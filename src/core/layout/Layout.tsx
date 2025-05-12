@@ -1,21 +1,14 @@
 import { 
-  Tags,
-  Box,
+
   ShoppingBag,
-  BarChart3,
-  User,
-  Mail,
-  File,
+
   User2,
 } from 'lucide-react';
-import { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 
-interface LayoutProps {
-  children: ReactNode;
-}
 
-export default function Layout({ children }: LayoutProps) {
+
+export default function Layout({ children }: any) {
   const location = useLocation();
   
   const navItems = [
