@@ -9,23 +9,23 @@ import { type User, useGetUsers, useUpdateUser, useDeleteUser } from '../api/use
 const userFields = [
   {
     name: 'name',
-    label: 'Full Name',
+    label: 'ФИО',
     type: 'text',
-    placeholder: 'Enter full name',
+    placeholder: 'Введите ФИО',
     required: true,
   },
   {
     name: 'phone_number',
-    label: 'Phone Number',
+    label: 'Номер телефона',
     type: 'text',
     placeholder: '+998 XX XXX XX XX',
     required: true,
   },
   {
     name: 'role',
-    label: 'Role',
+    label: 'Роль',
     type: 'select',
-    placeholder: 'Select user role',
+    placeholder: 'Выберите роль пользователя',
     required: true,
     options: [
       { value: 'Владелец', label: 'Владелец' },
@@ -43,19 +43,19 @@ const userFields = [
 
 const columns = [
   {
-    header: 'ID',
+    header: '№',
     accessorKey: 'displayId',
   },
   {
-    header: 'Name',
+    header: 'ФИО',
     accessorKey: 'name',
   },
   {
-    header: 'Phone Number',
+    header: 'Телефон',
     accessorKey: 'phone_number',
   },
   {
-    header: 'Role',
+    header: 'Роль',
     accessorKey: 'role',
   },
 ];

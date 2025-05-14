@@ -9,23 +9,23 @@ import { type Store, useGetStores, useUpdateStore, useDeleteStore } from '../api
 const storeFields = [
   {
     name: 'name',
-    label: 'Store Name',
+    label: 'Название магазина',
     type: 'text',
-    placeholder: 'Enter store name',
+    placeholder: 'Введите название магазина',
     required: true,
   },
   {
     name: 'address',
-    label: 'Address',
+    label: 'Адрес',
     type: 'text',
-    placeholder: 'Enter store address',
+    placeholder: 'Введите адрес магазина',
     required: true,
   },
   {
     name: 'phone_number',
-    label: 'Phone Number',
+    label: 'Телефон',
     type: 'text',
-    placeholder: 'Enter phone number',
+    placeholder: 'Введите номер телефона',
     required: true,
   },
   {
@@ -50,24 +50,24 @@ const storeFields = [
 
 const columns = [
   {
-    header: 'ID',
+    header: '№',
     accessorKey: 'displayId',
   },
   {
-    header: 'Name',
+    header: 'Название',
     accessorKey: 'name',
   },
   {
-    header: 'Address',
+    header: 'Адрес',
     accessorKey: 'address',
   },
   {
-    header: 'Phone Number',
+    header: 'Телефон',
     accessorKey: 'phone_number',
   },
   {
-    header: 'Main Store',
-    accessorKey: (row: Store) => (row.is_main ? 'Yes' : 'No'),
+    header: 'Главный магазин',
+    accessorKey: (row: Store) => (row.is_main ? 'Да' : 'Нет'),
   },
 ];
 

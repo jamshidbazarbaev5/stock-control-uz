@@ -47,6 +47,8 @@ export function ResourceTable<T extends { id?: number }>({
   onPageChange,
   currentPage = 1,
 }: ResourceTableProps<T>) {
+  // Handle case when data is undefined
+  const tableData = data || [];
   const totalPages = Math.ceil(totalCount / pageSize);
 
   const getPageNumbers = () => {
@@ -121,14 +123,14 @@ export function ResourceTable<T extends { id?: number }>({
                   Загрузка...
                 </TableCell>
               </TableRow>
-            ) : data.length === 0 ? (
+            ) : tableData.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length + (onEdit || onDelete ? 1 : 0)} className="text-center text-gray-500">
                   Данные отсутствуют
                 </TableCell>
               </TableRow>
             ) : (
-              data.map((row, rowIndex) => (
+              tableData.map((row, rowIndex) => (
                 <TableRow 
                   key={rowIndex} 
                   className="hover:bg-gray-50/50 transition-colors border-b border-gray-100 last:border-0"
