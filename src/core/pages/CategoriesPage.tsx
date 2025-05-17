@@ -1,28 +1,30 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
 import { type Category, useGetCategories, useUpdateCategory, useDeleteCategory } from '../api/category';
+import { t } from 'i18next';
 
 const categoryFields = [
   {
     name: 'category_name',
-    label: 'Название категории',
+    label: 'forms.category_name',
     type: 'text',
-    placeholder: 'Введите название категории',
+    placeholder: 'placeholders.enter_name',
     required: true,
   },
 ];
 
 const columns = [
   // {
-  //   header: '№',
+  //   header: 'table.number',
   //   accessorKey: 'displayId',
   // },
   {
-    header: 'Название категории',
+    header: t('forms.category_name'),
     accessorKey: 'category_name',
   },
 ];
@@ -35,6 +37,7 @@ type CategoryResponse = {
 }
 
 export default function CategoriesPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -66,20 +69,20 @@ export default function CategoriesPage() {
       { ...data, id: editingCategory.id } as Category,
       {
         onSuccess: () => {
-          toast.success('Категория успешно обновлена');
+          toast.success(t('messages.success.updated', { item: t('navigation.categories') }));
           setIsFormOpen(false);
           setEditingCategory(null);
         },
-        onError: () => toast.error('Не удалось обновить категорию'),
+        onError: () => toast.error(t('messages.error.update', { item: t('navigation.categories') })),
       }
     );
   };
 
   const handleDelete = (id: number) => {
-    if (confirm('Вы уверены, что хотите удалить эту категорию?')) {
+    if (confirm(t('messages.confirmation.delete'))) {
       deleteCategory(id, {
-        onSuccess: () => toast.success('Категория успешно удалена'),
-        onError: () => toast.error('Не удалось удалить категорию'),
+        onSuccess: () => toast.success(t('messages.success.deleted', { item: t('navigation.categories') })),
+        onError: () => toast.error(t('messages.error.delete', { item: t('navigation.categories') })),
       });
     }
   };
@@ -102,11 +105,15 @@ export default function CategoriesPage() {
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
           <ResourceForm
-            fields={fields}
+            fields={fields.map(field => ({
+              ...field,
+              label: t(field.label),
+              placeholder: t(field.placeholder)
+            }))}
             onSubmit={handleUpdateSubmit}
             defaultValues={editingCategory || {}}
             isSubmitting={isUpdating}
-            title="Редактировать категорию"
+            title={t('messages.edit', { item: t('navigation.categories') })}
           />
         </DialogContent>
       </Dialog>

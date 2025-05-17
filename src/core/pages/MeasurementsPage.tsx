@@ -8,6 +8,7 @@ import type { Measurement } from '../api/measurement';
 import { useGetMeasurements, useDeleteMeasurement, useUpdateMeasurement } from '../api/measurement';
 import { useGetStores } from '../api/store';
 import { ResourceTable } from '../helpers/ResourseTable';
+import { t } from 'i18next';
 
 const columns = [
   // {
@@ -15,7 +16,7 @@ const columns = [
   //   accessorKey: 'id',
   // },
   {
-    header: 'Единица измерения',
+    header: t('forms.measurement_name'),
     accessorKey: 'measurement_name',
   },
   
@@ -24,9 +25,9 @@ const columns = [
 const measurementFields = [
   {
     name: 'measurement_name',
-    label: 'Название единицы измерения',
+    label: t('forms.measurement_name'),
     type: 'text',
-    placeholder: 'Введите название единицы измерения',
+    placeholder: t('placeholders.enter_measurement_name'),
     required: true,
   },
   

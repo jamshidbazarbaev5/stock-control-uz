@@ -5,39 +5,40 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
 import { type User, useGetUsers, useUpdateUser, useDeleteUser } from '../api/user';
+import { t } from 'i18next';
 
 const userFields = [
   {
     name: 'name',
-    label: 'ФИО',
+    label: t('forms.fio'),
     type: 'text',
-    placeholder: 'Введите ФИО',
+    placeholder: t('placeholders.enter_name'),
     required: true,
   },
   {
     name: 'phone_number',
-    label: 'Номер телефона',
+    label: t('forms.phone_number'),
     type: 'text',
-    placeholder: '+998 XX XXX XX XX',
+    placeholder: t('placeholders.enter_phone'),
     required: true,
   },
   {
     name: 'role',
-    label: 'Роль',
+    label: t('forms.role'),
     type: 'select',
-    placeholder: 'Выберите роль пользователя',
+    placeholder: t('placeholders.select_role'),
     required: true,
     options: [
-      { value: 'Владелец', label: 'Владелец' },
-      { value: 'Администратор', label: 'Администратор' },
-      { value: 'Продавец', label: 'Продавец' },
+      { value: t('roles.owner'), label: t('roles.owner') },
+      { value: t('roles.admin'), label: t('roles.admin') },
+      { value: t('roles.seller'), label: t('roles.seller') },
     ],
   },
   {
     name: 'password',
-    label: 'Password',
+    label: t('forms.password'),
     type: 'text',
-    placeholder: 'Enter password',
+    placeholder: t('placeholders.enter_password'),
   },
 ];
 
@@ -47,15 +48,15 @@ const columns = [
   //   accessorKey: 'displayId',
   // },
   {
-    header: 'ФИО',
+    header: t('forms.fio'),
     accessorKey: 'name',
   },
   {
-    header: 'Телефон',
+    header: t('forms.phone_number'),
     accessorKey: 'phone_number',
   },
   {
-    header: 'Роль',
+    header: t('forms.role'),
     accessorKey: 'role',
   },
 ];
@@ -67,11 +68,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
   const { data: usersData, isLoading } = useGetUsers({
-    params: {
-      page: page,
-      page_size: 10,
-      ordering: '-created_at',
-    },
+   
   });
 
   // Handle both array and object response formats

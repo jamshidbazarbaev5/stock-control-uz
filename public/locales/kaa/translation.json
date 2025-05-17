@@ -40,6 +40,8 @@
     "quantity": "Sanı",
     "address": "Mánzil",
     "phone": "Telefon",
+    "fio":"Tolıq atı",
+    "phone_number": "Telefon nomeri",
     "email": "Email",
     "category_name": "Kategoriya atı",
     "product_name": "Ónim atı",
@@ -59,7 +61,13 @@
     "comment": "Kommentariy",
     "amount": "Muǵdarı",
     "from_stock": "Skladtan",
-    "to_store": "Dúkanǵa"
+    "to_store": "Dúkanǵa",
+    "password": "Parol"
+  },
+  "roles": {
+    "owner": "Iyesi",
+    "admin": "Administrator",
+    "seller": "Satıwshı"
   },
   "messages": {
     "success": {
@@ -94,7 +102,8 @@
     "enter_comment": "Kommentariy kiritiń",
     "enter_exchange_rate": "Kursın kiritiń",
     "select_store_type": "Dúkan túrin tańlań",
-    "select_owner": "Iyesin tańlań"
+    "select_owner": "Iyesin tańlań",
+    "enter_password": "Paroldi kiritiń"
   },
   "table": {
     "number": "№",

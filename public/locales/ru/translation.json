@@ -34,6 +34,8 @@
   },
   "forms": {
     "name": "Имя",
+    "fio": "ФИО",
+    "phone_number": "Номер телефона",
     "description": "Описание",
     "price": "Цена",
     "quantity": "Количество",
@@ -58,7 +60,13 @@
     "comment": "Комментарий",
     "amount": "Количество",
     "from_stock": "Со склада",
-    "to_store": "В магазин"
+    "to_store": "В магазин",
+    "password": "Пароль"
+  },
+  "roles": {
+    "owner": "Владелец",
+    "admin": "Администратор",
+    "seller": "Продавец"
   },
   "messages": {
     "success": {
@@ -93,7 +101,8 @@
     "enter_comment": "Введите комментарий",
     "enter_exchange_rate": "Введите курс обмена",
     "select_store_type": "Выберите тип магазина",
-    "select_owner": "Выберите владельца"
+    "select_owner": "Выберите владельца",
+    "enter_password": "Введите пароль"
   },
   "table": {
     "number": "№",
