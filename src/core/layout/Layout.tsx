@@ -77,7 +77,7 @@ export default function Layout({ children }: any) {
             <span className="text-2xl font-bold text-emerald-500">C</span>
           </div> */}
           <div className="font-semibold text-gray-800">
-            Coco
+            Stock-control
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -125,7 +125,7 @@ export default function Layout({ children }: any) {
                 </div> */}
                 {!isCollapsed && (
                   <div className="font-semibold text-gray-800">
-                    Coco
+                    Stock-control
                   </div>
                 )}
               </div>
