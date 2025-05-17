@@ -5,6 +5,12 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
 import type { Stock } from '../api/stock';
+import type { Product } from '../api/product';
+import type { Store } from '../api/store';
+import type { Measurement } from '../api/measurement';
+import type { Supplier } from '../api/supplier';
+
+type PaginatedData<T> = { results: T[]; count: number } | T[];
 import { useGetStocks, useDeleteStock, useUpdateStock } from '../api/stock';
 import { useGetProducts } from '../api/product';
 import { useGetStores } from '../api/store';
@@ -12,6 +18,8 @@ import { useGetMeasurements } from '../api/measurement';
 import { useGetSuppliers } from '../api/supplier';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { useTranslation } from 'react-i18next';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 
 const columns = (t: any) => [
   {
@@ -150,14 +158,29 @@ export default function StocksPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  // Get stocks without pagination
+  // Filter states
+  const [selectedProduct, setSelectedProduct] = useState<string>('all');
+  const [selectedStore, setSelectedStore] = useState<string>('all');
+  const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
+
+  // Get stocks with filters
   const {
     data: stocksData,
     isLoading,
-  } = useGetStocks({});
+  } = useGetStocks({
+    params: {
+      product: selectedProduct === 'all' ? undefined : selectedProduct,
+      store: selectedStore === 'all' ? undefined : selectedStore,
+      supplier: selectedSupplier === 'all' ? undefined : selectedSupplier,
+      date_of_arrived_gte: dateFrom || undefined,
+      date_of_arrived_lte: dateTo || undefined
+    }
+  });
 
-  // Get the stocks array, defaulting to empty array if undefined
-  const stocks = Array.isArray(stocksData) ? stocksData : [];
+  // Get the stocks array from the paginated response
+  const stocks = stocksData?.results || [];
 
   // Fetch products, stores, measurements and suppliers for the select dropdowns
   const { data: productsData } = useGetProducts({});
@@ -165,11 +188,16 @@ export default function StocksPage() {
   const { data: measurementsData } = useGetMeasurements({});
   const { data: suppliersData } = useGetSuppliers({});
 
-  // Get the products, stores, measurements and suppliers arrays
-  const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
-  const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
-  const measurements = Array.isArray(measurementsData) ? measurementsData : measurementsData?.results || [];
-  const suppliers = Array.isArray(suppliersData) ? suppliersData : suppliersData?.results || [];
+  // Extract data from paginated responses
+  const getPaginatedData = <T extends { id?: number }>(data: PaginatedData<T> | undefined): T[] => {
+    if (!data) return [];
+    return Array.isArray(data) ? data : data.results;
+  };
+
+  const products = getPaginatedData<Product>(productsData);
+  const stores = getPaginatedData<Store>(storesData);
+  const measurements = getPaginatedData<Measurement>(measurementsData);
+  const suppliers = getPaginatedData<Supplier>(suppliersData);
 
   // Mutations
   const updateStock = useUpdateStock();
@@ -180,7 +208,7 @@ export default function StocksPage() {
     if (field.name === 'product_write') {
       return {
         ...field,
-        options: products.map(product => ({
+        options: products.map((product: Product) => ({
           value: product.id,
           label: product.product_name
         }))
@@ -189,7 +217,7 @@ export default function StocksPage() {
     if (field.name === 'store_write') {
       return {
         ...field,
-        options: stores.map(store => ({
+        options: stores.map((store: Store) => ({
           value: store.id,
           label: store.name
         }))
@@ -198,7 +226,7 @@ export default function StocksPage() {
     if (field.name === 'measurement_write') {
       return {
         ...field,
-        options: measurements.map(measurement => ({
+        options: measurements.map((measurement: Measurement) => ({
           value: measurement.id,
           label: measurement.measurement_name
         }))
@@ -207,7 +235,7 @@ export default function StocksPage() {
     if (field.name === 'supplier_write') {
       return {
         ...field,
-        options: suppliers.map(supplier => ({
+        options: suppliers.map((supplier: Supplier) => ({
           value: supplier.id,
           label: supplier.name
         }))
@@ -279,6 +307,64 @@ export default function StocksPage() {
         <Button onClick={() => navigate('/create-stock')}>{t('common.create')} {t('table.product')}</Button>
       </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-5" >
+            <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+              <SelectTrigger>
+                <SelectValue placeholder={t('forms.select_product')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('forms.all_products')}</SelectItem>
+                {products?.map((product: Product) => product.id ? (
+                  <SelectItem key={product.id} value={product.id.toString()}>
+                    {product.product_name}
+                  </SelectItem>
+                ) : null) || null}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedStore} onValueChange={setSelectedStore}>
+              <SelectTrigger>
+                <SelectValue placeholder={t('forms.select_store')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('forms.all_stores')}</SelectItem>
+                {stores?.map((store: Store) => store.id ? (
+                  <SelectItem key={store.id} value={store.id.toString()}>
+                    {store.name}
+                  </SelectItem>
+                ) : null) || null}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
+              <SelectTrigger>
+                <SelectValue placeholder={t('forms.select_supplier')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('forms.all_suppliers')}</SelectItem>
+                {suppliers?.map((supplier: Supplier) => supplier.id ? (
+                  <SelectItem key={supplier.id} value={supplier.id.toString()}>
+                    {supplier.name}
+                  </SelectItem>
+                ) : null) || null}
+              </SelectContent>
+            </Select>
+
+            <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              placeholder={t('forms.from_date')}
+            />
+
+            <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              placeholder={t('forms.to_date')}
+            />
+          </div>
+
       <ResourceTable
         data={stocks}
         columns={columns(t)}
@@ -286,7 +372,7 @@ export default function StocksPage() {
         onEdit={handleEdit}
         onDelete={handleDelete}
         pageSize={pageSize}
-        totalCount={stocks.length}
+        totalCount={stocksData?.count || 0}
         currentPage={currentPage}
         onPageChange={setCurrentPage}
       />

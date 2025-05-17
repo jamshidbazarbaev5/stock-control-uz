@@ -11,17 +11,26 @@
     "select": "Выбрать",
     "yes": "Да",
     "logout": "Выйти",
-    "no": "Нет"
+    "previous": "Назад",
+    "next": "Далее",
+    "main_store": "Главный магазин",
+    "no": "Нет",
+    "page":"Страница",
+    "of":"Страница из",
+    "submitting": "Отправка...",
+    "delete_image": "Удалить изображение",
+    "total": "Всего"
   },
   "navigation": {
     "users": "Пользователи",
     "stores": "Магазины",
     "categories": "Категории",
     "products": "Продукты",
-    "stocks": "Склады",
+    "stocks": "Приход",
     "suppliers": "Поставщики",
     "transfers": "Переводы",
-    "measurements": "Измерения"
+    "measurements": "Измерения",
+    "settings": "Настройки"
   },
   "auth": {
     "login": "Войти",
@@ -40,6 +49,12 @@
     "price": "Цена",
     "quantity": "Количество",
     "address": "Адрес",
+    "all_products": "Все продукты",
+    "all_stores": "Все магазины",
+    "all_suppliers": "Все поставщики",
+    "from_date": "Дата от",
+    "to_date": "Дата до",
+   
     "phone": "Телефон",
     "email": "Эл. почта",
     "category_name": "Название категории",

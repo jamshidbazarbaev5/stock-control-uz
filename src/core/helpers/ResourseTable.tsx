@@ -16,6 +16,7 @@ import {
   TrashIcon,
   PlusIcon
 } from 'lucide-react';
+import { t } from 'i18next';
 
 interface Column<T> {
   header: string;
@@ -100,7 +101,7 @@ export function ResourceTable<T extends { id?: number }>({
         <h2 className="text-xl font-bold">Ресурсы</h2>
         {onAdd && (
           <Button onClick={onAdd} className="flex items-center gap-1">
-            <PlusIcon className="h-4 w-4" /> Добавить новый
+            <PlusIcon className="h-4 w-4" /> {t('common.create')}
           </Button>
         )}
       </div>
@@ -207,7 +208,7 @@ export function ResourceTable<T extends { id?: number }>({
         </Table>
       </div>
       
-      {totalPages > 1 && (
+      {totalPages >= 1 && (
         <div className="flex justify-end gap-2 items-center text-sm text-gray-600">
           <Button 
             variant="ghost" 

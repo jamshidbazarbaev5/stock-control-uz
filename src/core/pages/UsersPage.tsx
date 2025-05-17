@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { type User, useGetUsers, useUpdateUser, useDeleteUser } from '../api/user';
 import { t } from 'i18next';
 
-const userFields = [
+const userFields =[
   {
     name: 'name',
     label: t('forms.fio'),
@@ -135,7 +135,7 @@ export default function UsersPage() {
             onSubmit={handleUpdateSubmit}
             defaultValues={editingUser || {}}
             isSubmitting={isUpdating}
-            title="Edit User"
+            title={t('common.edit')}
           />
         </DialogContent>
       </Dialog>

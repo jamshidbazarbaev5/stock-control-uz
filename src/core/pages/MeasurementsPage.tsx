@@ -52,7 +52,13 @@ export default function MeasurementsPage() {
   const navigate = useNavigate();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMeasurement, setEditingMeasurement] = useState<Measurement | null>(null);
-  const { data: measurementsData, isLoading } = useGetMeasurements();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const { data: measurementsData, isLoading } = useGetMeasurements({
+    params: {
+      measurement_name: searchTerm
+    }
+  });
   const { data: storesData } = useGetStores();
   const deleteMeasurement = useDeleteMeasurement();
   const { mutate: updateMeasurement, isPending: isUpdating } = useUpdateMeasurement();
@@ -125,9 +131,18 @@ export default function MeasurementsPage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Measurements</h1>
-        <Button onClick={handleCreate}>Create New Measurement</Button>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">{t('forms.measurements')}</h1>
+          <Button onClick={handleCreate}>{t('common.create')}</Button>
+        </div>
+        <input
+          type="text"
+          placeholder={t('placeholders.search_measurement')}
+          className="w-full p-2 border rounded"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
       <ResourceTable<Measurement>

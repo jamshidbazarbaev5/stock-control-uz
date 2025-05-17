@@ -8,6 +8,9 @@ import { type Product, useGetProducts, useUpdateProduct, useDeleteProduct } from
 import { useGetCategories } from '../api/category';
 import { useGetStores } from '../api/store';
 import { useTranslation } from 'react-i18next';
+import { useGetMeasurements } from '../api/measurement';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 const productFields = (t: any) => [
   {
@@ -60,12 +63,18 @@ export default function ProductsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const { t } = useTranslation();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedMeasurement, setSelectedMeasurement] = useState<string>('');
 
   const { data: productsData, isLoading } = useGetProducts({
     params: {
-      page: page,
+      page,
       page_size: 10,
       ordering: '-created_at',
+      ...(searchTerm && { product_name: searchTerm }),
+      ...(selectedCategory && { category: selectedCategory }),
+      ...(selectedMeasurement && { measurement: selectedMeasurement }),
     },
   });
 
@@ -84,10 +93,14 @@ export default function ProductsPage() {
   // Fetch categories and stores for the select dropdowns
   const { data: categoriesData } = useGetCategories({});
   const { data: storesData } = useGetStores({});
+  const { data: measurementsData } = useGetMeasurements({});
 
   // Get the categories and stores arrays
   const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData?.results || [];
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
+  const measurements = Array.isArray(measurementsData) 
+    ? measurementsData 
+    : measurementsData?.results || [];
 
   // Update fields with category and store options
   const fields = productFields(t).map((field: any) => {
@@ -154,6 +167,47 @@ export default function ProductsPage() {
 
   return (
     <div className="container mx-auto py-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <Input
+          type="text"
+          placeholder={t('placeholders.search_product')}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        
+        <Select 
+          value={selectedCategory} 
+          onValueChange={setSelectedCategory}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder={t('placeholders.select_category')} />
+          </SelectTrigger>
+          <SelectContent>
+            {categories.map(category => (
+              <SelectItem key={category.id} value={String(category.id)}>
+                {category.category_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select 
+          value={selectedMeasurement} 
+          onValueChange={setSelectedMeasurement}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder={t('placeholders.select_measurement')} />
+          </SelectTrigger>
+          <SelectContent>
+            {measurements?.map(measurement => (
+              <SelectItem key={measurement.id} value={String(measurement.id)}>
+                {measurement.measurement_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <ResourceTable
         data={products}
         columns={columns(t)}

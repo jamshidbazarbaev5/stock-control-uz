@@ -10,18 +10,30 @@
     "loading": "Júklenip atır...",
     "select": "Tańlaw",
     "yes": "Awa",
+    "previous": "Artqa",
+    "next": "Keyingi",
+    "page":"Bet",
+    "total":"Barlıg'i",
+    "of":"Bet/Barlıq",
+    "page_of_total":"Bet/Barlıq",
+    "main_store": "Bas dúkan",
     "no": "Yaq",
-    "logout": "Shıǵıw"
+    "logout": "Shıǵıw",
+    "submitting": "Jiberilip atır...",
+    "delete_image": "Súwretti óshiriw"
+
   },
+  
 
   "navigation": {
     "users": "Paydalanıwshılar",
     "stores": "Dúkanlar",
     "categories": "Kategoriyalar",
     "products": "Ónimler",
-    "stocks": "Skladlar",
-    "suppliers": "Taminleyishiler",
+    "stocks": "Kelgenler",
+    "suppliers": "Taminlewshiler",
     "transfers": "Transferler",
+    "settings": "Sazlamalar",
     "measurements": "Ólshemler"
   },
   "auth": {
@@ -35,6 +47,11 @@
   },
   "forms": {
     "name": "Atı",
+    "all_products": "Barcha ónimler",
+    "all_stores": "Barcha dúkanlar",
+    "all_suppliers": "Barcha taminleyishiler",
+    "from_date": "Boshlang'ich san",
+    "to_date": "Tug'rilan san",
     "description": "Maǵlıwmat",
     "price": "Bahası",
     "quantity": "Sanı",
@@ -47,9 +64,14 @@
     "product_name": "Ónim atı",
     "store_name": "Dúkan atı",
     "is_main_store": "Bas dúkan",
-    "parent_store": "Joqarı dúkan",
+
+    "previous":"Aldin'g'i",
+    "next":"Keyingi",
+    "parent_store": "Ata dúkan",
+    "main_store": "Joqarı dúkan",
     "owner": "Iyesi",
     "role": "Lawazım",
+
     "measurement_name": "Ólshem birligin atı",
     "supplier_name": "Taminleyishi atı",
     "purchase_price_usd": "Alıw bahası (USD)",
@@ -103,6 +125,10 @@
     "enter_exchange_rate": "Kursın kiritiń",
     "select_store_type": "Dúkan túrin tańlań",
     "select_owner": "Iyesin tańlań",
+    "search_category": "Kategoriyanı izdeń",
+    "search_product": "Ónim izdeń",
+
+    "search_measurement": "Ólshem birligin izdeń",
     "enter_password": "Paroldi kiritiń"
   },
   "table": {

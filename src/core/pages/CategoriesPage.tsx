@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState,  } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ResourceTable } from '../helpers/ResourseTable';
@@ -11,9 +11,9 @@ import { t } from 'i18next';
 const categoryFields = [
   {
     name: 'category_name',
-    label: 'forms.category_name',
+    label: t('forms.category_name'),
     type: 'text',
-    placeholder: 'placeholders.enter_name',
+    placeholder: t('placeholders.enter_name'),
     required: true,
   },
 ];
@@ -41,8 +41,14 @@ export default function CategoriesPage() {
   const navigate = useNavigate();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const { data: categoriesData, isLoading } = useGetCategories({});
+  const { data: categoriesData, isLoading } = useGetCategories({
+    params: {
+      category_name: searchTerm
+    }
+  });
+
   const fields = categoryFields;
 
   // Get the categories array from the paginated response
@@ -89,6 +95,16 @@ export default function CategoriesPage() {
 
   return (
     <div className="container mx-auto py-6">
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder={t('placeholders.search_category')}
+          className="w-full p-2 border rounded"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+      
       <ResourceTable
         data={enhancedCategories}
         columns={columns}

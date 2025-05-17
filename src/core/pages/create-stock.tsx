@@ -2,13 +2,20 @@ import { useNavigate } from 'react-router-dom';
 import { ResourceForm } from '../helpers/ResourceForm';
 import type { Stock, CreateStockDTO } from '../api/stock';
 import { useCreateStock } from '../api/stock';
-import { useGetProducts } from '../api/product';
+import { useGetProducts, useCreateProduct } from '../api/product';
 import { useGetStores } from '../api/store';
-import { useGetMeasurements } from '../api/measurement';
-import { useGetSuppliers } from '../api/supplier';
+import { useGetMeasurements, useCreateMeasurement } from '../api/measurement';
+import { useGetSuppliers, useCreateSupplier } from '../api/supplier';
+import { useGetCategories } from '../api/category';
 import { toast } from 'sonner';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { Dialog, DialogContent, DialogTitle } from '../../components/ui/dialog';
+import { useTranslation } from 'react-i18next';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
 const stockFields = [
   {
@@ -100,9 +107,42 @@ interface FormValues extends Partial<Stock> {
   purchase_price_in_uz: string;
 }
 
+interface CreateProductForm {
+  product_name: string;
+  category_write: number;
+  store_write: number;
+}
+
+interface CreateSupplierForm {
+  name: string;
+  phone_number: string;
+}
+
+interface CreateMeasurementForm {
+  measurement_name: string;
+  store_write: number;
+}
+
 export default function CreateStock() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const createStock = useCreateStock();
+  
+  // Create mutations
+  const createProduct = useCreateProduct();
+  const createSupplier = useCreateSupplier();
+  const createMeasurement = useCreateMeasurement();
+  
+  // State for create new modals
+  const [createProductOpen, setCreateProductOpen] = useState(false);
+  const [createSupplierOpen, setCreateSupplierOpen] = useState(false);
+  const [createMeasurementOpen, setCreateMeasurementOpen] = useState(false);
+  
+  // Forms for creating new items
+  const productForm = useForm<CreateProductForm>();
+  const supplierForm = useForm<CreateSupplierForm>();
+  const measurementForm = useForm<CreateMeasurementForm>();
+  
   const form = useForm<FormValues>({
     defaultValues: {
       purchase_price_in_us: '',
@@ -111,22 +151,36 @@ export default function CreateStock() {
     }
   });
 
-  
   // Watch specific fields for changes
   const usdPrice = form.watch('purchase_price_in_us');
   const exchangeRate = form.watch('exchange_rate');
   
-  // Fetch products, stores and measurements for the select dropdowns
-  const { data: productsData } = useGetProducts({});
-  const { data: storesData } = useGetStores({});
-  const { data: measurementsData } = useGetMeasurements({});
-  const { data: suppliersData } = useGetSuppliers({});
+  // Fetch products, stores, measurements, suppliers and categories for the select dropdowns
+  const { data: productsData, isLoading: productsLoading } = useGetProducts({});
+  const { data: storesData, isLoading: storesLoading } = useGetStores({});
+  const { data: measurementsData, isLoading: measurementsLoading } = useGetMeasurements({});
+  const { data: suppliersData, isLoading: suppliersLoading } = useGetSuppliers({});
+  const { data: categoriesData, isLoading: categoriesLoading } = useGetCategories({});
 
-  // Get the products, stores, measurements and suppliers arrays
+  // Get the products, stores, measurements, suppliers and categories arrays
   const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
   const measurements = Array.isArray(measurementsData) ? measurementsData : measurementsData?.results || [];
   const suppliers = Array.isArray(suppliersData) ? suppliersData : suppliersData?.results || [];
+  const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData?.results || [];
+  
+  // Handlers for creating new items
+  const handleCreateProduct = () => {
+    setCreateProductOpen(true);
+  };
+  
+  const handleCreateSupplier = () => {
+    setCreateSupplierOpen(true);
+  };
+  
+  const handleCreateMeasurement = () => {
+    setCreateMeasurementOpen(true);
+  };
 
 
   // Effect to update purchase_price_in_uz when its dependencies change
@@ -154,7 +208,10 @@ export default function CreateStock() {
         options: products.map(product => ({
           value: product.id,
           label: product.product_name
-        }))
+        })),
+        createNewLabel: t('common.create_new_product'),
+        onCreateNew: handleCreateProduct,
+        isLoading: productsLoading
       };
     }
     if (field.name === 'store_write') {
@@ -163,7 +220,8 @@ export default function CreateStock() {
         options: stores.map(store => ({
           value: store.id,
           label: store.name
-        }))
+        })),
+        isLoading: storesLoading
       };
     }
     if (field.name === 'measurement_write') {
@@ -172,7 +230,10 @@ export default function CreateStock() {
         options: measurements.map(measurement => ({
           value: measurement.id,
           label: measurement.measurement_name
-        }))
+        })),
+        createNewLabel: t('common.create_new_measurement'),
+        onCreateNew: handleCreateMeasurement,
+        isLoading: measurementsLoading
       };
     }
     if (field.name === 'supplier_write') {
@@ -181,7 +242,10 @@ export default function CreateStock() {
         options: suppliers.map(supplier => ({
           value: supplier.id,
           label: supplier.name
-        }))
+        })),
+        createNewLabel: t('common.create_new_supplier'),
+        onCreateNew: handleCreateSupplier,
+        isLoading: suppliersLoading
       };
     }
     return field;
@@ -225,15 +289,168 @@ export default function CreateStock() {
     }
   };
 
+  // Handlers for creating new items
+  const handleCreateProductSubmit = async (data: CreateProductForm) => {
+    try {
+      await createProduct.mutateAsync(data);
+      toast.success(t('common.product_created'));
+      setCreateProductOpen(false);
+      productForm.reset();
+    } catch (error) {
+      toast.error(t('common.error_creating_product'));
+    }
+  };
+
+  const handleCreateSupplierSubmit = async (data: CreateSupplierForm) => {
+    try {
+      await createSupplier.mutateAsync(data);
+      toast.success(t('common.supplier_created'));
+      setCreateSupplierOpen(false);
+      supplierForm.reset();
+    } catch (error) {
+      toast.error(t('common.error_creating_supplier'));
+    }
+  };
+
+  const handleCreateMeasurementSubmit = async (data: CreateMeasurementForm) => {
+    try {
+      await createMeasurement.mutateAsync(data);
+      toast.success(t('common.measurement_created'));
+      setCreateMeasurementOpen(false);
+      measurementForm.reset();
+    } catch (error) {
+      toast.error(t('common.error_creating_measurement'));
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       <ResourceForm<FormValues>
         fields={fields}
         onSubmit={handleSubmit}
         isSubmitting={createStock.isPending}
-        title="Create New Stock"
+        title={t('common.create_new_stock')}
         form={form}
       />
+
+      {/* Create Product Modal */}
+      <Dialog open={createProductOpen} onOpenChange={setCreateProductOpen}>
+        <DialogContent>
+          <DialogTitle>{t('common.create_new_product')}</DialogTitle>
+          <form onSubmit={productForm.handleSubmit(handleCreateProductSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="product_name">{t('common.product_name')}</Label>
+              <Input
+                id="product_name"
+                {...productForm.register('product_name', { required: true })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="category_write">{t('common.category')}</Label>
+              <Select
+                value={productForm.watch('category_write')?.toString()}
+                onValueChange={(value) => productForm.setValue('category_write', parseInt(value))}
+                disabled={categoriesLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('common.select_category')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id?.toString() || ''} value={(category.id || 0).toString()}>
+                      {category.category_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="store_write">{t('common.store')}</Label>
+              <Select
+                value={productForm.watch('store_write')?.toString()}
+                onValueChange={(value) => productForm.setValue('store_write', parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('common.select_store')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {stores.map((store) => (
+                    <SelectItem key={store.id?.toString() || ''} value={(store.id || 0).toString()}>
+                      {store.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" disabled={createProduct.isPending}>
+              {t('common.create')}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Supplier Modal */}
+      <Dialog open={createSupplierOpen} onOpenChange={setCreateSupplierOpen}>
+        <DialogContent>
+          <DialogTitle>{t('common.create_new_supplier')}</DialogTitle>
+          <form onSubmit={supplierForm.handleSubmit(handleCreateSupplierSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">{t('common.supplier_name')}</Label>
+              <Input
+                id="name"
+                {...supplierForm.register('name', { required: true })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone_number">{t('common.phone_number')}</Label>
+              <Input
+                id="phone_number"
+                {...supplierForm.register('phone_number', { required: true })}
+              />
+            </div>
+            <Button type="submit" disabled={createSupplier.isPending}>
+              {t('common.create')}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Measurement Modal */}
+      <Dialog open={createMeasurementOpen} onOpenChange={setCreateMeasurementOpen}>
+        <DialogContent>
+          <DialogTitle>{t('common.create_new_measurement')}</DialogTitle>
+          <form onSubmit={measurementForm.handleSubmit(handleCreateMeasurementSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="measurement_name">{t('common.measurement_name')}</Label>
+              <Input
+                id="measurement_name"
+                {...measurementForm.register('measurement_name', { required: true })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="store_write">{t('common.store')}</Label>
+              <Select
+                value={measurementForm.watch('store_write')?.toString()}
+                onValueChange={(value) => measurementForm.setValue('store_write', parseInt(value))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t('common.select_store')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {stores.map((store) => (
+                    <SelectItem key={store.id?.toString() || ''} value={(store.id || 0).toString()}>
+                      {store.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" disabled={createMeasurement.isPending}>
+              {t('common.create')}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
