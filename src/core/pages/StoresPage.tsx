@@ -1,10 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ResourceTable } from '../helpers/ResourseTable';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
 import { type Store, useGetStores, useUpdateStore, useDeleteStore } from '../api/store';
+import { useGetUsers } from '../api/user';
+
+interface StoreFormData {
+  id?: number;
+  name: string;
+  address: string;
+  phone_number: string;
+  is_main: boolean;
+  parent_store: string;
+  owner: string;
+}
 
 const storeFields = [
   {
@@ -30,21 +41,30 @@ const storeFields = [
   },
   {
     name: 'is_main',
-    label: 'Main Store',
+    label: 'Главный магазин',
     type: 'select',
-    placeholder: 'Is this a main store?',
+    placeholder: 'Выберите тип магазина',
     required: true,
     options: [
-      { value: true, label: 'Yes' },
-      { value: false, label: 'No' },
+      { value: true, label: 'Да' },
+      { value: false, label: 'Нет' },
     ],
   },
   {
+    name: 'parent_store',
+    label: 'Родительский магазин',
+    type: 'select',
+    placeholder: 'Выберите родительский магазин',
+    required: false,
+    options: [], // Will be populated with stores
+  },
+  {
     name: 'owner',
-    label: 'Owner',
-    type: 'text',
-    placeholder: 'Owner ID',
+    label: 'Владелец',
+    type: 'select',
+    placeholder: 'Выберите владельца',
     required: true,
+    options: [], // Will be populated with users
   },
 ];
 
@@ -75,7 +95,7 @@ export default function StoresPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingStore, setEditingStore] = useState<Store | null>(null);
+  const [editingStore, setEditingStore] = useState<StoreFormData | null>(null);
 
   const { data: storesData, isLoading } = useGetStores({
     params: {
@@ -84,6 +104,10 @@ export default function StoresPage() {
       ordering: '-created_at',
     },
   });
+  
+  const { data: usersData } = useGetUsers({});
+  // Get all stores for parent store dropdown
+  const { data: allStoresData } = useGetStores({});
 
   // Handle both array and object response formats
   const results = Array.isArray(storesData) ? storesData : storesData?.results || [];
@@ -94,24 +118,57 @@ export default function StoresPage() {
     displayId: (page - 1) * 10 + index + 1,
   }));
 
+  // Prepare options for select inputs
+  const users = Array.isArray(usersData) ? usersData : usersData?.results || [];
+  const allStores = Array.isArray(allStoresData) ? allStoresData : allStoresData?.results || [];
+
+  // Update field options with dynamic data
+  const fields = storeFields.map(field => {
+    if (field.name === 'owner') {
+      return {
+        ...field,
+        options: users.map(user => ({ value: String(user?.id ?? ''), label: user.name }))
+      };
+    }
+    if (field.name === 'parent_store') {
+      return {
+        ...field,
+        options: [
+          { value: '0', label: 'Нет' }, // Use '0' instead of empty string
+          ...allStores.map(store => ({ value: String(store?.id ?? ''), label: store.name }))
+        ]
+      };
+    }
+    return field;
+  });
+
   const { mutate: updateStore, isPending: isUpdating } = useUpdateStore();
   const { mutate: deleteStore } = useDeleteStore();
 
   const handleEdit = (store: Store) => {
-    setEditingStore(store);
+    const formattedStore: StoreFormData = {
+      ...store,
+      is_main: store.is_main,
+      parent_store: store.parent_store?.toString() ?? '0', // Use '0' for no parent store
+      owner: store.owner.toString()
+    };
+    setEditingStore(formattedStore);
     setIsFormOpen(true);
   };
 
-  const handleUpdateSubmit = (data: Partial<Store>) => {
+  const handleUpdateSubmit = (data: StoreFormData) => {
     if (!editingStore?.id) return;
 
-    const updatedData = {
+    const formattedData = {
       ...data,
-      owner: typeof data.owner === 'string' ? parseInt(data.owner, 10) : data.owner,
+      id: editingStore.id,
+      owner: parseInt(data.owner, 10),
+      parent_store: data.parent_store === '0' ? null : parseInt(data.parent_store, 10),
+      is_main: data.is_main === true || data.is_main.toString() === 'true'
     };
 
     updateStore(
-      { ...updatedData, id: editingStore.id } as Store,
+      formattedData as Store,
       {
         onSuccess: () => {
           toast.success('Store successfully updated');
@@ -149,8 +206,12 @@ export default function StoresPage() {
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
+          <DialogTitle className="text-xl font-bold mb-4">Редактировать магазин</DialogTitle>
+          <DialogDescription className="mb-4">
+            Измените информацию о магазине
+          </DialogDescription>
           <ResourceForm
-            fields={storeFields}
+            fields={fields}
             onSubmit={handleUpdateSubmit}
             defaultValues={editingStore || undefined}
             isSubmitting={isUpdating}

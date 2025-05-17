@@ -4,76 +4,58 @@ import type { Product } from '../api/product';
 import { useCreateProduct } from '../api/product';
 import { useGetCategories } from '../api/category';
 import { useGetStores } from '../api/store';
+import { useGetMeasurements } from '../api/measurement';
 import { toast } from 'sonner';
+import { Button } from '../../components/ui/button';
+import { useState } from 'react';
 
-const productFields = [
-  {
-    name: 'product_name',
-    label: 'Product Name',
-    type: 'text',
-    placeholder: 'Enter product name',
-    required: true,
-  },
-  {
-    name: 'category_write',
-    label: 'Category',
-    type: 'select',
-    placeholder: 'Select category',
-    required: true,
-    options: [], // Will be populated with categories
-  },
-  {
-    name: 'store_write',
-    label: 'Store',
-    type: 'select',
-    placeholder: 'Select store',
-    required: true,
-    options: [], // Will be populated with stores
-  },
-];
+interface MeasurementItem {
+  measurement_write: number;
+  number: number;
+}
 
 export default function CreateProduct() {
   const navigate = useNavigate();
   const createProduct = useCreateProduct();
+  const [measurements, setMeasurements] = useState<MeasurementItem[]>([{ measurement_write: 0, number: 0 }]);
 
-  // Fetch categories and stores for the select dropdowns
+  // Fetch categories, stores and measurements for the select dropdowns
   const { data: categoriesData } = useGetCategories({});
   const { data: storesData } = useGetStores({});
+  const { data: measurementsData } = useGetMeasurements({});
 
-  // Get the categories and stores arrays
+  // Get the arrays from response data
   const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData?.results || [];
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
+  const availableMeasurements = Array.isArray(measurementsData) ? measurementsData : measurementsData?.results || [];
 
-  // Update fields with category and store options
-  const fields = productFields.map(field => {
-    if (field.name === 'category_write') {
-      return {
-        ...field,
-        options: categories.map(category => ({
-          value: category.id,
-          label: category.category_name
-        }))
-      };
-    }
-    if (field.name === 'store_write') {
-      return {
-        ...field,
-        options: stores.map(store => ({
-          value: store.id,
-          label: store.name
-        }))
-      };
-    }
-    return field;
-  });
+  const handleAddMeasurement = () => {
+    setMeasurements([...measurements, { measurement_write: 0, number: 0 }]);
+  };
 
-  const handleSubmit = async (data: Product) => {
+  const handleRemoveMeasurement = (index: number) => {
+    setMeasurements(measurements.filter((_: MeasurementItem, i: number) => i !== index));
+  };
+
+  const handleMeasurementChange = (index: number, field: keyof MeasurementItem, value: string) => {
+    const newMeasurements = [...measurements];
+    newMeasurements[index] = {
+      ...newMeasurements[index],
+      [field]: parseInt(value, 10) || 0
+    };
+    setMeasurements(newMeasurements);
+  };
+
+  const handleSubmit = async (data: any) => {
     try {
-      // Convert string values to proper types
       const formattedData = {
-        ...data,
+        product_name: data.product_name,
         category_write: typeof data.category_write === 'string' ? parseInt(data.category_write, 10) : data.category_write,
         store_write: typeof data.store_write === 'string' ? parseInt(data.store_write, 10) : data.store_write,
+        measurement: measurements.map((m: MeasurementItem) => ({
+          measurement_write: m.measurement_write,
+          number: m.number
+        }))
       };
 
       await createProduct.mutateAsync(formattedData);
@@ -88,11 +70,88 @@ export default function CreateProduct() {
   return (
     <div className="container mx-auto py-8 px-4">
       <ResourceForm<Product>
-        fields={fields}
+        fields={[
+          {
+            name: 'product_name',
+            label: 'Product Name',
+            type: 'text',
+            placeholder: 'Enter product name',
+            required: true,
+          },
+          {
+            name: 'category_write',
+            label: 'Category',
+            type: 'select',
+            placeholder: 'Select category',
+            required: true,
+            options: categories.map(category => ({
+              value: category.id,
+              label: category.category_name
+            }))
+          },
+          {
+            name: 'store_write',
+            label: 'Store',
+            type: 'select',
+            placeholder: 'Select store',
+            required: true,
+            options: stores.map(store => ({
+              value: store.id,
+              label: store.name
+            }))
+          }
+        ]}
         onSubmit={handleSubmit}
         isSubmitting={createProduct.isPending}
         title="Create New Product"
-      />
+      >
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Measurements</h3>
+          {measurements.map((measurement: MeasurementItem, index: number) => (
+            <div key={index} className="flex gap-4 items-end">
+              <div className="flex-1">
+                <select
+                  className="w-full px-3 py-2 border rounded-md"
+                  value={measurement.measurement_write || ''}
+                  onChange={(e) => handleMeasurementChange(index, 'measurement_write', e.target.value)}
+                >
+                  <option value="">Select measurement</option>
+                  {availableMeasurements?.map(m => (
+                    <option key={m.id} value={m.id}>
+                      {m.measurement_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex-1">
+                <input
+                  type="number"
+                  className="w-full px-3 py-2 border rounded-md"
+                  placeholder="Enter quantity"
+                  value={measurement.number || ''}
+                  onChange={(e) => handleMeasurementChange(index, 'number', e.target.value)}
+                />
+              </div>
+              {index > 0 && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => handleRemoveMeasurement(index)}
+                >
+                  Remove
+                </Button>
+              )}
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleAddMeasurement}
+          >
+            Add Measurement
+          </Button>
+        </div>
+      </ResourceForm>
     </div>
   );
 }

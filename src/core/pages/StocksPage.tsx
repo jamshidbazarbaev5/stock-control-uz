@@ -9,6 +9,7 @@ import { useGetStocks, useDeleteStock, useUpdateStock } from '../api/stock';
 import { useGetProducts } from '../api/product';
 import { useGetStores } from '../api/store';
 import { useGetMeasurements } from '../api/measurement';
+import { useGetSuppliers } from '../api/supplier';
 import { ResourceTable } from '../helpers/ResourseTable';
 
 const columns = [
@@ -27,8 +28,16 @@ const columns = [
     cell: (row: Stock) => row.product_read?.store_read?.name || '-',
   },
   {
-    header: 'Purchase Price',
-    accessorKey: 'purchase_price',
+    header: 'Purchase Price (UZS)',
+    accessorKey: 'purchase_price_in_uz',
+  },
+  {
+    header: 'Purchase Price (USD)',
+    accessorKey: 'purchase_price_in_us',
+  },
+  {
+    header: 'Exchange Rate',
+    accessorKey: 'exchange_rate',
   },
   {
     header: 'Selling Price',
@@ -41,6 +50,15 @@ const columns = [
   {
     header: 'Quantity',
     accessorKey: 'quantity',
+  },
+  {
+    header: 'Color',
+    accessorKey: 'color',
+  },
+  {
+    header: 'Supplier',
+    accessorKey: 'supplier_read',
+    cell: (row: Stock) => row.supplier_read?.name || '-',
   },
 ];
 
@@ -62,11 +80,25 @@ const stockFields = [
     options: [], // Will be populated with products
   },
   {
-    name: 'purchase_price',
-    label: 'Purchase Price',
+    name: 'purchase_price_in_us',
+    label: 'Purchase Price (USD)',
     type: 'text',
-    placeholder: 'Enter purchase price',
+    placeholder: 'Enter purchase price in USD',
     required: true,
+  },
+  {
+    name: 'exchange_rate',
+    label: 'Exchange Rate',
+    type: 'text',
+    placeholder: 'Enter exchange rate',
+    required: true,
+  },
+  {
+    name: 'purchase_price_in_uz',
+    label: 'Purchase Price (UZS)',
+    type: 'text',
+    placeholder: 'Calculated purchase price in UZS',
+    readOnly: true,
   },
   {
     name: 'selling_price',
@@ -87,6 +119,21 @@ const stockFields = [
     label: 'Quantity',
     type: 'text',
     placeholder: 'Enter quantity',
+    required: true,
+  },
+  {
+    name: 'supplier_write',
+    label: 'Supplier',
+    type: 'select',
+    placeholder: 'Select supplier',
+    required: true,
+    options: [], // Will be populated with suppliers
+  },
+  {
+    name: 'color',
+    label: 'Color',
+    type: 'text',
+    placeholder: 'Enter color',
     required: true,
   },
   {
@@ -114,21 +161,23 @@ export default function StocksPage() {
   // Get the stocks array, defaulting to empty array if undefined
   const stocks = Array.isArray(stocksData) ? stocksData : [];
 
-  // Fetch products, stores and measurements for the select dropdowns
+  // Fetch products, stores, measurements and suppliers for the select dropdowns
   const { data: productsData } = useGetProducts({});
   const { data: storesData } = useGetStores({});
   const { data: measurementsData } = useGetMeasurements({});
+  const { data: suppliersData } = useGetSuppliers({});
 
-  // Get the products, stores and measurements arrays
+  // Get the products, stores, measurements and suppliers arrays
   const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
   const measurements = Array.isArray(measurementsData) ? measurementsData : measurementsData?.results || [];
+  const suppliers = Array.isArray(suppliersData) ? suppliersData : suppliersData?.results || [];
 
   // Mutations
   const updateStock = useUpdateStock();
   const deleteStock = useDeleteStock();
 
-  // Update fields with product, store and measurement options
+  // Update fields with product, store, measurement and supplier options
   const fields = stockFields.map(field => {
     if (field.name === 'product_write') {
       return {
@@ -157,26 +206,21 @@ export default function StocksPage() {
         }))
       };
     }
+    if (field.name === 'supplier_write') {
+      return {
+        ...field,
+        options: suppliers.map(supplier => ({
+          value: supplier.id,
+          label: supplier.name
+        }))
+      };
+    }
     return field;
   });
 
   // Handlers
   const handleEdit = (stock: Stock) => {
-    // Get the initial measurement ID from measurement_read
-    const initialMeasurementId = stock.measurement_read?.[0]?.measurement_write;
-
-    // Create a modified stock object with the correct initial values
-    const stockWithInitialValues: Stock = {
-      ...stock,
-      // Set store_write from product's store_read
-      store_write: stock.product_read?.store_read?.id ?? stock.store_write,
-      // Set product_write from product_read
-      product_write: stock.product_read?.id ?? stock.product_write,
-      // Set measurement_write as a simple number for the select field
-      measurement_write: initialMeasurementId ? [{ measurement_write: initialMeasurementId, number: stock.quantity }] : []
-    };
-    
-    setSelectedStock(stockWithInitialValues);
+    navigate(`/edit-stock/${stock.id}`);
   };
 
   const handleUpdate = async (data: Partial<Stock>) => {
@@ -186,19 +230,29 @@ export default function StocksPage() {
       const quantity = typeof data.quantity === 'string' ? parseInt(data.quantity, 10) : data.quantity!;
       const measurement = typeof data.measurement_write === 'string' ? parseInt(data.measurement_write, 10) : data.measurement_write!;
       
-      // Format the measurement_write data
-      const formattedData = {
+      // Calculate the UZS price from USD and exchange rate
+      const priceInUSD = parseFloat(data.purchase_price_in_us || '0');
+      const exchangeRate = parseFloat(data.exchange_rate || '0');
+      const priceInUZS = (priceInUSD * exchangeRate).toString();
+
+      // Format the data for the API
+      const formattedData: Stock = {
         id: selectedStock.id,
         store_write: typeof data.store_write === 'string' ? parseInt(data.store_write, 10) : data.store_write!,
         product_write: typeof data.product_write === 'string' ? parseInt(data.product_write, 10) : data.product_write!,
-        purchase_price: data.purchase_price!,
+        purchase_price: priceInUZS,
         selling_price: data.selling_price!,
         min_price: data.min_price!,
         quantity: quantity,
+        supplier_write: typeof data.supplier_write === 'string' ? parseInt(data.supplier_write, 10) : data.supplier_write!,
+        color: data.color!,
         measurement_write: [{
           measurement_write: typeof measurement === 'number' ? measurement : measurement[0].measurement_write,
           number: quantity
-        }]
+        }],
+        purchase_price_in_us: data.purchase_price_in_us || '0',
+        exchange_rate: data.exchange_rate || '0',
+        purchase_price_in_uz: priceInUZS
       };
 
       await updateStock.mutateAsync(formattedData);

@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { ResourceForm } from '../helpers/ResourceForm';
 import type { Store } from '../api/store';
-import { useCreateStore } from '../api/store';
+import { useCreateStore, useGetStores } from '../api/store';
+import { useGetUsers } from '../api/user';
 import { toast } from 'sonner';
 
 const storeFields = [
@@ -40,15 +41,15 @@ const storeFields = [
   {
     name: 'parent_store',
     label: 'Parent Store',
-    type: 'text',
-    placeholder: 'Parent Store ID (Optional)',
+    type: 'select',
+    placeholder: 'Select parent store',
     required: false,
   },
   {
     name: 'owner',
     label: 'Owner',
-    type: 'text',
-    placeholder: 'Owner ID',
+    type: 'select',
+    placeholder: 'Select owner',
     required: true,
   },
 ];
@@ -56,6 +57,29 @@ const storeFields = [
 export default function CreateStore() {
   const navigate = useNavigate();
   const createStore = useCreateStore();
+  const { data: usersData } = useGetUsers({});
+  const { data: storesData } = useGetStores({});
+
+  // Prepare options for select inputs
+  const users = Array.isArray(usersData) ? usersData : usersData?.results || [];
+  const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
+
+  // Update field options with dynamic data
+  const fields = storeFields.map(field => {
+    if (field.name === 'owner') {
+      return {
+        ...field,
+        options: users.map(user => ({ value: user.id, label: user.name }))
+      };
+    }
+    if (field.name === 'parent_store') {
+      return {
+        ...field,
+        options: stores.map(store => ({ value: store.id, label: store.name }))
+      };
+    }
+    return field;
+  });
 
   const handleSubmit = async (data: Store) => {
     try {
@@ -82,7 +106,7 @@ export default function CreateStore() {
   return (
     <div className="container mx-auto py-8 px-4">
       <ResourceForm<Store>
-        fields={storeFields}
+        fields={fields}
         onSubmit={handleSubmit}
         isSubmitting={createStore.isPending}
         title="Create New Store"

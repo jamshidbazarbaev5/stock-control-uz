@@ -1,11 +1,17 @@
 import { createResourceApiHooks } from '../helpers/createResourceApi';
 
 // Types
+export interface ProductMeasurement {
+  measurement_write: number;
+  number: number;
+}
+
 export interface Product {
   id?: number;
   product_name: string;
   category_write: number;
   store_write: number;
+  measurements?: ProductMeasurement[];
   category_read?: {
     id: number;
     category_name: string;

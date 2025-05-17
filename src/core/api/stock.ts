@@ -13,7 +13,12 @@ export interface CreateStockDTO {
   selling_price: string;
   min_price: string;
   quantity: number;
+  supplier_write: number;
+  color: string;
   measurement_write: StockMeasurement[];
+  purchase_price_in_us: string;
+  exchange_rate: string;
+  purchase_price_in_uz: string;
 }
 
 export interface Stock extends CreateStockDTO {
@@ -65,6 +70,11 @@ export interface Stock extends CreateStockDTO {
     };
     number: number;
   }>;
+  supplier_read?: {
+    id: number;
+    name: string;
+    phone_number: string;
+  };
 }
 
 // API response type

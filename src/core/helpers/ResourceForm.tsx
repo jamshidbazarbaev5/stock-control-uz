@@ -37,6 +37,8 @@ interface ResourceFormProps<T extends Record<string, any>> {
   isSubmitting?: boolean;
   title: string;
   hideSubmitButton?: boolean;
+  children?: React.ReactNode;
+  form?: ReturnType<typeof useForm<T>>;
 }
 
 export function ResourceForm<T extends Record<string, any>>({
@@ -46,6 +48,8 @@ export function ResourceForm<T extends Record<string, any>>({
   isSubmitting = false,
   title,
   hideSubmitButton = false,
+  children,
+  form: providedForm,
 }: ResourceFormProps<T>) {
   // Transform defaultValues to handle nested fields
   const transformedDefaultValues = fields.reduce((acc, field) => {
@@ -61,7 +65,7 @@ export function ResourceForm<T extends Record<string, any>>({
     return acc;
   }, {} as Record<string, any>);
 
-  const form = useForm<any>({
+  const form = providedForm || useForm<T>({
     defaultValues: transformedDefaultValues,
   });
 
@@ -117,18 +121,21 @@ export function ResourceForm<T extends Record<string, any>>({
                         onValueChange={formField.onChange}
                         defaultValue={String(formField.value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder={field.placeholder} />
                         </SelectTrigger>
-                        <SelectContent>
-                          {field.options?.map((option:any) => (
-                            <SelectItem
-                              key={option.value}
-                              value={String(option.value)}
-                            >
-                              {option.label}
-                            </SelectItem>
-                          ))}
+                        <SelectContent className="max-h-[200px] overflow-y-auto bg-white rounded-md border shadow-md">
+                          <div className="max-h-[200px] overflow-y-auto py-1">
+                            {field.options?.map((option:any) => (
+                              <SelectItem
+                                key={option.value}
+                                value={String(option.value)}
+                                className="cursor-pointer hover:bg-gray-100 py-2 px-3"
+                              >
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </div>
                         </SelectContent>
                       </Select>
                     ) : field.type === 'file' ? (
@@ -144,7 +151,7 @@ export function ResourceForm<T extends Record<string, any>>({
                         )}
                         <Input
                           type="file"
-                          onChange={(e) => {
+                          onChange={(e:any) => {
                             const file = e.target.files?.[0];
                             if (file) {
                               setValue(field.name, file);
@@ -184,10 +191,10 @@ export function ResourceForm<T extends Record<string, any>>({
                         {/* Multiple file input */}
                         <Input
                           type="file"
-                          onChange={(e) => {
+                          onChange={(e:any) => {
                             const files = Array.from(e.target.files || []);
-                            const currentValues = formField.value || [];
-                            setValue(field.name, [...currentValues, ...files]);
+                            const currentValues = form.getValues(field.name) || [];
+                            form.setValue(field.name, [...currentValues, ...files] as any);
                           }}
                           multiple
                           accept="image/*"
@@ -210,6 +217,8 @@ export function ResourceForm<T extends Record<string, any>>({
               )}
             />
           ))}
+          
+          {children}
           
           {!hideSubmitButton && (
             <Button type="submit" disabled={isSubmitting}>
