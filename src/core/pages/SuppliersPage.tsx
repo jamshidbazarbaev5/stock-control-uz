@@ -5,40 +5,38 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
 import { type Supplier, useGetSuppliers, useUpdateSupplier, useDeleteSupplier } from '../api/supplier';
+import { useTranslation } from 'react-i18next';
 
-const supplierFields = [
+const supplierFields = (t: any) => [
   {
     name: 'name',
-    label: 'Supplier Name',
+    label: t('forms.supplier_name'),
     type: 'text',
-    placeholder: 'Enter supplier name',
+    placeholder: t('placeholders.enter_name'),
     required: true,
   },
   {
     name: 'phone_number',
-    label: 'Phone Number',
+    label: t('forms.phone'),
     type: 'text',
-    placeholder: '+998 XX XXX XX XX',
+    placeholder: t('placeholders.enter_phone'),
     required: true,
   },
 ];
 
-const columns = [
+const columns = (t: any) => [
   {
-    header: '№',
-    accessorKey: 'id',
-  },
-  {
-    header: 'Name',
+    header: t('table.name'),
     accessorKey: 'name',
   },
   {
-    header: 'Phone Number',
+    header: t('table.phone'),
     accessorKey: 'phone_number',
   },
 ];
 
 export default function SuppliersPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -66,20 +64,20 @@ export default function SuppliersPage() {
       { ...data, id: editingSupplier.id },
       {
         onSuccess: () => {
-          toast.success('Supplier updated successfully');
+          toast.success(t('messages.success.updated', { item: t('navigation.suppliers') }));
           setIsFormOpen(false);
           setEditingSupplier(null);
         },
-        onError: () => toast.error('Failed to update supplier'),
+        onError: () => toast.error(t('messages.error.update', { item: t('navigation.suppliers') }))
       }
     );
   };
 
   const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this supplier?')) {
+    if (confirm(t('messages.confirmation.delete'))) {
       deleteSupplier.mutate(id, {
-        onSuccess: () => toast.success('Supplier deleted successfully'),
-        onError: () => toast.error('Failed to delete supplier'),
+        onSuccess: () => toast.success(t('messages.success.deleted', { item: t('navigation.suppliers') })),
+        onError: () => toast.error(t('messages.error.delete', { item: t('navigation.suppliers') })),
       });
     }
   };
@@ -88,7 +86,7 @@ export default function SuppliersPage() {
     <div className="container mx-auto py-6">
       <ResourceTable
         data={suppliers}
-        columns={columns}
+        columns={columns(t)}
         isLoading={isLoading}
         onEdit={handleEdit}
         onDelete={handleDelete}
@@ -102,11 +100,11 @@ export default function SuppliersPage() {
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
           <ResourceForm
-            fields={supplierFields}
+            fields={supplierFields(t)}
             onSubmit={handleUpdateSubmit}
             defaultValues={editingSupplier || undefined}
             isSubmitting={updateSupplier.isPending}
-            title="Edit Supplier"
+            title={t('common.edit') + ' ' + t('navigation.suppliers')}
           />
         </DialogContent>
       </Dialog>

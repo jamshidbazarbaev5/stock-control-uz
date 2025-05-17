@@ -1,8 +1,10 @@
 import "./App.css";
 import "./index.css";
+import "./i18n";
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LoginPage } from "./core/pages/login";
+import { LanguageProvider } from "./core/context/LanguageContext";
 import CreateUser from "./core/pages/create-user";
 import CreateStore from "./core/pages/create-store";
 import CreateCategory from "./core/pages/create-category";
@@ -29,7 +31,8 @@ const queryClient = new QueryClient()
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Routes>
+      <LanguageProvider>
+        <Routes>
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
         
@@ -57,6 +60,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
       <Toaster />
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

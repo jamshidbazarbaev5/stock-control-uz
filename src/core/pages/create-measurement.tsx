@@ -13,14 +13,7 @@ const measurementFields = [
     placeholder: 'Enter measurement name',
     required: true,
   },
-  {
-    name: 'store_write',
-    label: 'Store',
-    type: 'select',
-    placeholder: 'Select store',
-    required: true,
-    options: [], // Will be populated with stores
-  },
+  
 ];
 
 export default function CreateMeasurement() {
@@ -47,7 +40,6 @@ export default function CreateMeasurement() {
       // Convert string values to proper types if needed
       const formattedData = {
         ...data,
-        store_write: typeof data.store_write === 'string' ? parseInt(data.store_write, 10) : data.store_write,
       };
 
       await createMeasurement.mutateAsync(formattedData);

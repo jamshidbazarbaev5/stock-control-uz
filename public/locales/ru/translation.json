@@ -1,0 +1,114 @@
+{
+  "common": {
+    "save": "Сохранить",
+    "cancel": "Отменить",
+    "edit": "Редактировать",
+    "delete": "Удалить",
+    "create": "Создать",
+    "submit": "Отправить",
+    "back": "Назад",
+    "loading": "Загрузка...",
+    "select": "Выбрать",
+    "yes": "Да",
+    "no": "Нет"
+  },
+  "navigation": {
+    "users": "Пользователи",
+    "stores": "Магазины",
+    "categories": "Категории",
+    "products": "Продукты",
+    "stocks": "Склады",
+    "suppliers": "Поставщики",
+    "transfers": "Переводы",
+    "measurements": "Измерения"
+  },
+  "auth": {
+    "login": "Войти",
+    "logout": "Выйти",
+    "email": "Эл. почта",
+    "password": "Пароль",
+    "username": "Имя пользователя",
+    "logging_in": "Выполняется вход...",
+    "invalid_credentials": "Неверные учетные данные"
+  },
+  "forms": {
+    "name": "Имя",
+    "description": "Описание",
+    "price": "Цена",
+    "quantity": "Количество",
+    "address": "Адрес",
+    "phone": "Телефон",
+    "email": "Эл. почта",
+    "category_name": "Название категории",
+    "product_name": "Название товара",
+    "store_name": "Название магазина",
+    "is_main_store": "Главный магазин",
+    "parent_store": "Родительский магазин",
+    "owner": "Владелец",
+    "role": "Роль",
+    "measurement_name": "Название единицы измерения",
+    "supplier_name": "Имя поставщика",
+    "purchase_price_usd": "Цена покупки (USD)",
+    "purchase_price_uzs": "Цена покупки (UZS)",
+    "selling_price": "Цена продажи",
+    "min_price": "Минимальная цена",
+    "exchange_rate": "Курс обмена",
+    "color": "Цвет",
+    "comment": "Комментарий",
+    "amount": "Количество",
+    "from_stock": "Со склада",
+    "to_store": "В магазин"
+  },
+  "messages": {
+    "success": {
+      "created": "{item} успешно создан",
+      "updated": "{item} успешно обновлен",
+      "deleted": "{item} успешно удален"
+    },
+    "error": {
+      "create": "Не удалось создать {item}",
+      "update": "Не удалось обновить {item}",
+      "delete": "Не удалось удалить {item}",
+      "general": "Произошла ошибка"
+    },
+    "confirmation": {
+      "delete": "Вы уверены, что хотите удалить это?"
+    },
+    "edit": "Изменить {item}"
+  },
+  "placeholders": {
+    "select_store": "Выберите магазин",
+    "select_category": "Выберите категорию",
+    "select_product": "Выберите товар",
+    "select_measurement": "Выберите единицу измерения",
+    "select_supplier": "Выберите поставщика",
+    "select_role": "Выберите роль",
+    "enter_name": "Введите имя",
+    "enter_phone": "Введите номер телефона",
+    "enter_address": "Введите адрес",
+    "enter_price": "Введите цену",
+    "enter_quantity": "Введите количество",
+    "enter_color": "Введите цвет",
+    "enter_comment": "Введите комментарий",
+    "enter_exchange_rate": "Введите курс обмена",
+    "select_store_type": "Выберите тип магазина",
+    "select_owner": "Выберите владельца"
+  },
+  "table": {
+    "number": "№",
+    "name": "Название",
+    "address": "Адрес",
+    "phone": "Телефон",
+    "category": "Категория",
+    "store": "Магазин",
+    "product": "Товар",
+    "supplier": "Поставщик",
+    "purchase_price": "Цена покупки",
+    "selling_price": "Цена продажи",
+    "min_price": "Мин. цена",
+    "quantity": "Количество",
+    "color": "Цвет",
+    "measurement": "Измерение",
+    "actions": "Действия"
+  }
+}

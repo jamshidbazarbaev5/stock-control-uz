@@ -29,13 +29,16 @@ export default function CreateTransfer() {
 
   const onSubmit = async (data: Transfer) => {
     try {
-      // Find the source stock to get its store information
+      // Find the source and destination stocks to get their store information
       const sourceStock = stocks?.find((stock) => stock.id === Number(data.from_stock));
+      const destStock = stocks?.find((stock) => stock.id === Number(data.to_stock));
+      
       const sourceStoreId = sourceStock?.product_read?.store_read?.id;
+      const destStoreId = destStock?.product_read?.store_read?.id;
       
       // Validate that source and destination stores are different
-      if (sourceStoreId === Number(data.to_stock)) {
-        toast.error('Cannot transfer to the same store');
+      if (sourceStoreId && destStoreId && sourceStoreId === destStoreId) {
+        toast.error('Cannot transfer between stocks in the same store');
         return;
       }
 

@@ -1,61 +1,63 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ResourceForm } from '../helpers/ResourceForm';
 import type { Store } from '../api/store';
 import { useCreateStore, useGetStores } from '../api/store';
 import { useGetUsers } from '../api/user';
 import { toast } from 'sonner';
 
-const storeFields = [
+const storeFields = (t: (key: string) => string) => [
   {
     name: 'name',
-    label: 'Store Name',
+    label: t('forms.store_name'),
     type: 'text',
-    placeholder: 'Enter store name',
+    placeholder: t('placeholders.enter_name'),
     required: true,
   },
   {
     name: 'address',
-    label: 'Address',
+    label: t('forms.address'),
     type: 'text',
-    placeholder: 'Enter store address',
+    placeholder: t('placeholders.enter_address'),
     required: true,
   },
   {
     name: 'phone_number',
-    label: 'Phone Number',
+    label: t('forms.phone'),
     type: 'text',
-    placeholder: 'Enter phone number',
+    placeholder: t('placeholders.enter_phone'),
     required: true,
   },
   {
     name: 'is_main',
-    label: 'Main Store',
+    label: t('forms.is_main_store'),
     type: 'select',
-    placeholder: 'Is this a main store?',
+    placeholder: t('placeholders.select_store_type'),
     required: true,
     options: [
-      { value: true, label: 'Yes' },
-      { value: false, label: 'No' },
+      { value: true, label: t('common.yes') },
+      { value: false, label: t('common.no') },
     ],
   },
   {
     name: 'parent_store',
-    label: 'Parent Store',
+    label: t('forms.parent_store'),
     type: 'select',
-    placeholder: 'Select parent store',
+    placeholder: t('placeholders.select_store'),
     required: false,
   },
   {
     name: 'owner',
-    label: 'Owner',
+    label: t('forms.owner'),
     type: 'select',
-    placeholder: 'Select owner',
+    placeholder: t('placeholders.select_owner'),
     required: true,
   },
 ];
 
 export default function CreateStore() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const createStore = useCreateStore();
   const { data: usersData } = useGetUsers({});
   const { data: storesData } = useGetStores({});
@@ -65,7 +67,7 @@ export default function CreateStore() {
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
 
   // Update field options with dynamic data
-  const fields = storeFields.map(field => {
+  const fields = storeFields(t).map(field => {
     if (field.name === 'owner') {
       return {
         ...field,
@@ -95,10 +97,10 @@ export default function CreateStore() {
       };
 
       await createStore.mutateAsync(formattedData);
-      toast.success('Store created successfully');
+      toast.success(t('messages.success.created', { item: t('navigation.stores') }));
       navigate('/stores');
     } catch (error) {
-      toast.error('Failed to create store');
+      toast.error(t('messages.error.create', { item: t('navigation.stores') }));
       console.error('Failed to create store:', error);
     }
   };
@@ -109,7 +111,7 @@ export default function CreateStore() {
         fields={fields}
         onSubmit={handleSubmit}
         isSubmitting={createStore.isPending}
-        title="Create New Store"
+        title={t('common.create') + ' ' + t('navigation.stores').toLowerCase()}
       />
     </div>
   );

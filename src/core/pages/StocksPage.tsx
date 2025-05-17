@@ -11,52 +11,49 @@ import { useGetStores } from '../api/store';
 import { useGetMeasurements } from '../api/measurement';
 import { useGetSuppliers } from '../api/supplier';
 import { ResourceTable } from '../helpers/ResourseTable';
+import { useTranslation } from 'react-i18next';
 
-const columns = [
+const columns = (t: any) => [
   {
-    header: 'ID',
-    accessorKey: 'id',
-  },
-  {
-    header: 'Product',
+    header: t('table.product'),
     accessorKey: 'product_read',
     cell: (row: Stock) => row.product_read?.product_name || '-',
   },
   {
-    header: 'Store',
+    header: t('table.store'),
     accessorKey: 'product_read',
-    cell: (row: Stock) => row.product_read?.store_read?.name || '-',
+    cell: (row: any) => row.store_read?.name || '-',
   },
   {
-    header: 'Purchase Price (UZS)',
+    header: t('table.purchase_price'),
     accessorKey: 'purchase_price_in_uz',
   },
   {
-    header: 'Purchase Price (USD)',
+    header: t('forms.purchase_price_usd'),
     accessorKey: 'purchase_price_in_us',
   },
   {
-    header: 'Exchange Rate',
+    header: t('forms.exchange_rate'),
     accessorKey: 'exchange_rate',
   },
   {
-    header: 'Selling Price',
+    header: t('table.selling_price'),
     accessorKey: 'selling_price',
   },
   {
-    header: 'Min Price',
+    header: t('table.min_price'),
     accessorKey: 'min_price',
   },
   {
-    header: 'Quantity',
+    header: t('table.quantity'),
     accessorKey: 'quantity',
   },
   {
-    header: 'Color',
+    header: t('table.color'),
     accessorKey: 'color',
   },
   {
-    header: 'Supplier',
+    header: t('table.supplier'),
     accessorKey: 'supplier_read',
     cell: (row: Stock) => row.supplier_read?.name || '-',
   },
@@ -147,6 +144,7 @@ const stockFields = [
 ];
 
 export default function StocksPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -267,9 +265,9 @@ export default function StocksPage() {
   const handleDelete = async (id: number) => {
     try {
       await deleteStock.mutateAsync(id);
-      toast.success('Stock deleted successfully');
+      toast.success(t('messages.success.deleted', { item: t('table.product') }));
     } catch (error) {
-      toast.error('Failed to delete stock');
+      toast.error(t('messages.error.delete', { item: t('table.product') }));
       console.error('Failed to delete stock:', error);
     }
   };
@@ -277,13 +275,13 @@ export default function StocksPage() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Stocks</h1>
-        <Button onClick={() => navigate('/create-stock')}>Add New Stock</Button>
+        <h1 className="text-2xl font-bold">{t('navigation.stocks')}</h1>
+        <Button onClick={() => navigate('/create-stock')}>{t('common.create')} {t('table.product')}</Button>
       </div>
 
       <ResourceTable
         data={stocks}
-        columns={columns}
+        columns={columns(t)}
         isLoading={isLoading}
         onEdit={handleEdit}
         onDelete={handleDelete}
@@ -301,7 +299,7 @@ export default function StocksPage() {
               onSubmit={handleUpdate}
               defaultValues={selectedStock}
               isSubmitting={updateStock.isPending}
-              title="Edit Stock"
+              title={t('common.edit') + ' ' + t('table.product')}
             />
           )}
         </DialogContent>

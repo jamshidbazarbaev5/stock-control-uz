@@ -49,10 +49,10 @@ export default function TransfersPage() {
   };
 
   const columns = [
-    {
-      header: '№',
-      accessorKey: 'displayId',
-    },
+    // {
+    //   header: '№',
+    //   accessorKey: 'displayId',
+    // },
     {
       header: 'From Stock',
       accessorKey: 'from_stock',

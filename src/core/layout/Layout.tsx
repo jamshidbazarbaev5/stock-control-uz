@@ -10,20 +10,23 @@ import {
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 export default function Layout({ children }: any) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { t } = useTranslation();
   
   const navItems = [
-    { icon: User2, label: 'Пользователи', href: '/users' },
-    { icon: ShoppingBag, label: 'Магазины', href: '/stores' },
-    { icon: ListView, label: 'Категории', href: '/categories' },
-    { icon: Ruler, label: 'Единицы измерения', href: '/measurements' },
-    { icon: ShoppingBag, label: 'Товары', href: '/products' },
-    { icon: Package, label: 'Склад', href: '/stock' },
-    { icon: ListView, label: 'Поставщики', href: '/suppliers' },
-    { icon: ArrowLeftRight, label: 'Переводы', href: '/transfers' },
+    { icon: User2, label: t('navigation.users'), href: '/users' },
+    { icon: ShoppingBag, label: t('navigation.stores'), href: '/stores' },
+    { icon: ListView, label: t('navigation.categories'), href: '/categories' },
+    { icon: Ruler, label: t('navigation.measurements'), href: '/measurements' },
+    { icon: ShoppingBag, label: t('navigation.products'), href: '/products' },
+    { icon: Package, label: t('navigation.stocks'), href: '/stock' },
+    { icon: ListView, label: t('navigation.suppliers'), href: '/suppliers' },
+    { icon: ArrowLeftRight, label: t('navigation.transfers'), href: '/transfers' },
   ];
 
   return (
@@ -38,16 +41,19 @@ export default function Layout({ children }: any) {
             Coco
           </div>
         </div>
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 rounded-lg hover:bg-gray-100"
-        >
-          {mobileMenuOpen ? (
-            <X size={24} className="text-gray-600" />
-          ) : (
-            <Menu size={24} className="text-gray-600" />
-          )}
-        </button>
+        <div className="flex items-center gap-4">
+        
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 rounded-lg hover:bg-gray-100"
+          >
+            {mobileMenuOpen ? (
+              <X size={24} className="text-gray-600" />
+            ) : (
+              <Menu size={24} className="text-gray-600" />
+            )}
+          </button>
+        </div>
       </header>
 
       <div className="flex flex-1 flex-col md:flex-row">
@@ -61,15 +67,18 @@ export default function Layout({ children }: any) {
           h-[calc(100vh-3.5rem)] md:h-screen
           z-50
         `}>
-          {/* Desktop Logo */}
+          {/* Desktop Logo and Language Switcher */}
           <div className="hidden md:block px-6 py-6 border-b">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-                <span className="text-2xl font-bold text-emerald-500">C</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                  <span className="text-2xl font-bold text-emerald-500">C</span>
+                </div>
+                <div className="font-semibold text-gray-800">
+                  Coco
+                </div>
               </div>
-              <div className="font-semibold text-gray-800">
-                Coco
-              </div>
+              
             </div>
           </div>
 
@@ -113,6 +122,10 @@ export default function Layout({ children }: any) {
 
         {/* Main Content */}
         <main className="flex-1 p-4 md:p-8 w-full overflow-x-auto md:ml-0">
+          <div className='flex items-center justify-end'>
+            <LanguageSwitcher />
+
+          </div>
           <div className="container mx-auto">
             {children}
           </div>

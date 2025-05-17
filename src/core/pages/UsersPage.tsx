@@ -42,10 +42,10 @@ const userFields = [
 ];
 
 const columns = [
-  {
-    header: '№',
-    accessorKey: 'displayId',
-  },
+  // {
+  //   header: '№',
+  //   accessorKey: 'displayId',
+  // },
   {
     header: 'ФИО',
     accessorKey: 'name',

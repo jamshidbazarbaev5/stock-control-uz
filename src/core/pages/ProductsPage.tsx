@@ -7,48 +7,49 @@ import { toast } from 'sonner';
 import { type Product, useGetProducts, useUpdateProduct, useDeleteProduct } from '../api/product';
 import { useGetCategories } from '../api/category';
 import { useGetStores } from '../api/store';
+import { useTranslation } from 'react-i18next';
 
-const productFields = [
+const productFields = (t: any) => [
   {
     name: 'product_name',
-    label: 'Название товара',
+    label: t('forms.product_name'),
     type: 'text',
-    placeholder: 'Введите название товара',
+    placeholder: t('placeholders.select_product'),
     required: true,
   },
   {
     name: 'category_write',
-    label: 'Категория',
+    label: t('table.category'),
     type: 'select',
-    placeholder: 'Выберите категорию',
+    placeholder: t('placeholders.select_category'),
     required: true,
     options: [], // Will be populated with categories
   },
   {
     name: 'store_write',
-    label: 'Магазин',
+    label: t('table.store'),
     type: 'select',
-    placeholder: 'Выберите магазин',
+    placeholder: t('placeholders.select_store'),
     required: true,
     options: [], // Will be populated with stores
   },
 ];
 
-const columns = [
+const columns = (t: any) => [
+  // {
+  //   header: '№',
+  //   accessorKey: 'displayId',
+  // },
   {
-    header: '№',
-    accessorKey: 'displayId',
-  },
-  {
-    header: 'Название',
+    header: t('table.name'),
     accessorKey: 'product_name',
   },
   {
-    header: 'Категория',
+    header: t('table.category'),
     accessorKey: (row: Product) => row.category_read?.category_name || row.category_write,
   },
   {
-    header: 'Магазин',
+    header: t('table.store'),
     accessorKey: (row: Product) => row.store_read?.name || row.store_write,
   },
 ];
@@ -58,6 +59,7 @@ export default function ProductsPage() {
   const [page, setPage] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const { t } = useTranslation();
 
   const { data: productsData, isLoading } = useGetProducts({
     params: {
@@ -88,7 +90,7 @@ export default function ProductsPage() {
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
 
   // Update fields with category and store options
-  const fields = productFields.map(field => {
+  const fields = productFields(t).map((field: any) => {
     if (field.name === 'category_write') {
       return {
         ...field,
@@ -132,20 +134,20 @@ export default function ProductsPage() {
       { ...updatedData, id: editingProduct.id } as Product,
       {
         onSuccess: () => {
-          toast.success('Товар успешно обновлен');
+          toast.success(t('messages.success.updated', { item: t('table.product') }));
           setIsFormOpen(false);
           setEditingProduct(null);
         },
-        onError: () => toast.error('Не удалось обновить товар'),
+        onError: () => toast.error(t('messages.error.update', { item: t('table.product') })),
       }
     );
   };
 
   const handleDelete = (id: number) => {
-    if (confirm('Вы уверены, что хотите удалить этот товар?')) {
+    if (confirm(t('messages.confirmation.delete'))) {
       deleteProduct(id, {
-        onSuccess: () => toast.success('Товар успешно удален'),
-        onError: () => toast.error('Не удалось удалить товар'),
+        onSuccess: () => toast.success(t('messages.success.deleted', { item: t('table.product') })),
+        onError: () => toast.error(t('messages.error.delete', { item: t('table.product') })),
       });
     }
   };
@@ -154,7 +156,7 @@ export default function ProductsPage() {
     <div className="container mx-auto py-6">
       <ResourceTable
         data={products}
-        columns={columns}
+        columns={columns(t)}
         isLoading={isLoading}
         onEdit={handleEdit}
         onDelete={handleDelete}
@@ -172,7 +174,7 @@ export default function ProductsPage() {
             onSubmit={handleUpdateSubmit}
             defaultValues={editingProduct || undefined}
             isSubmitting={isUpdating}
-            title="Редактировать товар"
+            title={t('common.edit') + ' ' + t('table.product')}
           />
         </DialogContent>
       </Dialog>

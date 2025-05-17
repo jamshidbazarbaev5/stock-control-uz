@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ResourceForm } from '../helpers/ResourceForm';
@@ -17,85 +18,86 @@ interface StoreFormData {
   owner: string;
 }
 
-const storeFields = [
+const storeFields = (t: (key: string) => string) => [
   {
     name: 'name',
-    label: 'Название магазина',
+    label: t('forms.store_name'),
     type: 'text',
-    placeholder: 'Введите название магазина',
+    placeholder: t('placeholders.enter_name'),
     required: true,
   },
   {
     name: 'address',
-    label: 'Адрес',
+    label: t('forms.address'),
     type: 'text',
-    placeholder: 'Введите адрес магазина',
+    placeholder: t('placeholders.enter_address'),
     required: true,
   },
   {
     name: 'phone_number',
-    label: 'Телефон',
+    label: t('forms.phone'),
     type: 'text',
-    placeholder: 'Введите номер телефона',
+    placeholder: t('placeholders.enter_phone'),
     required: true,
   },
   {
     name: 'is_main',
-    label: 'Главный магазин',
+    label: t('forms.is_main_store'),
     type: 'select',
-    placeholder: 'Выберите тип магазина',
+    placeholder: t('placeholders.select_store_type'),
     required: true,
     options: [
-      { value: true, label: 'Да' },
-      { value: false, label: 'Нет' },
+      { value: true, label: t('common.yes') },
+      { value: false, label: t('common.no') },
     ],
   },
   {
     name: 'parent_store',
-    label: 'Родительский магазин',
+    label: t('forms.parent_store'),
     type: 'select',
-    placeholder: 'Выберите родительский магазин',
+    placeholder: t('placeholders.select_store'),
     required: false,
     options: [], // Will be populated with stores
   },
   {
     name: 'owner',
-    label: 'Владелец',
+    label: t('forms.owner'),
     type: 'select',
-    placeholder: 'Выберите владельца',
+    placeholder: t('placeholders.select_owner'),
     required: true,
     options: [], // Will be populated with users
   },
 ];
 
-const columns = [
-  {
-    header: '№',
-    accessorKey: 'displayId',
-  },
-  {
-    header: 'Название',
-    accessorKey: 'name',
-  },
-  {
-    header: 'Адрес',
-    accessorKey: 'address',
-  },
-  {
-    header: 'Телефон',
-    accessorKey: 'phone_number',
-  },
-  {
-    header: 'Главный магазин',
-    accessorKey: (row: Store) => (row.is_main ? 'Да' : 'Нет'),
-  },
-];
-
 export default function StoresPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<StoreFormData | null>(null);
+
+  const columns = [
+    {
+      header: t('table.number'),
+      accessorKey: 'displayId',
+    },
+    {
+      header: t('table.name'),
+      accessorKey: 'name',
+    },
+    {
+      header: t('table.address'),
+      accessorKey: 'address',
+    },
+    {
+      header: t('table.phone'),
+      accessorKey: 'phone_number',
+    },
+    {
+      header: t('forms.is_main_store'),
+      accessorKey: (row: Store) => (row.is_main ? t('common.yes') : t('common.no')),
+    },
+  ];
 
   const { data: storesData, isLoading } = useGetStores({
     params: {
@@ -123,7 +125,7 @@ export default function StoresPage() {
   const allStores = Array.isArray(allStoresData) ? allStoresData : allStoresData?.results || [];
 
   // Update field options with dynamic data
-  const fields = storeFields.map(field => {
+  const fields = storeFields(t).map(field => {
     if (field.name === 'owner') {
       return {
         ...field,
@@ -134,7 +136,7 @@ export default function StoresPage() {
       return {
         ...field,
         options: [
-          { value: '0', label: 'Нет' }, // Use '0' instead of empty string
+          { value: '0', label: t('common.no') },
           ...allStores.map(store => ({ value: String(store?.id ?? ''), label: store.name }))
         ]
       };
@@ -149,7 +151,7 @@ export default function StoresPage() {
     const formattedStore: StoreFormData = {
       ...store,
       is_main: store.is_main,
-      parent_store: store.parent_store?.toString() ?? '0', // Use '0' for no parent store
+      parent_store: store.parent_store?.toString() ?? '0',
       owner: store.owner.toString()
     };
     setEditingStore(formattedStore);
@@ -171,20 +173,20 @@ export default function StoresPage() {
       formattedData as Store,
       {
         onSuccess: () => {
-          toast.success('Store successfully updated');
+          toast.success(t('messages.success.updated', { item: t('navigation.stores') }));
           setIsFormOpen(false);
           setEditingStore(null);
         },
-        onError: () => toast.error('Failed to update store'),
+        onError: () => toast.error(t('messages.error.update', { item: t('navigation.stores') })),
       }
     );
   };
 
   const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this store?')) {
+    if (confirm(t('messages.confirmation.delete'))) {
       deleteStore(id, {
-        onSuccess: () => toast.success('Store successfully deleted'),
-        onError: () => toast.error('Failed to delete store'),
+        onSuccess: () => toast.success(t('messages.success.deleted', { item: t('navigation.stores') })),
+        onError: () => toast.error(t('messages.error.delete', { item: t('navigation.stores') })),
       });
     }
   };
@@ -206,16 +208,16 @@ export default function StoresPage() {
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
-          <DialogTitle className="text-xl font-bold mb-4">Редактировать магазин</DialogTitle>
+          <DialogTitle className="text-xl font-bold mb-4">{t('common.edit')}</DialogTitle>
           <DialogDescription className="mb-4">
-            Измените информацию о магазине
+            {t('messages.edit', { item: t('navigation.stores').toLowerCase() })}
           </DialogDescription>
           <ResourceForm
             fields={fields}
             onSubmit={handleUpdateSubmit}
             defaultValues={editingStore || undefined}
             isSubmitting={isUpdating}
-            title="Edit Store"
+            title={t('common.edit') + ' ' + t('navigation.stores').toLowerCase()}
           />
         </DialogContent>
       </Dialog>

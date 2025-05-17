@@ -8,6 +8,7 @@ import { useGetMeasurements } from '../api/measurement';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface MeasurementItem {
   measurement_write: number;
@@ -17,6 +18,7 @@ interface MeasurementItem {
 export default function CreateProduct() {
   const navigate = useNavigate();
   const createProduct = useCreateProduct();
+  const { t } = useTranslation();
   const [measurements, setMeasurements] = useState<MeasurementItem[]>([{ measurement_write: 0, number: 0 }]);
 
   // Fetch categories, stores and measurements for the select dropdowns
@@ -59,10 +61,10 @@ export default function CreateProduct() {
       };
 
       await createProduct.mutateAsync(formattedData);
-      toast.success('Product created successfully');
+      toast.success(t('messages.success.created', { item: t('table.product') }));
       navigate('/products');
     } catch (error) {
-      toast.error('Failed to create product');
+      toast.error(t('messages.error.create', { item: t('table.product') }));
       console.error('Failed to create product:', error);
     }
   };
@@ -73,16 +75,16 @@ export default function CreateProduct() {
         fields={[
           {
             name: 'product_name',
-            label: 'Product Name',
+            label: t('forms.product_name'),
             type: 'text',
-            placeholder: 'Enter product name',
+            placeholder: t('placeholders.enter_name'),
             required: true,
           },
           {
             name: 'category_write',
-            label: 'Category',
+            label: t('table.category'),
             type: 'select',
-            placeholder: 'Select category',
+            placeholder: t('placeholders.select_category'),
             required: true,
             options: categories.map(category => ({
               value: category.id,
@@ -91,9 +93,9 @@ export default function CreateProduct() {
           },
           {
             name: 'store_write',
-            label: 'Store',
+            label: t('table.store'),
             type: 'select',
-            placeholder: 'Select store',
+            placeholder: t('placeholders.select_store'),
             required: true,
             options: stores.map(store => ({
               value: store.id,
@@ -103,10 +105,10 @@ export default function CreateProduct() {
         ]}
         onSubmit={handleSubmit}
         isSubmitting={createProduct.isPending}
-        title="Create New Product"
+        title={t('common.create') + ' ' + t('table.product')}
       >
         <div className="space-y-4">
-          <h3 className="text-lg font-medium">Measurements</h3>
+          <h3 className="text-lg font-medium">{t('table.measurements')}</h3>
           {measurements.map((measurement: MeasurementItem, index: number) => (
             <div key={index} className="flex gap-4 items-end">
               <div className="flex-1">
@@ -115,7 +117,7 @@ export default function CreateProduct() {
                   value={measurement.measurement_write || ''}
                   onChange={(e) => handleMeasurementChange(index, 'measurement_write', e.target.value)}
                 >
-                  <option value="">Select measurement</option>
+                  <option value="">{t('placeholders.select_measurement')}</option>
                   {availableMeasurements?.map(m => (
                     <option key={m.id} value={m.id}>
                       {m.measurement_name}

@@ -8,6 +8,7 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { Button } from '../../components/ui/button';
+import { Skeleton } from '../../components/ui/skeleton';
 import { 
   ChevronLeftIcon, 
   ChevronRightIcon, 
@@ -89,6 +90,10 @@ export function ResourceTable<T extends { id?: number }>({
     return pages;
   };
 
+  const getRowNumber = (index: number) => {
+    return ((currentPage - 1) * pageSize) + index + 1;
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -104,6 +109,9 @@ export function ResourceTable<T extends { id?: number }>({
         <Table>
           <TableHeader>
             <TableRow className="border-b border-gray-200 bg-gray-50/50">
+              <TableHead className="text-xs uppercase text-gray-500 font-medium w-[60px]">
+                №
+              </TableHead>
               {columns.map((column, index) => (
                 <TableHead key={index} className="text-xs uppercase text-gray-500 font-medium">
                   {column.header}
@@ -118,14 +126,29 @@ export function ResourceTable<T extends { id?: number }>({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={columns.length + (onEdit || onDelete ? 1 : 0)} className="text-center text-gray-500">
-                  Загрузка...
-                </TableCell>
-              </TableRow>
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={`skeleton-${index}`} className="border-b border-gray-100 last:border-0">
+                  <TableCell className="w-[60px]">
+                    <Skeleton className="h-4 w-8" />
+                  </TableCell>
+                  {columns.map((_, colIndex) => (
+                    <TableCell key={colIndex}>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                  ))}
+                  {(onEdit || onDelete) && (
+                    <TableCell className="w-[100px]">
+                      <div className="flex gap-1 justify-end">
+                        <Skeleton className="h-8 w-8" />
+                        {onDelete && <Skeleton className="h-8 w-8" />}
+                      </div>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))
             ) : tableData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length + (onEdit || onDelete ? 1 : 0)} className="text-center text-gray-500">
+                <TableCell colSpan={columns.length + 1 + (onEdit || onDelete ? 1 : 0)} className="text-center text-gray-500">
                   Данные отсутствуют
                 </TableCell>
               </TableRow>
@@ -135,6 +158,9 @@ export function ResourceTable<T extends { id?: number }>({
                   key={rowIndex} 
                   className="hover:bg-gray-50/50 transition-colors border-b border-gray-100 last:border-0"
                 >
+                  <TableCell className="w-[60px] font-medium text-gray-500">
+                    {getRowNumber(rowIndex)}
+                  </TableCell>
                   {columns.map((column, colIndex) => (
                     <TableCell key={colIndex}>
                       {column.cell 

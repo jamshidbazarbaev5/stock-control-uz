@@ -17,10 +17,10 @@ const categoryFields = [
 ];
 
 const columns = [
-  {
-    header: '№',
-    accessorKey: 'displayId',
-  },
+  // {
+  //   header: '№',
+  //   accessorKey: 'displayId',
+  // },
   {
     header: 'Название категории',
     accessorKey: 'category_name',

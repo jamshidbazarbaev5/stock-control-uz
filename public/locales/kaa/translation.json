@@ -1,0 +1,114 @@
+{
+  "common": {
+    "save": "Saqlaw",
+    "cancel": "Biykarlaw",
+    "edit": "Ózgertiw",
+    "delete": "Óshiriw",
+    "create": "Jaratıw",
+    "submit": "Jiberiw",
+    "back": "Artqa",
+    "loading": "Júklenip atır...",
+    "select": "Tańlaw",
+    "yes": "Awa",
+    "no": "Yaq"
+  },
+  "navigation": {
+    "users": "Paydalanıwshılar",
+    "stores": "Dúkanlar",
+    "categories": "Kategoriyalar",
+    "products": "Ónimler",
+    "stocks": "Skladlar",
+    "suppliers": "Taminleyishiler",
+    "transfers": "Transferler",
+    "measurements": "Ólshemler"
+  },
+  "auth": {
+    "login": "Kiriw",
+    "logout": "Shıǵıw",
+    "email": "Email",
+    "password": "Parol",
+    "username": "Paydalanıwshı atı",
+    "logging_in": "Kirilip atır...",
+    "invalid_credentials": "Nadura málimet"
+  },
+  "forms": {
+    "name": "Atı",
+    "description": "Maǵlıwmat",
+    "price": "Bahası",
+    "quantity": "Sanı",
+    "address": "Mánzil",
+    "phone": "Telefon",
+    "email": "Email",
+    "category_name": "Kategoriya atı",
+    "product_name": "Ónim atı",
+    "store_name": "Dúkan atı",
+    "is_main_store": "Bas dúkan",
+    "parent_store": "Joqarı dúkan",
+    "owner": "Iyesi",
+    "role": "Lawazım",
+    "measurement_name": "Ólshem birligin atı",
+    "supplier_name": "Taminleyishi atı",
+    "purchase_price_usd": "Alıw bahası (USD)",
+    "purchase_price_uzs": "Alıw bahası (UZS)",
+    "selling_price": "Satıw bahası",
+    "min_price": "Min baha",
+    "exchange_rate": "Kurs",
+    "color": "Reńi",
+    "comment": "Kommentariy",
+    "amount": "Muǵdarı",
+    "from_stock": "Skladtan",
+    "to_store": "Dúkanǵa"
+  },
+  "messages": {
+    "success": {
+      "created": "{item} áwmetli jaratıldı",
+      "updated": "{item} áwmetli jańalandı",
+      "deleted": "{item} áwmetli óshirildi"
+    },
+    "error": {
+      "create": "{item} jaratıw ámelge aspadı",
+      "update": "{item} jańalaw ámelge aspadı",
+      "delete": "{item} óshiriw ámelge aspadı",
+      "general": "Qátelik júz berdi"
+    },
+    "confirmation": {
+      "delete": "Bul zattı óshiriwge isenimlisiz be?"
+    },
+    "edit": "{item} ózgertiw"
+  },
+  "placeholders": {
+    "select_store": "Dúkandı tańlań",
+    "select_category": "Kategoriyanı tańlań",
+    "select_product": "Ónimdi tańlań",
+    "select_measurement": "Ólshem birligin tańlań",
+    "select_supplier": "Taminleyishini tańlań",
+    "select_role": "Lawazımdı tańlań",
+    "enter_name": "Atın kiritiń",
+    "enter_phone": "Telefon nomerin kiritiń",
+    "enter_address": "Mánzildi kiritiń",
+    "enter_price": "Bahasın kiritiń",
+    "enter_quantity": "Sanın kiritiń",
+    "enter_color": "Reńin kiritiń",
+    "enter_comment": "Kommentariy kiritiń",
+    "enter_exchange_rate": "Kursın kiritiń",
+    "select_store_type": "Dúkan túrin tańlań",
+    "select_owner": "Iyesin tańlań"
+  },
+  "table": {
+    "number": "№",
+    "name": "Atı",
+    "address": "Mánzil",
+    "phone": "Telefon",
+    "category": "Kategoriya",
+    "store": "Dúkan",
+    "product": "Ónim",
+    "supplier": "Taminleyishi",
+    "purchase_price": "Alıw bahası",
+    "selling_price": "Satıw bahası",
+    "min_price": "Min baha",
+    "quantity": "Sanı",
+    "color": "Reńi",
+    "measurement": "Ólshem",
+    "actions": "Háreketler"
+  }
+}

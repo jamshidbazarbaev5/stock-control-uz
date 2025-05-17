@@ -10,19 +10,15 @@ import { useGetStores } from '../api/store';
 import { ResourceTable } from '../helpers/ResourseTable';
 
 const columns = [
-  {
-    header: '№',
-    accessorKey: 'id',
-  },
+  // {
+  //   header: '№',
+  //   accessorKey: 'id',
+  // },
   {
     header: 'Единица измерения',
     accessorKey: 'measurement_name',
   },
-  {
-    header: 'Магазин',
-    accessorKey: 'store_read',
-    cell: (row: Measurement) => row.store_read?.name || '-',
-  },
+  
 ];
 
 const measurementFields = [
@@ -33,14 +29,7 @@ const measurementFields = [
     placeholder: 'Введите название единицы измерения',
     required: true,
   },
-  {
-    name: 'store_write',
-    label: 'Магазин',
-    type: 'select',
-    placeholder: 'Выберите магазин',
-    required: true,
-    options: [], // Will be populated with stores
-  },
+  
 ];
 
 interface PaginatedResponse {

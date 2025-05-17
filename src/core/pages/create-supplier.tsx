@@ -3,20 +3,21 @@ import { ResourceForm } from '../helpers/ResourceForm';
 import type { Supplier } from '../api/supplier';
 import { useCreateSupplier } from '../api/supplier';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
-const supplierFields = [
+const supplierFields = (t: any) => [
   {
     name: 'name',
-    label: 'Supplier Name',
+    label: t('forms.supplier_name'),
     type: 'text',
-    placeholder: 'Enter supplier name',
+    placeholder: t('placeholders.enter_name'),
     required: true,
   },
   {
     name: 'phone_number',
-    label: 'Phone Number',
+    label: t('forms.phone'),
     type: 'text',
-    placeholder: '+998 XX XXX XX XX',
+    placeholder: t('placeholders.enter_phone'),
     required: true,
   },
 ];
@@ -24,14 +25,15 @@ const supplierFields = [
 export default function CreateSupplier() {
   const navigate = useNavigate();
   const createSupplier = useCreateSupplier();
+  const { t } = useTranslation();
 
   const handleSubmit = async (data: Supplier) => {
     try {
       await createSupplier.mutateAsync(data);
-      toast.success('Supplier created successfully');
+      toast.success(t('messages.success.created', { item: t('table.supplier') }));
       navigate('/suppliers');
     } catch (error) {
-      toast.error('Failed to create supplier');
+      toast.error(t('messages.error.create', { item: t('table.supplier') }));
       console.error('Failed to create supplier:', error);
     }
   };
@@ -39,10 +41,10 @@ export default function CreateSupplier() {
   return (
     <div className="container mx-auto py-8 px-4">
       <ResourceForm<Supplier>
-        fields={supplierFields}
+        fields={supplierFields(t)}
         onSubmit={handleSubmit}
         isSubmitting={createSupplier.isPending}
-        title="Create New Supplier"
+        title={t('common.create') + ' ' + t('table.supplier')}
       />
     </div>
   );
