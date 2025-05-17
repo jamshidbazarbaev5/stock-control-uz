@@ -99,132 +99,134 @@ export function ResourceForm<T extends Record<string, any>>({
       <h2 className="text-xl font-bold">{title}</h2>
       
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-          {fields.map((field) => (
-            <FormField
-              key={field.name}
-              control={form.control}
-              name={field.name}
-              render={({ field: formField }) => (
-                <FormItem>
-                  <FormLabel>{field.label}</FormLabel>
-                  <FormControl>
-                    {field.type === 'textarea' ? (
-                      <Textarea
-                        placeholder={field.placeholder}
-                        {...formField}
-                        readOnly={field.readOnly}
-                        className={field.readOnly ? 'bg-gray-100' : ''}
-                      />
-                    ) : field.type === 'select' ? (
-                      <Select
-                        onValueChange={formField.onChange}
-                        defaultValue={String(formField.value)}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder={field.placeholder} />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[200px] overflow-y-auto bg-white rounded-md border shadow-md">
-                          <div className="max-h-[200px] overflow-y-auto py-1">
-                            {field.options?.map((option:any) => (
-                              <SelectItem
-                                key={option.value}
-                                value={String(option.value)}
-                                className="cursor-pointer hover:bg-gray-100 py-2 px-3"
-                              >
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </div>
-                        </SelectContent>
-                      </Select>
-                    ) : field.type === 'file' ? (
-                      <div className="space-y-2">
-                        {(field.preview || field.existingImage) && (
-                          <div className="mb-2">
-                            <img 
-                              src={field.preview || field.existingImage} 
-                              alt={field.label} 
-                              className="h-20 w-20 object-cover rounded-md"
-                            />
-                          </div>
-                        )}
-                        <Input
-                          type="file"
-                          onChange={(e:any) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              setValue(field.name, file);
-                            }
-                          }}
-                          required={field.required && !field.existingImage}
-                          accept="image/*"
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+            {fields.map((field) => (
+              <FormField
+                key={field.name}
+                control={form.control}
+                name={field.name}
+                render={({ field: formField }) => (
+                  <FormItem>
+                    <FormLabel>{field.label}</FormLabel>
+                    <FormControl>
+                      {field.type === 'textarea' ? (
+                        <Textarea
+                          placeholder={field.placeholder}
+                          {...formField}
+                          readOnly={field.readOnly}
+                          className={field.readOnly ? 'bg-gray-100' : ''}
                         />
-                      </div>
-                    ) : field.type === 'multiple-files' ? (
-                      <div className="space-y-2">
-                        {/* Show existing images */}
-                        {field.existingImages && field.existingImages.length > 0 && (
-                          <div className="flex flex-wrap gap-4 mb-4">
-                            {field.existingImages.map((img:any, idx:any) => (
-                              <div key={img.id || idx} className="relative">
-                                <img 
-                                  src={img.url} 
-                                  alt={`Image ${idx + 1}`} 
-                                  className="h-20 w-20 object-cover rounded-md"
-                                />
-                                {field.onDeleteImage && (
-                                  <button
-                                    type="button"
-                                    onClick={() => field.onDeleteImage(img.id)}
-                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600"
-                                    aria-label="Delete image"
-                                  >
-                                    ×
-                                  </button>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        
-                        {/* Multiple file input */}
+                      ) : field.type === 'select' ? (
+                        <Select
+                          onValueChange={formField.onChange}
+                          defaultValue={String(formField.value)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder={field.placeholder} />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[200px] overflow-y-auto bg-white rounded-md border shadow-md">
+                            <div className="max-h-[200px] overflow-y-auto py-1">
+                              {field.options?.map((option:any) => (
+                                <SelectItem
+                                  key={option.value}
+                                  value={String(option.value)}
+                                  className="cursor-pointer hover:bg-gray-100 py-2 px-3"
+                                >
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </div>
+                          </SelectContent>
+                        </Select>
+                      ) : field.type === 'file' ? (
+                        <div className="space-y-2">
+                          {(field.preview || field.existingImage) && (
+                            <div className="mb-2">
+                              <img 
+                                src={field.preview || field.existingImage} 
+                                alt={field.label} 
+                                className="h-20 w-20 object-cover rounded-md"
+                              />
+                            </div>
+                          )}
+                          <Input
+                            type="file"
+                            onChange={(e:any) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setValue(field.name, file);
+                              }
+                            }}
+                            required={field.required && !field.existingImage}
+                            accept="image/*"
+                          />
+                        </div>
+                      ) : field.type === 'multiple-files' ? (
+                        <div className="space-y-2">
+                          {/* Show existing images */}
+                          {field.existingImages && field.existingImages.length > 0 && (
+                            <div className="flex flex-wrap gap-4 mb-4">
+                              {field.existingImages.map((img:any, idx:any) => (
+                                <div key={img.id || idx} className="relative">
+                                  <img 
+                                    src={img.url} 
+                                    alt={`Image ${idx + 1}`} 
+                                    className="h-20 w-20 object-cover rounded-md"
+                                  />
+                                  {field.onDeleteImage && (
+                                    <button
+                                      type="button"
+                                      onClick={() => field.onDeleteImage(img.id)}
+                                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600"
+                                      aria-label="Delete image"
+                                    >
+                                      ×
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Multiple file input */}
+                          <Input
+                            type="file"
+                            onChange={(e:any) => {
+                              const files = Array.from(e.target.files || []);
+                              const currentValues = form.getValues(field.name) || [];
+                              form.setValue(field.name, [...currentValues, ...files] as any);
+                            }}
+                            multiple
+                            accept="image/*"
+                          />
+                        </div>
+                      ) : (
                         <Input
-                          type="file"
-                          onChange={(e:any) => {
-                            const files = Array.from(e.target.files || []);
-                            const currentValues = form.getValues(field.name) || [];
-                            form.setValue(field.name, [...currentValues, ...files] as any);
-                          }}
-                          multiple
-                          accept="image/*"
+                          type={field.type}
+                          placeholder={field.placeholder}
+                          {...formField}
+                          readOnly={field.readOnly}
+                          className={field.readOnly ? 'bg-gray-100' : ''}
                         />
-                        
-                        
-                      </div>
-                    ) : (
-                      <Input
-                        type={field.type}
-                        placeholder={field.placeholder}
-                        {...formField}
-                        readOnly={field.readOnly}
-                        className={field.readOnly ? 'bg-gray-100' : ''}
-                      />
-                    )}
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          ))}
+                      )}
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ))}
+          </div>
           
           {children}
           
-          {!hideSubmitButton && (
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Отправка...' : 'Отправить'}
-            </Button>
-          )}
+          <div className="col-span-full mt-6">
+            {!hideSubmitButton && (
+              <Button type="submit" disabled={isSubmitting} className="w-full md:w-auto">
+                {isSubmitting ? 'Отправка...' : 'Отправить'}
+              </Button>
+            )}
+          </div>
         </form>
       </Form>
     </div>

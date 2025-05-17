@@ -10,6 +10,7 @@
     "loading": "Загрузка...",
     "select": "Выбрать",
     "yes": "Да",
+    "logout": "Выйти",
     "no": "Нет"
   },
   "navigation": {

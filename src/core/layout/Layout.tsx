@@ -8,15 +8,18 @@ import {
   Menu,
   X
 } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { useLogout } from '../api/auth';
 
 export default function Layout({ children }: any) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useTranslation();
+   const logout = useLogout();
+  const navigate = useNavigate();
   
   const navItems = [
     { icon: User2, label: t('navigation.users'), href: '/users' },
@@ -28,6 +31,10 @@ export default function Layout({ children }: any) {
     { icon: ListView, label: t('navigation.suppliers'), href: '/suppliers' },
     { icon: ArrowLeftRight, label: t('navigation.transfers'), href: '/transfers' },
   ];
+  const handleLogout = () => {
+    logout.mutate();  
+    navigate('/login');
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -123,6 +130,12 @@ export default function Layout({ children }: any) {
         {/* Main Content */}
         <main className="flex-1 p-4 md:p-8 w-full overflow-x-auto md:ml-0">
           <div className='flex items-center justify-end'>
+            <button
+              onClick={handleLogout}
+              className=" py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors mr-2 w-20"   
+            >
+              {t('common.logout')}
+            </button>
             <LanguageSwitcher />
 
           </div>

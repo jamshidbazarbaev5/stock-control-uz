@@ -1,25 +1,24 @@
-import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useLanguage } from "@/core/context/LanguageContext";
 
 export const LanguageSwitcher = () => {
   const { currentLanguage, changeLanguage } = useLanguage();
 
   return (
-    <div className="flex gap-2">
-      <Button
-        variant={currentLanguage === "ru" ? "default" : "outline"}
-        onClick={() => changeLanguage("ru")}
-        size="sm"
-      >
-        Русский
-      </Button>
-      <Button
-        variant={currentLanguage === "kaa" ? "default" : "outline"}
-        onClick={() => changeLanguage("kaa")}
-        size="sm"
-      >
-        Қарақалпақ
-      </Button>
-    </div>
+    <Select value={currentLanguage} onValueChange={changeLanguage}>
+      <SelectTrigger size="sm">
+        <SelectValue placeholder="Select language" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="ru">Русский</SelectItem>
+        <SelectItem value="kaa">Қарақалпақ</SelectItem>
+      </SelectContent>
+    </Select>
   );
 };
