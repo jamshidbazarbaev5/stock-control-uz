@@ -4,6 +4,7 @@ import type { Measurement } from '../api/measurement';
 import { useCreateMeasurement } from '../api/measurement';
 import { toast } from 'sonner';
 import { useGetStores } from '../api/store';
+import { useTranslation } from 'react-i18next';
 
 const measurementFields = [
   {
@@ -13,11 +14,11 @@ const measurementFields = [
     placeholder: 'Enter measurement name',
     required: true,
   },
-  
 ];
 
 export default function CreateMeasurement() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const createMeasurement = useCreateMeasurement();
   const { data: storesData } = useGetStores();
 
@@ -28,25 +29,30 @@ export default function CreateMeasurement() {
     label: store.name,
   }));
 
-  // Update the store_write field options
-  const fields = measurementFields.map(field => 
-    field.name === 'store_write' 
-      ? { ...field, options: storeOptions }
-      : field
-  );
+  // Update the store_write field options and add translations
+  const fields = measurementFields.map(field => {
+    if (field.name === 'store_write') {
+      return { ...field, options: storeOptions };
+    }
+    // Add translations for field labels and placeholders
+    return {
+      ...field,
+      label: t(`forms.${field.name}`),
+      placeholder: t(`placeholders.enter_${field.name === 'measurement_name' ? 'name' : field.name}`),
+    };
+  });
 
   const handleSubmit = async (data: Measurement) => {
     try {
-      // Convert string values to proper types if needed
       const formattedData = {
         ...data,
       };
 
       await createMeasurement.mutateAsync(formattedData);
-      toast.success('Measurement created successfully');
+      toast.success(t('messages.success.created', { item: t('navigation.measurements') }));
       navigate('/measurements');
     } catch (error) {
-      toast.error('Failed to create measurement');
+      toast.error(t('messages.error.create', { item: t('navigation.measurements') }));
       console.error('Failed to create measurement:', error);
     }
   };
@@ -57,7 +63,7 @@ export default function CreateMeasurement() {
         fields={fields}
         onSubmit={handleSubmit}
         isSubmitting={createMeasurement.isPending}
-        title="Create New Measurement"
+        title={t('forms.measurement_name')}
       />
     </div>
   );

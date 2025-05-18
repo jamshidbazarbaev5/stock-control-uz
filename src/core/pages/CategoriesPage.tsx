@@ -6,9 +6,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
 import { type Category, useGetCategories, useUpdateCategory, useDeleteCategory } from '../api/category';
-import { t } from 'i18next';
 
-const categoryFields = [
+const categoryFields = (t: any) => [
   {
     name: 'category_name',
     label: t('forms.category_name'),
@@ -18,7 +17,7 @@ const categoryFields = [
   },
 ];
 
-const columns = [
+const columns = (t:any) => [
   // {
   //   header: 'table.number',
   //   accessorKey: 'displayId',
@@ -37,19 +36,18 @@ type CategoryResponse = {
 }
 
 export default function CategoriesPage() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-
+  const { t } = useTranslation();
   const { data: categoriesData, isLoading } = useGetCategories({
     params: {
       category_name: searchTerm
     }
   });
 
-  const fields = categoryFields;
+  const fields = categoryFields(t);
 
   // Get the categories array from the paginated response
   const categories = (categoriesData as CategoryResponse)?.results || [];
@@ -85,16 +83,20 @@ export default function CategoriesPage() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm(t('messages.confirmation.delete'))) {
-      deleteCategory(id, {
-        onSuccess: () => toast.success(t('messages.success.deleted', { item: t('navigation.categories') })),
-        onError: () => toast.error(t('messages.error.delete', { item: t('navigation.categories') })),
-      });
-    }
+    deleteCategory(id, {
+      onSuccess: () => toast.success(t('messages.success.deleted', { item: t('navigation.categories') })),
+      onError: () => toast.error(t('messages.error.delete', { item: t('navigation.categories') })),
+    });
   };
 
   return (
     <div className="container mx-auto py-6">
+       <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">{t('navigation.categories')}</h1>
+        {/* <Button onClick={() => navigate('/create-recycling')}>
+          {t('common.create')} {t('navigation.recyclings')}
+        </Button> */}
+      </div>
       <div className="mb-4">
         <input
           type="text"
@@ -107,7 +109,7 @@ export default function CategoriesPage() {
       
       <ResourceTable
         data={enhancedCategories}
-        columns={columns}
+        columns={columns(t)}
         isLoading={isLoading}
         onEdit={handleEdit}
         onDelete={handleDelete}
@@ -123,13 +125,13 @@ export default function CategoriesPage() {
           <ResourceForm
             fields={fields.map(field => ({
               ...field,
-              label: t(field.label),
-              placeholder: t(field.placeholder)
+              // label: t(field.label),
+              // placeholder: t(field.placeholder)
             }))}
             onSubmit={handleUpdateSubmit}
             defaultValues={editingCategory || {}}
             isSubmitting={isUpdating}
-            title={t('messages.edit', { item: t('navigation.categories') })}
+            title={t('messages.edit',)}
           />
         </DialogContent>
       </Dialog>

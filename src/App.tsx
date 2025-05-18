@@ -23,6 +23,8 @@ import SuppliersPage from "./core/pages/SuppliersPage";
 import CreateSupplier from "./core/pages/create-supplier";
 import TransfersPage from "./core/pages/TransfersPage";
 import CreateTransfer from "./core/pages/create-transfer";
+import RecyclingsPage from "./core/pages/RecyclingsPage";
+import CreateRecycling from "./core/pages/create-recycling";
 import { Toaster } from "sonner";
 
 
@@ -55,6 +57,8 @@ function App() {
           <Route path="/create-supplier" element={<CreateSupplier />} />
           <Route path="/transfers" element={<TransfersPage />} />
           <Route path="/create-transfer" element={<CreateTransfer />} />
+          <Route path="/recyclings" element={<RecyclingsPage />} />
+          <Route path="/create-recycling" element={<CreateRecycling />} />
           <Route path="/" element={<Navigate to="/users" />} />
         </Route>
         <Route path="*" element={<Navigate to="/" />} />

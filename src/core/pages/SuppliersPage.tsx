@@ -74,16 +74,20 @@ export default function SuppliersPage() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm(t('messages.confirmation.delete'))) {
-      deleteSupplier.mutate(id, {
-        onSuccess: () => toast.success(t('messages.success.deleted', { item: t('navigation.suppliers') })),
-        onError: () => toast.error(t('messages.error.delete', { item: t('navigation.suppliers') })),
-      });
-    }
+    deleteSupplier.mutate(id, {
+      onSuccess: () => toast.success(t('messages.success.deleted', { item: t('navigation.suppliers') })),
+      onError: () => toast.error(t('messages.error.delete', { item: t('navigation.suppliers') })),
+    });
   };
 
   return (
     <div className="container mx-auto py-6">
+         <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">{t('navigation.suppliers')}</h1>
+        {/* <Button onClick={() => navigate('/create-recycling')}>
+          {t('common.create')} {t('navigation.recyclings')}
+        </Button> */}
+      </div>
       <ResourceTable
         data={suppliers}
         columns={columns(t)}

@@ -5,6 +5,7 @@
     "edit": "Ózgertiw",
     "delete": "Óshiriw",
     "create": "Jaratıw",
+    "add": "Qosıw",
     "submit": "Jiberiw",
     "back": "Artqa",
     "loading": "Júklenip atır...",
@@ -20,11 +21,10 @@
     "no": "Yaq",
     "logout": "Shıǵıw",
     "submitting": "Jiberilip atır...",
-    "delete_image": "Súwretti óshiriw"
-
+    "delete_image": "Súwretti óshiriw",
+    "sending": "Jiberilmekte",
+    "send": "Jiberiw"
   },
-  
-
   "navigation": {
     "users": "Paydalanıwshılar",
     "stores": "Dúkanlar",
@@ -34,7 +34,8 @@
     "suppliers": "Taminlewshiler",
     "transfers": "Transferler",
     "settings": "Sazlamalar",
-    "measurements": "Ólshemler"
+    "measurements": "Ólshem birlikleri",
+    "recyclings": "Qayta ishlew"
   },
   "auth": {
     "login": "Kiriw",
@@ -47,6 +48,7 @@
   },
   "forms": {
     "name": "Atı",
+    "measurements":"Ólshem birligi",
     "all_products": "Barcha ónimler",
     "all_stores": "Barcha dúkanlar",
     "all_suppliers": "Barcha taminleyishiler",
@@ -64,14 +66,12 @@
     "product_name": "Ónim atı",
     "store_name": "Dúkan atı",
     "is_main_store": "Bas dúkan",
-
     "previous":"Aldin'g'i",
     "next":"Keyingi",
     "parent_store": "Ata dúkan",
     "main_store": "Joqarı dúkan",
     "owner": "Iyesi",
     "role": "Lawazım",
-
     "measurement_name": "Ólshem birligin atı",
     "supplier_name": "Taminleyishi atı",
     "purchase_price_usd": "Alıw bahası (USD)",
@@ -90,25 +90,32 @@
     "owner": "Iyesi",
     "admin": "Administrator",
     "seller": "Satıwshı"
-  },
-  "messages": {
+  },    "messages": {
     "success": {
-      "created": "{item} áwmetli jaratıldı",
-      "updated": "{item} áwmetli jańalandı",
-      "deleted": "{item} áwmetli óshirildi"
+      "created": " áwmetli jaratıldı",
+      "updated": " áwmetli jańalandı",
+      "deleted": " áwmetli óshirildi"
     },
     "error": {
-      "create": "{item} jaratıw ámelge aspadı",
-      "update": "{item} jańalaw ámelge aspadı",
-      "delete": "{item} óshiriw ámelge aspadı",
-      "general": "Qátelik júz berdi"
+      "create": " jaratıw ámelge aspadı",
+      "update": " jańalaw ámelge aspadı",
+      "delete": " óshiriw ámelge aspadı",
+      "general": "Qátelik júz berdi",
+    "invalid_stock_selection": "Невозможно создать приход на этот склад"
+,
+      "same_store_transfer": "Bir dúkandaǵı skladlar arasında transfer múmkin emes"
     },
     "confirmation": {
       "delete": "Bul zattı óshiriwge isenimlisiz be?"
     },
-    "edit": "{item} ózgertiw"
+    "edit": " ózgertiw",
+    "invalid_stock_selection": "Osi  skladǵa transfer jaratiw múmkin emes"
+
+
+
   },
   "placeholders": {
+    "search_category": "Kategoriyanı izdeń",
     "select_store": "Dúkandı tańlań",
     "select_category": "Kategoriyanı tańlań",
     "select_product": "Ónimdi tańlań",
@@ -125,14 +132,14 @@
     "enter_exchange_rate": "Kursın kiritiń",
     "select_store_type": "Dúkan túrin tańlań",
     "select_owner": "Iyesin tańlań",
-    "search_category": "Kategoriyanı izdeń",
     "search_product": "Ónim izdeń",
-
     "search_measurement": "Ólshem birligin izdeń",
     "enter_password": "Paroldi kiritiń"
   },
   "table": {
     "number": "№",
+    "to_stock":"Skladǵa",
+    "measurements":"Ólshemler",
     "name": "Atı",
     "address": "Mánzil",
     "phone": "Telefon",
@@ -146,6 +153,14 @@
     "quantity": "Sanı",
     "color": "Reńi",
     "measurement": "Ólshem",
-    "actions": "Háreketler"
+    "actions": "Háreketler",
+    "from_stock": "Skladtan",
+    "to_product": "Ónimge",
+    "spent_amount": "Jumsalǵan muǵdar",
+    "get_amount": "Alınǵan muǵdar",
+    "date": "Sáne",
+    "purchase_price_uz": "Alıw bahası (UZS)",
+    "purchase_price_us": "Alıw bahası (USD)",
+    "exchange_rate": "Kurs"
   }
 }

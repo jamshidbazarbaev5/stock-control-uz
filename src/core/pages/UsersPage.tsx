@@ -5,9 +5,9 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
 import { type User, useGetUsers, useUpdateUser, useDeleteUser } from '../api/user';
-import { t } from 'i18next';
+import { useTranslation } from 'react-i18next';
 
-const userFields =[
+const userFields = (t: any) => [
   {
     name: 'name',
     label: t('forms.fio'),
@@ -42,7 +42,7 @@ const userFields =[
   },
 ];
 
-const columns = [
+const columns = (t: any) => [
   // {
   //   header: '№',
   //   accessorKey: 'displayId',
@@ -66,6 +66,7 @@ export default function UsersPage() {
   const [page, setPage] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+const { t } = useTranslation();
 
   const { data: usersData, isLoading } = useGetUsers({
    
@@ -105,19 +106,23 @@ export default function UsersPage() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this user?')) {
-      deleteUser(id, {
-        onSuccess: () => toast.success('User successfully deleted'),
-        onError: () => toast.error('Failed to delete user'),
-      });
-    }
+    deleteUser(id, {
+      onSuccess: () => toast.success('User successfully deleted'),
+      onError: () => toast.error('Failed to delete user'),
+    });
   };
 
   return (
     <div className="container mx-auto py-6">
+       <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">{t('navigation.users')}</h1>
+        {/* <Button onClick={() => navigate('/create-recycling')}>
+          {t('common.create')} {t('navigation.recyclings')}
+        </Button> */}
+      </div>
       <ResourceTable
         data={users}
-        columns={columns}
+        columns={columns(t)}
         isLoading={isLoading}
         onEdit={handleEdit}
         onDelete={handleDelete}
@@ -131,7 +136,7 @@ export default function UsersPage() {
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
           <ResourceForm
-            fields={userFields}
+            fields={userFields(t)}
             onSubmit={handleUpdateSubmit}
             defaultValues={editingUser || {}}
             isSubmitting={isUpdating}

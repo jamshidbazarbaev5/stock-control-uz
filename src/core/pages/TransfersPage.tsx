@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ResourceForm } from '../helpers/ResourceForm';
@@ -10,14 +11,16 @@ import { useGetStores, type Store } from '../api/store';
 
 export default function TransfersPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTransfer, setEditingTransfer] = useState<Transfer | null>(null);
+  const [selectedFromStock, setSelectedFromStock] = useState<number | null>(null);
 
   const { data: transfersData, isLoading } = useGetTransfers({
     params: {
       page: page,
-      page_size: 10,
+      page_size: 30,
       ordering: '-created_at',
     },
   });
@@ -49,62 +52,82 @@ export default function TransfersPage() {
   };
 
   const columns = [
-    // {
-    //   header: '№',
-    //   accessorKey: 'displayId',
-    // },
     {
-      header: 'From Stock',
+      header: t('table.from_stock'),
       accessorKey: 'from_stock',
       cell: (row: Transfer) => getStockName(row.from_stock),
     },
     {
-      header: 'To Store',
+      header: t('table.store'),
       accessorKey: 'to_stock',
       cell: (row: Transfer) => getStoreName(row.to_stock),
     },
     {
-      header: 'Amount',
+      header: t('forms.amount'),
       accessorKey: 'amount',
     },
     {
-      header: 'Comment',
+      header: t('forms.comment'),
       accessorKey: 'comment',
     },
   ];
 
   const handleEdit = (transfer: Transfer) => {
     setEditingTransfer(transfer);
+    setSelectedFromStock(Number(transfer.from_stock));
     setIsFormOpen(true);
   };
 
   const handleUpdateSubmit = (data: Transfer) => {
     if (!editingTransfer?.id) return;
 
+    // Find the source stock and destination store to check if they're the same
+    const sourceStock = stocks.find((s: Stock) => s.id === Number(data.from_stock));
+    const destStore = stores.find((s: Store) => s.id === Number(data.to_stock));
+    
+    const sourceStoreId = sourceStock?.store_read?.id;
+    const destStoreId = destStore?.id;
+    
+    // Prevent transfers between the same store
+    if (sourceStoreId && destStoreId && sourceStoreId === destStoreId) {
+      toast.error(t('messages.error.same_store_transfer') || 'Cannot transfer to the same store');
+      return;
+    }
+
     updateTransfer(
       { ...data, id: editingTransfer.id },
       {
         onSuccess: () => {
-          toast.success('Transfer updated successfully');
+          toast.success('Transfer created successfully');
           setIsFormOpen(false);
           setEditingTransfer(null);
         },
-        onError: () => toast.error('Failed to update transfer'),
+        onError: (error: any) => {
+          if (error?.response?.data?.non_field_errors?.includes('Cannot transfer to the same store.')) {
+            toast.error('Cannot transfer to the same store');
+          } else {
+            toast.error('Failed to update transfer');
+          }
+        },
       }
     );
   };
 
   const handleDelete = (id: number) => {
-    if (confirm('Are you sure you want to delete this transfer?')) {
-      deleteTransfer(id, {
-        onSuccess: () => toast.success('Transfer deleted successfully'),
-        onError: () => toast.error('Failed to delete transfer'),
-      });
-    }
+    deleteTransfer(id, {
+      onSuccess: () => toast.success(t('messages.success.deleted')),
+      onError: () => toast.error(t('messages.error.delete', { item: t('navigation.transfers') })),
+    });
   };
 
   return (
     <div className="container mx-auto py-6">
+       <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">{t('navigation.transfers')}</h1>
+        {/* <Button onClick={() => navigate('/create-recycling')}>
+          {t('common.create')} {t('navigation.recyclings')}
+        </Button> */}
+      </div>
       <ResourceTable
         data={transfers}
         columns={columns}
@@ -113,7 +136,7 @@ export default function TransfersPage() {
         onDelete={handleDelete}
         onAdd={() => navigate('/create-transfer')}
         totalCount={totalCount}
-        pageSize={10}
+        pageSize={30}
         currentPage={page}
         onPageChange={(newPage) => setPage(newPage)}
       />
@@ -124,38 +147,51 @@ export default function TransfersPage() {
             fields={[
               {
                 name: 'from_stock',
-                label: 'From Stock',
+                label: t('forms.from_stock'),
                 type: 'select',
                 options: stocks?.map((stock: Stock) => ({
                   value: stock.id,
                   label: `${stock.product_read?.product_name} - ${stock.quantity}`
-                })) || []
+                })) || [],
+                defaultValue: selectedFromStock,
+                onChange: (value: number) => {
+                  setSelectedFromStock(Number(value));
+                }
               },
               {
                 name: 'to_stock',
-                label: 'To Store',
+                label: t('forms.to_store'),
                 type: 'select',
-                options: stores?.map((store: Store) => ({
-                  value: store.id,
-                  label: store.name
-                })) || []
+                options: stores?.map((store: Store) => {
+                  // Get the source stock ID based on the currently selected from_stock
+                  const sourceStock = stocks.find((s: Stock) => s.id === selectedFromStock);
+                  const sourceStoreId = sourceStock?.store_read?.id;
+                  
+                  // Skip if this store is the same as source store
+                  if (sourceStoreId && store.id === sourceStoreId) return null;
+                  
+                  return {
+                    value: store.id,
+                    label: store.name
+                  };
+                }).filter(Boolean) || []
               },
               {
                 name: 'amount',
-                label: 'Amount',
+                label: t('forms.amount'),
                 type: 'number',
                 step: '0.01'
               },
               {
                 name: 'comment',
-                label: 'Comment',
+                label: t('forms.comment'),
                 type: 'textarea'
               }
             ]}
             onSubmit={handleUpdateSubmit}
             defaultValues={editingTransfer || undefined}
             isSubmitting={isUpdating}
-            title="Edit Transfer"
+            title={t('messages.edit', { item: t('navigation.transfers') })}
           />
         </DialogContent>
       </Dialog>

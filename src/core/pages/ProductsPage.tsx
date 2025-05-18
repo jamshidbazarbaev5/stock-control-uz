@@ -28,14 +28,7 @@ const productFields = (t: any) => [
     required: true,
     options: [], // Will be populated with categories
   },
-  {
-    name: 'store_write',
-    label: t('table.store'),
-    type: 'select',
-    placeholder: t('placeholders.select_store'),
-    required: true,
-    options: [], // Will be populated with stores
-  },
+ 
 ];
 
 const columns = (t: any) => [
@@ -51,10 +44,7 @@ const columns = (t: any) => [
     header: t('table.category'),
     accessorKey: (row: Product) => row.category_read?.category_name || row.category_write,
   },
-  {
-    header: t('table.store'),
-    accessorKey: (row: Product) => row.store_read?.name || row.store_write,
-  },
+  
 ];
 
 export default function ProductsPage() {
@@ -157,16 +147,20 @@ export default function ProductsPage() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm(t('messages.confirmation.delete'))) {
-      deleteProduct(id, {
-        onSuccess: () => toast.success(t('messages.success.deleted', { item: t('table.product') })),
-        onError: () => toast.error(t('messages.error.delete', { item: t('table.product') })),
-      });
-    }
+    deleteProduct(id, {
+      onSuccess: () => toast.success(t('messages.success.deleted', { item: t('table.product') })),
+      onError: () => toast.error(t('messages.error.delete', { item: t('table.product') })),
+    });
   };
 
   return (
     <div className="container mx-auto py-6">
+       <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">{t('navigation.products')}</h1>
+        {/* <Button onClick={() => navigate('/create-recycling')}>
+          {t('common.create')} {t('navigation.recyclings')}
+        </Button> */}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <Input
           type="text"

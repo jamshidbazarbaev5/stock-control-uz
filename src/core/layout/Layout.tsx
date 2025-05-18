@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useLogout } from '../api/auth';
 
+
 export default function Layout({ children }: any) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -47,7 +48,7 @@ export default function Layout({ children }: any) {
   
   const navItems = [
     { icon: ArrowLeftRight, label: t('navigation.transfers'), href: '/transfers' },
-    
+    { icon: Package, label: t('navigation.stocks'), href: '/stock' },
     {
       icon: Package,
       label: t('navigation.settings'),
@@ -57,7 +58,7 @@ export default function Layout({ children }: any) {
         { icon: ListView, label: t('navigation.categories'), href: '/categories' },
         { icon: Ruler, label: t('navigation.measurements'), href: '/measurements' },
         { icon: ShoppingBag, label: t('navigation.products'), href: '/products' },
-        { icon: Package, label: t('navigation.stocks'), href: '/stock' },
+        {icon: ArrowLeftRight, label: t('navigation.recyclings'), href: '/recyclings' },
         { icon: ListView, label: t('navigation.suppliers'), href: '/suppliers' },
         { icon: User2, label: t('navigation.users'), href: '/users' },
       ]

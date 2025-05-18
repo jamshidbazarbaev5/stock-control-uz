@@ -10,10 +10,21 @@ import { toast } from 'sonner';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 
-interface FormValues extends Partial<Stock> {
+interface MeasurementRead {
+  id?: number;
+  measurement_write: number;
+  measurement_read?: {
+    id: number;
+    measurement_name: string;
+  };
+}
+
+// Define the form values interface with multiple measurements
+interface FormValues extends Omit<Stock, 'measurement_write'> {
   purchase_price_in_us: string;
   exchange_rate: string;
   purchase_price_in_uz: string;
+  measurement_write: string[];
 }
 
 const stockFields = [
@@ -92,9 +103,10 @@ const stockFields = [
   },
   {
     name: 'measurement_write',
-    label: 'Measurement',
+    label: 'Measurements',
     type: 'select',
-    placeholder: 'Select measurement',
+    multiple: true,
+    placeholder: 'Select measurements',
     required: true,
     options: [], // Will be populated with measurements
   },
@@ -116,7 +128,7 @@ export default function EditStock() {
                     isLoadingMeasurements || isLoadingSuppliers;
 
   // Get the arrays from the responses
-  const stocks = Array.isArray(stocksData) ? stocksData : [];
+  const stocks = Array.isArray(stocksData) ? stocksData : stocksData?.results || [];
   const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
   const measurements = Array.isArray(measurementsData) ? measurementsData : measurementsData?.results || [];
@@ -133,7 +145,7 @@ export default function EditStock() {
     defaultValues: {
       store_write: stock?.store_read?.id?.toString() || '',
       product_write: stock?.product_read?.id?.toString() || '',
-      measurement_write: stock?.measurement_read?.[0]?.measurement_read?.id?.toString() || '',
+      measurement_write: stock?.measurement_read?.map((m: MeasurementRead) => m.measurement_read?.id?.toString() || '') || [''],
       purchase_price_in_us: stock?.purchase_price_in_us?.toString() || '0',
       exchange_rate: stock?.exchange_rate?.toString() || '0',
       purchase_price_in_uz: stock?.purchase_price_in_uz?.toString() || '0',
@@ -172,7 +184,7 @@ export default function EditStock() {
       const values = {
         store_write: stock.store_read?.id?.toString() || '',
         product_write: stock.product_read?.id?.toString() || '',
-        measurement_write: stock.measurement_read?.[0]?.measurement_read?.id?.toString() || '',
+        measurement_write: stock.measurement_read?.map((m: MeasurementRead) => m.measurement_read?.id?.toString() || '') || [''],
         purchase_price_in_us: stock.purchase_price_in_us?.toString() || '0',
         exchange_rate: stock.exchange_rate?.toString() || '0',
         purchase_price_in_uz: stock.purchase_price_in_uz?.toString() || '0',
@@ -243,7 +255,14 @@ export default function EditStock() {
 
     try {
       const quantity = typeof data.quantity === 'string' ? parseInt(data.quantity, 10) : data.quantity!;
-      const measurement = typeof data.measurement_write === 'string' ? parseInt(data.measurement_write, 10) : data.measurement_write!;
+      
+      // Convert measurement strings to numbers and create measurement objects
+      const measurements = (Array.isArray(data.measurement_write) ? data.measurement_write : [data.measurement_write])
+        .filter(m => m) // Filter out empty values
+        .map(m => ({
+          measurement_write: parseInt(m, 10),
+          number: quantity
+        }));
       
       // Calculate the UZS price from USD and exchange rate
       const priceInUSD = parseFloat(data.purchase_price_in_us);
@@ -261,10 +280,7 @@ export default function EditStock() {
         quantity: quantity,
         supplier_write: typeof data.supplier_write === 'string' ? parseInt(data.supplier_write, 10) : data.supplier_write!,
         color: data.color!,
-        measurement_write: [{
-          measurement_write: typeof measurement === 'number' ? measurement : measurement[0].measurement_write,
-          number: quantity
-        }],
+        measurement_write: measurements,
         purchase_price_in_us: data.purchase_price_in_us || '0',
         exchange_rate: data.exchange_rate || '0',
         purchase_price_in_uz: priceInUZS

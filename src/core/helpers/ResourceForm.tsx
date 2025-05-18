@@ -11,12 +11,14 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { PlusCircle } from 'lucide-react';
+import { t } from 'i18next';
 
 // Update the FormField interface to be more specific about the field types
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'textarea' | 'select' | 'file' | 'multiple-files';
+  type: 'text' | 'number' | 'textarea' | 'select' | 'searchable-select' | 'file' | 'multiple-files';
   placeholder?: string;
   options?: { value: string | number; label: string }[];
   required?: boolean;
@@ -24,9 +26,16 @@ export interface FormField {
   readOnly?: boolean;
   imageUrl?: string;
   preview?: string;
-  existingImage?: string ;  // Add this new field
+  existingImage?: string;  // Add this new field
   onDeleteImage?: (imageId?: number) => void; // Function to handle image deletion
   existingImages?: Array<{ id?: number; url: string }>;
+  // For searchable-select
+  searchTerm?: string;
+  onSearch?: (value: string) => void;
+  showCreateButton?: boolean;
+  onCreateClick?: () => void;
+  defaultValue?: any;
+  onChange?: (value: any) => void; // Add onChange handler for select fields
 }
 
 // Update the ResourceFormProps interface to be more specific about generic type T
@@ -119,24 +128,90 @@ export function ResourceForm<T extends Record<string, any>>({
                         />
                       ) : field.type === 'select' ? (
                         <Select
+                          onValueChange={(value) => {
+                            formField.onChange(value);
+                            // Call the custom onChange handler if provided
+                            if (field.onChange) {
+                              field.onChange(value);
+                            }
+                          }}
+                          value={formField.value?.toString()}
+                          defaultValue={field.defaultValue?.toString()}
+                        >
+                          <SelectTrigger className={field.readOnly ? 'bg-gray-100' : ''}>
+                            <SelectValue placeholder={field.placeholder || t('placeholders.select')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {field.options?.map((option: { value: string | number; label: string }) => (
+                              <SelectItem key={option.value} value={option.value.toString()}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : field.type === 'searchable-select' ? (
+                        <Select
                           onValueChange={formField.onChange}
-                          defaultValue={String(formField.value)}
+                          value={formField.value?.toString()}
+                          defaultValue={formField.value?.toString()}
                         >
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder={field.placeholder} />
                           </SelectTrigger>
-                          <SelectContent className="max-h-[200px] overflow-y-auto bg-white rounded-md border shadow-md">
-                            <div className="max-h-[200px] overflow-y-auto py-1">
-                              {field.options?.map((option:any) => (
-                                <SelectItem
-                                  key={option.value}
-                                  value={String(option.value)}
-                                  className="cursor-pointer hover:bg-gray-100 py-2 px-3"
-                                >
-                                  {option.label}
-                                </SelectItem>
-                              ))}
+                          <SelectContent onPointerDownOutside={(e) => {
+                            // Prevent dropdown from closing when clicking inside it
+                            const target = e.target as Node;
+                            const selectContent = document.querySelector('.select-content-wrapper');
+                            if (selectContent && selectContent.contains(target)) {
+                              e.preventDefault();
+                            }
+                          }}>
+                            <div className="p-2 sticky top-0 bg-white z-10 border-b select-content-wrapper">
+                              <Input
+                                type="text"
+                                placeholder={`Search ${field.label.toLowerCase()}...`}
+                                value={field.searchTerm || ''}
+                                onChange={(e) => {
+                                  // Prevent closing dropdown when typing
+                                  e.stopPropagation();
+                                  field.onSearch && field.onSearch(e.target.value);
+                                }}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => e.stopPropagation()}
+                                className="flex-1"
+                                autoFocus
+                              />
                             </div>
+                            <div className="max-h-[200px] overflow-y-auto">
+                              {field.options && field.options.length > 0 ? (
+                                field.options.map((option: { value: string | number; label: string }) => (
+                                  <SelectItem key={option.value} value={option.value.toString()}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <div className="p-2 text-center text-gray-500 text-sm">
+                                  No results found
+                                </div>
+                              )}
+                            </div>
+                            {field.showCreateButton && (
+                              <div className="p-2 border-t sticky bottom-0 bg-white z-10">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    field.onCreateClick && field.onCreateClick();
+                                  }}
+                                  className="w-full flex items-center justify-center gap-2"
+                                >
+                                  <PlusCircle size={16} />
+                                  Create New {field.label}
+                                </Button>
+                              </div>
+                            )}
                           </SelectContent>
                         </Select>
                       ) : field.type === 'file' ? (
@@ -223,7 +298,7 @@ export function ResourceForm<T extends Record<string, any>>({
           <div className="col-span-full mt-6">
             {!hideSubmitButton && (
               <Button type="submit" disabled={isSubmitting} className="w-full md:w-auto">
-                {isSubmitting ? 'Отправка...' : 'Отправить'}
+                {isSubmitting ? t("common.sending") : t("common.submit")}
               </Button>
             )}
           </div>

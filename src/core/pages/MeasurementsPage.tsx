@@ -8,9 +8,9 @@ import type { Measurement } from '../api/measurement';
 import { useGetMeasurements, useDeleteMeasurement, useUpdateMeasurement } from '../api/measurement';
 import { useGetStores } from '../api/store';
 import { ResourceTable } from '../helpers/ResourseTable';
-import { t } from 'i18next';
+import { useTranslation } from 'react-i18next';
 
-const columns = [
+const columns = (t: any) => [
   // {
   //   header: '№',
   //   accessorKey: 'id',
@@ -22,7 +22,7 @@ const columns = [
   
 ];
 
-const measurementFields = [
+const measurementFields = (t: any) => [
   {
     name: 'measurement_name',
     label: t('forms.measurement_name'),
@@ -53,7 +53,7 @@ export default function MeasurementsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMeasurement, setEditingMeasurement] = useState<Measurement | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-
+  const { t } = useTranslation();
   const { data: measurementsData, isLoading } = useGetMeasurements({
     params: {
       measurement_name: searchTerm
@@ -74,7 +74,7 @@ export default function MeasurementsPage() {
   }));
 
   // Update the store_write field options
-  const fields = measurementFields.map(field => 
+  const fields = measurementFields(t)?.map(field => 
     field.name === 'store_write' 
       ? { ...field, options: storeOptions }
       : field
@@ -118,19 +118,18 @@ export default function MeasurementsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm('Are you sure you want to delete this measurement?')) {
-      try {
-        await deleteMeasurement.mutateAsync(id);
-        toast.success('Measurement deleted successfully');
-      } catch (error) {
-        toast.error('Failed to delete measurement');
-        console.error('Failed to delete measurement:', error);
-      }
+    try {
+      await deleteMeasurement.mutateAsync(id);
+      toast.success('Measurement deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete measurement');
+      console.error('Failed to delete measurement:', error);
     }
   };
 
   return (
     <div className="container mx-auto py-8 px-4">
+      
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">{t('forms.measurements')}</h1>
@@ -147,7 +146,7 @@ export default function MeasurementsPage() {
 
       <ResourceTable<Measurement>
         data={measurements}
-        columns={columns}
+        columns={columns(t)}
         isLoading={isLoading}
         onEdit={handleEdit}
         onDelete={handleDelete}
@@ -160,7 +159,7 @@ export default function MeasurementsPage() {
             onSubmit={handleUpdateSubmit}
             defaultValues={editingMeasurement || undefined}
             isSubmitting={isUpdating}
-            title="Edit Measurement"
+            title={t('common.edit') + ' ' + t('forms.measurement_name')}
           />
         </DialogContent>
       </Dialog>

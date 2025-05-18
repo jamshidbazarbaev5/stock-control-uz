@@ -304,7 +304,7 @@ export default function StocksPage() {
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">{t('navigation.stocks')}</h1>
-        <Button onClick={() => navigate('/create-stock')}>{t('common.create')} {t('table.product')}</Button>
+        <Button onClick={() => navigate('/create-stock')}>{t('common.create')} </Button>
       </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-5" >

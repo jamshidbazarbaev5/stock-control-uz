@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -17,6 +17,7 @@ import {
   PlusIcon
 } from 'lucide-react';
 import { t } from 'i18next';
+import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
 
 interface Column<T> {
   header: string;
@@ -44,7 +45,7 @@ export function ResourceTable<T extends { id?: number }>({
   onEdit,
   onDelete,
   onAdd,
-  pageSize = 10,
+  pageSize = 30,
   totalCount = 0,
   onPageChange,
   currentPage = 1,
@@ -52,6 +53,10 @@ export function ResourceTable<T extends { id?: number }>({
   // Handle case when data is undefined
   const tableData = data || [];
   const totalPages = Math.ceil(totalCount / pageSize);
+  
+  // State for delete confirmation modal
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<number | undefined>(undefined);
 
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
@@ -98,7 +103,7 @@ export function ResourceTable<T extends { id?: number }>({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Ресурсы</h2>
+        <h2 className="text-xl font-bold"></h2>
         {onAdd && (
           <Button onClick={onAdd} className="flex items-center gap-1">
             <PlusIcon className="h-4 w-4" /> {t('common.create')}
@@ -192,7 +197,10 @@ export function ResourceTable<T extends { id?: number }>({
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            onClick={() => onDelete(row.id!)}
+                            onClick={() => {
+                              setItemToDelete(row.id);
+                              setIsDeleteModalOpen(true);
+                            }}
                             className="h-8 w-8 p-0 hover:bg-red-50 text-red-500"
                           >
                             <TrashIcon className="h-4 w-4" />
@@ -255,6 +263,18 @@ export function ResourceTable<T extends { id?: number }>({
           </Button>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={() => {
+          if (itemToDelete && onDelete) {
+            onDelete(itemToDelete);
+          }
+          setIsDeleteModalOpen(false);
+        }}
+      />
     </div>
   );
 }

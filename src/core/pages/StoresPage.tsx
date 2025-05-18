@@ -162,12 +162,10 @@ export default function StoresPage() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm(t('messages.confirmation.delete'))) {
-      deleteStore(id, {
-        onSuccess: () => toast.success(t('messages.success.deleted', { item: t('navigation.stores') })),
-        onError: () => toast.error(t('messages.error.delete', { item: t('navigation.stores') })),
-      });
-    }
+    deleteStore(id, {
+      onSuccess: () => toast.success(t('messages.success.deleted', { item: t('navigation.stores') })),
+      onError: () => toast.error(t('messages.error.delete', { item: t('navigation.stores') })),
+    });
   };
 
   return (

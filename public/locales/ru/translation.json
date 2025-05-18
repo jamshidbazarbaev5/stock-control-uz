@@ -5,6 +5,7 @@
     "edit": "Редактировать",
     "delete": "Удалить",
     "create": "Создать",
+    "add": "Добавить",
     "submit": "Отправить",
     "back": "Назад",
     "loading": "Загрузка...",
@@ -19,7 +20,9 @@
     "of":"Страница из",
     "submitting": "Отправка...",
     "delete_image": "Удалить изображение",
-    "total": "Всего"
+    "total": "Всего",
+    "send": "Отправить",
+    "sending": "Отправка..."
   },
   "navigation": {
     "users": "Пользователи",
@@ -29,8 +32,9 @@
     "stocks": "Приход",
     "suppliers": "Поставщики",
     "transfers": "Переводы",
-    "measurements": "Измерения",
-    "settings": "Настройки"
+    "measurements": "Единицы измерения",
+    "settings": "Настройки",
+    "recyclings": "Переработка"
   },
   "auth": {
     "login": "Войти",
@@ -43,6 +47,7 @@
   },
   "forms": {
     "name": "Имя",
+    "measurements": "Единицы измерения",
     "fio": "ФИО",
     "phone_number": "Номер телефона",
     "description": "Описание",
@@ -82,25 +87,34 @@
     "owner": "Владелец",
     "admin": "Администратор",
     "seller": "Продавец"
-  },
-  "messages": {
+  },    "messages": {
     "success": {
-      "created": "{item} успешно создан",
-      "updated": "{item} успешно обновлен",
-      "deleted": "{item} успешно удален"
+      "created": " успешно создан",
+      "updated": " успешно обновлен",
+      "deleted": " успешно удален"
     },
     "error": {
-      "create": "Не удалось создать {item}",
-      "update": "Не удалось обновить {item}",
-      "delete": "Не удалось удалить {item}",
-      "general": "Произошла ошибка"
+      "create": "Не удалось создать ",
+      "update": "Не удалось обновить",
+      "delete": "Не удалось удалить ",
+      "general": "Произошла ошибка",
+    "invalid_stock_selection": "Невозможно создать приход на этот склад",
+
+      "same_store_transfer": "Невозможно перевести между складами в одном магазине"
     },
     "confirmation": {
       "delete": "Вы уверены, что хотите удалить это?"
     },
-    "edit": "Изменить {item}"
+    "edit": "Изменить"
+    
   },
   "placeholders": {
+    "search_category": "Поиск категории",
+    "search_product": "Поиск товара",
+    "search_store": "Поиск магазина",
+    "search_supplier": "Поиск поставщика",
+    "search_measurement": "Поиск единицы измерения",
+    "search_user": "Поиск пользователя",
     "select_store": "Выберите магазин",
     "select_category": "Выберите категорию",
     "select_product": "Выберите товар",
@@ -122,6 +136,7 @@
   "table": {
     "number": "№",
     "name": "Название",
+    "measurements":"Единицы измерения",
     "address": "Адрес",
     "phone": "Телефон",
     "category": "Категория",
@@ -134,6 +149,13 @@
     "quantity": "Количество",
     "color": "Цвет",
     "measurement": "Измерение",
-    "actions": "Действия"
+    "actions": "Действия",
+    "from_stock": "Со склада",
+    "to_product": "В продукт",
+    "spent_amount": "Потраченное количество",
+    "get_amount": "Полученное количество",
+    "date": "Дата",
+    "purchase_price_uz": "Цена покупки (UZS)",
+    "purchase_price_us": "Цена покупки (USD)"
   }
 }

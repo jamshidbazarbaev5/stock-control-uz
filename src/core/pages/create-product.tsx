@@ -3,7 +3,6 @@ import { ResourceForm } from '../helpers/ResourceForm';
 import type { Product } from '../api/product';
 import { useCreateProduct } from '../api/product';
 import { useGetCategories } from '../api/category';
-import { useGetStores } from '../api/store';
 import { useGetMeasurements } from '../api/measurement';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
@@ -23,12 +22,10 @@ export default function CreateProduct() {
 
   // Fetch categories, stores and measurements for the select dropdowns
   const { data: categoriesData } = useGetCategories({});
-  const { data: storesData } = useGetStores({});
   const { data: measurementsData } = useGetMeasurements({});
 
   // Get the arrays from response data
   const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData?.results || [];
-  const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
   const availableMeasurements = Array.isArray(measurementsData) ? measurementsData : measurementsData?.results || [];
 
   const handleAddMeasurement = () => {
@@ -53,7 +50,6 @@ export default function CreateProduct() {
       const formattedData = {
         product_name: data.product_name,
         category_write: typeof data.category_write === 'string' ? parseInt(data.category_write, 10) : data.category_write,
-        store_write: typeof data.store_write === 'string' ? parseInt(data.store_write, 10) : data.store_write,
         measurement: measurements.map((m: MeasurementItem) => ({
           measurement_write: m.measurement_write,
           number: m.number
@@ -91,17 +87,7 @@ export default function CreateProduct() {
               label: category.category_name
             }))
           },
-          {
-            name: 'store_write',
-            label: t('table.store'),
-            type: 'select',
-            placeholder: t('placeholders.select_store'),
-            required: true,
-            options: stores.map(store => ({
-              value: store.id,
-              label: store.name
-            }))
-          }
+          
         ]}
         onSubmit={handleSubmit}
         isSubmitting={createProduct.isPending}
@@ -129,7 +115,7 @@ export default function CreateProduct() {
                 <input
                   type="number"
                   className="w-full px-3 py-2 border rounded-md"
-                  placeholder="Enter quantity"
+                  placeholder={t('placeholders.enter_quantity')}
                   value={measurement.number || ''}
                   onChange={(e) => handleMeasurementChange(index, 'number', e.target.value)}
                 />
@@ -140,7 +126,7 @@ export default function CreateProduct() {
                   variant="destructive"
                   onClick={() => handleRemoveMeasurement(index)}
                 >
-                  Remove
+                  {t('common.delete')}
                 </Button>
               )}
             </div>
@@ -150,7 +136,7 @@ export default function CreateProduct() {
             variant="outline"
             onClick={handleAddMeasurement}
           >
-            Add Measurement
+            {t('common.add')} {t('table.measurement')}
           </Button>
         </div>
       </ResourceForm>
