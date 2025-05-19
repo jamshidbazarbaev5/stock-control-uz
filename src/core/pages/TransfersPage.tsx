@@ -53,12 +53,12 @@ export default function TransfersPage() {
 
   const columns = [
     {
-      header: t('table.from_stock'),
+      header: t('forms.from_product'),
       accessorKey: 'from_stock',
       cell: (row: Transfer) => getStockName(row.from_stock),
     },
     {
-      header: t('table.store'),
+      header: t('forms.from_stock'),
       accessorKey: 'to_stock',
       cell: (row: Transfer) => getStoreName(row.to_stock),
     },

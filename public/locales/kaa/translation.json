@@ -70,8 +70,8 @@
     "invalid_credentials": "Nadura málimet"
   },
   "forms": {
-    "from_store": "Dúkandan",
-    "from_product":"O'nimnen",
+    "from_store": "Qayaqdan",
+    "from_product":"Qaysi o'nimden",
     "name": "Atı",
     "measurements":"Ólshem birligi",
     "all_products": "Barcha ónimler",
@@ -108,7 +108,7 @@
     "comment": "Kommentariy",
     "amount": "Muǵdarı",
     "from_stock": "Skladtan",
-    "to_store": "Dúkanǵa",
+    "to_store": "Qayaqa",
     "password": "Parol"
   },
   "roles": {
@@ -165,7 +165,7 @@
   "table": {
     "number": "№",
     "to_stock":"Skladǵa",
-    "from_product":"Skladǵa",
+    "from_product":"Qaysi o'nimden",
     "measurements":"Ólshemler",
     "name": "Atı",
     "address": "Mánzil",

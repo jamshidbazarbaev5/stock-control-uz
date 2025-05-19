@@ -70,8 +70,8 @@
   },
   "forms": {
     "name": "Имя",
-    "from_product":"С товара",
-    "from_store": "Из магазина",
+    "from_product":"Найменование товара",
+    "from_store": "Откуда",
     "measurements": "Единицы измерения",
     "fio": "ФИО",
     "phone_number": "Номер телефона",
@@ -105,7 +105,7 @@
     "comment": "Комментарий",
     "amount": "Количество",
     "from_stock": "Со склада",
-    "to_store": "В магазин",
+    "to_store": "Куда",
     "password": "Пароль"
   },
   "roles": {

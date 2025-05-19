@@ -112,37 +112,8 @@ export default function CreateTransfer() {
             </Select>
           </div>
 
-          {/* Source Stock Selection - Only shown when store is selected */}
+          {/* Destination Store Selection */}
           {sourceStore && (
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                {t('forms.from_product')}
-                {selectedFromStock && (
-                  <span className="ml-2 text-gray-500">
-                    Selected: {selectedFromStock.product_read?.product_name} - {selectedFromStock.quantity}
-                  </span>
-                )}
-              </label>
-              <Select
-                onValueChange={(value) => form.setValue('from_stock', Number(value))}
-                value={fromStock?.toString()}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={t('placeholders.select_product')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {sourceStocks?.map((stock: Stock) => stock.id && (
-                    <SelectItem key={stock.id} value={stock.id.toString()}>
-                      {stock.product_read?.product_name} - {stock.quantity}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Destination Store Selection - Only shown when source stock is selected */}
-          {fromStock && (
             <div>
               <label className="block text-sm font-medium mb-1">
                 {t('forms.to_store')}
@@ -175,8 +146,37 @@ export default function CreateTransfer() {
             </div>
           )}
 
-          {/* Amount and Comment fields - Only shown when destination store is selected */}
-          {toStock && (
+          {/* Source Stock Selection - Only shown when both stores are selected */}
+          {sourceStore && toStock && (
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                {t('forms.from_product')}
+                {selectedFromStock && (
+                  <span className="ml-2 text-gray-500">
+                    Selected: {selectedFromStock.product_read?.product_name} - {selectedFromStock.quantity}
+                  </span>
+                )}
+              </label>
+              <Select
+                onValueChange={(value) => form.setValue('from_stock', Number(value))}
+                value={fromStock?.toString()}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={t('placeholders.select_product')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {sourceStocks?.map((stock: Stock) => stock.id && (
+                    <SelectItem key={stock.id} value={stock.id.toString()}>
+                      {stock.product_read?.product_name} - {stock.quantity}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Amount and Comment fields - Only shown when stock is selected */}
+          {fromStock && (
             <>
               <div>
                 <label className="block text-sm font-medium mb-1">{t('forms.amount')}</label>
