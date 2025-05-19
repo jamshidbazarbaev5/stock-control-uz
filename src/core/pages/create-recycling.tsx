@@ -20,9 +20,9 @@ interface FormValues extends Partial<Recycling> {
 const recyclingFields = (t:any)=> [
   {
     name: 'from_to',
-    label: t('table.from_stock'),
+    label: t('table.from_product'),
     type: 'select',
-    placeholder: t('placeholders.select_store'),
+    placeholder: t('placeholders.select_product'),
     required: true,
     options: [], // Will be populated with stocks
   },

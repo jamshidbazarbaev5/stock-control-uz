@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription } from '@/components/ui/dialog';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
 import { type Store, useGetStores, useUpdateStore, useDeleteStore } from '../api/store';
@@ -282,9 +282,8 @@ export default function StoresPage() {
 
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogContent>
-            <DialogTitle className="text-xl font-bold mb-4">{t('common.edit')}</DialogTitle>
             <DialogDescription className="mb-4">
-              {t('messages.edit', { item: t('navigation.stores').toLowerCase() })}
+              {/* {t('messages.edit', { item: t('navigation.stores').toLowerCase() })} */}
             </DialogDescription>
             <ResourceForm
               fields={fields}

@@ -23,7 +23,30 @@
     "submitting": "Jiberilip atır...",
     "delete_image": "Súwretti óshiriw",
     "sending": "Jiberilmekte",
-    "send": "Jiberiw"
+    "send": "Jiberiw",
+    "store": "Dúkan",
+    "product": "Ónim",
+    "supplier": "Taminleyishi",
+    "color": "Reńi",
+    "quantity": "Sanı",
+    "create_new_stock": "Jańa kelgen zatlar jaratıw",
+    "create_new_product": "Jańa ónim jaratıw",
+    "create_new_supplier": "Jańa taminleyishi jaratıw",
+    "product_created": "Ónim áwmetli jaratıldı",
+    "error_creating_product": "Ónim jaratıw ámelge aspadı",
+    "supplier_created": "Taminleyishi áwmetli jaratıldı",
+    "error_creating_supplier": "Taminleyishi jaratıw ámelge aspadı",
+    "category": "Kategoriya",
+    "select_category": "Kategoriyanı tańlań",
+    "select_store": "Dúkandı tańlań",
+    "enter_purchase_price_usd": "Alıw bahasın USD da kiritiń",
+    "enter_exchange_rate": "Kursın kiritiń",
+    "calculated_purchase_price_uzs": "Esaplangan alıw bahası UZS da",
+    "enter_selling_price": "Satıw bahasın kiritiń",
+    "enter_minimum_price": "Min bahasın kiritiń",
+    "enter_quantity": "Sanın kiritiń",
+    "select_supplier": "Taminleyishini tańlań",
+    "enter_color": "Reńin kiritiń"
   },
   "navigation": {
     "users": "Paydalanıwshılar",
@@ -47,6 +70,8 @@
     "invalid_credentials": "Nadura málimet"
   },
   "forms": {
+    "from_store": "Dúkandan",
+    "from_product":"O'nimnen",
     "name": "Atı",
     "measurements":"Ólshem birligi",
     "all_products": "Barcha ónimler",
@@ -134,11 +159,13 @@
     "select_owner": "Iyesin tańlań",
     "search_product": "Ónim izdeń",
     "search_measurement": "Ólshem birligin izdeń",
-    "enter_password": "Paroldi kiritiń"
+    "enter_password": "Paroldi kiritiń",
+    "enter_purchase_price_uzs": "Alıw bahasın UZS da kiritiń"
   },
   "table": {
     "number": "№",
     "to_stock":"Skladǵa",
+    "from_product":"Skladǵa",
     "measurements":"Ólshemler",
     "name": "Atı",
     "address": "Mánzil",

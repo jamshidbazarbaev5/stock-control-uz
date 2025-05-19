@@ -4,7 +4,7 @@ import type { Stock, CreateStockDTO } from '../api/stock';
 import { useCreateStock } from '../api/stock';
 import { useGetProducts, useCreateProduct } from '../api/product';
 import { useGetStores } from '../api/store';
-import { useGetMeasurements, useCreateMeasurement } from '../api/measurement';
+
 import { useGetSuppliers, useCreateSupplier } from '../api/supplier';
 import { useGetCategories } from '../api/category';
 import { toast } from 'sonner';
@@ -17,89 +17,6 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 
-const stockFields = [
-  {
-    name: 'store_write',
-    label: 'Store',
-    type: 'select',
-    placeholder: 'Select store',
-    required: true,
-    options: [], // Will be populated with stores
-  },
-  {
-    name: 'product_write',
-    label: 'Product',
-    type: 'select',
-    placeholder: 'Select product',
-    required: true,
-    options: [], // Will be populated with products
-  },
-  {
-    name: 'purchase_price_in_us',
-    label: 'Purchase Price (USD)',
-    type: 'text',
-    placeholder: 'Enter purchase price in USD',
-    required: true,
-  },
-  {
-    name: 'exchange_rate',
-    label: 'Exchange Rate',
-    type: 'text',
-    placeholder: 'Enter exchange rate',
-    required: true,
-  },
-  {
-    name: 'purchase_price_in_uz',
-    label: 'Purchase Price (UZS)',
-    type: 'text',
-    placeholder: 'Calculated purchase price in UZS',
-    readOnly: true,
-  },
-  {
-    name: 'selling_price',
-    label: 'Selling Price',
-    type: 'text',
-    placeholder: 'Enter selling price',
-    required: true,
-  },
-  {
-    name: 'min_price',
-    label: 'Minimum Price',
-    type: 'text',
-    placeholder: 'Enter minimum price',
-    required: true,
-  },
-  {
-    name: 'quantity',
-    label: 'Quantity',
-    type: 'text',
-    placeholder: 'Enter quantity',
-    required: true,
-  },
-  {
-    name: 'supplier_write',
-    label: 'Supplier',
-    type: 'select',
-    placeholder: 'Select supplier',
-    required: true,
-    options: [], // Will be populated with suppliers
-  },
-  {
-    name: 'color',
-    label: 'Color',
-    type: 'text',
-    placeholder: 'Enter color',
-    required: true,
-  },
-  {
-    name: 'measurement_write',
-    label: 'Measurement',
-    type: 'select',
-    placeholder: 'Select measurement',
-    required: true,
-    options: [], // Will be populated with measurements
-  },
-];
 
 interface FormValues extends Partial<Stock> {
   purchase_price_in_us: string;
@@ -118,30 +35,101 @@ interface CreateSupplierForm {
   phone_number: string;
 }
 
-interface CreateMeasurementForm {
-  measurement_name: string;
-  store_write: number;
-}
+
 
 export default function CreateStock() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  
+  // Define stock fields with translations
+  const stockFields = [
+    {
+      name: 'store_write',
+      label: t('common.store'),
+      type: 'select',
+      placeholder: t('common.select_store'),
+      required: true,
+      options: [], // Will be populated with stores
+    },
+    {
+      name: 'product_write',
+      label: t('common.product'),
+      type: 'select',
+      placeholder: t('common.product'),
+      required: true,
+      options: [], // Will be populated with products
+    },
+    {
+      name: 'purchase_price_in_us',
+      label: t('common.enter_purchase_price_usd'),
+      type: 'text',
+      placeholder: t('common.enter_purchase_price_usd'),
+      required: true,
+    },
+    {
+      name: 'exchange_rate',
+      label: t('common.enter_exchange_rate'),
+      type: 'text',
+      placeholder: t('common.enter_exchange_rate'),
+      required: true,
+    },
+    {
+      name: 'purchase_price_in_uz',
+      label: t('common.calculated_purchase_price_uzs'),
+      type: 'text',
+      placeholder: t('common.calculated_purchase_price_uzs'),
+      readOnly: true,
+    },
+    {
+      name: 'selling_price',
+      label: t('common.enter_selling_price'),
+      type: 'text',
+      placeholder: t('common.enter_selling_price'),
+      required: true,
+    },
+    {
+      name: 'min_price',
+      label: t('common.enter_minimum_price'),
+      type: 'text',
+      placeholder: t('common.enter_minimum_price'),
+      required: true,
+    },
+    {
+      name: 'quantity',
+      label: t('common.quantity'),
+      type: 'text',
+      placeholder: t('common.enter_quantity'),
+      required: true,
+    },
+    {
+      name: 'supplier_write',
+      label: t('common.supplier'),
+      type: 'select',
+      placeholder: t('common.select_supplier'),
+      required: true,
+      options: [], // Will be populated with suppliers
+    },
+    {
+      name: 'color',
+      label: t('common.color'),
+      type: 'text',
+      placeholder: t('common.enter_color'),
+      required: true,
+    },
+  ];
   const createStock = useCreateStock();
   
   // Create mutations
   const createProduct = useCreateProduct();
   const createSupplier = useCreateSupplier();
-  const createMeasurement = useCreateMeasurement();
   
   // State for create new modals
   const [createProductOpen, setCreateProductOpen] = useState(false);
   const [createSupplierOpen, setCreateSupplierOpen] = useState(false);
-  const [createMeasurementOpen, setCreateMeasurementOpen] = useState(false);
   
   // Forms for creating new items
   const productForm = useForm<CreateProductForm>();
   const supplierForm = useForm<CreateSupplierForm>();
-  const measurementForm = useForm<CreateMeasurementForm>();
   
   const form = useForm<FormValues>({
     defaultValues: {
@@ -158,14 +146,14 @@ export default function CreateStock() {
   // Fetch products, stores, measurements, suppliers and categories for the select dropdowns
   const { data: productsData, isLoading: productsLoading } = useGetProducts({});
   const { data: storesData, isLoading: storesLoading } = useGetStores({});
-  const { data: measurementsData, isLoading: measurementsLoading } = useGetMeasurements({});
+
   const { data: suppliersData, isLoading: suppliersLoading } = useGetSuppliers({});
   const { data: categoriesData, isLoading: categoriesLoading } = useGetCategories({});
 
   // Get the products, stores, measurements, suppliers and categories arrays
   const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
-  const measurements = Array.isArray(measurementsData) ? measurementsData : measurementsData?.results || [];
+
   const suppliers = Array.isArray(suppliersData) ? suppliersData : suppliersData?.results || [];
   const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData?.results || [];
   
@@ -178,9 +166,7 @@ export default function CreateStock() {
     setCreateSupplierOpen(true);
   };
   
-  const handleCreateMeasurement = () => {
-    setCreateMeasurementOpen(true);
-  };
+
 
 
   // Effect to update purchase_price_in_uz when its dependencies change
@@ -224,18 +210,7 @@ export default function CreateStock() {
         isLoading: storesLoading
       };
     }
-    if (field.name === 'measurement_write') {
-      return {
-        ...field,
-        options: measurements.map(measurement => ({
-          value: measurement.id,
-          label: measurement.measurement_name
-        })),
-        createNewLabel: t('common.create_new_measurement'),
-        onCreateNew: handleCreateMeasurement,
-        isLoading: measurementsLoading
-      };
-    }
+
     if (field.name === 'supplier_write') {
       return {
         ...field,
@@ -254,7 +229,6 @@ export default function CreateStock() {
   const handleSubmit = async (data: FormValues) => {
     try {
       const quantity = typeof data.quantity === 'string' ? parseInt(data.quantity, 10) : data.quantity!;
-      const measurement = typeof data.measurement_write === 'string' ? parseInt(data.measurement_write, 10) : data.measurement_write!;
       
       // Calculate the UZS price from USD and exchange rate
       const purchasePriceUSD = data.purchase_price_in_us;
@@ -273,10 +247,7 @@ export default function CreateStock() {
         quantity: quantity,
         supplier_write: typeof data.supplier_write === 'string' ? parseInt(data.supplier_write, 10) : data.supplier_write!,
         color: data.color!,
-        measurement_write: [{
-          measurement_write: typeof measurement === 'number' ? measurement : measurement[0].measurement_write,
-          number: quantity
-        }]
+        measurement_write: [] // Empty array since we removed measurement selection
       };
 
       console.log('Submitting data:', formattedData);
@@ -312,16 +283,7 @@ export default function CreateStock() {
     }
   };
 
-  const handleCreateMeasurementSubmit = async (data: CreateMeasurementForm) => {
-    try {
-      await createMeasurement.mutateAsync(data);
-      toast.success(t('common.measurement_created'));
-      setCreateMeasurementOpen(false);
-      measurementForm.reset();
-    } catch (error) {
-      toast.error(t('common.error_creating_measurement'));
-    }
-  };
+
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -415,42 +377,7 @@ export default function CreateStock() {
         </DialogContent>
       </Dialog>
 
-      {/* Create Measurement Modal */}
-      <Dialog open={createMeasurementOpen} onOpenChange={setCreateMeasurementOpen}>
-        <DialogContent>
-          <DialogTitle>{t('common.create_new_measurement')}</DialogTitle>
-          <form onSubmit={measurementForm.handleSubmit(handleCreateMeasurementSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="measurement_name">{t('common.measurement_name')}</Label>
-              <Input
-                id="measurement_name"
-                {...measurementForm.register('measurement_name', { required: true })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="store_write">{t('common.store')}</Label>
-              <Select
-                value={measurementForm.watch('store_write')?.toString()}
-                onValueChange={(value) => measurementForm.setValue('store_write', parseInt(value))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t('common.select_store')} />
-                </SelectTrigger>
-                <SelectContent>
-                  {stores.map((store) => (
-                    <SelectItem key={store.id?.toString() || ''} value={(store.id || 0).toString()}>
-                      {store.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button type="submit" disabled={createMeasurement.isPending}>
-              {t('common.create')}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+
     </div>
   );
 }

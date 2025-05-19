@@ -12,6 +12,7 @@ export interface Product {
   category_write: number;
   store_write?: number;
   measurements?: ProductMeasurement[];
+   measurement?: ProductMeasurement[];
   category_read?: {
     id: number;
     category_name: string;
