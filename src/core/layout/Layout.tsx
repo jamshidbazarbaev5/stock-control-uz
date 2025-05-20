@@ -6,7 +6,8 @@ import {
   Package,
   ArrowLeftRight,
   Menu,
-  X
+  X,
+  UserCheck,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
@@ -49,6 +50,8 @@ export default function Layout({ children }: any) {
   const navItems = [
     { icon: ArrowLeftRight, label: t('navigation.transfers'), href: '/transfers' },
     { icon: Package, label: t('navigation.stocks'), href: '/stock' },
+    { icon: ShoppingBag, label: t('navigation.sale'), href: '/sales' },
+
     {
       icon: Package,
       label: t('navigation.settings'),
@@ -61,6 +64,9 @@ export default function Layout({ children }: any) {
         {icon: ArrowLeftRight, label: t('navigation.recyclings'), href: '/recyclings' },
         { icon: ListView, label: t('navigation.suppliers'), href: '/suppliers' },
         { icon: User2, label: t('navigation.users'), href: '/users' },
+         { icon: ShoppingBag, label: t('navigation.staff'), href: '/staff' },
+           { icon: UserCheck, label: t('navigation.clients'), href: '/clients' },
+            { icon: ShoppingBag, label: t('navigation.debt'), href: '/debts' },
       ]
     },
   ];

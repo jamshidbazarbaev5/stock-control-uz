@@ -25,8 +25,16 @@ import TransfersPage from "./core/pages/TransfersPage";
 import CreateTransfer from "./core/pages/create-transfer";
 import RecyclingsPage from "./core/pages/RecyclingsPage";
 import CreateRecycling from "./core/pages/create-recycling";
+import ClientsPage from "./core/pages/ClientsPage";
+import CreateClient from "./core/pages/create-client";
+import EditClient from "./core/pages/edit-client";
+import SalesPage from "./core/pages/SalesPage";
+import CreateSale from "./core/pages/create-sale";
+import EditSale from "./core/pages/edit-sale";
 import { Toaster } from "sonner";
-
+import DebtsPage from "./core/pages/DebtsPage";
+import StaffPage from "./core/pages/StaffPage";
+import CreateStaff from "./core/pages/create-staff";
 
 const queryClient = new QueryClient()
 
@@ -55,10 +63,19 @@ function App() {
           <Route path="/edit-stock/:id" element={<EditStock />} />
           <Route path="/suppliers" element={<SuppliersPage />} />
           <Route path="/create-supplier" element={<CreateSupplier />} />
+          <Route path="/clients" element={<ClientsPage />} />
+          <Route path="/create-client" element={<CreateClient />} />
+          <Route path="/edit-client/:id" element={<EditClient />} />
           <Route path="/transfers" element={<TransfersPage />} />
           <Route path="/create-transfer" element={<CreateTransfer />} />
           <Route path="/recyclings" element={<RecyclingsPage />} />
           <Route path="/create-recycling" element={<CreateRecycling />} />
+          <Route path="/sales" element={<SalesPage />} />
+          <Route path="/create-sale" element={<CreateSale />} />
+          <Route path="/edit-sale/:id" element={<EditSale />} />
+          <Route path="/debts" element={<DebtsPage />} />
+          <Route path="/staff" element={<StaffPage />} />
+          <Route path="/create-staff" element={<CreateStaff />} />
           <Route path="/" element={<Navigate to="/users" />} />
         </Route>
         <Route path="*" element={<Navigate to="/" />} />

@@ -1,10 +1,18 @@
 {
+  "payment_types": {
+    "cash": "Naqd",
+    "card": "Karta",
+    "click": "Click",
+    "complex": "Quramalı tólem"
+  },
   "common": {
     "save": "Saqlaw",
     "cancel": "Biykarlaw",
     "edit": "Ózgertiw",
     "delete": "Óshiriw",
     "create": "Jaratıw",
+    "active": "Aktiv",
+    "inactive": "Aktiv emes",
     "add": "Qosıw",
     "submit": "Jiberiw",
     "back": "Artqa",
@@ -46,11 +54,24 @@
     "enter_minimum_price": "Min bahasın kiritiń",
     "enter_quantity": "Sanın kiritiń",
     "select_supplier": "Taminleyishini tańlań",
-    "enter_color": "Reńin kiritiń"
+    "enter_color": "Reńin kiritiń",
+    "payment_method": "Tólew usılı",
+    "sale_items": "Satıw pozitsiyaları",
+    "add_item": "Pozitsiya qosıw",
+    "remove": "Alıp taslaw",
+    "on_credit": "Qarzg'a",
+    "client": "Klient",
+    "due_date": "Tólew sánesi",
+    "creating": "Jaratılıp atır",
+    "selling_method": "Satıw usılı",
+    "paid": "Tólendi",
+    "unpaid": "Tólenbegen"
   },
   "navigation": {
+    "debts": "Qarizlar",
     "users": "Paydalanıwshılar",
     "stores": "Dúkanlar",
+    "staff":"Jumisshilar",
     "categories": "Kategoriyalar",
     "products": "Ónimler",
     "stocks": "Kelgenler",
@@ -58,7 +79,9 @@
     "transfers": "Transferler",
     "settings": "Sazlamalar",
     "measurements": "Ólshem birlikleri",
-    "recyclings": "Qayta ishlew"
+    "recyclings": "Qayta ishlew",
+    "clients": "Klientler",
+    "sale": "Satıwlar"
   },
   "auth": {
     "login": "Kiriw",
@@ -69,7 +92,18 @@
     "logging_in": "Kirilip atır...",
     "invalid_credentials": "Nadura málimet"
   },
+  "client": {
+    "individual": "Fizikalıq adam",
+    "corporate": "Yuridikalıq adam"
+  },
   "forms": {
+    "deposit": "Deposit",
+    "store":"Dúkan",
+    "remainder": "Qaldıǵı",
+    "status": "Status",
+    "payment_method": "Tólew",
+    "due_date": "Tólew sánesi",
+    "actions": "Háreketler",
     "from_store": "Qayaqdan",
     "from_product":"Qaysi o'nimden",
     "name": "Atı",
@@ -109,7 +143,13 @@
     "amount": "Muǵdarı",
     "from_stock": "Skladtan",
     "to_store": "Qayaqa",
-    "password": "Parol"
+    "password": "Parol",
+    "client_type": "Klient túri",
+    "company_name": "Kompaniya atı",
+    "ceo_name": "Basshı atı",
+    "balance": "Balans",
+    "status": "Status",
+    "user": "Paydalanıwshı"
   },
   "roles": {
     "owner": "Iyesi",
@@ -119,16 +159,19 @@
     "success": {
       "created": " áwmetli jaratıldı",
       "updated": " áwmetli jańalandı",
-      "deleted": " áwmetli óshirildi"
+      "deleted": " áwmetli óshirildi",
+      "payment_created": "Tólem áwmetli jaratıldı"
     },
     "error": {
       "create": " jaratıw ámelge aspadı",
+      "insufficient_quantity":"Muǵdarı jetkilik emes",
       "update": " jańalaw ámelge aspadı",
       "delete": " óshiriw ámelge aspadı",
       "general": "Qátelik júz berdi",
     "invalid_stock_selection": "Невозможно создать приход на этот склад"
 ,
-      "same_store_transfer": "Bir dúkandaǵı skladlar arasında transfer múmkin emes"
+      "same_store_transfer": "Bir dúkandaǵı skladlar arasında transfer múmkin emes",
+      "payment_create": "Tólem jaratıw ámelge aspadı"
     },
     "confirmation": {
       "delete": "Bul zattı óshiriwge isenimlisiz be?"
@@ -140,6 +183,7 @@
 
   },
   "placeholders": {
+  
     "search_category": "Kategoriyanı izdeń",
     "select_store": "Dúkandı tańlań",
     "select_category": "Kategoriyanı tańlań",
@@ -160,11 +204,19 @@
     "search_product": "Ónim izdeń",
     "search_measurement": "Ólshem birligin izdeń",
     "enter_password": "Paroldi kiritiń",
-    "enter_purchase_price_uzs": "Alıw bahasın UZS da kiritiń"
+    "enter_purchase_price_uzs": "Alıw bahasın UZS da kiritiń",
+    "select_client_type": "Klient túrin tańlań",
+    "enter_company_name": "Kompaniya atın kiritiń",
+    "enter_ceo_name": "Basshı atın kiritiń",
+    "enter_balance": "Balanstı kiritiń",
+    "select_client": "Klientti tańlań",
+    "enter_amount": "Muǵdarın kiritiń",
+    "select_user": "Paydalanıwshını tańlań"
   },
   "table": {
     "number": "№",
     "to_stock":"Skladǵa",
+    "staff":"Jumisshilar",
     "from_product":"Qaysi o'nimden",
     "measurements":"Ólshemler",
     "name": "Atı",
@@ -188,6 +240,11 @@
     "date": "Sáne",
     "purchase_price_uz": "Alıw bahası (UZS)",
     "purchase_price_us": "Alıw bahası (USD)",
-    "exchange_rate": "Kurs"
+    "exchange_rate": "Kurs",
+    "payment_method": "Tólew usılı",
+    "items": "Pozitsiyalar",
+    "on_credit": "Kreditke",
+    "due_date": "Tólew sánesi",
+    "client": "Klient"
   }
 }
