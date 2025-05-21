@@ -13,8 +13,7 @@ export default function SalesPage() {
   const { data: salesData, isLoading } = useGetSales({ 
     params: { 
       page,
-      page_size: 10,
-      ordering: '-created_at'
+        
     }
   });
 
@@ -23,6 +22,25 @@ export default function SalesPage() {
   // Get sales array and total count
   const sales = Array.isArray(salesData) ? salesData : salesData?.results || [];
   const totalCount = Array.isArray(salesData) ? sales.length : salesData?.count || 0;
+
+  const formatCurrency = (amount: string | number) => {
+    return new Intl.NumberFormat('ru-RU').format(Number(amount));
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      // Parse the ISO date string
+      const date = new Date(dateString);
+      // Format the date
+      return date.toLocaleDateString('ru-RU', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+    } catch (error) {
+      return '-';
+    }
+  };
 
   const columns = [
     {
@@ -37,7 +55,25 @@ export default function SalesPage() {
     {
       header: t('table.items'),
       accessorKey: 'sale_items',
-      cell: (row: Sale) => row.sale_items?.length || 0,
+      cell: (row: Sale) => {
+        if (!row.sale_items?.length) return '0';
+        const itemsText = row.sale_items.map(item => {
+          const product = item.stock_read?.product_read?.product_name || '-';
+          const quantity = item.quantity;
+          const method = item.selling_method;
+          return `${quantity} ${method} ${product}`;
+        }).join(' • ');
+        return (
+          <div className="whitespace-pre-wrap text-sm">
+            {itemsText}
+          </div>
+        );
+      },
+    },
+    {
+      header: t('table.total_amount'),
+      accessorKey: 'total_amount',
+      cell: (row: Sale) => formatCurrency(row.total_amount) + ' UZS',
     },
     {
       header: t('table.on_credit'),
@@ -52,12 +88,12 @@ export default function SalesPage() {
     {
       header: t('table.due_date'),
       accessorKey: 'sale_debt',
-      cell: (row: Sale) => row.sale_debt?.due_date || '-',
+      cell: (row: Sale) => row.sale_debt?.due_date ? formatDate(row.sale_debt.due_date) : '-',
     },
     {
       header: t('table.date'),
       accessorKey: 'created_at',
-      cell: (row: Sale) => new Date(row.created_at || '').toLocaleDateString(),
+      cell: (row: Sale) => row.created_at ? formatDate(row.created_at) : '-',
     },
   ];
 
@@ -82,6 +118,7 @@ export default function SalesPage() {
         columns={columns}
         isLoading={isLoading}
         onDelete={handleDelete}
+        onEdit={(row: Sale) => navigate(`/edit-sale/${row.id}`)}
         onAdd={() => navigate('/create-sale')}
         pageSize={10}
         totalCount={totalCount}

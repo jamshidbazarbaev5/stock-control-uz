@@ -94,13 +94,25 @@
   },
   "client": {
     "individual": "Fizikalıq adam",
-    "corporate": "Yuridikalıq adam"
+    "corporate": "Yuridikalıq adam",
+    "type": {
+      "Физ.лицо": "Fiz.adam",
+      "Юр.лицо": "Yur.adam"
+    }
+  },
+  "validation": {
+    "amount_exceeds_remainder": "Summa qalǵan summadan artıq bolmawı kerek"
   },
   "forms": {
+    "history": "Tarix",
+    "amount2":" Summa",
+    "payment_date":" Tólem sanesi",
     "deposit": "Deposit",
+    "total_aamout": "Jami summa",
     "store":"Dúkan",
     "remainder": "Qaldıǵı",
     "status": "Status",
+    "date_joined": "Qosılǵan sanesi",
     "payment_method": "Tólew",
     "due_date": "Tólew sánesi",
     "actions": "Háreketler",

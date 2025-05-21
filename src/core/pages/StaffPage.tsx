@@ -13,10 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ResourceForm } from '../helpers/ResourceForm';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useGetUsers } from '../api/user';
 
 interface StaffFormData {
-  is_active: boolean;
-  store: number;
+  is_active: string | boolean;  // Can be string from form or boolean from API
+  store: number | string;  // Can be string from form or number from API
+  user: number | string;   // Can be string from form or number from API
 }
 
 export default function StaffPage() {
@@ -78,7 +80,22 @@ export default function StaffPage() {
     },
   ];
 
+  const { data: usersData } = useGetUsers({});
+  const users = Array.isArray(usersData) ? usersData : usersData?.results || [];
+  const userOptions = users.map(user => ({
+    value: user.id,
+    label: `${user.name} (${user.phone_number})`
+  }));
+
   const staffFields = [
+    {
+      name: 'user',
+      label: t('forms.user'),
+      type: 'select',
+      placeholder: t('placeholders.select_user'),
+      required: true,
+      options: userOptions
+    },
     {
       name: 'store',
       label: t('forms.store'),
@@ -101,7 +118,21 @@ export default function StaffPage() {
   ];
 
   const handleEdit = (staff: Staff) => {
-    setEditingStaff(staff);
+    if (!staff.user_read?.id || !staff.store_read?.id) {
+      toast.error(t('messages.error.invalid_data'));
+      return;
+    }
+    
+    // Prepare form data with the exact fields our form needs
+    const formData = {
+      user: staff.user_read.id,
+      store: staff.store_read.id,
+      is_active: staff.is_active,  // Keep as boolean
+      id: staff.id,
+      date_joined: staff.date_joined,
+    };
+
+    setEditingStaff(formData);
     setIsFormOpen(true);
   };
 
@@ -109,10 +140,15 @@ export default function StaffPage() {
     if (!editingStaff) return;
 
     try {
+      // Convert string values to numbers and remove the mixed-type properties
+      const store = typeof data.store === 'string' ? parseInt(data.store) : data.store;
+      const user = typeof data.user === 'string' ? parseInt(data.user) : data.user;
+      
       await updateStaff.mutateAsync({
         ...editingStaff,
-        ...data,
-        store: typeof data.store === 'string' ? parseInt(data.store) : data.store,
+        store_write: store,
+        user_write: user,
+        is_active: Boolean(data.is_active),
       });
       toast.success(t('messages.success.updated', { item: t('navigation.staff') }));
       setIsFormOpen(false);

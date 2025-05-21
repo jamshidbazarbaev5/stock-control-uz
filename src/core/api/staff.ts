@@ -7,6 +7,8 @@ export interface Staff {
   date_joined: string;
   store: number;
   user: number;
+  user_write?:string | number;
+  store_write?:number,
   store_read?: {
     id: number;
     name: string;

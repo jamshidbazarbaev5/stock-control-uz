@@ -5,6 +5,9 @@
     "click": "Click",
     "complex": "Сложная оплата"
   },
+  "pages": {
+    "payment_history": "История платежей"
+  },
   "common": {
     "save": "Сохранить",
     "cancel": "Отменить",
@@ -83,7 +86,14 @@
   },
   "client": {
     "individual": "Физическое лицо",
-    "corporate": "Юридическое лицо"
+    "corporate": "Юридическое лицо",
+    "type": {
+      "Физ.лицо": "Физ.лицо",
+      "Юр.лицо": "Юр.лицо"
+    }
+  },
+  "validation": {
+    "amount_exceeds_remainder": "Сумма не может превышать остаток"
   },
   "auth": {
     "login": "Войти",
@@ -96,6 +106,13 @@
   },
   "forms": {
     "name": "Имя",
+    "history":"История ",
+    "amount2":" Сумма",
+    "payment_date":"Дата платежа",
+    "client_name":"Имя клиента",
+    "created_date":"Дата создания",
+    "total_amount": "Общая сумма",
+    "date_joined":"Дата ",
     "store_type": "Тип магазина",
     "payment_method": "Оплатить",
     "store":"Магазин",

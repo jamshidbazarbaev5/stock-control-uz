@@ -11,6 +11,7 @@ import {
 import { useGetDebts, useCreateDebtPayment, type Debt } from '../api/debt';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { ResourceTable } from '../helpers/ResourseTable';
+import { useNavigate } from 'react-router-dom';
 
 interface PaymentFormData {
   amount: number;
@@ -18,6 +19,7 @@ interface PaymentFormData {
 
 export default function DebtsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -28,20 +30,49 @@ export default function DebtsPage() {
 
   const columns = [
     {
+      accessorKey: 'client_read.name',
+      header: t('forms.client_name'),
+      cell: (debt: Debt) => (
+        <div>
+          <div>
+            {debt.client_read.name}{' '}
+            <span className="text-gray-500">({t(`${debt.client_read.type}`)})</span>
+          </div>
+          <div className="text-sm text-gray-500">
+            {debt.client_read.phone_number}
+          </div>
+        </div>
+      ),
+    },
+
+    {
       accessorKey: 'total_amount',
-      header: t('forms.amount'),
+      header: t('forms.total_amount'),
+      cell: (debt: Debt) => debt.total_amount?.toLocaleString(),
     },
     {
       accessorKey: 'deposit',
       header: t('forms.deposit'),
+      cell: (debt: Debt) => debt.deposit?.toLocaleString(),
     },
     {
       accessorKey: 'remainder',
       header: t('forms.remainder'),
+      cell: (debt: Debt) => (
+        <span className={debt.remainder < 0 ? 'text-green-600' : 'text-red-600'}>
+          {debt.remainder?.toLocaleString()}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'created_at',
+      header: t('forms.created_date'),
+      cell: (debt: Debt) => new Date(debt.created_at).toLocaleDateString(),
     },
     {
       accessorKey: 'due_date',
       header: t('forms.due_date'),
+      cell: (debt: Debt) => new Date(debt.due_date).toLocaleDateString(),
     },
     {
       accessorKey: 'is_paid',
@@ -56,17 +87,25 @@ export default function DebtsPage() {
       accessorKey: 'actions',
       header: t('forms.actions'),
       cell: (debt: Debt) => (
-        <button
-          onClick={() => handlePayClick(debt)}
-          disabled={debt.is_paid || debt.remainder === 0}
-          className={`px-3 py-1 rounded ${
-            debt.is_paid || debt.remainder === 0
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-500 hover:bg-blue-600 text-white'
-          }`}
-        >
-          {t('forms.payment_method')}
-        </button>
+        <div className="space-x-2">
+          <button
+            onClick={() => handlePayClick(debt)}
+            disabled={debt.is_paid || debt.remainder <= 0}
+            className={`px-3 py-1 rounded ${
+              debt.is_paid || debt.remainder <= 0
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            }`}
+          >
+            {t('forms.payment_method')}
+          </button>
+          <button
+            onClick={() => navigate(`/debts/${debt.id}/history`)}
+            className="px-3 py-1 rounded bg-green-500 hover:bg-green-600 text-white"
+          >
+            {t('forms.history')}
+          </button>
+        </div>
       ),
     },
   ];
@@ -102,6 +141,10 @@ export default function DebtsPage() {
       type: 'number',
       placeholder: t('placeholders.enter_amount'),
       required: true,
+      validation: {
+        max: selectedDebt?.remainder || 0,
+        message: t('validation.amount_exceeds_remainder'),
+      },
     },
   ];
 

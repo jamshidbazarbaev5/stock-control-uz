@@ -13,19 +13,33 @@ interface SaleDebt {
 }
 
 interface SaleItem {
+  id?: number;
   stock: number;
+  stock_read?: {
+    id: number;
+    product_read?: {
+      id: number;
+      product_name: string;
+      category_read?: {
+        id: number;
+        category_name: string;
+      };
+    };
+  };
   selling_method: 'Штук' | 'Ед.измерения';
-  quantity: number;
+  quantity: string;
+  subtotal: string;
 }
 
 export interface Sale {
   id?: number;
-  store: number;
+  store?: number;
   store_read?: {
     id: number;
     name: string;
     address: string;
     phone_number: string;
+    created_at: string;
     is_main: boolean;
     parent_store: number | null;
     owner: number;
@@ -34,6 +48,7 @@ export interface Sale {
   sale_items: SaleItem[];
   on_credit: boolean;
   sale_debt?: SaleDebt;
+  total_amount: string;
   created_at?: string;
 }
 
