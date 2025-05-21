@@ -6,6 +6,8 @@
     "complex": "Quramalı tólem"
   },
   "common": {
+    "details": "Tovar haqqinda ",
+    "on_credit": "Qarzg'a",
     "save": "Saqlaw",
     "cancel": "Biykarlaw",
     "edit": "Ózgertiw",
@@ -56,6 +58,7 @@
     "select_supplier": "Taminleyishini tańlań",
     "enter_color": "Reńin kiritiń",
     "payment_method": "Tólew usılı",
+
     "sale_items": "Satıw pozitsiyaları",
     "add_item": "Pozitsiya qosıw",
     "remove": "Alıp taslaw",
@@ -65,7 +68,9 @@
     "creating": "Jaratılıp atır",
     "selling_method": "Satıw usılı",
     "paid": "Tólendi",
-    "unpaid": "Tólenbegen"
+    "paid2":"Qarzg'a emes",
+    "unpaid": "Tólenbegen",
+    "close":"Jabuw"
   },
   "navigation": {
     "debts": "Qarizlar",
@@ -106,6 +111,7 @@
   "forms": {
     "history": "Tarix",
     "amount2":" Summa",
+    "amount3":" Jami summa",
     "payment_date":" Tólem sanesi",
     "deposit": "Deposit",
     "total_aamout": "Jami summa",
@@ -227,6 +233,9 @@
   },
   "table": {
     "number": "№",
+    "price":"Bahası",
+    "total_amount": "Jami summa",
+    "status":"Status",
     "to_stock":"Skladǵa",
     "staff":"Jumisshilar",
     "from_product":"Qaysi o'nimden",
@@ -254,7 +263,7 @@
     "purchase_price_us": "Alıw bahası (USD)",
     "exchange_rate": "Kurs",
     "payment_method": "Tólew usılı",
-    "items": "Pozitsiyalar",
+    "items": "Tovarlar",
     "on_credit": "Kreditke",
     "due_date": "Tólew sánesi",
     "client": "Klient"

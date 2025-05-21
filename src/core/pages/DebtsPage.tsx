@@ -142,8 +142,14 @@ export default function DebtsPage() {
       placeholder: t('placeholders.enter_amount'),
       required: true,
       validation: {
-        max: selectedDebt?.remainder || 0,
-        message: t('validation.amount_exceeds_remainder'),
+        min: {
+          value: 0.01,
+          message: t('validation.amount_must_be_positive')
+        },
+        max: {
+          value: selectedDebt?.remainder || 0,
+          message: t('validation.amount_exceeds_remainder')
+        },
       },
     },
   ];

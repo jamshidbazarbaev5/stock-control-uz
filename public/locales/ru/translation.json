@@ -9,6 +9,9 @@
     "payment_history": "История платежей"
   },
   "common": {
+    "actions":"Действия",
+    "details": "Детали",
+    "on_credit": "В долг",
     "save": "Сохранить",
     "cancel": "Отменить",
     "edit": "Редактировать",
@@ -65,6 +68,8 @@
     "creating": "Создание...",
     "updating": "Обновление...",
     "paid": "Оплачено",
+    "paid2":"Не в долг",
+    "close":"Закрыть",
     "unpaid": "Неоплачено"
   },
   "navigation": {
@@ -106,6 +111,7 @@
   },
   "forms": {
     "name": "Имя",
+    "amount3":" Общая Сумма",
     "history":"История ",
     "amount2":" Сумма",
     "payment_date":"Дата платежа",
@@ -231,6 +237,9 @@
     "select_user": "Выберите пользователя"
   },
   "table": {
+    "price":"Цена",
+    "total_amount":"Общая сумма",
+    "status":"Статус",
     "number": "№",
     "supplier":"Поставщик",
     "min_price":"Минимальная цена",
@@ -246,12 +255,13 @@
     "category": "Категория",
     "store": "Магазин",
     "payment_method": "Способ оплаты",
-    "items": "Позиции",
+    "items": "Товары",
     "on_credit": "В долг",
     "client": "Клиент",
     "due_date": "Срок оплаты",
     "product": "Товар",
     "quantity": "Количество",
+
     "pieces": "Штук",
     "measurement": "Ед.измерения",
     "actions": "Действия",

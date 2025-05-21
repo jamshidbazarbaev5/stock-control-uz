@@ -3,7 +3,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { useLanguage } from "@/core/context/LanguageContext";
 
@@ -13,11 +12,19 @@ export const LanguageSwitcher = () => {
   return (
     <Select value={currentLanguage} onValueChange={changeLanguage}>
       <SelectTrigger size="sm">
-        <SelectValue placeholder="Select language" />
+        <span className={`fi ${currentLanguage === 'ru' ? 'fi-ru' : 'fi-kaa'}`}></span>
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="ru">Русский</SelectItem>
-        <SelectItem value="kaa">Қарақалпақ</SelectItem>
+        <SelectItem value="ru">
+          <div className="flex items-center">
+            <span className="fi fi-ru"></span>
+          </div>
+        </SelectItem>
+        <SelectItem value="kaa">
+          <div className="flex items-center">
+            <span className="fi fi-kaa"></span>
+          </div>
+        </SelectItem>
       </SelectContent>
     </Select>
   );

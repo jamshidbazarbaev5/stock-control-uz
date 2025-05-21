@@ -1,5 +1,24 @@
 @import "tailwindcss";
-/* @import "tw-animate-css"; */
+@import "flag-icons/css/flag-icons.min.css";
+
+/* Custom flag for Karakalpak */
+.fi-kaa {
+  background: linear-gradient(to bottom,
+    #0066FF 33.33%,  /* Blue */
+    #FFDF00 33.33%, #FFDF00 66.66%,  /* Yellow */
+    #009900 66.66%  /* Green */
+  );
+  display: inline-block;
+  width: 1.3333em;
+  line-height: 1em;
+  position: relative;
+  height: 1em;
+  vertical-align: middle;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: 50%;
+  border-radius: 0.15em;
+}
 
 @custom-variant dark (&:is(.dark *));
 
