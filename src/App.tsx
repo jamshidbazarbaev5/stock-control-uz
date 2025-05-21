@@ -29,7 +29,7 @@ import ClientsPage from "./core/pages/ClientsPage";
 import CreateClient from "./core/pages/create-client";
 import EditClient from "./core/pages/edit-client";
 import SalesPage from "./core/pages/SalesPage";
-import CreateSale from "./core/pages/create-sale";
+// import CreateSale from "./core/pages/create-sale";
 
 import { Toaster } from "sonner";
 import DebtsPage from "./core/pages/DebtsPage";
@@ -72,7 +72,7 @@ function App() {
             <Route path="/recyclings" element={<RecyclingsPage />} />
             <Route path="/create-recycling" element={<CreateRecycling />} />
             <Route path="/sales" element={<SalesPage />} />
-            <Route path="/create-sale" element={<CreateSale />} />
+            {/* <Route path="/create-sale" element={<CreateSale />} /> */}
             {/* <Route path="/edit-sale/:id" element={<EditSale />} /> */}
             <Route path="/debts" element={<DebtsPage />} />
             <Route path="/debts/:id/history" element={<DebtPaymentHistoryPage />} />
