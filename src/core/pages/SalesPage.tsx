@@ -26,7 +26,7 @@ export default function SalesPage() {
   const deleteSale = useDeleteSale();
 
   // Get sales array and total count
-  const sales = Array.isArray(salesData) ? salesData : salesData?.results || [];
+  const  sales = Array.isArray(salesData) ? salesData : salesData?.results || [];
   const totalCount = Array.isArray(salesData) ? sales.length : salesData?.count || 0;
 
   const formatCurrency = (amount: string | number) => {

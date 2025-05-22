@@ -24,10 +24,12 @@ import { useGetStores } from '../api/store';
 import { useGetStocks } from '../api/stock';
 import { useGetClients } from '../api/client';
 import { useGetSale, useUpdateSale } from '../api/sale';
+import { Wallet, CreditCard, SmartphoneNfc, AlertCircle } from 'lucide-react';
 
 interface SaleItem {
   id?: number;
   stock: number;
+  stock_write?: number;
   stock_read?: {
     id: number;
     product_read?: {
@@ -47,6 +49,7 @@ interface SaleItem {
 
 interface SaleFormData {
   store: number;
+  store_write?: number;
   payment_method: string;
   sale_items: SaleItem[];
   on_credit: boolean;
@@ -80,7 +83,6 @@ export default function EditSale() {
   const { data: storesData } = useGetStores({});
   const { data: stocksData } = useGetStocks({});
   const { data: clientsData } = useGetClients({});
-
   const updateSale = useUpdateSale();
 
   // Prepare data arrays
@@ -99,16 +101,14 @@ export default function EditSale() {
 
   // Initialize form with sale data
   useEffect(() => {
-    if (!sale) return;
-
-    console.log('Sale data received:', sale);
+    if (!sale || !stocks.length) return;
 
     const formData = {
-      store: sale.store_read?.id || 0,
+      store_write: sale.store_read?.id || 0,
       payment_method: sale.payment_method,
       sale_items: sale.sale_items.map(item => ({
         id: item.id,
-        stock: item.stock_read?.id || 0,
+        stock_write: item.stock_read?.id || 0,
         stock_read: item.stock_read,
         selling_method: item.selling_method,
         quantity: item.quantity || "1",
@@ -122,12 +122,10 @@ export default function EditSale() {
       total_amount: sale.total_amount || "0"
     };
 
-    console.log('Setting form data:', formData);
-
-    // First set the store and stocks
+    // First set the store
     setSelectedStore(sale.store_read?.id || null);
     
-    // Then set the stocks quantities
+    // Then set the stocks quantities in one update
     const stocksMap = sale.sale_items.reduce<{[key: number]: number}>((acc, item, index) => {
       if (item.stock_read?.id) {
         const stockQuantity = stocks.find(s => s.id === item.stock_read?.id)?.quantity;
@@ -137,13 +135,15 @@ export default function EditSale() {
       }
       return acc;
     }, {});
-    setSelectedStocks(stocksMap);
-
-    // Finally reset the form
-    form.reset(formData);
-
-    console.log('Form values after reset:', form.getValues());
-  }, [sale, stocks]);
+    
+    // Batch the state updates
+    const batchUpdates = () => {
+      setSelectedStocks(stocksMap);
+      form.reset(formData);
+    };
+    
+    batchUpdates();
+  }, [sale?.id, stocks.length]); // Only depend on sale.id and stocks.length
 
   // Filter stocks by selected store
   const filteredStocks = stocks.filter(stock => stock.store_read?.id === selectedStore);
@@ -165,49 +165,59 @@ export default function EditSale() {
   const handleStockSelection = (value: string, index: number) => {
     const stockId = parseInt(value, 10);
     const selectedStock = filteredStocks.find(stock => stock.id === stockId);
+    const currentQuantity = form.getValues(`sale_items.${index}.quantity`);
     
+    // Set form values individually
+    form.setValue(`sale_items.${index}.stock` as const, stockId, { shouldDirty: true });
+    form.setValue(`sale_items.${index}.stock_read` as const, selectedStock, { shouldDirty: true });
+    form.setValue(`sale_items.${index}.subtotal` as const, calculateSubtotal(stockId, currentQuantity), { shouldDirty: true });
+
     setSelectedStocks(prev => ({
       ...prev,
       [index]: selectedStock?.quantity || 0
     }));
     
-    form.setValue(`sale_items.${index}.stock`, stockId);
-    form.setValue(`sale_items.${index}.stock_read`, selectedStock);
-    const quantity = form.getValues(`sale_items.${index}.quantity`);
-    const subtotal = calculateSubtotal(stockId, quantity);
-    form.setValue(`sale_items.${index}.subtotal`, subtotal);
-    
-    // Update total amount
+    // Calculate and update total amount
     const items = form.getValues('sale_items');
-    form.setValue('total_amount', calculateTotal(items));
+    const total = calculateTotal(items);
+    form.setValue('total_amount', total, { shouldDirty: true });
   };
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const quantity = e.target.value;
     const stockId = form.getValues(`sale_items.${index}.stock`);
-    const maxQuantity = selectedStocks[index];
+    const maxQuantity = selectedStocks[index] || 0;
     
+    let finalQuantity = quantity;
     if (Number(quantity) > maxQuantity) {
       toast.error(t('messages.error.insufficient_quantity'));
-      form.setValue(`sale_items.${index}.quantity`, maxQuantity.toString());
-      const subtotal = calculateSubtotal(stockId, maxQuantity.toString());
-      form.setValue(`sale_items.${index}.subtotal`, subtotal);
-    } else {
-      form.setValue(`sale_items.${index}.quantity`, quantity);
-      const subtotal = calculateSubtotal(stockId, quantity);
-      form.setValue(`sale_items.${index}.subtotal`, subtotal);
+      finalQuantity = maxQuantity.toString();
     }
-    
-    // Update total amount
+
+    // Set form values individually
+    form.setValue(`sale_items.${index}.quantity` as const, finalQuantity, { shouldDirty: true });
+    form.setValue(`sale_items.${index}.subtotal` as const, calculateSubtotal(stockId, finalQuantity), { shouldDirty: true });
+
+    // Calculate and update total amount
     const items = form.getValues('sale_items');
-    form.setValue('total_amount', calculateTotal(items));
+    const total = calculateTotal(items);
+    form.setValue('total_amount', total, { shouldDirty: true });
   };
 
   const handleSubmit = async (data: SaleFormData) => {
     if (!id) return;
     
     try {
-      await updateSale.mutateAsync({ id: Number(id), ...data });
+      // Transform the data to match API requirements
+      const transformedData = {
+        ...data,
+        store_write: data.store,
+        sale_items: data.sale_items.map(item => ({
+          ...item,
+          stock_write: item.stock
+        }))
+      };
+      await updateSale.mutateAsync({ id: Number(id), ...transformedData });
       toast.success(t('messages.success.updated', { item: t('navigation.sale') }));
       navigate('/sales');
     } catch (error) {
@@ -255,7 +265,17 @@ export default function EditSale() {
   return (
     <div className="container mx-auto py-8 px-4">
       <Card className="p-6">
-        <h1 className="text-2xl font-bold mb-6">{t('common.edit_sale')}</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">{t('common.edit_sale')}</h1>
+          <div className="flex items-center gap-2">
+            {sale.on_credit && (
+              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {t('common.on_credit')}
+              </span>
+            )}
+          </div>
+        </div>
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -298,19 +318,44 @@ export default function EditSale() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('table.payment_method')}</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Наличные">{t('common.cash')}</SelectItem>
-                      <SelectItem value="Карта">{t('common.card')}</SelectItem>
-                      <SelectItem value="Перечисление">{t('common.bank_transfer')}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="grid grid-cols-3 gap-4">
+                    <button
+                      type="button"
+                      className={`flex items-center justify-center gap-2 p-3 rounded-lg border transition-all ${
+                        field.value === 'Наличные'
+                          ? 'border-green-500 bg-green-50 text-green-600'
+                          : 'border-gray-200 hover:border-green-500 hover:bg-green-50'
+                      }`}
+                      onClick={() => field.onChange('Наличные')}
+                    >
+                      <Wallet className={`h-5 w-5 ${field.value === 'Наличные' ? 'text-green-500' : 'text-gray-400'}`} />
+                      <span>{t('payment_types.cash')}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`flex items-center justify-center gap-2 p-3 rounded-lg border transition-all ${
+                        field.value === 'Карта'
+                          ? 'border-blue-500 bg-blue-50 text-blue-600'
+                          : 'border-gray-200 hover:border-blue-500 hover:bg-blue-50'
+                      }`}
+                      onClick={() => field.onChange('Карта')}
+                    >
+                      <CreditCard className={`h-5 w-5 ${field.value === 'Карта' ? 'text-blue-500' : 'text-gray-400'}`} />
+                      <span>{t('payment_types.card')}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`flex items-center justify-center gap-2 p-3 rounded-lg border transition-all ${
+                        field.value === 'Click'
+                          ? 'border-purple-500 bg-purple-50 text-purple-600'
+                          : 'border-gray-200 hover:border-purple-500 hover:bg-purple-50'
+                      }`}
+                      onClick={() => field.onChange('Click')}
+                    >
+                      <SmartphoneNfc className={`h-5 w-5 ${field.value === 'Click' ? 'text-purple-500' : 'text-gray-400'}`} />
+                      <span>{t('payment_types.click')}</span>
+                    </button>
+                  </div>
                 </FormItem>
               )}
             />
@@ -319,13 +364,13 @@ export default function EditSale() {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-semibold">{t('common.sale_items')}</h2>
-                <Button type="button" onClick={addSaleItem}>
+                <Button type="button" onClick={addSaleItem} variant="outline" size="sm">
                   {t('common.add_item')}
                 </Button>
               </div>
 
               {form.watch('sale_items')?.map((item: SaleItem, index: number) => (
-                <div key={index} className="grid grid-cols-3 gap-4 p-4 border rounded-lg">
+                <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-gray-50">
                   <FormField
                     control={form.control}
                     name={`sale_items.${index}.stock`}
@@ -382,30 +427,33 @@ export default function EditSale() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>{t('table.quantity')}</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="1"
-                            max={selectedStocks[index] || 1}
-                            placeholder={t('placeholders.enter_quantity')}
-                            {...field}
-                            onChange={(e) => handleQuantityChange(e, index)}
-                          />
-                        </FormControl>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="1"
+                              max={selectedStocks[index] || 1}
+                              placeholder={t('placeholders.enter_quantity')}
+                              {...field}
+                              onChange={(e) => handleQuantityChange(e, index)}
+                              className="flex-1"
+                            />
+                          </FormControl>
+                          {index > 0 && (
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              onClick={() => removeSaleItem(index)}
+                            >
+                              ×
+                            </Button>
+                          )}
+                        </div>
+                       
                       </FormItem>
                     )}
                   />
-
-                  {index > 0 && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={() => removeSaleItem(index)}
-                      className="mt-8"
-                    >
-                      {t('common.remove')}
-                    </Button>
-                  )}
                 </div>
               ))}
             </div>
@@ -417,13 +465,10 @@ export default function EditSale() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('table.total_amount')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="text"
-                      readOnly
-                      {...field}
-                    />
-                  </FormControl>
+                  <div className="text-2xl font-bold text-emerald-600">
+                    {Number(field.value).toLocaleString('ru-RU')} UZS
+                  </div>
+                  
                 </FormItem>
               )}
             />
@@ -434,13 +479,18 @@ export default function EditSale() {
               name="on_credit"
               render={({ field }) => (
                 <FormItem>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-2 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                       onClick={() => field.onChange(!field.value)}>
                     <input
                       type="checkbox"
                       checked={field.value}
                       onChange={field.onChange}
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                     />
-                    <FormLabel>{t('table.on_credit')}</FormLabel>
+                    <div className="flex-1">
+                      <FormLabel className="font-medium text-gray-900">{t('table.on_credit')}</FormLabel>
+                      {/* <p className="text-sm text-gray-500">{t('common.credit_description')}</p> */}
+                    </div>
                   </div>
                 </FormItem>
               )}
@@ -448,7 +498,15 @@ export default function EditSale() {
 
             {/* Credit Details */}
             {isOnCredit && (
-              <div className="space-y-4">
+              <div className="space-y-4 p-4 border rounded-lg bg-amber-50 border-amber-200">
+                <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                  {/* {t('common.credit_details')} */}
+                  <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {t('common.on_credit')}
+                  </span>
+                </h3>
+
                 <FormField
                   control={form.control}
                   name="sale_debt.client"
@@ -493,7 +551,7 @@ export default function EditSale() {
             )}
 
             {/* Submit Button */}
-            <div className="flex justify-end space-x-4">
+            <div className="flex justify-end space-x-4 pt-4 mt-6 border-t">
               <Button 
                 type="button" 
                 variant="outline"
@@ -501,8 +559,12 @@ export default function EditSale() {
               >
                 {t('common.cancel')}
               </Button>
-              <Button type="submit">
-                {t('common.save')}
+              <Button 
+                type="submit"
+                className="bg-primary hover:bg-primary/90"
+                disabled={updateSale.isPending}
+              >
+                {updateSale.isPending ? t('common.updating') : t('common.save')}
               </Button>
             </div>
           </form>

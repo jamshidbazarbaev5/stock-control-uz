@@ -8,13 +8,7 @@ import { useGetProducts } from '../api/product';
 import { useGetStores } from '../api/store';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
-import { useEffect } from 'react';
-
-interface FormValues extends Partial<Recycling> {
-  purchase_price_in_us: number;
-  exchange_rate: number;
-  purchase_price_in_uz: number;
-}
+interface FormValues extends Partial<Recycling> {}
 
 
 const recyclingFields = (t:any)=> [
@@ -25,7 +19,7 @@ const recyclingFields = (t:any)=> [
     placeholder: t('placeholders.select_product'),
     required: true,
     options: [], // Will be populated with stocks
-  },
+  }, 
   {
     name: 'to_product',
     label: t('table.to_product'),
@@ -45,44 +39,16 @@ const recyclingFields = (t:any)=> [
   {
     name: 'spent_amount',
     label: t('table.spent_amount'),
-    type: 'text',
+    type: 'number',
     placeholder: t('placeholders.enter_quantity'),
     required: true,
   },
   {
     name: 'get_amount',
     label: t('table.get_amount'),
-    type: 'text',
+    type: 'number',
     placeholder: t('placeholders.enter_quantity'),
     required: true,
-  },
-  {
-    name: 'date_of_recycle',
-    label: t('table.date'),
-    type: 'date',
-    placeholder: t('placeholders.select_date'),
-    required: true,
-  },
-  {
-    name: 'purchase_price_in_us',
-    label: t('forms.purchase_price_usd'),
-    type: 'number',
-    placeholder: t('placeholders.enter_price'),
-    required: true,
-  },
-  {
-    name: 'exchange_rate',
-    label: t('forms.exchange_rate'),
-    type: 'number',
-    placeholder: t('placeholders.enter_exchange_rate'),
-    required: true,
-  },
-  {
-    name: 'purchase_price_in_uz',
-    label: t('forms.purchase_price_uzs'),
-    type: 'number',
-    placeholder: t('table.purchase_price_uz'),
-    readOnly: true,
   },
   {
     name: 'selling_price',
@@ -98,11 +64,15 @@ const recyclingFields = (t:any)=> [
     placeholder: t('placeholders.enter_price'),
     required: true,
   },
+  
+  
+  
+ 
   {
-    name: 'color',
-    label: t('forms.color'),
-    type: 'text',
-    placeholder: t('placeholders.enter_color'),
+    name: 'date_of_recycle',
+    label: t('table.date'),
+    type: 'date',
+    placeholder: t('placeholders.select_date'),
     required: true,
   },
 ];
@@ -113,16 +83,9 @@ export default function CreateRecycling() {
   const { t } = useTranslation();
   const form = useForm<FormValues>({
     defaultValues: {
-      purchase_price_in_us: 0,
-      exchange_rate: 0,
-      purchase_price_in_uz: 0,
       date_of_recycle: new Date().toISOString().split('T')[0], // Today's date
     }
   });
-
-  // Watch fields for USD price calculation
-  const usdPrice = form.watch('purchase_price_in_us');
-  const exchangeRate = form.watch('exchange_rate');
 
   // Fetch data for dropdowns
   const { data: stocksData } = useGetStocks();
@@ -133,14 +96,6 @@ export default function CreateRecycling() {
   const stocks = Array.isArray(stocksData) ? stocksData : stocksData?.results || [];
   const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
-
-  // Update UZS price when USD price or exchange rate changes
-  useEffect(() => {
-    if (usdPrice && exchangeRate) {
-      const calculatedPrice = usdPrice * exchangeRate;
-      form.setValue('purchase_price_in_uz', calculatedPrice);
-    }
-  }, [usdPrice, exchangeRate, form]);
 
   // Update fields with dynamic options
   const fields = recyclingFields(t).map(field => {
@@ -176,19 +131,16 @@ export default function CreateRecycling() {
 
   const handleSubmit = async (data: FormValues) => {
     try {
-      const formattedData: Recycling = {
-        from_to: typeof data.from_to === 'string' ? parseInt(data.from_to, 10) : data.from_to!,
-        to_product: typeof data.to_product === 'string' ? parseInt(data.to_product, 10) : data.to_product!,
-        store: typeof data.store === 'string' ? parseInt(data.store, 10) : data.store!,
-        purchase_price_in_us: data.purchase_price_in_us,
-        purchase_price_in_uz: data.purchase_price_in_uz,
-        exchange_rate: data.exchange_rate,
-        selling_price: data.selling_price!,
-        min_price: data.min_price!,
-        spent_amount: data.spent_amount!,
-        get_amount: data.get_amount!,
-        date_of_recycle: data.date_of_recycle!,
-        color: data.color!
+      const formattedData:any = {
+        from_to: Number(data.from_to),
+        to_product: Number(data.to_product),
+        store: Number(data.store),
+        selling_price: Number(data.selling_price),
+        min_price: Number(data.min_price),
+        spent_amount: String(data.spent_amount || ''),
+        get_amount: String(data.get_amount || ''),
+        date_of_recycle: data.date_of_recycle || '',
+       
       };
 
       await createRecycling.mutateAsync(formattedData);

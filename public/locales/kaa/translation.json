@@ -73,7 +73,7 @@
     "close":"Jabuw"
   },
   "navigation": {
-    "debts": "Qarizlar",
+    "debts": "Qarizdarlar",
     "users": "Paydalanıwshılar",
     "stores": "Dúkanlar",
     "staff":"Jumisshilar",
@@ -109,6 +109,8 @@
     "amount_exceeds_remainder": "Summa qalǵan summadan artıq bolmawı kerek"
   },
   "forms": {
+    "product":"Ónim",
+    "selling_method":"Satıw usılı",
     "history": "Tarix",
     "amount2":" Summa",
     "amount3":" Jami summa",
@@ -167,7 +169,15 @@
     "ceo_name": "Basshı atı",
     "balance": "Balans",
     "status": "Status",
-    "user": "Paydalanıwshı"
+    "user": "Paydalanıwshı",
+    "client_info": "Klient maǵlıwmatı",
+    "client_name": "Klient atı",
+    "debt_info": "Qarız maǵlıwmatı",
+    "total_amount": "Jámi summa",
+    "created_date": "Jaratiw sánesi",
+    "store_info": "Dúkan maǵlıwmatı",
+    "sale_items": "Satıw pozitsiyaları",
+    "subtotal": "Ara summa"
   },
   "roles": {
     "owner": "Iyesi",
@@ -267,5 +277,8 @@
     "on_credit": "Kreditke",
     "due_date": "Tólew sánesi",
     "client": "Klient"
+  },
+  "pages": {
+    "debt_details": "Qarız maǵlıwmatı"
   }
 }

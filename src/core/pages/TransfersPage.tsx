@@ -41,30 +41,30 @@ export default function TransfersPage() {
   const { mutate: updateTransfer, isPending: isUpdating } = useUpdateTransfer();
   const { mutate: deleteTransfer } = useDeleteTransfer();
 
-  const getStockName = (stockId: number) => {
-    const stock = stocks.find((s: Stock) => s.id === stockId);
-    return stock?.product_read?.product_name || 'Unknown Stock';
-  };
-
-  const getStoreName = (storeId: number) => {
-    const store = stores.find((s: Store) => s.id === storeId);
-    return store?.name || 'Unknown Store';
-  };
-
   const columns = [
     {
       header: t('forms.from_product'),
-      accessorKey: 'from_stock',
-      cell: (row: Transfer) => getStockName(row.from_stock),
+      accessorKey: 'from_stock_read',
+      cell: (row: Transfer) => row.from_stock_read?.product_read?.product_name || 'Unknown Product',
     },
     {
-      header: t('forms.from_stock'),
-      accessorKey: 'to_stock',
-      cell: (row: Transfer) => getStoreName(row.to_stock),
+      header: t('forms.from_store'),
+      accessorKey: 'from_stock_read',
+      cell: (row: Transfer) => row.from_stock_read?.store_read?.name || 'Unknown Store',
+    },
+    {
+      header: t('forms.to_store'),
+      accessorKey: 'to_stock_read',
+      cell: (row: Transfer) => row.to_stock_read?.name || 'Unknown Store',
     },
     {
       header: t('forms.amount'),
       accessorKey: 'amount',
+    },
+    {
+      header: t('forms.date'),
+      accessorKey: 'date_of_transfer',
+      cell: (row: Transfer) => row.date_of_transfer ? new Date(row.date_of_transfer).toLocaleDateString() : '-',
     },
     {
       header: t('forms.comment'),
@@ -73,8 +73,20 @@ export default function TransfersPage() {
   ];
 
   const handleEdit = (transfer: Transfer) => {
-    setEditingTransfer(transfer);
-    setSelectedFromStock(Number(transfer.from_stock));
+    // Create a new object with only the required fields for the form
+    const formattedTransfer: Transfer = {
+      id: transfer.id,
+      from_stock: transfer.from_stock_read?.id || 0,
+      to_stock: transfer.to_stock_read?.id || 0,
+      amount: transfer.amount,
+      comment: transfer.comment || '',
+      date_of_transfer: transfer.date_of_transfer,
+      stock: transfer.stock,
+      from_stock_read: transfer.from_stock_read,
+      to_stock_read: transfer.to_stock_read
+    };
+    setEditingTransfer(formattedTransfer);
+    setSelectedFromStock(Number(transfer.from_stock_read?.id));
     setIsFormOpen(true);
   };
 
@@ -83,19 +95,32 @@ export default function TransfersPage() {
 
     // Find the source stock and destination store to check if they're the same
     const sourceStock = stocks.find((s: Stock) => s.id === Number(data.from_stock));
-    const destStore = stores.find((s: Store) => s.id === Number(data.to_stock));
     
     const sourceStoreId = sourceStock?.store_read?.id;
-    const destStoreId = destStore?.id;
     
     // Prevent transfers between the same store
-    if (sourceStoreId && destStoreId && sourceStoreId === destStoreId) {
+    if (sourceStoreId && sourceStoreId === Number(data.to_stock)) {
       toast.error(t('messages.error.same_store_transfer') || 'Cannot transfer to the same store');
       return;
     }
-
+    
+    // Validate that we have enough quantity
+    const transferAmount = Number(data.amount);
+    if (sourceStock && transferAmount > sourceStock.quantity) {
+      toast.error(t('messages.error.insufficient_quantity') || 'Insufficient quantity in source stock');
+      return;
+    }
+    const tranformedData = {
+      // ...data.amount,
+      from_stock: Number(data.from_stock),
+      to_stock: Number(data.to_stock),
+      amount: String(data.amount),
+      date_of_transfer: data.date_of_transfer,
+      comment: data.comment,
+      stock: Number(data.from_stock),
+    }
     updateTransfer(
-      { ...data, id: editingTransfer.id },
+      { ...tranformedData, id: editingTransfer.id },
       {
         onSuccess: () => {
           toast.success('Transfer created successfully');
@@ -149,7 +174,7 @@ export default function TransfersPage() {
                 name: 'from_stock',
                 label: t('forms.from_stock'),
                 type: 'select',
-                options: stocks?.map((stock: Stock) => ({
+                options: stocks?.map((stock) => ({
                   value: stock.id,
                   label: `${stock.product_read?.product_name} - ${stock.quantity}`
                 })) || [],
@@ -163,13 +188,8 @@ export default function TransfersPage() {
                 label: t('forms.to_store'),
                 type: 'select',
                 options: stores?.map((store: Store) => {
-                  // Get the source stock ID based on the currently selected from_stock
-                  const sourceStock = stocks.find((s: Stock) => s.id === selectedFromStock);
-                  const sourceStoreId = sourceStock?.store_read?.id;
-                  
-                  // Skip if this store is the same as source store
-                  if (sourceStoreId && store.id === sourceStoreId) return null;
-                  
+                  const sourceStock = stocks.find((s) => s.id === selectedFromStock);
+                  if (sourceStock?.product_read?.store_read?.id === store.id) return null;
                   return {
                     value: store.id,
                     label: store.name
@@ -181,6 +201,12 @@ export default function TransfersPage() {
                 label: t('forms.amount'),
                 type: 'number',
                 step: '0.01'
+              },
+              {
+                name: 'date_of_transfer',
+                label: t('forms.date'),
+                type: 'datetime-local',
+                defaultValue: editingTransfer?.date_of_transfer ? new Date(editingTransfer.date_of_transfer).toISOString().slice(0, 16) : undefined
               },
               {
                 name: 'comment',

@@ -20,6 +20,7 @@ interface MeasurementWithRead {
   };
   measurement_write: number;
   number: string | number;
+  for_sale?: boolean;
 }
 
 const productFields = (t: any) => [
@@ -54,7 +55,17 @@ const columns = (t: any) => [
     header: t('table.category'),
     accessorKey: (row: Product) => row.category_read?.category_name || row.category_write,
   },
-  
+  {
+    header: t('table.measurements'),
+    accessorKey: (row: Product) => {
+      if (!row.measurement || row.measurement.length === 0) return '-';
+      return row.measurement.map((m: MeasurementWithRead) => {
+        const measurementName = m.measurement_read ? m.measurement_read.measurement_name : '';
+        const number = typeof m.number === 'string' ? parseFloat(m.number) : m.number;
+        return `${measurementName}: ${number}${m.for_sale ? ' (продажа)' : ''}`;
+      }).join(', ');
+    },
+  },
 ];
 
 export default function ProductsPage() {

@@ -6,7 +6,8 @@
     "complex": "Сложная оплата"
   },
   "pages": {
-    "payment_history": "История платежей"
+    "payment_history": "История платежей",
+    "debt_details": "Информация о долге"
   },
   "common": {
     "actions":"Действия",
@@ -75,14 +76,14 @@
   "navigation": {
     "users": "Пользователи",
     "stores": "Магазины",
-    "debt":"Долги",
+    "debt":"Должники",
     "staff":"Устав",
     "sales":"Продажи",
     "categories": "Категории",
     "products": "Товары",
     "stocks": "Приход",
     "suppliers": "Поставщики",
-    "transfers": "Переводы",
+    "transfers": "Перемещение",
     "measurements": "Единицы измерения",
     "settings": "Настройки",
     "recyclings": "Переработка",
@@ -171,7 +172,12 @@
     "ceo_name": "Имя руководителя",
     "balance": "Баланс",
     "status": "Статус",
-    "user": "Пользователь"
+    "user": "Пользователь",
+    "client_info": "Информация о клиенте",
+    "debt_info": "Информация о долге",
+    "store_info": "Информация о магазине",
+    "sale_items": "Позиции продажи",
+    "subtotal": "Промежуточный итог"
   },
   "roles": {
     "owner": "Владелец",

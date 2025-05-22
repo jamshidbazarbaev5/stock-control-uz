@@ -35,8 +35,13 @@ export default function DebtsPage() {
       cell: (debt: Debt) => (
         <div>
           <div>
-            {debt.client_read.name}{' '}
-            <span className="text-gray-500">({t(`${debt.client_read.type}`)})</span>
+            <button
+              onClick={() => navigate(`/debts/${debt.id}`)}
+              className="text-blue-600 hover:underline hover:text-blue-800"
+            >
+              {debt.client_read.name}{' '}
+              <span className="text-gray-500">({t(`${debt.client_read.type}`)})</span>
+            </button>
           </div>
           <div className="text-sm text-gray-500">
             {debt.client_read.phone_number}
@@ -105,6 +110,7 @@ export default function DebtsPage() {
           >
             {t('forms.history')}
           </button>
+          
         </div>
       ),
     },

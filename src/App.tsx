@@ -36,6 +36,8 @@ import DebtsPage from "./core/pages/DebtsPage";
 import StaffPage from "./core/pages/StaffPage";
 import CreateStaff from "./core/pages/create-staff";
 import DebtPaymentHistoryPage from "./core/pages/DebtPaymentHistoryPage";
+import EditSale from "./core/pages/edit-sale";
+import DebtDetailsPage from "./core/pages/DebtDetailsPage";
 
 const queryClient = new QueryClient()
 
@@ -73,9 +75,10 @@ function App() {
             <Route path="/create-recycling" element={<CreateRecycling />} />
             <Route path="/sales" element={<SalesPage />} />
             {/* <Route path="/create-sale" element={<CreateSale />} /> */}
-            {/* <Route path="/edit-sale/:id" element={<EditSale />} /> */}
+            <Route path="/edit-sale/:id" element={<EditSale />} />
             <Route path="/debts" element={<DebtsPage />} />
             <Route path="/debts/:id/history" element={<DebtPaymentHistoryPage />} />
+            <Route path="/debts/:id" element={<DebtDetailsPage />} />
             <Route path="/staff" element={<StaffPage />} />
             <Route path="/create-staff" element={<CreateStaff />} />
             <Route path="/" element={<Navigate to="/users" />} />
