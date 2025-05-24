@@ -39,14 +39,14 @@ const recyclingFields = (t:any)=> [
   {
     name: 'spent_amount',
     label: t('table.spent_amount'),
-    type: 'number',
+    type: 'string',
     placeholder: t('placeholders.enter_quantity'),
     required: true,
   },
   {
     name: 'get_amount',
     label: t('table.get_amount'),
-    type: 'number',
+    type: 'string',
     placeholder: t('placeholders.enter_quantity'),
     required: true,
   },

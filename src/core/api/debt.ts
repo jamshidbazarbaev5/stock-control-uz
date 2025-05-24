@@ -62,6 +62,7 @@ export interface DebtPayment {
   debt: number;
   amount: number;
   paid_at?: string;
+  payment_method: string;
 }
 
 // API endpoints

@@ -6,6 +6,11 @@
     "complex": "Quramalı tólem"
   },
   "common": {
+    "all":"Hammesi",
+    "filters": "Filterler",
+    "start_date": "Baslaniw sanesi",
+    "end_date": "Tawsiliw sanesi",
+   "clear_filters":"Filterlerdi óshiriw",
     "details": "Tovar haqqinda ",
     "on_credit": "Qarzg'a",
     "save": "Saqlaw",
@@ -109,6 +114,8 @@
     "amount_exceeds_remainder": "Summa qalǵan summadan artıq bolmawı kerek"
   },
   "forms": {
+    "start_date": "Baslaniw sanesi",
+    "end_date": "Tawsiliw sanesi",
     "product":"Ónim",
     "selling_method":"Satıw usılı",
     "history": "Tarix",
@@ -195,6 +202,7 @@
       "insufficient_quantity":"Muǵdarı jetkilik emes",
       "update": " jańalaw ámelge aspadı",
       "delete": " óshiriw ámelge aspadı",
+      "below_min_price": "Min bahadan tómen bolmawı kerek",
       "general": "Qátelik júz berdi",
     "invalid_stock_selection": "Невозможно создать приход на этот склад"
 ,
@@ -211,7 +219,9 @@
 
   },
   "placeholders": {
-  
+    "select_for_sale": "Satıw úshin tańlaw",
+    "selects_status": "Status tańlaw",
+    "select_status": "Status tańlań",
     "search_category": "Kategoriyanı izdeń",
     "select_store": "Dúkandı tańlań",
     "select_category": "Kategoriyanı tańlań",
@@ -242,6 +252,7 @@
     "select_user": "Paydalanıwshını tańlań"
   },
   "table": {
+     "credit_status":"Status",
     "number": "№",
     "price":"Bahası",
     "total_amount": "Jami summa",

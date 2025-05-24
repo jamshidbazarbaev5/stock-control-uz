@@ -3,11 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { type Sale, useGetSales, useDeleteSale } from '../api/sale';
+import { useGetProducts } from '../api/product';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Button } from '../../components/ui/button';
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { Card } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { CheckCircle2, AlertCircle, Store, Calendar, Tag, CreditCard, Wallet, SmartphoneNfc } from 'lucide-react';
 
 export default function SalesPage() {
@@ -16,17 +25,30 @@ export default function SalesPage() {
   const [page, setPage] = useState(1);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+  // Set initial states
+  const [selectedProduct, setSelectedProduct] = useState<string>('all');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [creditStatus, setCreditStatus] = useState<string>('all');
   
   const { data: salesData, isLoading } = useGetSales({ 
     params: { 
       page,
+      product: selectedProduct !== 'all' ? selectedProduct : undefined,
+      start_date: startDate || undefined,
+      end_date: endDate || undefined,
+      on_credit: creditStatus !== 'all' ? creditStatus === 'true' : undefined
     }
   });
+
+  const { data: productsData } = useGetProducts({});
+  const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
 
   const deleteSale = useDeleteSale();
 
   // Get sales array and total count
-  const  sales = Array.isArray(salesData) ? salesData : salesData?.results || [];
+  const sales = Array.isArray(salesData) ? salesData : salesData?.results || [];
   const totalCount = Array.isArray(salesData) ? sales.length : salesData?.count || 0;
 
   const formatCurrency = (amount: string | number) => {
@@ -57,6 +79,14 @@ export default function SalesPage() {
       toast.error(t('messages.error.delete', { item: t('navigation.sales') }));
       console.error('Failed to delete sale:', error);
     }
+  };
+
+  const handleClearFilters = () => {
+    setSelectedProduct('all');
+    setStartDate('');
+    setEndDate('');
+    setCreditStatus('all');
+    setPage(1);
   };
 
   const columns = [
@@ -145,6 +175,77 @@ export default function SalesPage() {
         </Button>
       </div>
 
+      {/* Filters */}
+      <Card className="p-4 mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-medium">{t('common.filters')}</h2>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleClearFilters}
+          >
+            {t('common.clear_filters')}
+          </Button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{t('table.product')}</label>
+            <Select
+              value={selectedProduct}
+              onValueChange={setSelectedProduct}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t('placeholders.select_product')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('common.all')}</SelectItem>
+                {products.map((product) => (
+                  <SelectItem key={product.id} value={String(product.id || '')}>
+                    {product.product_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{t('forms.start_date')}</label>
+            <Input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{t('forms.end_date')}</label>
+            <Input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">{t('table.credit_status')}</label>
+            <Select
+              value={creditStatus}
+              onValueChange={setCreditStatus}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t('placeholders.select_status')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('common.all')}</SelectItem>
+                <SelectItem value="true">{t('common.on_credit')}</SelectItem>
+                <SelectItem value="false">{t('common.paid2')}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </Card>
+
+      {/* Table */}
       <Card className="mb-6">
         <ResourceTable
           data={sales}

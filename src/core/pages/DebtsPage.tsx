@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 
 interface PaymentFormData {
   amount: number;
+  payment_method: string;
 }
 
 export default function DebtsPage() {
@@ -128,6 +129,7 @@ export default function DebtsPage() {
       await createPayment.mutateAsync({
         debt: selectedDebt.id!,
         amount: data.amount,
+        payment_method: data.payment_method,
       });
       toast.success(t('messages.success.payment_created'));
       // Invalidate and refetch debts
@@ -158,6 +160,19 @@ export default function DebtsPage() {
         },
       },
     },
+    {
+      name:"payment_method",
+      label: t('forms.payment_method'),
+      type: 'select',
+      placeholder: t('placeholders.select_payment_method'),
+      required: true,
+      options: [
+        { value: 'Наличные', label: t('forms.cash') },
+        { value: 'Карта', label: t('forms.card') },
+        { value: 'Click', label: t('forms.click') },
+        { value: 'Сложная оплата', label: t('forms.complex_payment') },
+      ],
+    }
   ];
 
   return (

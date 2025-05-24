@@ -10,6 +10,9 @@
     "debt_details": "Информация о долге"
   },
   "common": {
+    "filters": "Фильтры",
+    "clear_fiters":"Очистить фильтры",
+    "all":"Все",
     "actions":"Действия",
     "details": "Детали",
     "on_credit": "В долг",
@@ -111,6 +114,9 @@
     "invalid_credentials": "Неверные учетные данные"
   },
   "forms": {
+    "start_date": "Дата начала",
+    "end_date": "Дата окончания",
+
     "name": "Имя",
     "amount3":" Общая Сумма",
     "history":"История ",
@@ -192,6 +198,7 @@
     },
     "error": {
       "create": "Не удалось создать ",
+      "below_min_price":"Цена продажи не может быть ниже минимальной цены",
       "update": "Не удалось обновить",
       "insufficient_quantity":"Недостаточно количества",
       "delete": "Не удалось удалить ",
@@ -209,6 +216,8 @@
   },
   "placeholders": {
     "select":"Выбрать",
+    "select_for_sale":"Выберите для продажи",
+    "select_status":"Выберите статус",
     "select_client" : "Выберите клиента",
     "search_category": "Поиск категории",
     "search_product": "Поиск товара",
@@ -243,6 +252,7 @@
     "select_user": "Выберите пользователя"
   },
   "table": {
+    "credit_status":"Статус",
     "price":"Цена",
     "total_amount":"Общая сумма",
     "status":"Статус",

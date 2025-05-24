@@ -1,12 +1,12 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ResourceForm } from '../helpers/ResourceForm';
 import type { Product } from '../api/product';
-import { useCreateProduct } from '../api/product';
+import { useUpdateProduct, useGetProduct } from '../api/product';
 import { useGetCategories } from '../api/category';
 import { useGetMeasurements } from '../api/measurement';
 import { toast } from 'sonner';
 import { Button } from '../../components/ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Select,
@@ -17,24 +17,38 @@ import {
 } from '@/components/ui/select';
 
 interface MeasurementItem {
+  id?: number;
   measurement_write: number;
   number: number;
   for_sale: boolean;
 }
 
-export default function CreateProduct() {
+export default function EditProduct() {
   const navigate = useNavigate();
-  const createProduct = useCreateProduct();
+  const { id } = useParams();
   const { t } = useTranslation();
-  const [measurements, setMeasurements] = useState<MeasurementItem[]>([{ measurement_write: 0, number: 0, for_sale: false }]);
+  const updateProduct = useUpdateProduct();
+  const { data: product } = useGetProduct(Number(id));
+  const [measurements, setMeasurements] = useState<MeasurementItem[]>([]);
 
-  // Fetch categories, stores and measurements for the select dropdowns
+  // Fetch categories and measurements for the select dropdowns
   const { data: categoriesData } = useGetCategories({});
   const { data: measurementsData } = useGetMeasurements({});
 
   // Get the arrays from response data
   const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData?.results || [];
   const availableMeasurements = Array.isArray(measurementsData) ? measurementsData : measurementsData?.results || [];
+
+  useEffect(() => {
+    if (product?.measurement) {
+      setMeasurements(product.measurement.map((m: any) => ({
+        id: m.id,
+        measurement_write: m.measurement_read?.id || m.measurement_write,
+        number: typeof m.number === 'string' ? Number(m.number) : m.number,
+        for_sale: m.for_sale || false
+      })));
+    }
+  }, [product]);
 
   const handleAddMeasurement = () => {
     setMeasurements([...measurements, { measurement_write: 0, number: 0, for_sale: false }]);
@@ -54,8 +68,11 @@ export default function CreateProduct() {
   };
 
   const handleSubmit = async (data: any) => {
+    if (!id) return;
+
     try {
       const formattedData = {
+        id: Number(id),
         product_name: data.product_name,
         category_write: typeof data.category_write === 'string' ? parseInt(data.category_write, 10) : data.category_write,
         measurement: measurements.map((m: MeasurementItem) => ({
@@ -65,14 +82,18 @@ export default function CreateProduct() {
         }))
       };
 
-      await createProduct.mutateAsync(formattedData);
-      toast.success(t('messages.success.created', { item: t('table.product') }));
+      await updateProduct.mutateAsync(formattedData);
+      toast.success(t('messages.success.updated', { item: t('table.product') }));
       navigate('/products');
     } catch (error) {
-      toast.error(t('messages.error.create', { item: t('table.product') }));
-      console.error('Failed to create product:', error);
+      toast.error(t('messages.error.update', { item: t('table.product') }));
+      console.error('Failed to update product:', error);
     }
   };
+
+  if (!product) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -96,11 +117,14 @@ export default function CreateProduct() {
               label: category.category_name
             }))
           },
-          
         ]}
         onSubmit={handleSubmit}
-        isSubmitting={createProduct.isPending}
-        title={t('common.create') + ' ' + t('table.product')}
+        isSubmitting={updateProduct.isPending}
+        title={t('common.edit') + ' ' + t('table.product')}
+        defaultValues={{
+          product_name: product.product_name,
+          category_write: product.category_read?.id || product.category_write,
+        }}
       >
         <div className="space-y-4">
           <h3 className="text-lg font-medium">{t('table.measurements')}</h3>

@@ -101,15 +101,7 @@ const stockFields = [
     placeholder: 'Enter color',
     required: true,
   },
-  {
-    name: 'measurement_write',
-    label: 'Measurements',
-    type: 'select',
-    multiple: true,
-    placeholder: 'Select measurements',
-    required: true,
-    options: [], // Will be populated with measurements
-  },
+ 
 ];
 
 export default function EditStock() {

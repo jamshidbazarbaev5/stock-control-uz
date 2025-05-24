@@ -1,14 +1,25 @@
 import { useNavigate } from 'react-router-dom';
 import { ResourceForm } from '../helpers/ResourceForm';
-import type { User } from '../api/user';
-import { useCreateUser } from '../api/user';
+import { useCreateStaff } from '../api/staff';
 import { useTranslation } from 'react-i18next';
+import { useGetStores } from '../api/store';
 import { toast } from 'sonner';
+
+interface UserFormData {
+  name: string;
+  phone_number: string;
+  role: string;
+  password: string;
+  store: number;
+  is_active: boolean;
+}
 
 export default function CreateUser() {
   const navigate = useNavigate();
-  const createUser = useCreateUser();
+  const createStaff = useCreateStaff();
   const { t } = useTranslation();
+  const { data: storesData } = useGetStores({});
+  const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
 
   const userFields = [
     {
@@ -44,11 +55,46 @@ export default function CreateUser() {
       placeholder: t('placeholders.enter_password'),
       required: true,
     },
+    {
+      name: 'store',
+      label: t('forms.store'),
+      type: 'select',
+      placeholder: t('placeholders.select_store'),
+      required: true,
+      options: stores.map(store => ({
+        value: store.id,
+        label: store.name
+      }))
+    },
+    {
+      name: 'is_active',
+      label: t('forms.status'),
+      type: 'select',
+      placeholder: t('placeholders.select_status'),
+      required: true,
+      defaultValue: true,
+      options: [
+        { value: true, label: t('common.active') },
+        { value: false, label: t('common.inactive') },
+      ],
+    }
   ];
 
-  const handleSubmit = async (data: User) => {
+  const handleSubmit = async (data: UserFormData) => {
     try {
-      await createUser.mutateAsync(data);
+      // Transform the data to match the staff creation endpoint requirements
+      const staffData = {
+        user_write: {
+          name: data.name,
+          phone_number: data.phone_number,
+          role: data.role,
+          password: data.password
+        },
+        store_write: Number(data.store),
+        is_active: Boolean(data.is_active)
+      };
+
+      await createStaff.mutateAsync(staffData as any);
       toast.success(t('messages.success.created', { item: t('navigation.users') }));
       navigate('/users');
     } catch (error) {
@@ -59,10 +105,10 @@ export default function CreateUser() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <ResourceForm<User>
+      <ResourceForm<UserFormData>
         fields={userFields}
         onSubmit={handleSubmit}
-        isSubmitting={createUser.isPending}
+        isSubmitting={createStaff.isPending}
         title={t('common.create') + ' ' + t('navigation.users')}
       />
     </div>
