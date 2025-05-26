@@ -46,6 +46,7 @@ import CashInflowNamesPage from "./core/pages/CashInflowNamesPage";
 import EditExpensePage from "./core/pages/edit-expense";
 import CashInflowHistoryPage from "./core/pages/CashInflowHistoryPage";
 import EditMoney from "./core/pages/edit-money";
+import EditProduct from "./core/pages/edit-product";
 
 const queryClient = new QueryClient()
 
@@ -99,6 +100,7 @@ function App() {
             <Route path="/cash-inflow-names" element={<CashInflowNamesPage />} />
             <Route path="/finance" element={<CashInflowHistoryPage />} />
             <Route path="/edit-money/:id" element={<EditMoney />} />
+            <Route path="/edit-product/:id" element={<EditProduct />} />
             <Route path="/" element={<Navigate to="/users" />} />
           </Route>
           <Route path="*" element={<Navigate to="/" />} />
