@@ -32,18 +32,7 @@ const columns = (t: any) => [
     accessorKey: 'product_read',
     cell: (row: any) => row.store_read?.name || '-',
   },
-  {
-    header: t('table.purchase_price'),
-    accessorKey: 'purchase_price_in_uz',
-  },
-  {
-    header: t('forms.purchase_price_usd'),
-    accessorKey: 'purchase_price_in_us',
-  },
-  {
-    header: t('forms.exchange_rate'),
-    accessorKey: 'exchange_rate',
-  },
+  
   {
     header: t('table.selling_price'),
     accessorKey: 'selling_price',
@@ -56,15 +45,7 @@ const columns = (t: any) => [
     header: t('table.quantity'),
     accessorKey: 'quantity',
   },
-  {
-    header: t('table.color'),
-    accessorKey: 'color',
-  },
-  {
-    header: t('table.supplier'),
-    accessorKey: 'supplier_read',
-    cell: (row: Stock) => row.supplier_read?.name || '-',
-  },
+ 
 ];
 
 const stockFields = [

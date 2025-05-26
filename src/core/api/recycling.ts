@@ -17,22 +17,84 @@ export interface CreateRecyclingDTO {
 }
 
 export interface Recycling extends CreateRecyclingDTO {
-  id?: number;
-  from_stock_read?: {
+  id: number;
+  from_to_read: {
     id: number;
-    product_read?: {
+    store_read: {
+      id: number;
+      name: string;
+      address: string;
+      phone_number: string;
+      budget: string;
+      created_at: string;
+      is_main: boolean;
+      parent_store: number | null;
+      owner: number;
+    };
+    product_read: {
       id: number;
       product_name: string;
+      category_read: {
+        id: number;
+        category_name: string;
+      };
+      measurement: Array<{
+        id: number;
+        measurement_read: {
+          id: number;
+          measurement_name: string;
+        };
+        number: string;
+        for_sale: boolean;
+      }>;
     };
   };
-  to_product_read?: {
+  to_product_read: {
     id: number;
     product_name: string;
+    category_read: {
+      id: number;
+      category_name: string;
+    };
+    measurement: Array<{
+      id: number;
+      measurement_read: {
+        id: number;
+        measurement_name: string;
+      };
+      number: string;
+      for_sale: boolean;
+    }>;
   };
-  store_read?: {
+  to_stock_read: {
     id: number;
-    name: string;
+    store_read: {
+      id: number;
+      name: string;
+      address: string;
+      phone_number: string;
+      budget: string;
+      created_at: string;
+      is_main: boolean;
+      parent_store: number | null;
+      owner: number;
+    };
   };
+}
+
+export interface PaginatedRecyclings {
+  links: {
+    first: string | null;
+    last: string | null;
+    next: string | null;
+    previous: string | null;
+  };
+  total_pages: number;
+  current_page: number;
+  page_range: number[];
+  page_size: number;
+  results: Recycling[];
+  count: number;
 }
 
 // API endpoints
@@ -45,4 +107,4 @@ export const {
   useCreateResource: useCreateRecycling,
   useUpdateResource: useUpdateRecycling,
   useDeleteResource: useDeleteRecycling,
-} = createResourceApiHooks<Recycling>(RECYCLING_URL, 'recyclings');
+} = createResourceApiHooks<Recycling, PaginatedRecyclings>(RECYCLING_URL, 'recyclings');

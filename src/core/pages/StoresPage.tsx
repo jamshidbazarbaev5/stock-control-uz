@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { type Store, useGetStores, useUpdateStore, useDeleteStore } from '../api/store';
 import { useGetUsers } from '../api/user';
 import { Button } from '@/components/ui/button';
-import { Building2, Phone, MapPin, Plus, Pencil, Trash2, Store as StoreIcon, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Building2, Phone, MapPin, Plus, Pencil, Trash2, Store as StoreIcon, ArrowLeft, ArrowRight, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface StoreFormData {
@@ -15,6 +15,7 @@ interface StoreFormData {
   name: string;
   address: string;
   phone_number: string;
+  budget: string;
   is_main: boolean;
   parent_store: string;
   owner: string;
@@ -228,6 +229,10 @@ export default function StoresPage() {
                     <div className="flex items-center gap-3 text-gray-600">
                       <Building2 className="h-4 w-4 text-primary/60" />
                       <span className="text-sm">{store.is_main ? t('common.yes') : t('common.no')}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-gray-600">
+                      <DollarSign className="h-4 w-4 text-primary/60" />
+                      <span className="text-sm">{Number(store.budget).toLocaleString()} </span>
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-end gap-3 pt-4 border-t">

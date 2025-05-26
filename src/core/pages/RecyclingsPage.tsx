@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ResourceTable } from '../helpers/ResourseTable';
-
 import { toast } from 'sonner';
 import { useGetRecyclings, useDeleteRecycling } from '../api/recycling';
 import { format } from 'date-fns';
@@ -10,17 +9,23 @@ import { format } from 'date-fns';
 const columns = (t: any) => [
   {
     header: t('table.from_stock'),
-    accessorKey: 'from_to',
+    accessorKey: 'from_to_read',
+    cell: (row: any) => {
+      const fromStore = row.from_to_read?.store_read?.name;
+      const fromProduct = row.from_to_read?.product_read?.product_name;
+      return fromStore && fromProduct ? `${fromProduct} (${fromStore})` : '-';
+    },
   },
   {
     header: t('table.to_product'),
-    accessorKey: 'to_product',
+    accessorKey: 'to_product_read',
+    cell: (row: any) => row.to_product_read?.product_name || '-',
   },
   {
     header: t('table.to_stock'),
-    accessorKey: 'to_stock',
+    accessorKey: 'to_stock_read',
+    cell: (row: any) => row.to_stock_read?.store_read?.name || '-',
   },
-  
   {
     header: t('table.date'),
     accessorKey: 'date_of_recycle',
@@ -29,7 +34,14 @@ const columns = (t: any) => [
       return date ? format(new Date(date), 'dd/MM/yyyy') : '-';
     },
   },
-    
+  {
+    header: t('table.spent_amount'),
+    accessorKey: 'spent_amount',
+  },
+  {
+    header: t('table.get_amount'),
+    accessorKey: 'get_amount',
+  },
 ];
 
 export default function RecyclingsPage() {
@@ -46,13 +58,8 @@ export default function RecyclingsPage() {
     },
   });
 
-  // Handle both array and object response formats
-  const recyclings = Array.isArray(recyclingsData) 
-    ? recyclingsData 
-    : recyclingsData?.results || [];
-  const totalCount = Array.isArray(recyclingsData) 
-    ? recyclingsData.length 
-    : recyclingsData?.count || 0;
+  const recyclings = recyclingsData?.results || [];
+  const totalCount = recyclingsData?.count || 0;
 
   const { mutate: deleteRecycling } = useDeleteRecycling();
 
@@ -67,9 +74,6 @@ export default function RecyclingsPage() {
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">{t('navigation.recyclings')}</h1>
-        {/* <Button onClick={() => navigate('/create-recycling')}>
-          {t('common.create')} {t('navigation.recyclings')}
-        </Button> */}
       </div>
 
       <ResourceTable

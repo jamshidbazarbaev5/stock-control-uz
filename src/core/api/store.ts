@@ -6,6 +6,7 @@ export interface Store {
   name: string;
   address: string;
   phone_number: string;
+  budget: string;
   is_main: boolean;
   parent_store?: number;
   owner: number;

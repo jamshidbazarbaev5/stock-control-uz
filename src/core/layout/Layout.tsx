@@ -8,12 +8,17 @@ import {
   Menu,
   X,
   UserCheck,
+  Wallet,
+  Receipt,
+  PlusCircle,
+  BanknoteIcon,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useLogout } from '../api/auth';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 
 
 export default function Layout({ children }: any) {
@@ -22,6 +27,7 @@ export default function Layout({ children }: any) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
+  const { data: currentUser } = useCurrentUser();
 
   // Set active submenu based on current path
   useEffect(() => {
@@ -51,6 +57,18 @@ export default function Layout({ children }: any) {
     { icon: ArrowLeftRight, label: t('navigation.transfers'), href: '/transfers' },
     { icon: Package, label: t('navigation.stocks'), href: '/stock' },
     { icon: ShoppingBag, label: t('navigation.sale'), href: '/sales' },
+    
+    {
+      icon: Wallet,
+      label: t('navigation.finance'),
+      id: 'finance',
+      submenu: [
+        { icon: Receipt, label: t('navigation.expense_name'), href: '/expense-name' },
+        { icon: BanknoteIcon, label: t('navigation.expense'), href: '/expense' },
+        { icon: PlusCircle, label: t('navigation.add_money'), href: '/finance' },
+        { icon: Receipt, label: t('navigation.cash_inflow_names'), href: '/cash-inflow-names' },
+      ]
+    },
 
     {
       icon: Package,
@@ -64,13 +82,9 @@ export default function Layout({ children }: any) {
         {icon: ArrowLeftRight, label: t('navigation.recyclings'), href: '/recyclings' },
         { icon: ListView, label: t('navigation.suppliers'), href: '/suppliers' },
         { icon: User2, label: t('navigation.users'), href: '/users' },
-         { icon: ShoppingBag, label: t('navigation.staff'), href: '/staff' },
+        //  { icon: ShoppingBag, label: t('navigation.staff'), href: '/staff' },
            { icon: UserCheck, label: t('navigation.clients'), href: '/clients' },
-            { icon: ShoppingBag, label: t('navigation.debt'), href: '/debts' },
-        { icon: ShoppingBag, label: t('navigation.expense_name'), href: '/expense-name' },
-        { icon: ShoppingBag, label: t('navigation.expense'), href: '/expense' },
-        { icon: ShoppingBag, label: t('navigation.add_money'), href: '/finance' },
-        { icon: ShoppingBag, label: t('navigation.cash_inflow_names'), href: '/cash-inflow-names' },
+            { icon: ShoppingBag, label: t('navigation.debt'), href: '/debts' }
       ]
     },
   ];
@@ -84,15 +98,40 @@ export default function Layout({ children }: any) {
       {/* Mobile Header */}
       <header className="md:hidden bg-white shadow-sm px-4 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {/* <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
-            <span className="text-2xl font-bold text-emerald-500">C</span>
-          </div> */}
           <div className="font-semibold text-gray-800">
             Stock-control
           </div>
         </div>
-        <div className="flex items-center gap-4">
-        
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher />
+          <div className="relative">
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                <User2 size={20} className="text-emerald-600" />
+              </div>
+            </button>
+            {dropdownOpen && (
+              <div className="absolute right-0 mt-2 w-60 bg-white rounded-lg shadow-lg py-3 z-50">
+                {currentUser && (
+                  <div className="px-4 py-2 border-b mb-2">
+                    <div className="font-medium text-gray-800">{currentUser.name}</div>
+                    <div className="text-sm text-gray-500 mt-1">{currentUser.phone_number}</div>
+                    <div className="text-sm font-medium text-emerald-600 mt-1">{currentUser.role}</div>
+                  </div>
+                )}
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <ArrowLeftRight size={16} />
+                  {t('common.logout')}
+                </button>
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 rounded-lg hover:bg-gray-100"
@@ -110,7 +149,7 @@ export default function Layout({ children }: any) {
         {/* Mobile menu overlay */}
         {mobileMenuOpen && (
           <div 
-            // className="fixed inset-0 bg-black/20 bac kdrop-blur-sm z-40 md:hidden"
+            // className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
             onClick={() => setMobileMenuOpen(false)}
           />
         )}
@@ -126,6 +165,7 @@ export default function Layout({ children }: any) {
           transition-all duration-300 ease-in-out
           ${isCollapsed ? 'md:w-20' : 'md:w-72'}
           flex-shrink-0
+          overflow-hidden
         `}>
           {/* Desktop Logo and Language Switcher */}
           <div className="hidden md:block px-6 py-6 border-b">
@@ -175,7 +215,7 @@ export default function Layout({ children }: any) {
                       )}
                     </button>
                     {activeSubmenu === item.id && (
-                      <div className={`ml-2 ${isCollapsed ? 'absolute left-full top-0 ml-2 bg-white shadow-lg rounded-lg p-2 min-w-[200px]' : ''}`}>
+                      <div className={`ml-2 ${isCollapsed ? 'absolute left-full top-0 ml-2 bg-white shadow-lg rounded-lg p-2 min-w-[200px] max-h-[80vh] overflow-y-auto' : ''}`}>
                         {item.submenu.map((subItem, subIndex) => (
                           <a
                             key={subIndex}
@@ -216,12 +256,14 @@ export default function Layout({ children }: any) {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 transition-all duration-300">
-          <div className="h-full flex flex-col">
-            <div className="bg-white  px-4 md:px-6 py-4 flex items-center justify-end gap-4">
-              <LanguageSwitcher />
+        <main className="flex-1 min-w-0 transition-all duration-300 overflow-x-auto">
+          <div className="h-full flex flex-col min-w-[320px]">
+            <div className="bg-white px-4 md:px-6 py-4 flex items-center justify-end gap-4 sticky top-0 z-10">
+              <div className="hidden md:block">
+                <LanguageSwitcher />
+              </div>
 
-              <div className="relative" ref={dropdownRef}>
+              <div className="relative hidden md:block" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -232,7 +274,14 @@ export default function Layout({ children }: any) {
                 </button>
 
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50">
+                  <div className="absolute right-0 mt-2 w-60 bg-white rounded-lg shadow-lg py-3 z-50">
+                    {currentUser && (
+                      <div className="px-4 py-2 border-b mb-2">
+                        <div className="font-medium text-gray-800">{currentUser.name}</div>
+                        <div className="text-sm text-gray-500 mt-1">{currentUser.phone_number}</div>
+                        <div className="text-sm font-medium text-emerald-600 mt-1">{currentUser.role}</div>
+                      </div>
+                    )}
                     <button
                       onClick={handleLogout}
                       className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50 flex items-center gap-2"

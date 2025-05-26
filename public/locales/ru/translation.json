@@ -13,7 +13,7 @@
   },
   "common": {
     "filters": "Фильтры",
-      
+
     "clear_fiters":"Очистить фильтры",
     "all":"Все",
     "actions":"Действия",
@@ -80,7 +80,8 @@
     "unpaid": "Неоплачено"
   },
   "navigation": {
-    "add_money": "Добавить деньги",
+    "finance": "Финансы",
+    "add_money": "Добавить депозит в кассу",
     "expense":"Расходы",
     "cash_inflow_name":"Названия поступления",
     "cash_inflow_names": "Название поступления",
@@ -111,6 +112,7 @@
     }
   },
   "validation": {
+    "amount_exceeds_budget": "Сумма не может превышать бюджет",
     "amount_exceeds_remainder": "Сумма не может превышать остаток"
   },
   "auth": {
@@ -276,6 +278,7 @@
   "table": {
     "credit_status":"Статус",
     "price":"Цена",
+    "budget":"Бюджет",
     "total_amount":"Общая сумма",
     "status":"Статус",
     "number": "№",

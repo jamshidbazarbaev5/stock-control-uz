@@ -30,11 +30,11 @@ export default function ExpensesPage() {
       cell: (row: Expense) => row.expense_name_read?.name || '-',
     },
     {
-      header: t('forms.amount'),
+      header: t('forms.amount3'),
       accessorKey: 'amount',
       cell: (row: Expense) => (
         <div className="text-right font-medium">
-          {Number(row.amount).toLocaleString()} UZS
+          {Number(row.amount).toLocaleString()} 
         </div>
       ),
     },

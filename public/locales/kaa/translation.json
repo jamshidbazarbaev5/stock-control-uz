@@ -79,6 +79,7 @@
   },
   "navigation": {
     "expense":"Rasxodtar",
+    "finance": "Moliya",
     "add_money": "Tusim qosıw",
     "cash_inflow_name": "Tusim atı",
     "cash_inflow_names":"Tusimnin atı",
@@ -117,6 +118,7 @@
     }
   },
   "validation": {
+    "amount_exceeds_budget": "Summa byudjetten artıq bolmawı kerek",
     "amount_exceeds_remainder": "Summa qalǵan summadan artıq bolmawı kerek"
   },
   "forms": {
