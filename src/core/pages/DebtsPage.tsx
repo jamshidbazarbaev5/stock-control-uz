@@ -125,6 +125,11 @@ export default function DebtsPage() {
   const handlePaymentSubmit = async (data: PaymentFormData) => {
     if (!selectedDebt) return;
 
+    if (data.amount > selectedDebt.remainder) {
+      toast.error(t('validation.amount_exceeds_remainder'));
+      return;
+    }
+
     try {
       await createPayment.mutateAsync({
         debt: selectedDebt.id!,

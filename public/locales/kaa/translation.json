@@ -78,6 +78,12 @@
     "close":"Jabuw"
   },
   "navigation": {
+    "expense":"Rasxodtar",
+    "add_money": "Tusim qosıw",
+    "cash_inflow_name": "Tusim atı",
+    "cash_inflow_names":"Tusimnin atı",
+    "expense_name": "Rasxod atı",
+    "expenses": "Rasxodtar",
     "debts": "Qarizdarlar",
     "users": "Paydalanıwshılar",
     "stores": "Dúkanlar",
@@ -114,6 +120,15 @@
     "amount_exceeds_remainder": "Summa qalǵan summadan artıq bolmawı kerek"
   },
   "forms": {
+    "select_store":"Dúkandı tańlań",
+    "cash":"Naq",
+    "card":"Karta",
+    "select_expense_name": "Rasxod atın tańlań",
+    "add_money": "Tusim qosıw",
+    "cash_inflow_name": "Tusim atı",
+    "create_cash_inflow_name": "Tusim atın jaratıw",
+    "click":"Click",
+    "complex_payment":"Quramalı tólem",
     "start_date": "Baslaniw sanesi",
     "end_date": "Tawsiliw sanesi",
     "product":"Ónim",
@@ -219,6 +234,8 @@
 
   },
   "placeholders": {
+    "select_cash_inflow_name": "Tusim atın tańlań",
+    "select_payment_method": "Tólew usılın tańlań",
     "select_for_sale": "Satıw úshin tańlaw",
     "selects_status": "Status tańlaw",
     "select_status": "Status tańlań",
@@ -290,6 +307,8 @@
     "client": "Klient"
   },
   "pages": {
-    "debt_details": "Qarız maǵlıwmatı"
+    "debt_details": "Qarız maǵlıwmatı",
+    "create_expense_name": "Rasxod atın jaratıw",
+    "create_expense": "Rasxod jaratıw"
   }
 }

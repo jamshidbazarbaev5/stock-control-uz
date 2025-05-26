@@ -104,16 +104,21 @@ export default function EditSale() {
     if (!sale || !stocks.length) return;
 
     const formData = {
+      store: sale.store_read?.id || 0,
       store_write: sale.store_read?.id || 0,
       payment_method: sale.payment_method,
-      sale_items: sale.sale_items.map(item => ({
-        id: item.id,
-        stock_write: item.stock_read?.id || 0,
-        stock_read: item.stock_read,
-        selling_method: item.selling_method,
-        quantity: item.quantity || "1",
-        subtotal: item.subtotal || "0"
-      })),
+      sale_items: sale.sale_items.map(item => {
+        const stock = stocks.find(s => s.id === item.stock_read?.id);
+        return {
+          id: item.id,
+          stock: item.stock_read?.id || 0,
+          stock_write: item.stock_read?.id || 0,
+          stock_read: stock || item.stock_read,  // Use the fresh stock data if available
+          selling_method: item.selling_method,
+          quantity: item.quantity || "1",
+          subtotal: item.subtotal || "0"
+        };
+      }),
       on_credit: sale.on_credit || false,
       sale_debt: sale.on_credit ? {
         client: sale.sale_debt?.client || 0,
@@ -151,9 +156,10 @@ export default function EditSale() {
   const calculateSubtotal = (stockId: number, quantity: string) => {
     const stock = filteredStocks.find(s => s.id === stockId);
     if (stock?.selling_price) {
-      return (Number(quantity) * stock.selling_price).toString();
+      const subtotal = (Number(quantity) * stock.selling_price).toFixed(2);
+      return subtotal;
     }
-    return "0";
+    return "0.00";
   };
 
   const calculateTotal = (items: SaleItem[]) => {
@@ -318,7 +324,7 @@ export default function EditSale() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('table.payment_method')}</FormLabel>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                     <button
                       type="button"
                       className={`flex items-center justify-center gap-2 p-3 rounded-lg border transition-all ${
@@ -355,6 +361,18 @@ export default function EditSale() {
                       <SmartphoneNfc className={`h-5 w-5 ${field.value === 'Click' ? 'text-purple-500' : 'text-gray-400'}`} />
                       <span>{t('payment_types.click')}</span>
                     </button>
+                    <button
+                      type="button"
+                      className={`flex items-center justify-center gap-2 p-3 rounded-lg border transition-all ${
+                        field.value === 'Сложная оплата'
+                          ? 'border-orange-500 bg-orange-50 text-orange-600'
+                          : 'border-gray-200 hover:border-orange-500 hover:bg-orange-50'
+                      }`}
+                      onClick={() => field.onChange('Сложная оплата')}
+                    >
+                      <CreditCard className={`h-5 w-5 ${field.value === 'Сложная оплата' ? 'text-orange-500' : 'text-gray-400'}`} />
+                      <span>{t('payment_types.complex')}</span>
+                    </button>
                   </div>
                 </FormItem>
               )}
@@ -389,7 +407,7 @@ export default function EditSale() {
                               .filter(stock => stock.quantity > 0)
                               .map((stock) => (
                                 <SelectItem key={stock.id} value={stock.id?.toString() || ''}>
-                                  {stock.product_read?.product_name} ({stock.quantity} {stock.product_read?.measurement_read?.name})
+                                  {stock.product_read?.product_name} ({stock.quantity} {stock.product_read?.measurement_read?.name}) - {stock.selling_price.toLocaleString('ru-RU')} UZS
                                 </SelectItem>
                             ))}
                           </SelectContent>
@@ -450,7 +468,20 @@ export default function EditSale() {
                             </Button>
                           )}
                         </div>
-                       
+                        <div className="mt-2 flex flex-col gap-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500">{t('table.price')}:</span>
+                            <span className="text-sm font-medium">
+                              {item.stock_read?.selling_price?.toLocaleString('ru-RU')} UZS
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500">{t('table.subtotal')}:</span>
+                            <span className="text-sm font-semibold text-emerald-600">
+                              {Number(item.subtotal).toLocaleString('ru-RU')} UZS
+                            </span>
+                          </div>
+                        </div>
                       </FormItem>
                     )}
                   />

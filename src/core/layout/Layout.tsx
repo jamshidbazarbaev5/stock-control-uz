@@ -67,6 +67,10 @@ export default function Layout({ children }: any) {
          { icon: ShoppingBag, label: t('navigation.staff'), href: '/staff' },
            { icon: UserCheck, label: t('navigation.clients'), href: '/clients' },
             { icon: ShoppingBag, label: t('navigation.debt'), href: '/debts' },
+        { icon: ShoppingBag, label: t('navigation.expense_name'), href: '/expense-name' },
+        { icon: ShoppingBag, label: t('navigation.expense'), href: '/expense' },
+        { icon: ShoppingBag, label: t('navigation.add_money'), href: '/finance' },
+        { icon: ShoppingBag, label: t('navigation.cash_inflow_names'), href: '/cash-inflow-names' },
       ]
     },
   ];

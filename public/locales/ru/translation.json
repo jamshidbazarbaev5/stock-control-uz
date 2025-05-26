@@ -6,11 +6,14 @@
     "complex": "Сложная оплата"
   },
   "pages": {
+    "create_expense_name": "Создать название расхода",
     "payment_history": "История платежей",
-    "debt_details": "Информация о долге"
+    "debt_details": "Информация о долге",
+    "create_expense": "Создать расход"
   },
   "common": {
     "filters": "Фильтры",
+      
     "clear_fiters":"Очистить фильтры",
     "all":"Все",
     "actions":"Действия",
@@ -77,8 +80,14 @@
     "unpaid": "Неоплачено"
   },
   "navigation": {
+    "add_money": "Добавить деньги",
+    "expense":"Расходы",
+    "cash_inflow_name":"Названия поступления",
+    "cash_inflow_names": "Название поступления",
     "users": "Пользователи",
     "stores": "Магазины",
+    "expense_name": "Название расхода",
+    "expenses": "Расходы",
     "debt":"Должники",
     "staff":"Устав",
     "sales":"Продажи",
@@ -114,9 +123,19 @@
     "invalid_credentials": "Неверные учетные данные"
   },
   "forms": {
+    "select_store":"Выберите магазин",
+    "add_money": "Добавить деньги",
+    "cash_inflow_name": "Название поступления",
+    "edit_expense_name": "Редактировать название расхода",
+    "expense_name": "Название расхода",
+    "create_cash_inflow_name": "Создать название поступления",
     "start_date": "Дата начала",
     "end_date": "Дата окончания",
-
+    "cash": "Наличные",
+    "click": "Click",
+    "select_expense_name": "Выберите название расхода",
+    "card": "Карта",
+    "complex_payment": "Сложная оплата",
     "name": "Имя",
     "amount3":" Общая Сумма",
     "history":"История ",
@@ -215,6 +234,9 @@
     
   },
   "placeholders": {
+    "select_expense_name": "Выберите название расхода",
+    "select_cash_inflow_name": "Выберите название поступления",
+    "select_payment_method": "Выберите способ оплаты",
     "select":"Выбрать",
     "select_for_sale":"Выберите для продажи",
     "select_status":"Выберите статус",

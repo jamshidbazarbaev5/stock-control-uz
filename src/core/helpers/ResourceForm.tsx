@@ -44,7 +44,7 @@ interface ResourceFormProps<T extends Record<string, any>> {
   onSubmit: (data: T) => void;
   defaultValues?: Partial<T>;
   isSubmitting?: boolean;
-  title: string;
+  title?: string;
   hideSubmitButton?: boolean;
   children?: React.ReactNode;
   form?: ReturnType<typeof useForm<T>>;

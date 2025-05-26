@@ -29,8 +29,6 @@ import ClientsPage from "./core/pages/ClientsPage";
 import CreateClient from "./core/pages/create-client";
 import EditClient from "./core/pages/edit-client";
 import SalesPage from "./core/pages/SalesPage";
-// import CreateSale from "./core/pages/create-sale";
-
 import { Toaster } from "sonner";
 import DebtsPage from "./core/pages/DebtsPage";
 import StaffPage from "./core/pages/StaffPage";
@@ -39,7 +37,15 @@ import DebtPaymentHistoryPage from "./core/pages/DebtPaymentHistoryPage";
 import EditSale from "./core/pages/edit-sale";
 import DebtDetailsPage from "./core/pages/DebtDetailsPage";
 import CreateSale from "./core/pages/create-sale";
-import EditProduct from "./core/pages/edit-product";
+import ExpenseNamesPage from "./core/pages/ExpenseNamesPage";
+import CreateExpenseName from "./core/pages/create-expense-name";
+import ExpensesPage from "./core/pages/ExpensesPage";
+import CreateExpense from "./core/pages/create-expense";
+import AddMoney from "./core/pages/add-money";
+import CashInflowNamesPage from "./core/pages/CashInflowNamesPage";
+import EditExpensePage from "./core/pages/edit-expense";
+import CashInflowHistoryPage from "./core/pages/CashInflowHistoryPage";
+import EditMoney from "./core/pages/edit-money";
 
 const queryClient = new QueryClient()
 
@@ -81,9 +87,18 @@ function App() {
             <Route path="/debts" element={<DebtsPage />} />
             <Route path="/debts/:id/history" element={<DebtPaymentHistoryPage />} />
             <Route path="/debts/:id" element={<DebtDetailsPage />} />
+            <Route path="/expense-name" element={<ExpenseNamesPage />} />
+            <Route path="/create-expense-name" element={<CreateExpenseName />} />
+            <Route path="/expense" element={<ExpensesPage />} />
+            <Route path="/create-expense" element={<CreateExpense />} />
             <Route path="/staff" element={<StaffPage />} />
-            <Route path="/edit-product/:id" element={<EditProduct />} />
+            <Route path="/edit-debt/:id" element={<DebtDetailsPage />} />
             <Route path="/create-staff" element={<CreateStaff />} />
+            <Route path="/add-money" element={<AddMoney />} />
+            <Route path="/edit-expense/:id" element={<EditExpensePage />} />
+            <Route path="/cash-inflow-names" element={<CashInflowNamesPage />} />
+            <Route path="/finance" element={<CashInflowHistoryPage />} />
+            <Route path="/edit-money/:id" element={<EditMoney />} />
             <Route path="/" element={<Navigate to="/users" />} />
           </Route>
           <Route path="*" element={<Navigate to="/" />} />
