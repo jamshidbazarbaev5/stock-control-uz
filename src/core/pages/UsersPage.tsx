@@ -3,12 +3,40 @@ import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
-import { type User, useGetUsers, useUpdateUser, useDeleteUser } from '../api/user';
+import { type User, useUpdateUser, useDeleteUser } from '../api/user';
+import { useGetStaffs } from '../api/staff';
+// import { useGetStores } from '../api/store';
 import { useTranslation } from 'react-i18next';
 import { Users, User as UserIcon, Pencil, Trash2, Plus, Phone, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+
+interface StaffResponse {
+  id: number;
+  store_read: {
+    id: number;
+    name: string;
+    address: string;
+    phone_number: string;
+    budget: string;
+    created_at: string;
+    is_main: boolean;
+    parent_store: number | null;
+    owner: number;
+  };
+  user_read: User;
+  is_active: boolean;
+  date_joined: string;
+  user: number;
+}
+
+interface ExtendedUser extends User {
+  staff_id?: number;
+  store?: StaffResponse['store_read'];
+  is_active?: boolean;
+  displayId?: number;
+}
 
 const userFields = (t: any) => [
   {
@@ -38,9 +66,20 @@ const userFields = (t: any) => [
     ],
   },
   {
+    name: 'is_active',
+    label: t('forms.status'),
+    type: 'select',
+    placeholder: t('placeholders.select_status'),
+    required: true,
+    options: [
+      { value: 'true', label: t('common.active') },
+      { value: 'false', label: t('common.inactive') },
+    ],
+  },
+  {
     name: 'password',
     label: t('forms.password'),
-    type: 'text',
+    type: 'password',
     placeholder: t('placeholders.enter_password'),
   },
 ];
@@ -49,48 +88,68 @@ export default function UsersPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingUser, setEditingUser] = useState<ExtendedUser | null>(null);
   const { t } = useTranslation();
 
-  const { data: usersData, isLoading } = useGetUsers({});
+  const { data: staffsData, isLoading } = useGetStaffs({});
+  // const { data: storesData } = useGetStores({});
 
   // Handle both array and object response formats
-  const results = Array.isArray(usersData) ? usersData : usersData?.results || [];
-  const totalCount = Array.isArray(usersData) ? usersData.length : usersData?.count || 0;
+  const results: any[] = Array.isArray(staffsData) ? staffsData : staffsData?.results || [];
+  // const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
+  const totalCount = Array.isArray(staffsData) ? staffsData.length : staffsData?.count || 0;
 
-  const users = results.map((user, index) => ({
-    ...user,
+  const users: ExtendedUser[] = results.map((staff, index) => ({
+    ...staff.user_read,
+    staff_id: staff.id,
+    store: staff.store_read,
+    is_active: staff.is_active,
     displayId: (page - 1) * 10 + index + 1,
   }));
 
   const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
   const { mutate: deleteUser } = useDeleteUser();
 
-  const handleEdit = (user: User) => {
+  const handleEdit = (user: ExtendedUser) => {
     setEditingUser(user);
     setIsFormOpen(true);
   };
 
-  const handleUpdateSubmit = (data: Partial<User>) => {
+  const handleUpdateSubmit = (data: Partial<ExtendedUser>) => {
     if (!editingUser?.id) return;
 
-    updateUser(
-      { ...data, id: editingUser.id } as User,
-      {
-        onSuccess: () => {
-          toast.success('User successfully updated');
-          setIsFormOpen(false);
-          setEditingUser(null);
-        },
-        onError: () => toast.error('Failed to update user'),
-      }
-    );
+    // Create the update payload
+    const updateData: Partial<User> = {
+      id: editingUser.id,
+      name: data.name || '',
+      phone_number: data.phone_number || '',
+      role: data.role || '',
+    };
+
+    // Only include password if it's provided
+    if (data.password) {
+      updateData.password = data.password;
+    }
+
+    updateUser(updateData as User, {
+      onSuccess: () => {
+        const message = data.password 
+          ? t('messages.user_password_updated')
+          : t('messages.user_updated');
+        toast.success(message);
+        setIsFormOpen(false);
+        setEditingUser(null);
+      },
+      onError: () => toast.error(t('messages.update_failed')),
+    });
   };
 
   const handleDelete = (id: number) => {
+    if (!id) return;
+    
     deleteUser(id, {
-      onSuccess: () => toast.success('User successfully deleted'),
-      onError: () => toast.error('Failed to delete user'),
+      onSuccess: () => toast.success(t('messages.user_deleted')),
+      onError: () => toast.error(t('messages.delete_failed')),
     });
   };
 

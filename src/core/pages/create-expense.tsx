@@ -105,7 +105,7 @@ export default function CreateExpense() {
         amount: data.amount.toString()
       });
       toast.success(t('messages.success.expense_created'));
-      navigate('/expenses'); // navigate to expenses list page
+      navigate('/expense'); // navigate to expenses list page
     } catch (error) {
       toast.error(t('messages.error.expense_create'));
       console.error('Failed to create expense:', error);

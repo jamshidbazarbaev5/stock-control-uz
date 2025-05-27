@@ -51,6 +51,16 @@ export interface Stock extends CreateStockDTO {
       owner: number;
     }
   };
+  store_read?: {
+    id: number;
+    name: string;
+    address: string;
+    phone_number: string;
+    created_at: string;
+    is_main: boolean;
+    parent_store: number | null;
+    owner: number;
+  };
   measurement_read?: Array<{
     id: number;
     measurement_write: number;
@@ -74,6 +84,14 @@ export interface Stock extends CreateStockDTO {
     id: number;
     name: string;
     phone_number: string;
+  };
+  history_of_prices?: {
+    quantity: number;
+    min_price: number;
+    exchange_rate: number;
+    selling_price: number;
+    purchase_price_in_us: number;
+    purchase_price_in_uz: number;
   };
 }
 

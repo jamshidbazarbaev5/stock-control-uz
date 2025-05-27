@@ -21,7 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 
-const columns = (t: any) => [
+const columns = (t: any, navigate: (path: string) => void) => [
   {
     header: t('table.product'),
     accessorKey: 'product_read',
@@ -32,20 +32,50 @@ const columns = (t: any) => [
     accessorKey: 'product_read',
     cell: (row: any) => row.store_read?.name || '-',
   },
+  {
+    header: t('table.purchase_price'),
+    accessorKey: 'purchase_price_in_uz',
+  },
   
   {
     header: t('table.selling_price'),
     accessorKey: 'selling_price',
   },
-  {
-    header: t('table.min_price'),
-    accessorKey: 'min_price',
-  },
+ 
   {
     header: t('table.quantity'),
     accessorKey: 'quantity',
   },
- 
+  {
+    header: t('table.actions'),
+    accessorKey: 'actions',
+    cell: (row: any) => (
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => navigate(`/stocks/${row.id}/history`)}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3 3v5h5" />
+            <path d="M3 3l6.1 6.1" />
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 3" />
+          </svg>
+        </Button>
+      </div>
+    ),
+  },
 ];
 
 const stockFields = [
@@ -348,7 +378,7 @@ export default function StocksPage() {
 
       <ResourceTable
         data={stocks}
-        columns={columns(t)}
+        columns={columns(t, navigate)}
         isLoading={isLoading}
         onEdit={handleEdit}
         onDelete={handleDelete}

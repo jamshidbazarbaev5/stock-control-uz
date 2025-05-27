@@ -62,7 +62,8 @@ export default function CreateProduct() {
           measurement_write: m.measurement_write,
           number: m.number,
           for_sale: m.for_sale
-        }))
+        })),
+        has_color: data.has_color === 'true'
       };
 
       await createProduct.mutateAsync(formattedData);
@@ -96,7 +97,17 @@ export default function CreateProduct() {
               label: category.category_name
             }))
           },
-          
+          {
+            name: 'has_color',
+            label: t('forms.has_color'),
+            type: 'select',
+            placeholder: t('placeholders.select_has_color'),
+            required: true,
+            options: [
+              { value: 'false', label: t('common.no') },
+              { value: 'true', label: t('common.yes') }
+            ]
+          }
         ]}
         onSubmit={handleSubmit}
         isSubmitting={createProduct.isPending}

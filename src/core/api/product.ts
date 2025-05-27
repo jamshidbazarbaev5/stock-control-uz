@@ -12,7 +12,8 @@ export interface Product {
   category_write: number;
   store_write?: number;
   measurements?: ProductMeasurement[];
-   measurement?: ProductMeasurement[];
+  measurement?: ProductMeasurement[];
+  has_color?: boolean;
   category_read?: {
     id: number;
     category_name: string;

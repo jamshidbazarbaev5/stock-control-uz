@@ -40,6 +40,7 @@ interface CreateSupplierForm {
 export default function CreateStock() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   
   // Define stock fields with translations
   const stockFields = [
@@ -115,6 +116,7 @@ export default function CreateStock() {
       type: 'text',
       placeholder: t('common.enter_color'),
       required: true,
+      hidden: true, // Initially hidden until a product is selected
     },
   ];
   const createStock = useCreateStock();
@@ -197,7 +199,11 @@ export default function CreateStock() {
         })),
         createNewLabel: t('common.create_new_product'),
         onCreateNew: handleCreateProduct,
-        isLoading: productsLoading
+        isLoading: productsLoading,
+        onChange: (value: string) => {
+          const product = products.find(p => p.id === parseInt(value));
+          setSelectedProduct(product);
+        }
       };
     }
     if (field.name === 'store_write') {
@@ -221,6 +227,12 @@ export default function CreateStock() {
         createNewLabel: t('common.create_new_supplier'),
         onCreateNew: handleCreateSupplier,
         isLoading: suppliersLoading
+      };
+    }
+    if (field.name === 'color') {
+      return {
+        ...field,
+        hidden: !selectedProduct?.has_color
       };
     }
     return field;
@@ -253,7 +265,7 @@ export default function CreateStock() {
       console.log('Submitting data:', formattedData);
       await createStock.mutateAsync(formattedData);
       toast.success('Stock created successfully');
-      navigate('/stocks');
+      navigate('/stock');
     } catch (error) {
       toast.error('Failed to create stock');
       console.error('Failed to create stock:', error);

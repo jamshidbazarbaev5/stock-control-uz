@@ -2,30 +2,27 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ResourceForm } from '../helpers/ResourceForm';
 import type { Stock } from '../api/stock';
 import { useUpdateStock, useGetStocks } from '../api/stock';
-import { useGetProducts } from '../api/product';
-import { useGetStores } from '../api/store';
-import { useGetMeasurements } from '../api/measurement';
-import { useGetSuppliers } from '../api/supplier';
+import { useGetProducts, type Product } from '../api/product';
+import { useGetStores, type Store } from '../api/store';
+import { useGetMeasurements, type Measurement } from '../api/measurement';
+import { useGetSuppliers, type Supplier } from '../api/supplier';
 import { toast } from 'sonner';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
-interface MeasurementRead {
-  id?: number;
-  measurement_write: number;
-  measurement_read?: {
-    id: number;
-    measurement_name: string;
-  };
-}
-
-// Define the form values interface with multiple measurements
-interface FormValues extends Omit<Stock, 'measurement_write'> {
+type StockFormValues = {
+  store_write: string;
+  product_write: string;
   purchase_price_in_us: string;
   exchange_rate: string;
   purchase_price_in_uz: string;
+  selling_price: string;
+  min_price: string;
+  quantity: string;
+  supplier_write: string;
+  color: string;
   measurement_write: string[];
-}
+};
 
 const stockFields = [
   {
@@ -100,14 +97,22 @@ const stockFields = [
     type: 'text',
     placeholder: 'Enter color',
     required: true,
+    hidden: true, // Initially hidden until we check the product
   },
- 
 ];
+
+type MeasurementReadType = {
+  measurement_read?: {
+    id: number;
+    measurement_name: string;
+  };
+};
 
 export default function EditStock() {
   const { id } = useParams();
   const navigate = useNavigate();
   const updateStock = useUpdateStock();
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   
   // Fetch the stock and dependencies
   const { data: stocksData, isLoading: isLoadingStocks } = useGetStocks({});
@@ -119,31 +124,33 @@ export default function EditStock() {
   const isLoading = isLoadingStocks || isLoadingProducts || isLoadingStores || 
                     isLoadingMeasurements || isLoadingSuppliers;
 
-  // Get the arrays from the responses
-  const stocks = Array.isArray(stocksData) ? stocksData : stocksData?.results || [];
-  const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
-  const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
-  const measurements = Array.isArray(measurementsData) ? measurementsData : measurementsData?.results || [];
-  const suppliers = Array.isArray(suppliersData) ? suppliersData : suppliersData?.results || [];
+  // Get the arrays from the responses with proper null checking
+  const stocks = stocksData ? ('results' in stocksData ? stocksData.results : stocksData) : [];
+  const products = productsData ? ('results' in productsData ? productsData.results : productsData) : [];
+  const stores = storesData ? ('results' in storesData ? storesData.results : storesData) : [];
+  const measurements = measurementsData ? ('results' in measurementsData ? measurementsData.results : measurementsData) : [];
+  const suppliers = suppliersData ? ('results' in suppliersData ? suppliersData.results : suppliersData) : [];
+
+  // Debug logging
+  console.log('Products:', products);
+  console.log('Stores:', stores);
+  console.log('Suppliers:', suppliers);
 
   // Find the stock to edit
   const stock = stocks.find(s => s.id === Number(id));
 
-  console.log('Current stock:', stock);
-  console.log('Current stores:', stores);
-  console.log('Current measurements:', measurements);
-  
-  const form = useForm<FormValues>({
+  const form = useForm<StockFormValues>({
+    // Set default values as soon as the form is initialized
     defaultValues: {
       store_write: stock?.store_read?.id?.toString() || '',
       product_write: stock?.product_read?.id?.toString() || '',
-      measurement_write: stock?.measurement_read?.map((m: MeasurementRead) => m.measurement_read?.id?.toString() || '') || [''],
-      purchase_price_in_us: stock?.purchase_price_in_us?.toString() || '0',
-      exchange_rate: stock?.exchange_rate?.toString() || '0',
-      purchase_price_in_uz: stock?.purchase_price_in_uz?.toString() || '0',
-      selling_price: stock?.selling_price?.toString() || '0',
-      min_price: stock?.min_price?.toString() || '0',
-      quantity: stock?.quantity?.toString() || '0',
+      measurement_write: stock?.measurement_read?.map((m: MeasurementReadType) => m.measurement_read?.id?.toString()) || [''],
+      purchase_price_in_us: stock?.purchase_price_in_us?.toString() || '',
+      exchange_rate: stock?.exchange_rate?.toString() || '',
+      purchase_price_in_uz: stock?.purchase_price_in_uz?.toString() || '',
+      selling_price: stock?.selling_price?.toString() || '',
+      min_price: stock?.min_price?.toString() || '',
+      quantity: stock?.quantity?.toString() || '',
       supplier_write: stock?.supplier_read?.id?.toString() || '',
       color: stock?.color || ''
     }
@@ -171,91 +178,124 @@ export default function EditStock() {
 
   // Update form values when stock data is loaded
   useEffect(() => {
-    if (stock) {
-      console.log('Setting form values for stock:', stock);
-      const values = {
+    if (stock && !isLoading) {
+      setSelectedProduct(stock.product_read);
+      form.reset({
         store_write: stock.store_read?.id?.toString() || '',
         product_write: stock.product_read?.id?.toString() || '',
-        measurement_write: stock.measurement_read?.map((m: MeasurementRead) => m.measurement_read?.id?.toString() || '') || [''],
-        purchase_price_in_us: stock.purchase_price_in_us?.toString() || '0',
-        exchange_rate: stock.exchange_rate?.toString() || '0',
-        purchase_price_in_uz: stock.purchase_price_in_uz?.toString() || '0',
-        selling_price: stock.selling_price?.toString() || '0',
-        min_price: stock.min_price?.toString() || '0',
-        quantity: stock.quantity?.toString() || '0',
+        measurement_write: stock.measurement_read?.map((m: MeasurementReadType) => m.measurement_read?.id?.toString()) || [''],
+        purchase_price_in_us: stock.purchase_price_in_us?.toString() || '',
+        exchange_rate: stock.exchange_rate?.toString() || '',
+        purchase_price_in_uz: stock.purchase_price_in_uz?.toString() || '',
+        selling_price: stock.selling_price?.toString() || '',
+        min_price: stock.min_price?.toString() || '',
+        quantity: stock.quantity?.toString() || '',
         supplier_write: stock.supplier_read?.id?.toString() || '',
         color: stock.color || ''
-      };
-
-      Object.entries(values).forEach(([key, value]) => {
-        form.setValue(key as keyof FormValues, value);
       });
     }
-  }, [stock, form]);
+  }, [stock, isLoading, form]);
 
   // Update fields with product, store, measurement and supplier options
   const fields = stockFields.map(field => {
-    if (field.name === 'product_write') {
-      const productOptions = products.map(product => ({
-        value: product.id?.toString() || '',
-        label: product.product_name
-      })).filter(opt => opt.value);
-      console.log('Product options:', productOptions);
-      return {
-        ...field,
-        options: productOptions
-      };
+    const commonSelectProps = {
+      type: 'select' as const,
+      required: true,
+    };
+
+    switch(field.name) {
+      case 'product_write':
+        return {
+          ...field,
+          ...commonSelectProps,
+          defaultValue: stock?.product_read?.id?.toString() || '',
+          options: products
+            .filter((product: Product) => product?.id != null)
+            .map((product: Product) => ({
+              value: product.id!.toString(),
+              label: product.product_name || 'Unnamed Product'
+            })),
+          onChange: (value: string) => {
+            const product = products.find((p: Product) => p.id === parseInt(value));
+            setSelectedProduct(product);
+          }
+        };
+
+      case 'store_write':
+        return {
+          ...field,
+          ...commonSelectProps,
+          defaultValue: stock?.store_read?.id?.toString() || '',
+          options: stores
+            .filter((store: Store) => store?.id != null)
+            .map((store: Store) => ({
+              value: store.id!.toString(),
+              label: store.name || 'Unnamed Store'
+            })),
+        };
+
+      case 'supplier_write':
+        return {
+          ...field,
+          ...commonSelectProps,
+          defaultValue: stock?.supplier_read?.id?.toString() || '',
+          options: suppliers
+            .filter((supplier: Supplier) => supplier?.id != null)
+            .map((supplier: Supplier) => ({
+              value: supplier.id!.toString(),
+              label: supplier.name || 'Unnamed Supplier'
+            })),
+        };
+
+      case 'measurement_write':
+        return {
+          ...field,
+          ...commonSelectProps,
+          defaultValue: stock?.measurement_read?.[0]?.measurement_read?.id?.toString() || '',
+          options: measurements
+            .filter((measurement: Measurement) => measurement?.id != null)
+            .map((measurement: Measurement) => ({
+              value: measurement.id!.toString(),
+              label: measurement.measurement_name || 'Unnamed Measurement'
+            })),
+        };
+
+      case 'color':
+        return {
+          ...field,
+          hidden: !selectedProduct?.has_color
+        };
+
+      default:
+        return field;
     }
-    if (field.name === 'store_write') {
-      const storeOptions = stores.map(store => ({
-        value: store.id?.toString() || '',
-        label: store.name
-      })).filter(opt => opt.value);
-      console.log('Store options:', storeOptions);
-      return {
-        ...field,
-        options: storeOptions
-      };
-    }
-    if (field.name === 'measurement_write') {
-      const measurementOptions = measurements.map(measurement => ({
-        value: measurement.id?.toString() || '',
-        label: measurement.measurement_name
-      })).filter(opt => opt.value);
-      console.log('Measurement options:', measurementOptions);
-      return {
-        ...field,
-        options: measurementOptions
-      };
-    }
-    if (field.name === 'supplier_write') {
-      const supplierOptions = suppliers.map(supplier => ({
-        value: supplier.id?.toString() || '',
-        label: supplier.name
-      })).filter(opt => opt.value);
-      console.log('Supplier options:', supplierOptions);
-      return {
-        ...field,
-        options: supplierOptions
-      };
-    }
-    return field;
   });
 
-  const handleSubmit = async (data: FormValues) => {
+  // Debug the fields after mapping
+  console.log('Mapped fields:', fields);
+  
+  // Debug select field options in detail
+  const selectFields = fields.filter(f => f.type === 'select');
+  console.log('Select fields:', selectFields.map(f => ({
+    name: f.name,
+    optionsCount: f.options?.length || 0,
+    options: f.options
+  })));
+
+  const handleSubmit = async (data: StockFormValues) => {
     if (!stock?.id) return;
 
     try {
-      const quantity = typeof data.quantity === 'string' ? parseInt(data.quantity, 10) : data.quantity!;
+      const quantity = parseInt(data.quantity, 10);
       
       // Convert measurement strings to numbers and create measurement objects
       const measurements = (Array.isArray(data.measurement_write) ? data.measurement_write : [data.measurement_write])
-        .filter(m => m) // Filter out empty values
-        .map(m => ({
+        .filter((m: string) => m) // Filter out empty values
+        .map((m: string) => ({
           measurement_write: parseInt(m, 10),
           number: quantity
         }));
-      
+
       // Calculate the UZS price from USD and exchange rate
       const priceInUSD = parseFloat(data.purchase_price_in_us);
       const exchangeRate = parseFloat(data.exchange_rate);
@@ -264,30 +304,30 @@ export default function EditStock() {
       // Format the data for the API
       const formattedData: Stock = {
         id: stock.id,
-        store_write: typeof data.store_write === 'string' ? parseInt(data.store_write, 10) : data.store_write!,
-        product_write: typeof data.product_write === 'string' ? parseInt(data.product_write, 10) : data.product_write!,
+        store_write: parseInt(data.store_write, 10),
+        product_write: parseInt(data.product_write, 10),
         purchase_price: priceInUZS,
-        selling_price: data.selling_price!,
-        min_price: data.min_price!,
+        selling_price: data.selling_price,
+        min_price: data.min_price,
         quantity: quantity,
-        supplier_write: typeof data.supplier_write === 'string' ? parseInt(data.supplier_write, 10) : data.supplier_write!,
-        color: data.color!,
+        supplier_write: parseInt(data.supplier_write, 10),
+        color: data.color,
         measurement_write: measurements,
-        purchase_price_in_us: data.purchase_price_in_us || '0',
-        exchange_rate: data.exchange_rate || '0',
+        purchase_price_in_us: data.purchase_price_in_us,
+        exchange_rate: data.exchange_rate,
         purchase_price_in_uz: priceInUZS
       };
 
       await updateStock.mutateAsync(formattedData);
       toast.success('Stock updated successfully');
-      navigate('/stocks');
+      navigate('/stock');
     } catch (error) {
       toast.error('Failed to update stock');
       console.error('Failed to update stock:', error);
     }
   };
 
-  if (!stock || isLoading) {
+  if (!stock || isLoading || !products.length || !stores.length || !suppliers.length) {
     return (
       <div className="container mx-auto py-8 px-4">
         <div className="text-center">Loading...</div>
@@ -298,7 +338,7 @@ export default function EditStock() {
   return (
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-2xl font-bold mb-6">Edit Stock</h1>
-      <ResourceForm<FormValues>
+      <ResourceForm<StockFormValues>
         fields={fields}
         onSubmit={handleSubmit}
         isSubmitting={updateStock.isPending}

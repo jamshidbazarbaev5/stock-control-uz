@@ -22,20 +22,19 @@ export interface FormField {
   placeholder?: string;
   options?: { value: string | number; label: string }[];
   required?: boolean;
-  // validation?: (schema: z.ZodTypeAny) => z.ZodTypeAny;
   readOnly?: boolean;
+  hidden?: boolean; // Add hidden property
   imageUrl?: string;
   preview?: string;
-  existingImage?: string;  // Add this new field
-  onDeleteImage?: (imageId?: number) => void; // Function to handle image deletion
+  existingImage?: string;
+  onDeleteImage?: (imageId?: number) => void;
   existingImages?: Array<{ id?: number; url: string }>;
-  // For searchable-select
   searchTerm?: string;
   onSearch?: (value: string) => void;
   showCreateButton?: boolean;
   onCreateClick?: () => void;
   defaultValue?: any;
-  onChange?: (value: any) => void; // Add onChange handler for select fields
+  onChange?: (value: any) => void;
 }
 
 // Update the ResourceFormProps interface to be more specific about generic type T
@@ -105,12 +104,12 @@ export function ResourceForm<T extends Record<string, any>>({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold">{title}</h2>
+      {title && <h2 className="text-xl font-bold">{title}</h2>}
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            {fields.map((field) => (
+            {fields.map((field) => !field.hidden && (
               <FormField
                 key={field.name}
                 control={form.control}

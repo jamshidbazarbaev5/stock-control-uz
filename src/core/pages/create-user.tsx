@@ -90,7 +90,7 @@ export default function CreateUser() {
           role: data.role,
           password: data.password
         },
-        storeт: Number(data.store),
+        store: Number(data.store),
         is_active: Boolean(data.is_active)
       };
 

@@ -75,6 +75,7 @@ export default function EditProduct() {
         id: Number(id),
         product_name: data.product_name,
         category_write: typeof data.category_write === 'string' ? parseInt(data.category_write, 10) : data.category_write,
+        has_color: data.has_color === 'true',
         measurement: measurements.map((m: MeasurementItem) => ({
           measurement_write: m.measurement_write,
           number: m.number,
@@ -117,6 +118,17 @@ export default function EditProduct() {
               label: category.category_name
             }))
           },
+          {
+            name: 'has_color',
+            label: t('forms.has_color'),
+            type: 'select',
+            placeholder: t('placeholders.select_has_color'),
+            required: true,
+            options: [
+              { value: 'false', label: t('common.no') },
+              { value: 'true', label: t('common.yes') }
+            ]
+          }
         ]}
         onSubmit={handleSubmit}
         isSubmitting={updateProduct.isPending}
@@ -124,6 +136,7 @@ export default function EditProduct() {
         defaultValues={{
           product_name: product.product_name,
           category_write: product.category_read?.id || product.category_write,
+          has_color: (product.has_color || false),
         }}
       >
         <div className="space-y-4">
@@ -162,7 +175,7 @@ export default function EditProduct() {
                   onValueChange={(value) => handleMeasurementChange(index, 'for_sale', value === 'true')}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t('placeholders.select_for_sale')} />
+                    <SelectValue placeholder={t('common.select')} />{/* Select whether this measurement is available for sale */}
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="false">{t('common.no')}</SelectItem>
