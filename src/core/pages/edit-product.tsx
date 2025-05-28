@@ -30,6 +30,8 @@ export default function EditProduct() {
   const updateProduct = useUpdateProduct();
   const { data: product } = useGetProduct(Number(id));
   const [measurements, setMeasurements] = useState<MeasurementItem[]>([]);
+  const [hasColor, setHasColor] = useState(false);
+  const [color, setColor] = useState('');
 
   // Fetch categories and measurements for the select dropdowns
   const { data: categoriesData } = useGetCategories({});
@@ -47,6 +49,10 @@ export default function EditProduct() {
         number: typeof m.number === 'string' ? Number(m.number) : m.number,
         for_sale: m.for_sale || false
       })));
+    }
+    if (product?.has_color) {
+      setHasColor(product.has_color);
+      setColor(product.color || '');
     }
   }, [product]);
 
@@ -76,6 +82,7 @@ export default function EditProduct() {
         product_name: data.product_name,
         category_write: typeof data.category_write === 'string' ? parseInt(data.category_write, 10) : data.category_write,
         has_color: data.has_color === 'true',
+        ...(data.has_color === 'true' && { color }),
         measurement: measurements.map((m: MeasurementItem) => ({
           measurement_write: m.measurement_write,
           number: m.number,
@@ -127,7 +134,8 @@ export default function EditProduct() {
             options: [
               { value: 'false', label: t('common.no') },
               { value: 'true', label: t('common.yes') }
-            ]
+            ],
+            onChange: (value: string) => setHasColor(value === 'true')
           }
         ]}
         onSubmit={handleSubmit}
@@ -139,6 +147,18 @@ export default function EditProduct() {
           has_color: (product.has_color || false),
         }}
       >
+        {hasColor && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">{t('forms.color')}</label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 border rounded-md"
+              placeholder={t('placeholders.enter_color')}
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+            />
+          </div>
+        )}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">{t('table.measurements')}</h3>
           {measurements.map((measurement: MeasurementItem, index: number) => (
@@ -175,7 +195,7 @@ export default function EditProduct() {
                   onValueChange={(value) => handleMeasurementChange(index, 'for_sale', value === 'true')}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t('common.select')} />{/* Select whether this measurement is available for sale */}
+                    <SelectValue placeholder={t('common.select')} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="false">{t('common.no')}</SelectItem>

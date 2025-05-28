@@ -15,7 +15,7 @@ import ProductsPage from "./core/pages/ProductsPage";
 import CreateProduct from "./core/pages/create-product";
 import StocksPage from "./core/pages/StocksPage";
 import CreateStock from "./core/pages/create-stock";
-import EditStock from "./core/pages/edit-stock";
+// import EditStock from "./core/pages/edit-stock";
 import Layout from "./core/layout/Layout";
 import MeasurementsPage from "./core/pages/MeasurementsPage";
 import CreateMeasurement from "./core/pages/create-measurement";
@@ -48,7 +48,7 @@ import CashInflowHistoryPage from "./core/pages/CashInflowHistoryPage";
 import EditMoney from "./core/pages/edit-money";
 import EditProduct from "./core/pages/edit-product";
 import StockPriceHistoryPage from "./core/pages/StockPriceHistoryPage";
-
+import EditStock from "./core/pages/edit-stock-2";
 const queryClient = new QueryClient()
 
 function App() {

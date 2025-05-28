@@ -40,6 +40,18 @@ const expenseFields = (t: (key: string) => string, storeBudget: number, onStoreC
     }
   },
   {
+    name: 'payment_type',
+    label: t('forms.payment_method'),
+    type: 'select',
+    placeholder: t('placeholders.select_payment_method'),
+    required: true,
+    options: [
+      { value: 'Наличные', label: t('forms.cash') },
+      { value: 'Карта', label: t('forms.card') },
+      { value: 'Click', label: t('forms.click') },
+    ],
+  },
+  {
     name: 'comment',
     label: t('forms.comment'),
     type: 'text',

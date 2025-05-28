@@ -22,6 +22,7 @@ interface FormValues extends Partial<Stock> {
   purchase_price_in_us: string;
   exchange_rate: string;
   purchase_price_in_uz: string;
+  date_of_arrived: string;
 }
 
 interface CreateProductForm {
@@ -96,6 +97,13 @@ export default function CreateStock() {
       required: true,
     },
     {
+      name: 'date_of_arrived',
+      label: t('common.date_of_arrival'),
+      type: 'datetime-local',
+      placeholder: t('common.enter_arrival_date'),
+      required: true,
+    },
+    {
       name: 'quantity',
       label: t('common.quantity'),
       type: 'text',
@@ -110,14 +118,7 @@ export default function CreateStock() {
       required: true,
       options: [], // Will be populated with suppliers
     },
-    {
-      name: 'color',
-      label: t('common.color'),
-      type: 'text',
-      placeholder: t('common.enter_color'),
-      required: true,
-      hidden: true, // Initially hidden until a product is selected
-    },
+
   ];
   const createStock = useCreateStock();
   
@@ -137,7 +138,12 @@ export default function CreateStock() {
     defaultValues: {
       purchase_price_in_us: '',
       exchange_rate: '',
-      purchase_price_in_uz: ''
+      purchase_price_in_uz: '',
+      date_of_arrived: (() => {
+        const date = new Date();
+        date.setHours(date.getHours() + 5); // Subtract 5 hours
+        return date.toISOString().slice(0, 16);
+      })()
     }
   });
 
@@ -209,10 +215,12 @@ export default function CreateStock() {
     if (field.name === 'store_write') {
       return {
         ...field,
-        options: stores.map(store => ({
-          value: store.id,
-          label: store.name
-        })),
+        options: stores
+          .filter(store => store.is_main) // Only show non-main stores
+          .map(store => ({
+            value: store.id,
+            label: store.name
+          })),
         isLoading: storesLoading
       };
     }
@@ -258,7 +266,8 @@ export default function CreateStock() {
         min_price: data.min_price!,
         quantity: quantity,
         supplier_write: typeof data.supplier_write === 'string' ? parseInt(data.supplier_write, 10) : data.supplier_write!,
-        color: data.color!,
+
+        date_of_arrived: data.date_of_arrived,
         measurement_write: [] // Empty array since we removed measurement selection
       };
 
@@ -348,7 +357,7 @@ export default function CreateStock() {
                   <SelectValue placeholder={t('common.select_store')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {stores.map((store) => (
+                  {stores.filter(store => !store.is_main).map((store) => (
                     <SelectItem key={store.id?.toString() || ''} value={(store.id || 0).toString()}>
                       {store.name}
                     </SelectItem>

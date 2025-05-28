@@ -8,9 +8,6 @@
     "click": "Click",
     "complex": "Сложная оплата"
   },
-  "stock": {
-    "price_history": "История цен"
-  },
   "pages": {
     "create_expense_name": "Создать название расхода",
     "payment_history": "История платежей",
@@ -18,10 +15,15 @@
     "create_expense": "Создать расход"
   },
   "common": {
+    "all_expense_names": "Все названия расходов",
+    "all_payment_types":" Все способы оплаты",
+    "all_stores": "Все магазины",
+      "edit_stock": "Редактировать приход",
+    "enter_arrival_date": "Введите дату прихода",
     "no_history": "Нет истории",
     "filters": "Фильтры",
-
-    "clear_fiters":"Очистить фильтры",
+    "date_of_arrival":"Дата прихода",
+    "clear_filters2":"Очистить фильтры",
     "all":"Все",
     "actions":"Действия",
     "details": "Детали",
@@ -291,6 +293,7 @@
   },
   "table": {
     "credit_status":"Статус",
+    "date_of_arrived": "Дата прихода",
     "price":"Цена",
     "budget":"Бюджет",
     "total_amount":"Общая сумма",

@@ -26,6 +26,8 @@ export default function CreateProduct() {
   const navigate = useNavigate();
   const createProduct = useCreateProduct();
   const { t } = useTranslation();
+  const [color, setColor] = useState('');
+  const [hasColor, setHasColor] = useState(false);
   const [measurements, setMeasurements] = useState<MeasurementItem[]>([{ measurement_write: 0, number: 0, for_sale: false }]);
 
   // Fetch categories, stores and measurements for the select dropdowns
@@ -48,7 +50,7 @@ export default function CreateProduct() {
     const newMeasurements = [...measurements];
     newMeasurements[index] = {
       ...newMeasurements[index],
-      [field]: field === 'for_sale' ? value : (parseInt(value as string, 10) || 0)
+      [field]: field === 'for_sale' ? value : parseInt(value as string, 10) || 0
     };
     setMeasurements(newMeasurements);
   };
@@ -61,9 +63,10 @@ export default function CreateProduct() {
         measurement: measurements.map((m: MeasurementItem) => ({
           measurement_write: m.measurement_write,
           number: m.number,
-          for_sale: m.for_sale
+          for_sale: m.for_sale,
         })),
-        has_color: data.has_color === 'true'
+        has_color: data.has_color === 'true',
+        ...(data.has_color === 'true' && { color })
       };
 
       await createProduct.mutateAsync(formattedData);
@@ -106,13 +109,26 @@ export default function CreateProduct() {
             options: [
               { value: 'false', label: t('common.no') },
               { value: 'true', label: t('common.yes') }
-            ]
+            ],
+            onChange: (value: string) => setHasColor(value === 'true')
           }
         ]}
         onSubmit={handleSubmit}
         isSubmitting={createProduct.isPending}
         title={t('common.create') + ' ' + t('table.product')}
       >
+        {hasColor && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">{t('forms.color')}</label>
+            <input
+              type="text"
+              className="w-full px-3 py-2 border rounded-md"
+              placeholder={t('placeholders.enter_color')}
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+            />
+          </div>
+        )}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">{t('table.measurements')}</h3>
           {measurements.map((measurement: MeasurementItem, index: number) => (

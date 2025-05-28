@@ -9,6 +9,7 @@ export interface ProductMeasurement {
 export interface Product {
   id?: number;
   product_name: string;
+  color?: string;
   category_write: number;
   store_write?: number;
   measurements?: ProductMeasurement[];

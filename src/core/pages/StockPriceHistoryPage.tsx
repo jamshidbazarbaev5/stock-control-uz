@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useGetStock } from '../api/stock';
+import { formatDate } from '../helpers/formatDate';
 
 export default function StockPriceHistoryPage() {
   const { t } = useTranslation();
@@ -52,6 +53,9 @@ export default function StockPriceHistoryPage() {
             {stock.product_read?.product_name} - {stock.store_read?.name}
           </p>
         </div>
+        <div>
+            {formatDate(stock.history_of_prices.date_of_arrived)}
+        </div>
         <Button variant="outline" onClick={() => navigate('/stocks')}>
           {t('common.back')}
         </Button>
@@ -80,6 +84,7 @@ export default function StockPriceHistoryPage() {
           stock.quantity.toString(),
           stock.history_of_prices.quantity.toString()
         )}
+       
 
         {renderValueCard(
           t('table.exchange_rate'),

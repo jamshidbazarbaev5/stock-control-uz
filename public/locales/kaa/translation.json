@@ -9,8 +9,17 @@
     "complex": "Quramalı tólem"
   },
   "common": {
+    
+    "all_payment_types": "Barlıq tólew usılları",
+    "all_stores": "Barlıq dúkanlar",
+    "all_expense_names": "Barlıq rasxod atları",
+    "edit_stock": "Kelgen zatlardı ózgertiw",
+    "enter_arrival_date": "Keliw sánesin kiritiń",
+    "date_of_arrival": "Kelgen sanesi",
+    
     "no_history": "Tarixi yoq",
     "all":"Hammesi",
+    "clear_filters2": "Filterlerdi oshiriw",
     "filters": "Filterler",
     "start_date": "Baslaniw sanesi",
     "end_date": "Tawsiliw sanesi",
@@ -285,6 +294,7 @@
      "credit_status":"Status",
     "number": "№",
     "price":"Bahası",
+    "date_of_arrived": "Kelgen sa'ne",
     "total_amount": "Jami summa",
     "status":"Status",
     "to_stock":"Skladǵa",

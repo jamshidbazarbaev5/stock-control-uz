@@ -14,11 +14,13 @@ export interface CreateStockDTO {
   min_price: string;
   quantity: number;
   supplier_write: number;
-  color: string;
+  color?: string;
   measurement_write: StockMeasurement[];
   purchase_price_in_us: string;
   exchange_rate: string;
   purchase_price_in_uz: string;
+  date_of_arrived?: string;
+  date?:string;
 }
 
 export interface Stock extends CreateStockDTO {
@@ -92,6 +94,7 @@ export interface Stock extends CreateStockDTO {
     selling_price: number;
     purchase_price_in_us: number;
     purchase_price_in_uz: number;
+    date_of_arrived:Date;
   };
 }
 

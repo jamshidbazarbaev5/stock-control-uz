@@ -49,6 +49,18 @@ export default function EditExpensePage() {
       required: true,
     },
     {
+      name: 'payment_method',
+      label: t('forms.payment_method'),
+      type: 'select',
+      placeholder: t('forms.select_payment_method'),
+      required: true,
+      options: [
+        { value: 'Наличные', label: t('forms.cash') },
+        { value: 'Карта', label: t('forms.card') },
+        { value: 'Click', label: t('forms.click') },
+      ],
+    },
+    {
       name: 'comment',
       label: t('forms.comment'),
       type: 'textarea',
@@ -61,6 +73,7 @@ export default function EditExpensePage() {
     store_write: number;
     expense_name_write: number;
     amount: string;
+    payment_method: string;
     comment?: string;
   }
 
@@ -69,6 +82,7 @@ export default function EditExpensePage() {
       store: data.store_write,
       expense_name: data.expense_name_write,
       amount: data.amount,
+      payment_method: data.payment_method,
       comment: data.comment,
     };
     try {
@@ -92,7 +106,8 @@ export default function EditExpensePage() {
     store_write: expense.store_read?.id,
     expense_name_write: expense.expense_name_read?.id,
     amount: expense.amount,
-    comment: expense.comment,
+    payment_method: expense.payment_method,
+    comment: expense.comment
   };
 
   return (

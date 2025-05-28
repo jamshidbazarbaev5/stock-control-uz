@@ -184,7 +184,7 @@ export default function SalesPage() {
             size="sm"
             onClick={handleClearFilters}
           >
-            {t('common.clear_filters')}
+            {t('common.clear_filters2')}
           </Button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

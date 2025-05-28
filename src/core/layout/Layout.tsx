@@ -57,6 +57,8 @@ export default function Layout({ children }: any) {
     { icon: ArrowLeftRight, label: t('navigation.transfers'), href: '/transfers' },
     { icon: Package, label: t('navigation.stocks'), href: '/stock' },
     { icon: ShoppingBag, label: t('navigation.sale'), href: '/sales' },
+    { icon: UserCheck, label: t('navigation.clients'), href: '/clients' },
+    { icon: ShoppingBag, label: t('navigation.debt'), href: '/debts' },
     
     {
       icon: Wallet,
@@ -83,8 +85,7 @@ export default function Layout({ children }: any) {
         { icon: ListView, label: t('navigation.suppliers'), href: '/suppliers' },
         { icon: User2, label: t('navigation.users'), href: '/users' },
         //  { icon: ShoppingBag, label: t('navigation.staff'), href: '/staff' },
-           { icon: UserCheck, label: t('navigation.clients'), href: '/clients' },
-            { icon: ShoppingBag, label: t('navigation.debt'), href: '/debts' }
+
       ]
     },
   ];

@@ -175,7 +175,6 @@ export default function DebtsPage() {
         { value: 'Наличные', label: t('forms.cash') },
         { value: 'Карта', label: t('forms.card') },
         { value: 'Click', label: t('forms.click') },
-        { value: 'Сложная оплата', label: t('forms.complex_payment') },
       ],
     }
   ];

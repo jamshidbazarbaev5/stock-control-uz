@@ -20,7 +20,7 @@ import { ResourceTable } from '../helpers/ResourseTable';
 import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-
+import {formatDate} from "@/core/helpers/formatDate.ts";
 const columns = (t: any, navigate: (path: string) => void) => [
   {
     header: t('table.product'),
@@ -40,6 +40,15 @@ const columns = (t: any, navigate: (path: string) => void) => [
   {
     header: t('table.selling_price'),
     accessorKey: 'selling_price',
+  },
+  {
+    header: t('table.date_of_arrived'),
+    accessorKey:'date',
+    cell:(row:any)=>(
+        <p>
+          {formatDate(row.history_of_prices.date_of_arrived)}
+        </p>
+    )
   },
  
   {

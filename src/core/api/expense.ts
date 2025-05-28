@@ -7,6 +7,7 @@ export interface Expense {
   amount: string;
   expense_name: number;
   comment?: string;
+  payment_method: string;
   store_read?: {
     id: number;
     name: string;
