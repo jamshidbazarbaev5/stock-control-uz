@@ -221,60 +221,60 @@ export default function CreateSale() {
 
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold mb-6">
+    <div className="container mx-auto py-4 sm:py-8 px-2 sm:px-4">
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
         {t('common.create')} {t('navigation.sale')}
       </h1>
       
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
           {/* Store Selection */}
-          <FormField
-            control={form.control}
-            name="store_write"
-            rules={{ required: t('validation.required') }}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('table.store')}</FormLabel>
-                <Select
-                  value={field.value?.toString()}
-                  onValueChange={(value) => {
-                    field.onChange(parseInt(value, 10));
-                    setSelectedStore(parseInt(value, 10));
-                  }}
-                >
-                  <SelectTrigger className={form.formState.errors.store_write ? "border-red-500" : ""}>
-                    <SelectValue placeholder={t('placeholders.select_store')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {stores.map((store) => (
-                      <SelectItem key={store.id} value={store.id?.toString() || ''}>
-                        {store.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.store_write && (
-                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.store_write.message}</p>
-                )}
-              </FormItem>
-            )}
-          />
-
-
+          <div className="w-full sm:w-2/3 lg:w-1/2">
+            <FormField
+              control={form.control}
+              name="store_write"
+              rules={{ required: t('validation.required') }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('table.store')}</FormLabel>
+                  <Select
+                    value={field.value?.toString()}
+                    onValueChange={(value) => {
+                      field.onChange(parseInt(value, 10));
+                      setSelectedStore(parseInt(value, 10));
+                    }}
+                  >
+                    <SelectTrigger className={form.formState.errors.store_write ? "border-red-500" : ""}>
+                      <SelectValue placeholder={t('placeholders.select_store')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {stores.map((store) => (
+                        <SelectItem key={store.id} value={store.id?.toString() || ''}>
+                          {store.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.store_write && (
+                    <p className="text-sm text-red-500 mt-1">{form.formState.errors.store_write.message}</p>
+                  )}
+                </FormItem>
+              )}
+            />
+          </div>
 
           {/* Sale Items */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold">{t('common.sale_items')}</h2>
+              <h2 className="text-base sm:text-lg font-semibold">{t('common.sale_items')}</h2>
               <Button type="button" onClick={addSaleItem}>
                 {t('common.add_item')}
               </Button>
             </div>
 
             {form.watch('sale_items').map((_, index: number) => (
-              <div key={index} className="flex flex-wrap items-start gap-4 p-4 border rounded-lg bg-white shadow-sm">
-                <div className="w-[250px]">
+              <div key={index} className="flex flex-col sm:flex-row flex-wrap items-start gap-2 sm:gap-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
+                <div className="w-full sm:w-[250px]">
                   <FormField
                     control={form.control}
                     name={`sale_items.${index}.stock_write`}
@@ -312,7 +312,7 @@ export default function CreateSale() {
                   />
                 </div>
 
-                <div className="w-[250px]">
+                <div className="w-full sm:w-[250px]">
                   <FormField
                     control={form.control}
                     name={`sale_items.${index}.selling_method`}
@@ -336,7 +336,7 @@ export default function CreateSale() {
                   />
                 </div>
 
-                <div className="w-[120px]">
+                <div className="w-full sm:w-[120px]">
                   <FormField
                     control={form.control}
                     name={`sale_items.${index}.quantity`}
@@ -359,7 +359,7 @@ export default function CreateSale() {
                   />
                 </div>
 
-                <div className="w-[150px]">
+                <div className="w-full sm:w-[150px]">
                   <FormField
                     control={form.control}
                     name={`sale_items.${index}.subtotal`}
@@ -389,7 +389,7 @@ export default function CreateSale() {
                     variant="destructive"
                     size="icon"
                     onClick={() => removeSaleItem(index)}
-                    className="mt-8"
+                    className="mt-2 sm:mt-8"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M18 6L6 18M6 6l12 12"/>
@@ -402,9 +402,9 @@ export default function CreateSale() {
 
           {/* Payment Methods */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">{t('table.payment_methods')}</h3>
+            <h3 className="text-base sm:text-lg font-semibold">{t('table.payment_methods')}</h3>
             {form.watch('sale_payments').map((_, index) => (
-              <div key={index} className="flex gap-4 items-end">
+              <div key={index} className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-end">
                 <FormField
                   control={form.control}
                   name={`sale_payments.${index}.payment_method`}
@@ -472,6 +472,7 @@ export default function CreateSale() {
                         form.setValue('sale_payments', payments);
                       }
                     }}
+                    className="mt-0 sm:mt-1"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M18 6L6 18M6 6l12 12"/>
@@ -494,121 +495,128 @@ export default function CreateSale() {
                   form.setValue('sale_payments', payments);
                 }
               }}
+              className="w-full sm:w-auto"
             >
               {t('common.add_payment_method')}
             </Button>
           </div>
 
           {/* On Credit */}
-          <FormField
-            control={form.control}
-            name="on_credit"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('table.on_credit')}</FormLabel>
-                <Select
-                  value={field.value ? 'true' : 'false'}
-                  onValueChange={(value) => {
-                    const isCredit = value === 'true';
-                    field.onChange(isCredit);
-                    if (!isCredit) {
-                      form.setValue('sale_debt', undefined);
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="true">{t('common.yes')}</SelectItem>
-                    <SelectItem value="false">{t('common.no')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
+          <div className="w-full sm:w-2/3 lg:w-1/2">
+            <FormField
+              control={form.control}
+              name="on_credit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('table.on_credit')}</FormLabel>
+                  <Select
+                    value={field.value ? 'true' : 'false'}
+                    onValueChange={(value) => {
+                      const isCredit = value === 'true';
+                      field.onChange(isCredit);
+                      if (!isCredit) {
+                        form.setValue('sale_debt', undefined);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">{t('common.yes')}</SelectItem>
+                      <SelectItem value="false">{t('common.no')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+          </div>
 
-          {/* Client Selection - Always visible */}
-          <FormField
-            control={form.control}
-            name="sale_debt.client"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('table.client')}</FormLabel>
-                <Select
-                  value={field.value?.toString()}
-                  onValueChange={(value) => {
-                    field.onChange(parseInt(value, 10));
-                    // If client is selected but on_credit is not enabled, set on_credit to false
-                    if (value && !form.getValues('on_credit')) {
-                      form.setValue('on_credit', false);
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('placeholders.select_client')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clients
-                      .filter(client => form.watch('on_credit') ? true : client.type === 'Юр.лицо')
-                      .map((client) => (
-                        <SelectItem key={client.id} value={client.id?.toString() || ''}>
-                          {client.name} {client.type !== 'Юр.лицо' && `(${client.type})`}
-                        </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
+          {/* Client Selection */}
+          <div className="w-full sm:w-2/3 lg:w-1/2">
+            <FormField
+              control={form.control}
+              name="sale_debt.client"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('table.client')}</FormLabel>
+                  <Select
+                    value={field.value?.toString()}
+                    onValueChange={(value) => {
+                      field.onChange(parseInt(value, 10));
+                      // If client is selected but on_credit is not enabled, set on_credit to false
+                      if (value && !form.getValues('on_credit')) {
+                        form.setValue('on_credit', false);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('placeholders.select_client')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients
+                        .filter(client => form.watch('on_credit') ? true : client.type === 'Юр.лицо')
+                        .map((client) => (
+                          <SelectItem key={client.id} value={client.id?.toString() || ''}>
+                            {client.name} {client.type !== 'Юр.лицо' && `(${client.type})`}
+                          </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+          </div>
 
-          {/* Credit Details (only shown when on_credit is true) */}
+          {/* Credit Details */}
           {form.watch('on_credit') && (
-            <div className="space-y-4 p-4 border rounded-lg bg-amber-50 border-amber-200">
+            <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-amber-50 border-amber-200">
               <h3 className="font-semibold text-gray-800 flex items-center gap-2">
                 <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full flex items-center gap-1">
                   {t('common.on_credit')}
                 </span>
               </h3>
 
-              <FormField
-                control={form.control}
-                name="sale_debt.due_date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('table.due_date')}</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+              <div className="grid sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="sale_debt.due_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('table.due_date')}</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="sale_debt.deposit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('table.deposit')}</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="0"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="sale_debt.deposit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('table.deposit')}</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="0"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
           )}
 
           {/* Total Amount Display */}
-          <div className="mt-8 p-6 border rounded-lg bg-gray-50">
+          <div className="mt-6 sm:mt-8 p-4 sm:p-6 border rounded-lg bg-gray-50">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-700">{t('table.total_amount')}</h3>
-              <p className="text-3xl font-bold text-green-600">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-700">{t('table.total_amount')}</h3>
+              <p className="text-xl sm:text-3xl font-bold text-green-600">
                 {parseFloat(form.watch('total_amount') || '0').toLocaleString()}
               </p>
             </div>
@@ -616,7 +624,7 @@ export default function CreateSale() {
 
           <Button 
             type="submit" 
-            className="w-full mt-6 h-12 text-lg font-medium" 
+            className="w-full mt-4 sm:mt-6 h-10 sm:h-12 text-base sm:text-lg font-medium" 
             disabled={createSale.isPending}
           >
             {createSale.isPending ? t('common.creating') : t('common.create')}

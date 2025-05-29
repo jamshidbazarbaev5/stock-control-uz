@@ -21,6 +21,7 @@
     "create_expense": "Создать расход"
   },
   "common": {
+    "history":"История ",
     "add_payment_method": "Добавить способ оплаты",
     "all_expense_names": "Все названия расходов",
     "all_payment_types": " Все способы оплаты",
