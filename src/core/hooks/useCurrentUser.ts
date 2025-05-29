@@ -20,7 +20,7 @@ export function useCurrentUser() {
       const decoded = decodeToken(token);
       if (!decoded?.user_id) return null;
 
-      const response = await api.get(`personel/users/${decoded.user_id}/`);
+      const response = await api.get(`users/${decoded.user_id}/`);
       return response.data;
     },
     retry: false

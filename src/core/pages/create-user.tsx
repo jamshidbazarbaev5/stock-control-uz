@@ -1,9 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { ResourceForm } from '../helpers/ResourceForm';
-import { useCreateStaff } from '../api/staff';
 import { useTranslation } from 'react-i18next';
 import { useGetStores } from '../api/store';
 import { toast } from 'sonner';
+import { useCreateUser } from '../api/user';
 
 interface UserFormData {
   name: string;
@@ -16,7 +16,7 @@ interface UserFormData {
 
 export default function CreateUser() {
   const navigate = useNavigate();
-  const createStaff = useCreateStaff();
+  const createStaff = useCreateUser();
   const { t } = useTranslation();
   const { data: storesData } = useGetStores({});
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
@@ -84,13 +84,13 @@ export default function CreateUser() {
     try {
       // Transform the data to match the staff creation endpoint requirements
       const staffData = {
-        user_write: {
+
           name: data.name,
           phone_number: data.phone_number,
           role: data.role,
-          password: data.password
-        },
-        store: Number(data.store),
+          password: data.password,
+
+        store_write: Number(data.store),
         is_active: Boolean(data.is_active)
       };
 

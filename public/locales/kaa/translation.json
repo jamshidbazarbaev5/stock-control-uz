@@ -9,7 +9,7 @@
     "complex": "Quramalı tólem"
   },
   "common": {
-    
+    "history": "Tarix",
     "all_payment_types": "Barlıq tólew usılları",
     "all_stores": "Barlıq dúkanlar",
     "all_expense_names": "Barlıq rasxod atları",
@@ -94,6 +94,7 @@
     "expense":"Rasxodtar",
     "finance": "Moliya",
     "add_money": "Tusim qosıw",
+    "income": "Kírister",
     "cash_inflow_name": "Tusim atı",
     "cash_inflow_names":"Tusimnin atı",
     "expense_name": "Rasxod atı",
@@ -135,7 +136,13 @@
     "amount_exceeds_remainder": "Summa qalǵan summadan artıq bolmawı kerek"
   },
   "forms": {
+    "current_balance": "Ha'zirgi balans",
     "has_color":"Reńi barma?",
+    "amount_deducted": "Sheshilgen summa",
+    "previous_balance": "Alding'i balans",
+    "all_sources":"Barliq resuslar",
+    "new_balance": "Taza balans",
+
     "select_store":"Dúkandı tańlań",
     "date":"Sáne",
     "cash":"Naq",
@@ -292,6 +299,7 @@
   "table": {
     "history_value": "Aldınǵı bahası",
      "credit_status":"Status",
+     "deposit":"Avans",
     "number": "№",
     "price":"Bahası",
     "date_of_arrived": "Kelgen sa'ne",

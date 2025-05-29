@@ -22,24 +22,32 @@ import { Input } from '@/components/ui/input';
 import { useGetStores } from '../api/store';
 import { useGetStocks } from '../api/stock';
 import { useGetClients } from '../api/client';
-import { useCreateSale } from '../api/sale';
+import { useCreateSale, type Sale } from '@/core/api/sale';
 
-interface SaleItem {
+interface FormSaleItem {
   stock_write: number;
   selling_method: 'Штук' | 'Ед.измерения';
   quantity: number;
   subtotal: string;
 }
 
+
+
+interface FormSalePayment {
+  payment_method: string;
+  amount: number;
+}
+
 interface SaleFormData {
   store_write: number;
-  payment_method: string;
-  sale_items: SaleItem[];
+  sale_items: FormSaleItem[];
   on_credit: boolean;
   total_amount: string;
+  sale_payments: FormSalePayment[];
   sale_debt?: {
     client: number;
     due_date: string;
+    deposit?: number;
   };
 }
 
@@ -48,17 +56,18 @@ export default function CreateSale() {
   const { t } = useTranslation();
   const form = useForm<SaleFormData>({
     defaultValues: {
-      payment_method: 'Наличные',
       sale_items: [{ stock_write: 0, selling_method: 'Штук', quantity: 1, subtotal: '0' }],
+      sale_payments: [{ payment_method: 'Наличные', amount: 0 }],
       on_credit: false,
-      total_amount: '0'
+      total_amount: '0',
+      store_write: 0
     },
     mode: 'onChange'
   });
 
   const [selectedStore, setSelectedStore] = useState<number | null>(null);
-  const [selectedStocks, setSelectedStocks] = useState<{[key: number]: number}>({});
-  const [selectedPrices, setSelectedPrices] = useState<{[key: number]: { min: number; selling: number }}>({});
+  const [selectedStocks, setSelectedStocks] = useState<Record<number, number>>({});
+  const [selectedPrices, setSelectedPrices] = useState<Record<number, { min: number; selling: number }>>({});
   
   // Fetch data
   const { data: storesData } = useGetStores({});
@@ -69,11 +78,12 @@ export default function CreateSale() {
   // Prepare data arrays
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
   const stocks = Array.isArray(stocksData) ? stocksData : stocksData?.results || [];
+  // Remove the filter to show all clients
   const clients = Array.isArray(clientsData) ? clientsData : clientsData?.results || [];
 
   // Filter stocks by selected store
   const filteredStocks = stocks.filter(stock => stock.store_read?.id === selectedStore);
-
+  
   const calculateSubtotal = (quantity: number, price: number) => {
     return (quantity * price).toString();
   };
@@ -155,42 +165,60 @@ export default function CreateSale() {
       });
 
       if (hasInvalidPrices) {
-        toast.error(t('messages.error.below_min_price'));
+        toast.error(t('messages.error.invalid_price'));
         return;
-      }
-
-      const saleData = {
-        ...data,
-        // total_amount: data.total_amount,
+      }        // Get primary payment method from sale_payments
+      const primaryPayment = data.sale_payments[0];
+      
+      const formattedData: Sale = {
+        store: data.store_write,
+        payment_method: primaryPayment?.payment_method || 'Наличные',
         sale_items: data.sale_items.map(item => ({
-          ...item,
-          quantity: item.quantity.toString()
-        }))
+          stock_write: item.stock_write,
+          selling_method: item.selling_method,
+          quantity: item.quantity.toString(),
+          subtotal: item.subtotal.toString()
+        })),
+        sale_payments: data.sale_payments.map(payment => ({
+          payment_method: payment.payment_method,
+          amount: payment.amount.toString()
+        })),
+        on_credit: data.on_credit,
+        total_amount: data.total_amount.toString(),
+        // If client is selected but not on credit, send client directly
+        ...(data.sale_debt?.client && !data.on_credit ? { client: data.sale_debt.client } : {}),
+        // If on credit and client selected, include in sale_debt
+        ...(data.on_credit && data.sale_debt?.client ? {
+          sale_debt: {
+            client: data.sale_debt.client,
+            due_date: data.sale_debt.due_date,
+            ...(data.sale_debt.deposit ? { deposit: data.sale_debt.deposit.toString() } : {})
+          }
+        } : {})
       };
 
-      await createSale.mutateAsync(saleData as any); // Type assertion as any to bypass type check temporarily
-      toast.success(t('messages.success.created', { item: t('navigation.sale') }));
+      await createSale.mutateAsync(formattedData);
+      toast.success(t('messages.created_successfully'));
       navigate('/sales');
     } catch (error) {
-      toast.error(t('messages.error.create', { item: t('navigation.sale') }));
-      console.error('Failed to create sale:', error);
+      console.error('Error creating sale:', error);
+      toast.error(t('messages.error_creating'));
     }
   };
 
   const addSaleItem = () => {
-    const currentItems = form.getValues('sale_items');
-    form.setValue('sale_items', [
-      ...currentItems,
-      { stock_write: 0, selling_method: 'Штук', quantity: 1, subtotal: '0' }
-    ]);
+    const items = form.getValues('sale_items');
+    form.setValue('sale_items', [...items, { stock_write: 0, selling_method: 'Штук', quantity: 1, subtotal: '0' } as FormSaleItem]);
+    updateTotalAmount();
   };
 
   const removeSaleItem = (index: number) => {
-    const currentItems = form.getValues('sale_items');
-    form.setValue('sale_items', currentItems.filter((_: SaleItem, i: number) => i !== index));
+    const items = form.getValues('sale_items');
+    form.setValue('sale_items', items.filter((_, i) => i !== index));
+    updateTotalAmount();
   };
 
-  const isOnCredit = form.watch('on_credit');
+
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -233,30 +261,7 @@ export default function CreateSale() {
             )}
           />
 
-          {/* Payment Method */}
-          <FormField
-            control={form.control}
-            name="payment_method"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('table.payment_method')}</FormLabel>
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('placeholders.select_payment_method')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Наличные">{t('payment_types.cash')}</SelectItem>
-                    <SelectItem value="Карта">{t('payment_types.card')}</SelectItem>
-                    <SelectItem value="Click">{t('payment_types.click')}</SelectItem>
-                    <SelectItem value="Сложная оплата">{t('payment_types.complex')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
+
 
           {/* Sale Items */}
           <div className="space-y-4">
@@ -267,7 +272,7 @@ export default function CreateSale() {
               </Button>
             </div>
 
-            {form.watch('sale_items').map((_: SaleItem, index: number) => (
+            {form.watch('sale_items').map((_, index: number) => (
               <div key={index} className="flex flex-wrap items-start gap-4 p-4 border rounded-lg bg-white shadow-sm">
                 <div className="w-[250px]">
                   <FormField
@@ -307,7 +312,7 @@ export default function CreateSale() {
                   />
                 </div>
 
-                <div className="w-[150px]">
+                <div className="w-[250px]">
                   <FormField
                     control={form.control}
                     name={`sale_items.${index}.selling_method`}
@@ -395,6 +400,105 @@ export default function CreateSale() {
             ))}
           </div>
 
+          {/* Payment Methods */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">{t('table.payment_methods')}</h3>
+            {form.watch('sale_payments').map((_, index) => (
+              <div key={index} className="flex gap-4 items-end">
+                <FormField
+                  control={form.control}
+                  name={`sale_payments.${index}.payment_method`}
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>{t('table.payment_method')}</FormLabel>
+                      <Select
+                        value={typeof field.value === 'string' ? field.value : ''}
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Наличные">{t('payment.cash')}</SelectItem>
+                          <SelectItem value="Click">{t('payment.click')}</SelectItem>
+                          <SelectItem value="Карта">{t('payment.card')}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name={`sale_payments.${index}.amount`}
+                  render={({ field: { onChange, value } }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>{t('table.amount')}</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          value={value?.toString() || ''}
+                          onChange={(e) => {
+                            const newAmount = parseFloat(e.target.value) || 0;
+                            const totalAmount = parseFloat(form.watch('total_amount'));
+                            const otherPaymentsTotal = form.watch('sale_payments')
+                              .filter((_, i) => i !== index)
+                              .reduce((sum, p) => sum + (p.amount || 0), 0);
+                            
+                            if (newAmount + otherPaymentsTotal > totalAmount) {
+                              onChange(totalAmount - otherPaymentsTotal);
+                            } else {
+                              onChange(newAmount);
+                            }
+                          }}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                {index > 0 && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => {
+                      const payments = form.getValues('sale_payments');
+                      payments.splice(index, 1);
+                      const totalAmount = parseFloat(form.watch('total_amount'));
+                      const remainingAmount = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+                      if (remainingAmount < totalAmount) {
+                        payments[payments.length - 1].amount = totalAmount - remainingAmount;
+                        form.setValue('sale_payments', payments);
+                      } else {
+                        form.setValue('sale_payments', payments);
+                      }
+                    }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                  </Button>
+                )}
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const payments = form.getValues('sale_payments');
+                const totalAmount = parseFloat(form.watch('total_amount'));
+                const currentTotal = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+                const remaining = totalAmount - currentTotal;
+                
+                if (remaining > 0) {
+                  payments.push({ payment_method: 'Наличные', amount: remaining });
+                  form.setValue('sale_payments', payments);
+                }
+              }}
+            >
+              {t('common.add_payment_method')}
+            </Button>
+          </div>
+
           {/* On Credit */}
           <FormField
             control={form.control}
@@ -404,7 +508,13 @@ export default function CreateSale() {
                 <FormLabel>{t('table.on_credit')}</FormLabel>
                 <Select
                   value={field.value ? 'true' : 'false'}
-                  onValueChange={(value) => field.onChange(value === 'true')}
+                  onValueChange={(value) => {
+                    const isCredit = value === 'true';
+                    field.onChange(isCredit);
+                    if (!isCredit) {
+                      form.setValue('sale_debt', undefined);
+                    }
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -418,33 +528,48 @@ export default function CreateSale() {
             )}
           />
 
-          {/* Sale Debt (only shown when on_credit is true) */}
-          {isOnCredit && (
-            <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="sale_debt.client"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('table.client')}</FormLabel>
-                    <Select
-                      value={field.value?.toString()}
-                      onValueChange={(value) => field.onChange(parseInt(value, 10))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('placeholders.select_client')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {clients.map((client) => (
-                          <SelectItem key={client.id} value={client.id?.toString() || ''}>
-                            {client.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
+          {/* Client Selection - Always visible */}
+          <FormField
+            control={form.control}
+            name="sale_debt.client"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('table.client')}</FormLabel>
+                <Select
+                  value={field.value?.toString()}
+                  onValueChange={(value) => {
+                    field.onChange(parseInt(value, 10));
+                    // If client is selected but on_credit is not enabled, set on_credit to false
+                    if (value && !form.getValues('on_credit')) {
+                      form.setValue('on_credit', false);
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t('placeholders.select_client')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients
+                      .filter(client => form.watch('on_credit') ? true : client.type === 'Юр.лицо')
+                      .map((client) => (
+                        <SelectItem key={client.id} value={client.id?.toString() || ''}>
+                          {client.name} {client.type !== 'Юр.лицо' && `(${client.type})`}
+                        </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
+
+          {/* Credit Details (only shown when on_credit is true) */}
+          {form.watch('on_credit') && (
+            <div className="space-y-4 p-4 border rounded-lg bg-amber-50 border-amber-200">
+              <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full flex items-center gap-1">
+                  {t('common.on_credit')}
+                </span>
+              </h3>
 
               <FormField
                 control={form.control}
@@ -454,6 +579,24 @@ export default function CreateSale() {
                     <FormLabel>{t('table.due_date')}</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="sale_debt.deposit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('table.deposit')}</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="0"
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                      />
                     </FormControl>
                   </FormItem>
                 )}

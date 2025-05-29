@@ -14,7 +14,7 @@ interface SaleDebt {
 
 interface SaleItem {
   id?: number;
-  stock: number;
+  stock_write: number;
   stock_read?: {
     id: number;
     product_read?: {
@@ -28,11 +28,13 @@ interface SaleItem {
   };
   selling_method: 'Штук' | 'Ед.измерения';
   quantity: string;
+ 
   subtotal: string;
 }
 
 export interface Sale {
   id?: number;
+
   store?: number;
   store_read?: {
     id: number;
@@ -49,6 +51,11 @@ export interface Sale {
   on_credit: boolean;
   sale_debt?: SaleDebt;
   total_amount: string;
+  sale_payments?: {
+    payment_method: string;
+    amount: string;
+  }[] | undefined;
+  client?: number;
   created_at?: string;
 }
 

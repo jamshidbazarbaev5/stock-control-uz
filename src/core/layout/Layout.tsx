@@ -69,6 +69,7 @@ export default function Layout({ children }: any) {
         { icon: BanknoteIcon, label: t('navigation.expense'), href: '/expense' },
         { icon: PlusCircle, label: t('navigation.add_money'), href: '/finance' },
         { icon: Receipt, label: t('navigation.cash_inflow_names'), href: '/cash-inflow-names' },
+        { icon: BanknoteIcon, label: t('navigation.income'), href: '/income' },
       ]
     },
 

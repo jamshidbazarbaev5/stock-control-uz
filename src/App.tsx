@@ -15,7 +15,6 @@ import ProductsPage from "./core/pages/ProductsPage";
 import CreateProduct from "./core/pages/create-product";
 import StocksPage from "./core/pages/StocksPage";
 import CreateStock from "./core/pages/create-stock";
-// import EditStock from "./core/pages/edit-stock";
 import Layout from "./core/layout/Layout";
 import MeasurementsPage from "./core/pages/MeasurementsPage";
 import CreateMeasurement from "./core/pages/create-measurement";
@@ -28,13 +27,14 @@ import CreateRecycling from "./core/pages/create-recycling";
 import ClientsPage from "./core/pages/ClientsPage";
 import CreateClient from "./core/pages/create-client";
 import EditClient from "./core/pages/edit-client";
+import ClientHistoryPage from "./core/pages/ClientHistoryPage";
 import SalesPage from "./core/pages/SalesPage";
 import { Toaster } from "sonner";
 import DebtsPage from "./core/pages/DebtsPage";
 import StaffPage from "./core/pages/StaffPage";
 import CreateStaff from "./core/pages/create-staff";
 import DebtPaymentHistoryPage from "./core/pages/DebtPaymentHistoryPage";
-import EditSale from "./core/pages/edit-sale";
+// import EditSale from "÷./core/pages/edit-sale";
 import DebtDetailsPage from "./core/pages/DebtDetailsPage";
 import CreateSale from "./core/pages/create-sale";
 import ExpenseNamesPage from "./core/pages/ExpenseNamesPage";
@@ -49,7 +49,9 @@ import EditMoney from "./core/pages/edit-money";
 import EditProduct from "./core/pages/edit-product";
 import StockPriceHistoryPage from "./core/pages/StockPriceHistoryPage";
 import EditStock from "./core/pages/edit-stock-2";
-const queryClient = new QueryClient()
+import IncomePage from "./core/pages/IncomePage";
+
+const queryClient = new QueryClient();
 
 function App() {
   return (
@@ -67,7 +69,7 @@ function App() {
             <Route path="/stores" element={<StoresPage />} />
             <Route path="/create-category" element={<CreateCategory />} />
             <Route path="/categories" element={<CategoriesPage />} />
-            <Route path="//measurements/create" element={<CreateMeasurement />} />
+            <Route path="/measurements/create" element={<CreateMeasurement />} />
             <Route path="/measurements" element={<MeasurementsPage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/create-product" element={<CreateProduct />} />
@@ -79,13 +81,14 @@ function App() {
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/create-client" element={<CreateClient />} />
             <Route path="/edit-client/:id" element={<EditClient />} />
+            <Route path="/clients/:id/history" element={<ClientHistoryPage />} />
             <Route path="/transfers" element={<TransfersPage />} />
             <Route path="/create-transfer" element={<CreateTransfer />} />
             <Route path="/recyclings" element={<RecyclingsPage />} />
             <Route path="/create-recycling" element={<CreateRecycling />} />
             <Route path="/sales" element={<SalesPage />} />
             <Route path="/create-sale" element={<CreateSale />} />
-            <Route path="/edit-sale/:id" element={<EditSale />} />
+            {/* <Route path="/edit-sale/:id" element={<EditSale />} /> */}
             <Route path="/debts" element={<DebtsPage />} />
             <Route path="/debts/:id/history" element={<DebtPaymentHistoryPage />} />
             <Route path="/debts/:id" element={<DebtDetailsPage />} />
@@ -103,6 +106,7 @@ function App() {
             <Route path="/edit-money/:id" element={<EditMoney />} />
             <Route path="/edit-product/:id" element={<EditProduct />} />
             <Route path="/stocks/:id/history" element={<StockPriceHistoryPage />} />
+            <Route path="/income" element={<IncomePage />} />
             <Route path="/" element={<Navigate to="/users" />} />
           </Route>
           <Route path="*" element={<Navigate to="/" />} />

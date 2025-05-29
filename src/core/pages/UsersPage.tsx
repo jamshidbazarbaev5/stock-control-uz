@@ -3,18 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
-import { type User, useUpdateUser, useDeleteUser } from '../api/user';
-import { useGetStaffs } from '../api/staff';
-// import { useGetStores } from '../api/store';
+import { type User, useUpdateUser, useDeleteUser, useGetUsers } from '../api/user';
 import { useTranslation } from 'react-i18next';
 import { Users, User as UserIcon, Pencil, Trash2, Plus, Phone, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useGetStores } from '../api/store';
 
-interface StaffResponse {
-  id: number;
-  store_read: {
+interface ExtendedUser extends User {
+  store_read?: {
     id: number;
     name: string;
     address: string;
@@ -25,20 +23,10 @@ interface StaffResponse {
     parent_store: number | null;
     owner: number;
   };
-  user_read: User;
-  is_active: boolean;
-  date_joined: string;
-  user: number;
-}
-
-interface ExtendedUser extends User {
-  staff_id?: number;
-  store?: StaffResponse['store_read'];
-  is_active?: boolean;
   displayId?: number;
 }
 
-const userFields = (t: any) => [
+const userFields = (t: any, stores: any[] = []) => [
   {
     name: 'name',
     label: t('forms.fio'),
@@ -66,14 +54,25 @@ const userFields = (t: any) => [
     ],
   },
   {
+    name: 'store_write',
+    label: t('forms.store'),
+    type: 'select',
+    placeholder: t('placeholders.select_store'),
+    required: true,
+    options: stores.map(store => ({
+      value: store.id.toString(),
+      label: store.name
+    })),
+  },
+  {
     name: 'is_active',
     label: t('forms.status'),
     type: 'select',
     placeholder: t('placeholders.select_status'),
     required: true,
     options: [
-      { value: 'true', label: t('common.active') },
-      { value: 'false', label: t('common.inactive') },
+      { value: true, label: t('common.active') },
+      { value: false, label: t('common.inactive') },
     ],
   },
   {
@@ -91,19 +90,15 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<ExtendedUser | null>(null);
   const { t } = useTranslation();
 
-  const { data: staffsData, isLoading } = useGetStaffs({});
-  // const { data: storesData } = useGetStores({});
+  const { data: staffsData, isLoading } = useGetUsers({});
+  const { data: storesData } = useGetStores({});
 
   // Handle both array and object response formats
   const results: any[] = Array.isArray(staffsData) ? staffsData : staffsData?.results || [];
-  // const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
   const totalCount = Array.isArray(staffsData) ? staffsData.length : staffsData?.count || 0;
 
-  const users: ExtendedUser[] = results.map((staff, index) => ({
-    ...staff.user_read,
-    staff_id: staff.id,
-    store: staff.store_read,
-    is_active: staff.is_active,
+  const users: ExtendedUser[] = results.map((user, index) => ({
+    ...user,
     displayId: (page - 1) * 10 + index + 1,
   }));
 
@@ -124,6 +119,8 @@ export default function UsersPage() {
       name: data.name || '',
       phone_number: data.phone_number || '',
       role: data.role || '',
+      is_active: Boolean(data.is_active),
+      store_write: Number(data.store_write),
     };
 
     // Only include password if it's provided
@@ -154,7 +151,7 @@ export default function UsersPage() {
   };
 
   const getRoleColor = (role: string) => {
-    switch (role.toLowerCase()) {
+    switch (role?.toLowerCase()) {
       case 'owner':
         return 'bg-purple-100 text-purple-700';
       case 'admin':
@@ -277,9 +274,13 @@ export default function UsersPage() {
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
           <ResourceForm
-            fields={userFields(t)}
+            fields={userFields(t, Array.isArray(storesData) ? storesData : storesData?.results || [])}
             onSubmit={handleUpdateSubmit}
-            defaultValues={editingUser || {}}
+            defaultValues={{
+              ...editingUser,
+              store_write: editingUser?.store_read?.id,
+              is_active: editingUser?.is_active,
+            }}
             isSubmitting={isUpdating}
             title={t('common.edit')}
           />

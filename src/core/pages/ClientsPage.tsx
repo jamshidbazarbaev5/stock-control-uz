@@ -3,11 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { type Client, useGetClients, useDeleteClient } from '../api/client';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 
 export default function ClientsPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { data: clientsData, isLoading } = useGetClients();
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const { data: clientsData, isLoading } = useGetClients({ params: selectedType === 'all' ? {} : { type: selectedType } });
   const deleteClient = useDeleteClient();
 
   const clients = Array.isArray(clientsData) ? clientsData : clientsData?.results || [];
@@ -34,6 +38,22 @@ export default function ClientsPage() {
       header: t('forms.balance'),
       accessorKey: (row: Client) => 'balance' in row ? row.balance : '-',
     },
+    {
+      header: '',
+      id: 'history',
+      accessorKey: 'id',
+      cell: (row: Client) => 
+        row.type === 'Юр.лицо' ? (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/clients/${row.id}/history`)}
+            >
+              {t('common.history')}
+            </Button>
+          </div>
+        ) : null,
+    },
   ];
 
   const handleDelete = async (id: number) => {
@@ -48,6 +68,18 @@ export default function ClientsPage() {
 
   return (
     <div className="container py-8 px-4">
+      <div className="mb-4">
+        <Select value={selectedType} onValueChange={setSelectedType}>
+          <SelectTrigger>
+            <SelectValue placeholder={t('forms.select_client_type')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('common.all')}</SelectItem>
+            <SelectItem value="Физ.лицо">{t('forms.individual')}</SelectItem>
+            <SelectItem value="Юр.лицо">{t('forms.legal_entity')}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
       <ResourceTable<Client>
         data={clients}
         columns={columns}

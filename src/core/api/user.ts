@@ -4,13 +4,15 @@ import { createResourceApiHooks } from '../helpers/createResourceApi'
 export interface User {
   id?: number;
   name: string;
-    phone_number: string;
-    role: string;
-    password: string;
+  phone_number: string;
+  role: string;
+  password?: string;
+  is_active: boolean;
+  store_write?: number | null;
 }
 
 // API endpoints
-const USER_URL = 'personel/users/';
+const USER_URL = 'users/';
 
 // Create user API hooks using the factory function
 export const {
