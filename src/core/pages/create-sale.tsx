@@ -84,17 +84,22 @@ export default function CreateSale() {
   // Filter stocks by selected store
   const filteredStocks = stocks.filter(stock => stock.store_read?.id === selectedStore);
   
-  const calculateSubtotal = (quantity: number, price: number) => {
-    return (quantity * price).toString();
-  };
-
   const updateTotalAmount = () => {
     const items = form.getValues('sale_items');
-    const total = items.reduce((sum, item) => {
-      const subtotalValue = item.subtotal ? parseFloat(item.subtotal.replace(/[^0-9]/g, '')) : 0;
-      return sum + (isNaN(subtotalValue) ? 0 : subtotalValue);
+    const total = items.reduce((sum, item, index) => {
+      // Calculate actual total using quantity * price
+      const quantity = item.quantity || 0;
+      const price = selectedPrices[index]?.selling || 0;
+      const actualTotal = quantity * price;
+      return sum + actualTotal;
     }, 0);
     form.setValue('total_amount', total.toString());
+    
+    // Update payment amount with total
+    const payments = form.getValues('sale_payments');
+    if (payments.length > 0) {
+      form.setValue('sale_payments.0.amount', total);
+    }
   };
 
   const handleStockSelection = (value: string, index: number) => {
@@ -118,10 +123,8 @@ export default function CreateSale() {
         }
       }));
       
-      // Set default subtotal based on current quantity and selling price
-      const currentQuantity = form.getValues(`sale_items.${index}.quantity`);
-      const subtotal = sellingPrice * currentQuantity;
-      form.setValue(`sale_items.${index}.subtotal`, subtotal.toString());
+      // Set subtotal as the selling price for one quantity
+      form.setValue(`sale_items.${index}.subtotal`, sellingPrice.toString());
       updateTotalAmount();
     }
     
@@ -135,19 +138,15 @@ export default function CreateSale() {
     if (value > maxQuantity) {
       toast.error(t('messages.error.insufficient_quantity'));
       form.setValue(`sale_items.${index}.quantity`, maxQuantity);
-      // Update subtotal with max quantity
-      if (selectedPrices[index]) {
-        const subtotal = calculateSubtotal(maxQuantity, selectedPrices[index].selling);
-        form.setValue(`sale_items.${index}.subtotal`, subtotal);
-      }
     } else {
       form.setValue(`sale_items.${index}.quantity`, value);
-      // Update subtotal with new quantity
-      if (selectedPrices[index]) {
-        const subtotal = calculateSubtotal(value, selectedPrices[index].selling);
-        form.setValue(`sale_items.${index}.subtotal`, subtotal);
-      }
     }
+    
+    // Keep subtotal display fixed at selling price
+    if (selectedPrices[index]) {
+      form.setValue(`sale_items.${index}.subtotal`, selectedPrices[index].selling.toString());
+    }
+    
     updateTotalAmount();
   };
 

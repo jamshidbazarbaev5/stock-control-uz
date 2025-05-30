@@ -7,6 +7,7 @@ import { LoginPage } from "./core/pages/login";
 import { LanguageProvider } from "./core/context/LanguageContext";
 import CreateUser from "./core/pages/create-user";
 import CreateStore from "./core/pages/create-store";
+import { ProfilePage } from "./core/pages/ProfilePage";
 import CreateCategory from "./core/pages/create-category";
 import UsersPage from "./core/pages/UsersPage";
 import StoresPage from "./core/pages/StoresPage";
@@ -50,6 +51,7 @@ import EditProduct from "./core/pages/edit-product";
 import StockPriceHistoryPage from "./core/pages/StockPriceHistoryPage";
 import EditStock from "./core/pages/edit-stock-2";
 import IncomePage from "./core/pages/IncomePage";
+import EditSale from "./core/pages/edit-sale";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +83,7 @@ function App() {
             <Route path="/clients" element={<ClientsPage />} />
             <Route path="/create-client" element={<CreateClient />} />
             <Route path="/edit-client/:id" element={<EditClient />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/clients/:id/history" element={<ClientHistoryPage />} />
             <Route path="/transfers" element={<TransfersPage />} />
             <Route path="/create-transfer" element={<CreateTransfer />} />
@@ -88,7 +91,7 @@ function App() {
             <Route path="/create-recycling" element={<CreateRecycling />} />
             <Route path="/sales" element={<SalesPage />} />
             <Route path="/create-sale" element={<CreateSale />} />
-            {/* <Route path="/edit-sale/:id" element={<EditSale />} /> */}
+            <Route path="/edit-sale/:id" element={<EditSale />} />
             <Route path="/debts" element={<DebtsPage />} />
             <Route path="/debts/:id/history" element={<DebtPaymentHistoryPage />} />
             <Route path="/debts/:id" element={<DebtDetailsPage />} />

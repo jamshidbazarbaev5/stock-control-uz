@@ -9,6 +9,7 @@
     "complex": "Quramalı tólem"
   },
   "common": {
+    "update": "O'zgertiw",
     "history": "Tarix",
     "all_payment_types": "Barlıq tólew usılları",
     "all_stores": "Barlıq dúkanlar",
@@ -16,7 +17,9 @@
     "edit_stock": "Kelgen zatlardı ózgertiw",
     "enter_arrival_date": "Keliw sánesin kiritiń",
     "date_of_arrival": "Kelgen sanesi",
-    
+    "edit_profile": "Profildi o'zgertiw",
+    "profile": "Akkaunt",
+    "change_password": "Paroldi o'zgertiw",
     "no_history": "Tarixi yoq",
     "all":"Hammesi",
     "clear_filters2": "Filterlerdi oshiriw",
@@ -91,6 +94,7 @@
     "close":"Jabuw"
   },
   "navigation": {
+    "profile": "Profile",
     "expense":"Rasxodtar",
     "finance": "Moliya",
     "add_money": "Tusim qosıw",
@@ -142,7 +146,7 @@
     "previous_balance": "Alding'i balans",
     "all_sources":"Barliq resuslar",
     "new_balance": "Taza balans",
-
+    "payment_method2":"To'lem usili",
     "select_store":"Dúkandı tańlań",
     "date":"Sáne",
     "cash":"Naq",
@@ -230,10 +234,11 @@
     "admin": "Administrator",
     "seller": "Satıwshı"
   },    "messages": {
+    "created_successfully": "áwmetli jaratıldı",
     "success": {
       "expense_created": "Rasxod áwmetli jaratıldı",
       "created": " áwmetli jaratıldı",
-      "updated": " áwmetli jańalandı",
+        "updated": " áwmetli jańalandı",
       "deleted": " áwmetli óshirildi",
       "money_added":"Tusim áwmetli qosıldı",
       "money_updated": "Tusim áwmetli jańalandı",

@@ -125,6 +125,16 @@ export default function Layout({ children }: any) {
                   </div>
                 )}
                 <button
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    navigate('/profile');
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2"
+                >
+                  <User2 size={16} />
+                  {t('common.profile')}
+                </button>
+                <button
                   onClick={handleLogout}
                   className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50 flex items-center gap-2"
                 >
@@ -284,6 +294,16 @@ export default function Layout({ children }: any) {
                         <div className="text-sm font-medium text-emerald-600 mt-1">{currentUser.role}</div>
                       </div>
                     )}
+                    <button
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        navigate('/profile');
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2"
+                    >
+                      <User2 size={16} />
+                      {t('common.profile')}
+                    </button>
                     <button
                       onClick={handleLogout}
                       className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50 flex items-center gap-2"

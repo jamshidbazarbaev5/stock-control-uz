@@ -4,6 +4,7 @@ import { createResourceApiHooks } from '../helpers/createResourceApi';
 interface SaleDebt {
   client: number;
   due_date: string;
+  deposit?: string;
   client_read?: {
     id: number;
     name: string;

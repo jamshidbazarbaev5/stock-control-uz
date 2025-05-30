@@ -134,8 +134,8 @@ export function ResourceForm<T extends Record<string, any>>({
                               field.onChange(value);
                             }
                           }}
-                          value={formField.value?.toString()}
-                          defaultValue={field.defaultValue?.toString()}
+                          value={formField.value !== undefined && formField.value !== null ? formField.value.toString() : undefined}
+                          defaultValue={field.defaultValue !== undefined ? field.defaultValue.toString() : undefined}
                         >
                           <SelectTrigger className={field.readOnly ? 'bg-gray-100' : ''}>
                             <SelectValue placeholder={field.placeholder || t('placeholders.select')} />
@@ -151,8 +151,8 @@ export function ResourceForm<T extends Record<string, any>>({
                       ) : field.type === 'searchable-select' ? (
                         <Select
                           onValueChange={formField.onChange}
-                          value={formField.value?.toString()}
-                          defaultValue={formField.value?.toString()}
+                          value={formField.value !== undefined && formField.value !== null ? formField.value.toString() : undefined}
+                          defaultValue={formField.value !== undefined && formField.value !== null ? formField.value.toString() : undefined}
                         >
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder={field.placeholder} />

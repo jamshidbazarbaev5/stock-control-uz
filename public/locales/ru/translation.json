@@ -21,6 +21,10 @@
     "create_expense": "Создать расход"
   },
   "common": {
+    "update": "Изменить",
+    "profile": "Профиль",
+    "change_password": "Изменить пароль",
+    "edit_profile": "Изменить профиль",
     "history":"История ",
     "add_payment_method": "Добавить способ оплаты",
     "all_expense_names": "Все названия расходов",
@@ -97,6 +101,7 @@
     "unpaid": "Неоплачено"
   },
   "navigation": {
+    "profile": "Профиль",
     "finance": "Финансы",
     "income": "Доходы",
     "incomes": "Доходы",
@@ -144,6 +149,7 @@
     "invalid_credentials": "Неверные учетные данные"
   },
   "forms": {
+    "payment_method2": "Способ оплаты",
     "current_balance": "Текущий баланс",
     "individual":"Физическое лицо",
     "legal_entity":"Юр лицо",
@@ -225,6 +231,9 @@
     "client_type": "Тип клиента",
     "company_name": "Название компании",
     "ceo_name": "Имя руководителя",
+    "profile": "Профиль",
+    "change_password": "Изменить пароль",
+    "edit_profile": "Редактировать профиль",
     "balance": "Баланс",
     "status": "Статус",
     "user": "Пользователь",
@@ -240,6 +249,7 @@
     "seller": "Продавец"
   },
   "messages": {
+    "created_successfully": " успешно создан",
     "success": {
       "created": " успешно создан",
       "expense_created": "Расход успешно создан",

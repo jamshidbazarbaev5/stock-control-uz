@@ -76,19 +76,41 @@ export default function EditStock() {
   // Load stock data when it's available and related data is loaded
   useEffect(() => {
     if (stock && products.length && stores.length && suppliers.length) {
-      form.reset({
-        store_write: stock.store_read?.id,
-        product_write: stock.product_read?.id,
-        purchase_price_in_us: stock.purchase_price_in_us?.toString(),
-        exchange_rate: stock.exchange_rate?.toString(),
-        purchase_price_in_uz: stock.purchase_price_in_uz?.toString(),
-        selling_price: stock.selling_price?.toString(),
-        min_price: stock.min_price?.toString(),
+      console.log('Raw stock data:', stock);
+      console.log('Available products:', products);
+      console.log('Available stores:', stores);
+      console.log('Available suppliers:', suppliers);
+      
+      // Convert values to appropriate types for the form
+      const formValues: FormValues = {
+        store_write: stock.store_read?.id ? Number(stock.store_read.id) : undefined,
+        product_write: stock.product_read?.id ? Number(stock.product_read.id) : undefined,
+        purchase_price_in_us: stock.purchase_price_in_us?.toString() || '',
+        exchange_rate: stock.exchange_rate?.toString() || '',
+        purchase_price_in_uz: stock.purchase_price_in_uz?.toString() || '',
+        selling_price: stock.selling_price?.toString() || '',
+        min_price: stock.min_price?.toString() || '',
         quantity: stock.quantity || 0,
-        supplier_write: stock.supplier_read?.id,
+        supplier_write: stock.supplier_read?.id ? Number(stock.supplier_read.id) : undefined,
         date_of_arrived: new Date(stock.date_of_arrived || '').toISOString().slice(0, 16)
-      });
+      };
+
+      console.log('Setting form values:', formValues);
+      form.reset(formValues);
       setSelectedProduct(stock.product_read);
+      
+      // Directly set values after a brief delay to ensure the UI updates
+      setTimeout(() => {
+        if (stock.store_read?.id) form.setValue('store_write', Number(stock.store_read.id));
+        if (stock.product_read?.id) form.setValue('product_write', Number(stock.product_read.id));
+        if (stock.supplier_read?.id) form.setValue('supplier_write', Number(stock.supplier_read.id));
+        
+        // Force re-render select components by triggering a change event
+        document.querySelectorAll('select').forEach(select => {
+          const event = new Event('change', { bubbles: true });
+          select.dispatchEvent(event);
+        });
+      }, 100);
       
       console.log('Form reset with data:', {
         stock,
@@ -186,8 +208,8 @@ export default function EditStock() {
           label: product.product_name
         })),
         isLoading: productsLoading,
-        onChange: (value: string) => {
-          const product = products.find(p => p.id === parseInt(value));
+        onChange: (value: number) => {
+          const product = products.find(p => p.id === value);
           setSelectedProduct(product);
         }
       };

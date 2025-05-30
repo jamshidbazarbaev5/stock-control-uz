@@ -20,6 +20,11 @@ export default function DebtPaymentHistoryPage() {
       header: t('forms.payment_date'),
       cell: (payment: any) => new Date(payment.paid_at).toLocaleDateString(),
     },
+    {
+      accessorKey: 'payment_method',
+      header:t('forms.payment_method2'),
+
+    }
   ];
 
   return (

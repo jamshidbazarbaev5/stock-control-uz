@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CheckCircle2, AlertCircle,  CreditCard, Wallet, SmartphoneNfc } from 'lucide-react';
+import { CheckCircle2, AlertCircle,  CreditCard, Wallet, SmartphoneNfc,XCircle } from 'lucide-react';
 
 export default function SalesPage() {
   const navigate = useNavigate();
@@ -185,12 +185,12 @@ export default function SalesPage() {
       <Card className="p-4 mb-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-medium">{t('common.filters')}</h2>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={handleClearFilters}
           >
-            {t('common.clear_filters2')}
+            <XCircle className="h-3 w-3" />
           </Button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
