@@ -11,9 +11,11 @@ import { useState } from 'react';
 export default function ClientHistoryPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
-  const [selectedType, setSelectedType] = useState<string>('');
+  const [selectedType, setSelectedType] = useState<string>('all');
   const { data: client, isLoading: isClientLoading } = useGetClient(Number(id));
-  const { data: history, isLoading: isHistoryLoading } = useGetClientHistory(Number(id), { type: selectedType || undefined });
+  const { data: history, isLoading: isHistoryLoading } = useGetClientHistory(Number(id), { 
+    type: selectedType === 'all' ? undefined : selectedType 
+  });
 
   if (isClientLoading || isHistoryLoading) {
     return <div className="container py-8 px-4">Loading...</div>;
@@ -81,7 +83,7 @@ export default function ClientHistoryPage() {
             <SelectValue placeholder={t('forms.select_type')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">{t('common.all')}</SelectItem>
+            <SelectItem value="all">{t('common.all')}</SelectItem>
             <SelectItem value="Расход">Расход</SelectItem>
             <SelectItem value="Пополнение">Пополнение</SelectItem>
           </SelectContent>

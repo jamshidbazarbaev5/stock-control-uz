@@ -14,7 +14,9 @@ import {
   ChevronRightIcon, 
   EyeIcon,
   TrashIcon,
-  PlusIcon
+  PlusIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
 } from 'lucide-react';
 import { t } from 'i18next';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
@@ -36,6 +38,8 @@ interface ResourceTableProps<T extends { id?: number }> {
   totalCount?: number;
   onPageChange?: (page: number) => void;
   currentPage?: number;
+  expandedRowRenderer?: (row: T) => React.ReactNode;
+  onRowClick?: (row: T) => void;
 }
 
 export function ResourceTable<T extends { id?: number }>({
@@ -49,14 +53,17 @@ export function ResourceTable<T extends { id?: number }>({
   totalCount = 0,
   onPageChange,
   currentPage = 1,
+  expandedRowRenderer,
+  onRowClick,
 }: ResourceTableProps<T>) {
   // Handle case when data is undefined
   const tableData = data || [];
   const totalPages = Math.ceil(totalCount / pageSize);
   
-  // State for delete confirmation modal
+  // State for delete confirmation modal and expanded row
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | undefined>(undefined);
+  const [expandedRow, setExpandedRow] = useState<number>(-1);
 
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
@@ -160,56 +167,93 @@ export function ResourceTable<T extends { id?: number }>({
               </TableRow>
             ) : (
               tableData.map((row, rowIndex) => (
-                <TableRow 
-                  key={rowIndex} 
-                  className="hover:bg-gray-50/50 transition-colors border-b border-gray-100 last:border-0"
-                >
-                  <TableCell className="w-[60px] font-medium text-gray-500">
-                    {getRowNumber(rowIndex)}
-                  </TableCell>
-                  {columns.map((column, colIndex) => (
-                    <TableCell key={colIndex}>
-                      {column.cell 
-                        ? column.cell(row)
-                        : typeof column.accessorKey === 'function'
-                          ? column.accessorKey(row)
-                          : String(
-                              typeof column.accessorKey === 'string' 
-                                ? (row as any)[column.accessorKey] || ''
-                                : row[column.accessorKey as keyof T] || ''
-                            )}
+                <React.Fragment key={rowIndex}>
+                  <TableRow 
+                    className={`border-b border-gray-100 ${(expandedRowRenderer || onRowClick) ? 'cursor-pointer hover:bg-gray-50/50 transition-colors' : ''}`}
+                    onClick={(e) => {
+                      if (expandedRowRenderer) {
+                        e.stopPropagation();
+                        setExpandedRow(expandedRow === rowIndex ? -1 : rowIndex);
+                      }
+                      if (onRowClick) {
+                        onRowClick(row);
+                      }
+                    }}
+                  >
+                    <TableCell className="w-[60px] font-medium text-gray-500">
+                      {getRowNumber(rowIndex)}
                     </TableCell>
-                  ))}
-                  {(onEdit || onDelete) && (
-                    <TableCell className="text-right w-[100px]">
-                      <div className="flex gap-1 justify-end">
-                        {onEdit && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => onEdit(row)}
-                            className="h-8 w-8 p-0 hover:bg-gray-100"
-                          >
-                            <EyeIcon className="h-4 w-4 text-gray-500" />
-                          </Button>
-                        )}
-                        {onDelete && row.id && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => {
-                              setItemToDelete(row.id);
-                              setIsDeleteModalOpen(true);
-                            }}
-                            className="h-8 w-8 p-0 hover:bg-red-50 text-red-500"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
+                    {columns.map((column, colIndex) => (
+                      <TableCell key={colIndex}>
+                        {column.cell 
+                          ? column.cell(row)
+                          : typeof column.accessorKey === 'function'
+                            ? column.accessorKey(row)
+                            : String(
+                                typeof column.accessorKey === 'string' 
+                                  ? (row as any)[column.accessorKey] || ''
+                                  : row[column.accessorKey as keyof T] || ''
+                              )}
+                      </TableCell>
+                    ))}
+                    {(onEdit || onDelete) && (
+                      <TableCell className="text-right w-[100px]" onClick={e => e.stopPropagation()}>
+                        <div className="flex gap-1 justify-end">
+                          {onEdit && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => onEdit(row)}
+                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                            >
+                              <EyeIcon className="h-4 w-4 text-gray-500" />
+                            </Button>
+                          )}
+                          {onDelete && row.id && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => {
+                                setItemToDelete(row.id);
+                                setIsDeleteModalOpen(true);
+                              }}
+                              className="h-8 w-8 p-0 hover:bg-red-50 text-red-500"
+                            >
+                              <TrashIcon className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {expandedRowRenderer && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedRow(expandedRow === rowIndex ? -1 : rowIndex);
+                              }}
+                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                            >
+                              {expandedRow === rowIndex ? (
+                                <ChevronUpIcon className="h-4 w-4 text-gray-500" />
+                              ) : (
+                                <ChevronDownIcon className="h-4 w-4 text-gray-500" />
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                  {expandedRowRenderer && expandedRow === rowIndex && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length + 1 + (onEdit || onDelete ? 1 : 0)}
+                        className="bg-gray-50/50 border-b border-gray-100"
+                      >
+                        {expandedRowRenderer(row)}
+                      </TableCell>
+                    </TableRow>
                   )}
-                </TableRow>
+                </React.Fragment>
               ))
             )}
           </TableBody>

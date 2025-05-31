@@ -7,11 +7,13 @@ import {
   getStockByCategory, 
   getProductIntake,
   getClientDebts,
+  getUnsoldProducts,
   type SalesSummaryResponse,
   type TopProductsResponse,
   type StockByCategoryResponse,
   type ProductIntakeResponse,
-  type ClientDebtResponse
+  type ClientDebtResponse,
+  type UnsoldProductsResponse
 } from '../api/reports';
 import { ArrowUpRight, DollarSign, ShoppingCart, TrendingUp, Package, BarChart2, Users } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -25,6 +27,7 @@ const DashboardPage = () => {
   const [stockByCategory, setStockByCategory] = useState<StockByCategoryResponse[]>([]);
   const [productIntake, setProductIntake] = useState<ProductIntakeResponse | null>(null);
   const [clientDebts, setClientDebts] = useState<ClientDebtResponse[]>([]);
+  const [unsoldProducts, setUnsoldProducts] = useState<UnsoldProductsResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('month');
@@ -34,12 +37,13 @@ const DashboardPage = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const [salesSummary, topProductsData, stockByCategoryData, productIntakeData, clientDebtsData] = await Promise.all([
+        const [salesSummary, topProductsData, stockByCategoryData, productIntakeData, clientDebtsData, unsoldProductsData] = await Promise.all([
           getReportsSalesSummary(period),
           getTopProducts(period, topProductsLimit),
           getStockByCategory(),
           getProductIntake(period),
-          getClientDebts()
+          getClientDebts(),
+          getUnsoldProducts()
         ]);
         
         setSalesData(salesSummary);
@@ -47,6 +51,7 @@ const DashboardPage = () => {
         setStockByCategory(stockByCategoryData);
         setProductIntake(productIntakeData);
         setClientDebts(clientDebtsData);
+        setUnsoldProducts(unsoldProductsData);
       } catch (err) {
         setError('Failed to load dashboard data');
         console.error(err);
@@ -512,6 +517,43 @@ const DashboardPage = () => {
               ) : (
                 <div className="text-center py-6 text-muted-foreground">
                   {t('dashboard.no_client_debt_data_available')}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Unsold Products */}
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle>{t('dashboard.unsold_products') || 'Unsold Products'}</CardTitle>
+            <CardDescription>{t('dashboard.products_with_no_sales') || 'Products that have not been sold'}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {unsoldProducts.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="text-left border-b">
+                        <th className="pb-2">{t('dashboard.product') || 'Product'}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {unsoldProducts.map((product, index) => (
+                        <tr key={index} className="border-b last:border-0">
+                          <td className="py-3 flex items-center gap-2">
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                            <span>{product.product_name}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-6 text-muted-foreground">
+                  {t('dashboard.no_unsold_products') || 'No unsold products'}
                 </div>
               )}
             </div>

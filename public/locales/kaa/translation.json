@@ -1,6 +1,8 @@
 {
   "dashboard": {
     "title": "Satıw paneli",
+    "products_with_no_sales":"Satılmaǵan ónimler",
+    "unsold_products": "Satılmaǵan ónimler",
     "period": "Dáwir",
     "select_period": "Dáwirdi tańlań",
     "day": "Kún",
@@ -138,6 +140,7 @@
     "close":"Jabuw"
   },
   "navigation": {
+    "dashboard": "Panel",
     "profile": "Profile",
     "expense":"Rasxodtar",
     "finance": "Moliya",
@@ -184,6 +187,10 @@
     "amount_exceeds_remainder": "Summa qalǵan summadan artıq bolmawı kerek"
   },
   "forms": {
+    "selling_method":"Satıw usılı",
+    "select_type":" Túri tańlań",
+    "all_workers": "Barlıq jumisshılar",
+    "select_worker": "Jumisshını tańlań",
     "current_balance": "Ha'zirgi balans",
     "has_color":"Reńi barma?",
     "amount_deducted": "Sheshilgen summa",

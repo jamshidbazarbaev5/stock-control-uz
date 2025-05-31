@@ -35,6 +35,7 @@ import DebtsPage from "./core/pages/DebtsPage";
 import StaffPage from "./core/pages/StaffPage";
 import CreateStaff from "./core/pages/create-staff";
 import DebtPaymentHistoryPage from "./core/pages/DebtPaymentHistoryPage";
+import IncomeDetailsPage from "./core/pages/IncomeDetailsPage";
 // import EditSale from "÷./core/pages/edit-sale";
 import DebtDetailsPage from "./core/pages/DebtDetailsPage";
 import CreateSale from "./core/pages/create-sale";
@@ -111,6 +112,7 @@ function App() {
             <Route path="/edit-product/:id" element={<EditProduct />} />
             <Route path="/stocks/:id/history" element={<StockPriceHistoryPage />} />
             <Route path="/income" element={<IncomePage />} />
+            <Route path="/income/:id" element={<IncomeDetailsPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/" element={<Navigate to="/dashboard" />} />
           </Route>

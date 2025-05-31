@@ -1,5 +1,9 @@
 import api from './api';
 
+export interface UnsoldProductsResponse {
+  product_name: string;
+}
+
 export interface SalesSummaryResponse {
   total_sales: number;
   total_revenue: number;
@@ -66,5 +70,10 @@ export const getProductIntake = async (period?: PeriodType): Promise<ProductInta
 
 export const getClientDebts = async (): Promise<ClientDebtResponse[]> => {
   const response = await api.get<ClientDebtResponse[]>('reports/client-debts');
+  return response.data;
+};
+
+export const getUnsoldProducts = async (): Promise<UnsoldProductsResponse[]> => {
+  const response = await api.get<UnsoldProductsResponse[]>('reports/unsold-products');
   return response.data;
 };

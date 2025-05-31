@@ -17,8 +17,20 @@ export interface Income {
   };
   description: {
     Amount: string;
-    Worker: string;
-    'Sold Date': string;
+    Worker?: string;
+    'Sold Date'?: string;
+    'Timestamp'?: string;
+    Client?: string;
+    Payments?: Array<{
+      Method: string;
+      Amount: string;
+    }>;
+    Items?: Array<{
+      Product: string;
+      Quantity: string;
+      'Selling Method': string;
+      Subtotal: string;
+    }>;
   };
   timestamp: string;
 }

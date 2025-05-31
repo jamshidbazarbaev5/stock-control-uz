@@ -1,6 +1,8 @@
 {
   "dashboard": {
+    "unsold_products": "Непроданные товары",
     "title": "Панель продаж",
+    "products_with_no_sales": "Товары без продаж",
     "period": "Период",
     "select_period": "Выбрать период",
     "day": "День",
@@ -144,6 +146,7 @@
     "unpaid": "Неоплачено"
   },
   "navigation": {
+    "dashobard": "Панель управления",
     "profile": "Профиль",
     "finance": "Финансы",
     "income": "Доходы",
@@ -192,6 +195,8 @@
     "invalid_credentials": "Неверные учетные данные"
   },
   "forms": {
+    "selling_method":"Способ продажи",
+    "all_workers":"Все работники",
     "payment_method2": "Способ оплаты",
     "current_balance": "Текущий баланс",
     "individual":"Физическое лицо",
