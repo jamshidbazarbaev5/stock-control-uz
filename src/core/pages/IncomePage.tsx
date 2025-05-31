@@ -10,8 +10,6 @@ import type { Store } from '../api/store';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { format } from 'date-fns';
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 import {
   Table,
   TableBody,
@@ -23,7 +21,6 @@ import {
 
 export default function IncomePage() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [selectedStore, setSelectedStore] = useState('all');
   const [selectedSource, setSelectedSource] = useState('all');
