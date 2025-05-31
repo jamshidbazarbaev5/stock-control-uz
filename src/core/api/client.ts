@@ -51,7 +51,7 @@ export const {
 } = createResourceApiHooks<Client>(CLIENT_URL, 'clients');
 
 // Client history hook
-export const useGetClientHistory = (clientId: number, params?: { sale?: string; start_date?: string; end_date?: string }) => {
+export const useGetClientHistory = (clientId: number, params?: { sale?: string; start_date?: string; end_date?: string; type?: string }) => {
   return useQuery({
     queryKey: ['clientHistory', clientId, params],
     queryFn: async () => {

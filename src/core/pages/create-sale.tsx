@@ -142,9 +142,11 @@ export default function CreateSale() {
       form.setValue(`sale_items.${index}.quantity`, value);
     }
     
-    // Keep subtotal display fixed at selling price
+    // Update subtotal based on quantity and selling price
     if (selectedPrices[index]) {
-      form.setValue(`sale_items.${index}.subtotal`, selectedPrices[index].selling.toString());
+      const sellingPrice = selectedPrices[index].selling;
+      const newSubtotal = value * sellingPrice;
+      form.setValue(`sale_items.${index}.subtotal`, newSubtotal.toString());
     }
     
     updateTotalAmount();
@@ -158,6 +160,13 @@ export default function CreateSale() {
           const quantity = parseInt(item.quantity.toString(), 10);
           const subtotal = parseFloat(item.subtotal);
           const minTotal = selectedPrices[index].min * quantity;
+          console.log('Price validation:', {
+            quantity,
+            subtotal,
+            minPrice: selectedPrices[index].min,
+            minTotal,
+            isInvalid: subtotal < minTotal
+          });
           return subtotal < minTotal;
         }
         return false;

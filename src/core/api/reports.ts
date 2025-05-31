@@ -1,0 +1,70 @@
+import api from './api';
+
+export interface SalesSummaryResponse {
+  total_sales: number;
+  total_revenue: number;
+  trend: {
+    day: string;
+    total: number;
+  }[];
+}
+
+export interface TopProductsResponse {
+  product_name: string;
+  total_quantity: string;
+  total_revenue: string;
+}
+
+export interface StockByCategoryResponse {
+  category: string;
+  total_stock: string;
+}
+
+export interface ProductIntakeResponse {
+  total_positions: number;
+  total_sum: number;
+  data: {
+    day: string;
+    total_price: number;
+    total_quantity: number;
+  }[];
+}
+
+export interface ClientDebtResponse {
+  client_name: string;
+  debt: string;
+}
+
+type PeriodType = 'day' | 'week' | 'month';
+
+export const getReportsSalesSummary = async (period?: PeriodType): Promise<SalesSummaryResponse> => {
+  const params = period ? { period } : {};
+  const response = await api.get<SalesSummaryResponse>('reports/sales-summary', { params });
+  return response.data;
+};
+
+export const getTopProducts = async (period?: PeriodType, limit?: number): Promise<TopProductsResponse[]> => {
+  const params: Record<string, string | number> = {};
+  
+  if (period) params.period = period;
+  if (limit) params.limit = limit;
+  
+  const response = await api.get<TopProductsResponse[]>('reports/top-products', { params });
+  return response.data;
+};
+
+export const getStockByCategory = async (): Promise<StockByCategoryResponse[]> => {
+  const response = await api.get<StockByCategoryResponse[]>('reports/stock-by-category');
+  return response.data;
+};
+
+export const getProductIntake = async (period?: PeriodType): Promise<ProductIntakeResponse> => {
+  const params = period ? { period } : {};
+  const response = await api.get<ProductIntakeResponse>('reports/product-intake', { params });
+  return response.data;
+};
+
+export const getClientDebts = async (): Promise<ClientDebtResponse[]> => {
+  const response = await api.get<ClientDebtResponse[]>('reports/client-debts');
+  return response.data;
+};

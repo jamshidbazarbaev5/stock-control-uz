@@ -52,6 +52,7 @@ import StockPriceHistoryPage from "./core/pages/StockPriceHistoryPage";
 import EditStock from "./core/pages/edit-stock-2";
 import IncomePage from "./core/pages/IncomePage";
 import EditSale from "./core/pages/edit-sale";
+import DashboardPage from "./core/pages/DashboardPage";
 
 const queryClient = new QueryClient();
 
@@ -110,7 +111,8 @@ function App() {
             <Route path="/edit-product/:id" element={<EditProduct />} />
             <Route path="/stocks/:id/history" element={<StockPriceHistoryPage />} />
             <Route path="/income" element={<IncomePage />} />
-            <Route path="/" element={<Navigate to="/users" />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/" element={<Navigate to="/dashboard" />} />
           </Route>
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

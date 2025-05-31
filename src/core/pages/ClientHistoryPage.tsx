@@ -3,14 +3,17 @@ import { useTranslation } from 'react-i18next';
 import { useGetClient, useGetClientHistory } from '../api/client';
 import { format } from 'date-fns';
 import { ResourceTable } from '../helpers/ResourseTable';
-import { CalendarIcon, CoinsIcon, PiggyBankIcon, WalletIcon,  } from 'lucide-react';
+import { CalendarIcon, CoinsIcon, PiggyBankIcon, WalletIcon } from 'lucide-react';
 import type { ClientHistoryEntry } from '../api/client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useState } from 'react';
 
 export default function ClientHistoryPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
+  const [selectedType, setSelectedType] = useState<string>('');
   const { data: client, isLoading: isClientLoading } = useGetClient(Number(id));
-  const { data: history, isLoading: isHistoryLoading } = useGetClientHistory(Number(id));
+  const { data: history, isLoading: isHistoryLoading } = useGetClientHistory(Number(id), { type: selectedType || undefined });
 
   if (isClientLoading || isHistoryLoading) {
     return <div className="container py-8 px-4">Loading...</div>;
@@ -72,10 +75,24 @@ export default function ClientHistoryPage() {
         <p className="text-gray-600">{t('forms.current_balance')}: {client.balance}</p>
       </div>
 
+      <div className="mb-4 w-[200px]">
+        <Select value={selectedType} onValueChange={setSelectedType}>
+          <SelectTrigger>
+            <SelectValue placeholder={t('forms.select_type')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">{t('common.all')}</SelectItem>
+            <SelectItem value="Расход">Расход</SelectItem>
+            <SelectItem value="Пополнение">Пополнение</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <ResourceTable<any>
         data={history || []}
         columns={columns}
         isLoading={isHistoryLoading}
+        
       />
     </div>
   );

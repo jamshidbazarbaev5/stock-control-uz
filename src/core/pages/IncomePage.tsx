@@ -73,14 +73,33 @@ export default function IncomePage() {
       ),
     },
     {
+      header: t('forms.payment_method'),
+      accessorKey: 'description.Payment Method',
+      cell: (row: any) => {
+        if (row.description['Payment Method']) {
+          return row.description['Payment Method'];
+        }
+        if (row.description.Payments?.length > 0) {
+          return row.description.Payments.map((p: any) => p.Method).join(', ');
+        }
+        return '-';
+      },
+    },
+    {
+      header: t('forms.client'),
+      accessorKey: 'description.Client',
+      cell: (row: any) => row.description.Client,
+    },
+    
+    {
       header: t('forms.worker'),
-      accessorKey: 'description.Worker',
-      cell: (row: any) => row.description.Worker || '-',
+      accessorKey: 'worker_read.name',
+      cell: (row: any) => row.description.Worker || row.worker_read?.name || '-',
     },
     {
       header: t('forms.date'),
       accessorKey: 'timestamp',
-      cell: (row: any) => formatDate(row.timestamp),
+      cell: (row: any) => formatDate(row.description['Sold Date'] || row.description['Timestamp'] || row.timestamp),
     },
   ];
 

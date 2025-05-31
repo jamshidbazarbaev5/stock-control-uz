@@ -13,7 +13,7 @@ import {
   PlusCircle,
   BanknoteIcon,
 } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import {  useLocation, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
@@ -54,6 +54,7 @@ export default function Layout({ children }: any) {
   }, []);
   
   const navItems = [
+    {icon:Package,label:t('navigation.dashobard'),href:'/dashboard'},
     { icon: ArrowLeftRight, label: t('navigation.transfers'), href: '/transfers' },
     { icon: Package, label: t('navigation.stocks'), href: '/stock' },
     { icon: ShoppingBag, label: t('navigation.sale'), href: '/sales' },
