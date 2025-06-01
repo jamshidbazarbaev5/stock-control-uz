@@ -1,4 +1,6 @@
-import { createResourceApiHooks } from '../helpers/createResourceApi'
+import { createResourceApiHooks } from '../helpers/createResourceApi';
+import { useMutation } from '@tanstack/react-query';
+import api from './api';
 
 // Types
 export interface User {
@@ -22,3 +24,13 @@ export const {
   useUpdateResource: useUpdateUser,
   useDeleteResource: useDeleteUser,
 } = createResourceApiHooks<User>(USER_URL, 'users');
+
+// Custom hook for updating current user profile
+export const useUpdateCurrentUser = () => {
+  return useMutation({
+    mutationFn: async (data: Partial<User>) => {
+      const response = await api.patch<User>('users/me/', data);
+      return response.data;
+    }
+  });
+};

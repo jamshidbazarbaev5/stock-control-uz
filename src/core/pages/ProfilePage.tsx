@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import { useUpdateUser } from '../api/user';
+import { useUpdateCurrentUser } from '../api/user';
 import { Card, CardContent } from '@/components/ui/card';
 import { User, Store, Phone } from 'lucide-react';
 
@@ -22,7 +22,7 @@ interface ProfileUpdateData {
 export function ProfilePage() {
   const { t } = useTranslation();
   const { data: currentUser, isLoading } = useCurrentUser();
-  const updateUser = useUpdateUser();
+  const updateUser = useUpdateCurrentUser();
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
 
@@ -58,21 +58,12 @@ export function ProfilePage() {
       placeholder: t('placeholders.enter_password'),
       required: true,
     },
-
   ];
 
   const handlePasswordUpdate = async (data: PasswordUpdateData) => {
-    if (!currentUser?.id) return;
-
     try {
       await updateUser.mutateAsync({
-        id: currentUser.id,
-        name: currentUser.name,
-        phone_number: currentUser.phone_number,
-        role: currentUser.role,
-        is_active: true, // Since this is the current user, they must be active
         password: data.password,
-        store_write: currentUser?.store_read?.id || undefined, // Optional chaining for store_read
       });
       toast.success(t('messages.success.password_updated'));
       setIsPasswordDialogOpen(false);
@@ -83,17 +74,8 @@ export function ProfilePage() {
   };
 
   const handleProfileUpdate = async (data: ProfileUpdateData) => {
-    if (!currentUser?.id) return;
-
     try {
-      await updateUser.mutateAsync({
-        ...data,
-        id: currentUser.id,
-        role: currentUser.role,
-        is_active: true,
-        store_write:currentUser?.store_read?.id || undefined,
-        password:data.password
-      });
+      await updateUser.mutateAsync(data);
       toast.success(t('messages.success.profile_updated'));
       setIsProfileDialogOpen(false);
     } catch (error) {

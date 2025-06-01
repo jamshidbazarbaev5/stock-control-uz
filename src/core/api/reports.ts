@@ -44,7 +44,18 @@ export interface ProductIntakeResponse {
 
 export interface ClientDebtResponse {
   client_name: string;
-  debt: string;
+  total_debt: string;
+  total_paid: string;
+  remaining_debt: string;
+  deposit: string;
+}
+
+export interface TopSellersResponse {
+  store_name: string;
+  seller_name: string | null;
+  seller_phone: string | null;
+  total_revenue: number;
+  total_sales: number;
 }
 
 type PeriodType = 'day' | 'week' | 'month';
@@ -88,5 +99,11 @@ export const getUnsoldProducts = async (): Promise<UnsoldProductsResponse[]> => 
 
 export const getProductProfitability = async (): Promise<ProductProfitabilityResponse[]> => {
   const response = await api.get<ProductProfitabilityResponse[]>('reports/product-profitability');
+  return response.data;
+};
+
+export const getTopSellers = async (period?: PeriodType): Promise<TopSellersResponse[]> => {
+  const params = period ? { period } : {};
+  const response = await api.get<TopSellersResponse[]>('reports/top-sellers', { params });
   return response.data;
 };

@@ -1,11 +1,18 @@
 {
   "dashboard": {
+    "top_sellers": "Eń jaqsı satıwshılar",
+    "top_performing_stores": "Eń jaqsı dükanlar hám satıwshılar",
+    "store": "Dükan",
+    "seller": "Satıwshı",
+    "seller_phone": "Telefon",
+    "not_specified": "Kórsetilmegen",
+    "no_sellers_data_available": "Satıwshılar haqqında mağlıwmat yoq",
     "product_profitability": "Ónim paydaları",
     "profitability_analysis": "Ónimlerdegi tabıs, qárejet hám payda analizi",
     "cost": "Qárejet",
     "profit": "Payda",
     "margin": "Marja",
-    "no_profitability_data": "Payda haqqında maǵlıwmat yoq",
+    "no_profitability_data": "Payda haqqında mağlıwmat yoq",
     "no_unsold_products": "Satılmaǵan ónim yoq",
     "title": "Satıw paneli",
     "products_with_no_sales": "Satılmaǵan ónimler",
@@ -50,6 +57,10 @@
     "outstanding_client_debts": "Tólenbegen klient qarzları",
     "client": "Klient",
     "debt_amount": "Qarz summası",
+    "total_debt": "Barlıq qarz",
+    "total_paid": "Barlıq tólendi",
+    "remaining_debt": "Qalǵan qarz",
+    "deposit": "Depozit",
     "no_client_debt_data_available": "Klient qarzları haqqında maǵlıwmat yoq"
   },
   "stock": {

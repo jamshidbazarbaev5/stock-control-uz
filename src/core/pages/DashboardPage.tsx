@@ -9,15 +9,17 @@ import {
   getClientDebts,
   getUnsoldProducts,
   getProductProfitability,
+  getTopSellers,
   type SalesSummaryResponse,
   type TopProductsResponse,
   type StockByCategoryResponse,
   type ProductIntakeResponse,
   type ClientDebtResponse,
   type UnsoldProductsResponse,
-  type ProductProfitabilityResponse
+  type ProductProfitabilityResponse,
+  type TopSellersResponse
 } from '../api/reports';
-import { ArrowUpRight, DollarSign, ShoppingCart, TrendingUp, Package, BarChart2, Users } from 'lucide-react';
+import { ArrowUpRight, DollarSign, ShoppingCart, TrendingUp, Package, BarChart2, Users, Store, User } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, LineChart, Line, Cell } from 'recharts';
 import { format, parseISO } from 'date-fns';
@@ -31,6 +33,7 @@ const DashboardPage = () => {
   const [clientDebts, setClientDebts] = useState<ClientDebtResponse[]>([]);
   const [unsoldProducts, setUnsoldProducts] = useState<UnsoldProductsResponse[]>([]);
   const [productProfitability, setProductProfitability] = useState<ProductProfitabilityResponse[]>([]);
+  const [topSellers, setTopSellers] = useState<TopSellersResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('month');
@@ -40,14 +43,15 @@ const DashboardPage = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const [salesSummary, topProductsData, stockByCategoryData, productIntakeData, clientDebtsData, unsoldProductsData, profitabilityData] = await Promise.all([
+        const [salesSummary, topProductsData, stockByCategoryData, productIntakeData, clientDebtsData, unsoldProductsData, profitabilityData, topSellersData] = await Promise.all([
           getReportsSalesSummary(period),
           getTopProducts(period, topProductsLimit),
           getStockByCategory(),
           getProductIntake(period),
           getClientDebts(),
           getUnsoldProducts(),
-          getProductProfitability()
+          getProductProfitability(),
+          getTopSellers(period)
         ]);
         
         setSalesData(salesSummary);
@@ -57,6 +61,7 @@ const DashboardPage = () => {
         setClientDebts(clientDebtsData);
         setUnsoldProducts(unsoldProductsData);
         setProductProfitability(profitabilityData);
+        setTopSellers(topSellersData);
       } catch (err) {
         setError('Failed to load dashboard data');
         console.error(err);
@@ -428,7 +433,10 @@ const DashboardPage = () => {
                     <thead>
                       <tr className="text-left border-b">
                         <th className="pb-2">{t('dashboard.client')}</th>
-                        <th className="pb-2 text-right">{t('dashboard.debt_amount')}</th>
+                        <th className="pb-2 text-right">{t('dashboard.total_debt')}</th>
+                        <th className="pb-2 text-right">{t('dashboard.total_paid')}</th>
+                        <th className="pb-2 text-right">{t('dashboard.remaining_debt')}</th>
+                        <th className="pb-2 text-right">{t('dashboard.deposit')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -438,9 +446,27 @@ const DashboardPage = () => {
                             <Users className="h-4 w-4 text-muted-foreground" />
                             <span>{client.client_name}</span>
                           </td>
+                          <td className="py-3 text-right">
+                            {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                              .format(Number(client.total_debt))
+                              .replace('UZS', '')
+                              .trim()}
+                          </td>
+                          <td className="py-3 text-right text-green-600">
+                            {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                              .format(Number(client.total_paid))
+                              .replace('UZS', '')
+                              .trim()}
+                          </td>
                           <td className="py-3 text-right text-destructive">
                             {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
-                              .format(Number(client.debt))
+                              .format(Number(client.remaining_debt))
+                              .replace('UZS', '')
+                              .trim()}
+                          </td>
+                          <td className="py-3 text-right text-blue-600">
+                            {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                              .format(Number(client.deposit))
                               .replace('UZS', '')
                               .trim()}
                           </td>
@@ -495,6 +521,61 @@ const DashboardPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Top Sellers */}
+      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8">
+        <CardHeader>
+          <CardTitle>{t('dashboard.top_sellers') || 'Top Sellers'}</CardTitle>
+          <CardDescription>{t('dashboard.top_performing_stores') || 'Top performing stores and sellers'}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {topSellers.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="text-left border-b">
+                      <th className="pb-2">{t('dashboard.store') || 'Store'}</th>
+                      <th className="pb-2">{t('dashboard.seller') || 'Seller'}</th>
+                      <th className="pb-2">{t('dashboard.seller_phone') || 'Phone'}</th>
+                      <th className="pb-2 text-right">{t('dashboard.total_sales') || 'Total Sales'}</th>
+                      <th className="pb-2 text-right">{t('dashboard.total_revenue') || 'Total Revenue'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topSellers.map((seller, index) => (
+                      <tr key={index} className="border-b last:border-0">
+                        <td className="py-3 flex items-center gap-2">
+                          <Store className="h-4 w-4 text-muted-foreground" />
+                          <span>{seller.store_name}</span>
+                        </td>
+                        <td className="py-3">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span>{seller.seller_name || t('dashboard.not_specified') || 'Not specified'}</span>
+                          </div>
+                        </td>
+                        <td className="py-3">{seller.seller_phone || '-'}</td>
+                        <td className="py-3 text-right">{seller.total_sales}</td>
+                        <td className="py-3 text-right">
+                          {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                            .format(seller.total_revenue)
+                            .replace('UZS', '')
+                            .trim()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                {t('dashboard.no_sellers_data_available') || 'No sellers data available'}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Product Profitability - Full Width Section */}
       <div className="mb-8">

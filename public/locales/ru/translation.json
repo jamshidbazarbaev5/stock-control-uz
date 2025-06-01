@@ -1,5 +1,12 @@
 {
   "dashboard": {
+    "top_sellers": "Лучшие продавцы",
+    "top_performing_stores": "Лучшие магазины и продавцы",
+    "store": "Магазин",
+    "seller": "Продавец",
+    "seller_phone": "Телефон",
+    "not_specified": "Не указан",
+    "no_sellers_data_available": "Нет данных о продавцах",
     "product_profitability": "Прибыльность товаров",
     "profitability_analysis": "Анализ доходов, затрат и маржи прибыли по товарам",
     "cost": "Затраты",
@@ -50,6 +57,10 @@
     "outstanding_client_debts": "Неоплаченные долги клиентов",
     "client": "Клиент",
     "debt_amount": "Сумма долга",
+    "total_debt": "Общий долг",
+    "total_paid": "Всего оплачено",
+    "remaining_debt": "Остаток долга",
+    "deposit": "Депозит",
     "no_client_debt_data_available": "Нет данных о долгах клиентов"
   },
   "stock": {
