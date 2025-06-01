@@ -142,6 +142,23 @@ export default function EditSale() {
     updateTotalAmount();
   };
 
+  const handleSubtotalChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const value = parseFloat(e.target.value) || 0;
+    const quantity = form.getValues(`sale_items.${index}.quantity`);
+    
+    if (selectedPrices[index]) {
+      const minTotal = selectedPrices[index].min * quantity;
+      if (value < minTotal) {
+        toast.error(t('messages.error.price_below_minimum'));
+        const correctedValue = selectedPrices[index].selling * quantity;
+        form.setValue(`sale_items.${index}.subtotal`, correctedValue.toString());
+      } else {
+        form.setValue(`sale_items.${index}.subtotal`, value.toString());
+      }
+    }
+    updateTotalAmount();
+  };
+
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const value = parseInt(e.target.value, 10);
     const maxQuantity = selectedStocks[index] || 0;
@@ -503,11 +520,7 @@ export default function EditSale() {
                             type="text"
                             className="text-right font-medium"
                             {...field}
-                            onChange={(e) => {
-                              const newValue = e.target.value.replace(/[^0-9]/g, '');
-                              field.onChange(newValue);
-                              updateTotalAmount();
-                            }}
+                            onChange={(e) => handleSubtotalChange(e, index)}
                           />
                         </FormControl>
                       </FormItem>

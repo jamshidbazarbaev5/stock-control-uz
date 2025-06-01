@@ -502,8 +502,8 @@ const DashboardPage = () => {
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle>{t('dashboard.product_profitability') || 'Product Profitability'}</CardTitle>
-                <CardDescription>{t('dashboard.profitability_analysis') || 'Revenue, cost, and profit margins by product'}</CardDescription>
+                <CardTitle>{t('dashboard.product_profitability')}</CardTitle>
+                <CardDescription>{t('dashboard.profitability_analysis')}</CardDescription>
               </div>
               <TrendingUp className="h-6 w-6 text-primary" />
             </div>
@@ -536,7 +536,7 @@ const DashboardPage = () => {
                             .format(Number(value))
                             .replace('UZS', '')
                             .trim(),
-                          name === 'profit' ? 'Profit' : name === 'margin' ? 'Margin %' : name
+                          name === 'profit' ? t('dashboard.profit') : name === 'margin' ? t('dashboard.margin') : name
                         ]}
                         labelFormatter={(label) => `Product: ${label}`}
                       />
@@ -563,12 +563,11 @@ const DashboardPage = () => {
                 <div className="overflow-x-auto rounded-md border mt-4">
                   <table className="w-full border-collapse">
                     <thead>
-                      <tr className="bg-muted/50">
-                        <th className="p-3 text-left font-medium text-muted-foreground">{t('dashboard.product') || 'Product'}</th>
-                        <th className="p-3 text-right font-medium text-muted-foreground">{t('dashboard.revenue') || 'Revenue'}</th>
-                        <th className="p-3 text-right font-medium text-muted-foreground">{t('dashboard.cost') || 'Cost'}</th>
-                        <th className="p-3 text-right font-medium text-muted-foreground">{t('dashboard.profit') || 'Profit'}</th>
-                        <th className="p-3 text-right font-medium text-muted-foreground">{t('dashboard.margin') || 'Margin %'}</th>
+                      <tr className="bg-muted/50">                            <th className="p-3 text-left font-medium text-muted-foreground">{t('dashboard.product')}</th>
+                        <th className="p-3 text-right font-medium text-muted-foreground">{t('dashboard.revenue')}</th>
+                        <th className="p-3 text-right font-medium text-muted-foreground">{t('dashboard.cost')}</th>
+                        <th className="p-3 text-right font-medium text-muted-foreground">{t('dashboard.profit')}</th>
+                        <th className="p-3 text-right font-medium text-muted-foreground">{t('dashboard.margin')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -622,7 +621,7 @@ const DashboardPage = () => {
               </div>
             ) : (
               <div className="text-center py-6 text-muted-foreground">
-                {t('dashboard.no_profitability_data') || 'No profitability data available'}
+                {t('dashboard.no_profitability_data')}
               </div>
             )}
           </CardContent>

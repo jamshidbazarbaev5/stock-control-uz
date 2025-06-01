@@ -1,5 +1,11 @@
 {
   "dashboard": {
+    "product_profitability": "Прибыльность товаров",
+    "profitability_analysis": "Анализ доходов, затрат и маржи прибыли по товарам",
+    "cost": "Затраты",
+    "profit": "Прибыль",
+    "margin": "Маржа",
+    "no_profitability_data": "Нет данных о прибыльности",
     "no_unsold_products":"Нет непроданных товаров",
     "unsold_products": "Непроданные товары",
     "title": "Панель продаж",

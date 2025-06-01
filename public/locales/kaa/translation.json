@@ -1,5 +1,11 @@
 {
   "dashboard": {
+    "product_profitability": "Ónim paydaları",
+    "profitability_analysis": "Ónimlerdegi tabıs, qárejet hám payda analizi",
+    "cost": "Qárejet",
+    "profit": "Payda",
+    "margin": "Marja",
+    "no_profitability_data": "Payda haqqında maǵlıwmat yoq",
     "no_unsold_products": "Satılmaǵan ónim yoq",
     "title": "Satıw paneli",
     "products_with_no_sales": "Satılmaǵan ónimler",
