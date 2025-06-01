@@ -8,16 +8,18 @@ import {
   getProductIntake,
   getClientDebts,
   getUnsoldProducts,
+  getProductProfitability,
   type SalesSummaryResponse,
   type TopProductsResponse,
   type StockByCategoryResponse,
   type ProductIntakeResponse,
   type ClientDebtResponse,
-  type UnsoldProductsResponse
+  type UnsoldProductsResponse,
+  type ProductProfitabilityResponse
 } from '../api/reports';
 import { ArrowUpRight, DollarSign, ShoppingCart, TrendingUp, Package, BarChart2, Users } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, LineChart, Line } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, LineChart, Line, Cell } from 'recharts';
 import { format, parseISO } from 'date-fns';
 
 const DashboardPage = () => {
@@ -28,6 +30,7 @@ const DashboardPage = () => {
   const [productIntake, setProductIntake] = useState<ProductIntakeResponse | null>(null);
   const [clientDebts, setClientDebts] = useState<ClientDebtResponse[]>([]);
   const [unsoldProducts, setUnsoldProducts] = useState<UnsoldProductsResponse[]>([]);
+  const [productProfitability, setProductProfitability] = useState<ProductProfitabilityResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('month');
@@ -37,13 +40,14 @@ const DashboardPage = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const [salesSummary, topProductsData, stockByCategoryData, productIntakeData, clientDebtsData, unsoldProductsData] = await Promise.all([
+        const [salesSummary, topProductsData, stockByCategoryData, productIntakeData, clientDebtsData, unsoldProductsData, profitabilityData] = await Promise.all([
           getReportsSalesSummary(period),
           getTopProducts(period, topProductsLimit),
           getStockByCategory(),
           getProductIntake(period),
           getClientDebts(),
-          getUnsoldProducts()
+          getUnsoldProducts(),
+          getProductProfitability()
         ]);
         
         setSalesData(salesSummary);
@@ -52,6 +56,7 @@ const DashboardPage = () => {
         setProductIntake(productIntakeData);
         setClientDebts(clientDebtsData);
         setUnsoldProducts(unsoldProductsData);
+        setProductProfitability(profitabilityData);
       } catch (err) {
         setError('Failed to load dashboard data');
         console.error(err);
@@ -142,7 +147,7 @@ const DashboardPage = () => {
               {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
                 .format(salesData?.total_revenue || 0)
                 .replace('UZS', '')
-                .trim()} UZS
+                .trim()}
             </div>
             <div className="text-xs text-green-500 flex items-center mt-1">
               <ArrowUpRight className="h-4 w-4 mr-1" />
@@ -164,7 +169,7 @@ const DashboardPage = () => {
                 ? new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
                     .format(salesData.total_revenue / salesData.total_sales)
                     .replace('UZS', '')
-                    .trim() + ' UZS'
+                    .trim()
                 : '0 UZS'}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
@@ -185,88 +190,10 @@ const DashboardPage = () => {
               {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
                 .format(salesData?.trend[salesData.trend.length - 1]?.total || 0)
                 .replace('UZS', '')
-                .trim()} UZS
+                .trim()} 
             </div>
             <div className="text-xs text-muted-foreground mt-1">
               {salesData?.trend[salesData.trend.length - 1]?.day || ''}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle>{t('dashboard.revenue_trend')}</CardTitle>
-            <CardDescription>{t('dashboard.daily_revenue_over_time')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={formattedData}
-                  margin={{
-                    top: 10,
-                    right: 30,
-                    left: 0,
-                    bottom: 0,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip 
-                    formatter={(value) => 
-                      [new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
-                        .format(Number(value))
-                        .replace('UZS', '')
-                        .trim() + ' UZS', 'Revenue']}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="sales" 
-                    stroke="#8884d8" 
-                    fill="#8884d8" 
-                    fillOpacity={0.3} 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle>{t('dashboard.daily_revenue')}</CardTitle>
-            <CardDescription>{t('dashboard.revenue_by_day')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={formattedData}
-                  margin={{
-                    top: 10,
-                    right: 30,
-                    left: 0,
-                    bottom: 0,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <Tooltip 
-                    formatter={(value) => 
-                      [new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
-                        .format(Number(value))
-                        .replace('UZS', '')
-                        .trim() + ' UZS', 'Revenue']}
-                  />
-                  <Legend />
-                  <Bar dataKey="sales" fill="#82ca9d" name="Revenue" />
-                </BarChart>
-              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
@@ -286,19 +213,27 @@ const DashboardPage = () => {
                 margin={{
                   top: 10,
                   right: 30,
-                  left: 0,
-                  bottom: 0,
+                  left: 60,
+                  bottom: 10,
                 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
-                <YAxis />
+                <YAxis 
+                  width={70}
+                  tickFormatter={(value) => 
+                    new Intl.NumberFormat('uz-UZ', { 
+                      notation: 'compact',
+                      compactDisplay: 'short' 
+                    }).format(value)
+                  }
+                />
                 <Tooltip 
                   formatter={(value) => 
                     [new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
                       .format(Number(value))
-                      .replace('UZS', '')
-                      .trim() + ' UZS', 'Revenue']}
+                      .replace('', '')
+                      .trim(), 'Revenue']}
                 />
                 <Legend />
                 <Line 
@@ -364,7 +299,7 @@ const DashboardPage = () => {
                             {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
                               .format(Number(product.total_revenue))
                               .replace('UZS', '')
-                              .trim()} UZS
+                              .trim()}
                           </td>
                         </tr>
                       ))}
@@ -420,7 +355,7 @@ const DashboardPage = () => {
         </Card>
         
         {/* Product Intake Chart */}
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow md:col-span-2 lg:col-span-1">  
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow md:col-span-2 lg:col-span-2">  
           <CardHeader>
             <CardTitle>{t('dashboard.product_intake')}</CardTitle>
             <CardDescription>{t('dashboard.products_coming_into_storage')}</CardDescription>
@@ -439,7 +374,7 @@ const DashboardPage = () => {
                       {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
                         .format(productIntake.total_sum)
                         .replace('UZS', '')
-                        .trim()} UZS
+                        .trim()}
                     </div>
                   </div>
                 </div>
@@ -457,7 +392,7 @@ const DashboardPage = () => {
                               `${new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
                                 .format(Number(value))
                                 .replace('UZS', '')
-                                .trim()} UZS`, 
+                                .trim()}`, 
                               t('dashboard.total_price')
                             ];
                           }
@@ -507,7 +442,7 @@ const DashboardPage = () => {
                             {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
                               .format(Number(client.debt))
                               .replace('UZS', '')
-                              .trim()} UZS
+                              .trim()}
                           </td>
                         </tr>
                       ))}
@@ -557,6 +492,139 @@ const DashboardPage = () => {
                 </div>
               )}
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Product Profitability - Full Width Section */}
+      <div className="mb-8">
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>{t('dashboard.product_profitability') || 'Product Profitability'}</CardTitle>
+                <CardDescription>{t('dashboard.profitability_analysis') || 'Revenue, cost, and profit margins by product'}</CardDescription>
+              </div>
+              <TrendingUp className="h-6 w-6 text-primary" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            {productProfitability.length > 0 ? (
+              <div className="space-y-6">
+                {/* Chart visualization */}
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={productProfitability} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis 
+                        dataKey="product_name" 
+                        tick={{ fontSize: 12 }} 
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis 
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(value) => 
+                          new Intl.NumberFormat('uz-UZ', { notation: 'compact', compactDisplay: 'short' })
+                            .format(value)
+                        }
+                      />
+                      <Tooltip 
+                        formatter={(value, name) => [
+                          new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                            .format(Number(value))
+                            .replace('UZS', '')
+                            .trim(),
+                          name === 'profit' ? 'Profit' : name === 'margin' ? 'Margin %' : name
+                        ]}
+                        labelFormatter={(label) => `Product: ${label}`}
+                      />
+                      <Legend verticalAlign="top" height={36} />
+                      <Bar 
+                        dataKey="profit" 
+                        name="Profit" 
+                        radius={[4, 4, 0, 0]}
+                        fillOpacity={0.8}
+                      >
+                        {/* Use shape to customize the color based on value */}
+                        {productProfitability.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={Number(entry.profit) >= 0 ? '#10b981' : '#ef4444'} 
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                {/* Data table with improved styling */}
+                <div className="overflow-x-auto rounded-md border mt-4">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-muted/50">
+                        <th className="p-3 text-left font-medium text-muted-foreground">{t('dashboard.product') || 'Product'}</th>
+                        <th className="p-3 text-right font-medium text-muted-foreground">{t('dashboard.revenue') || 'Revenue'}</th>
+                        <th className="p-3 text-right font-medium text-muted-foreground">{t('dashboard.cost') || 'Cost'}</th>
+                        <th className="p-3 text-right font-medium text-muted-foreground">{t('dashboard.profit') || 'Profit'}</th>
+                        <th className="p-3 text-right font-medium text-muted-foreground">{t('dashboard.margin') || 'Margin %'}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {productProfitability.map((product, index) => {
+                        const isNegativeProfit = Number(product.profit) < 0;
+                        const isNegativeMargin = product.margin < 0;
+                        
+                        return (
+                          <tr key={index} className="border-t hover:bg-muted/30 transition-colors">
+                            <td className="p-3 flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-primary"></div>
+                              <span className="font-medium">{product.product_name}</span>
+                            </td>
+                            <td className="p-3 text-right">
+                              {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                                .format(Number(product.revenue))
+                                .replace('UZS', '')
+                                .trim()}
+                            </td>
+                            <td className="p-3 text-right">
+                              {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                                .format(Number(product.cost))
+                                .replace('UZS', '')
+                                .trim()}
+                            </td>
+                            <td className="p-3 text-right">
+                              <span 
+                                className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-medium ${isNegativeProfit ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}
+                              >
+                                {isNegativeProfit ? '↓ ' : '↑ '}
+                                {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                                  .format(Math.abs(Number(product.profit)))
+                                  .replace('UZS', '')
+                                  .trim()}
+                              </span>
+                            </td>
+                            <td className="p-3 text-right">
+                              <span 
+                                className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-medium ${isNegativeMargin ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}
+                              >
+                                {isNegativeMargin ? '↓ ' : '↑ '}
+                                {Math.abs(product.margin).toFixed(2)}%
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                {t('dashboard.no_profitability_data') || 'No profitability data available'}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

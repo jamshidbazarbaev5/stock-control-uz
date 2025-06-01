@@ -1,5 +1,6 @@
 {
   "dashboard": {
+    "no_unsold_products":"Нет непроданных товаров",
     "unsold_products": "Непроданные товары",
     "title": "Панель продаж",
     "products_with_no_sales": "Товары без продаж",
@@ -194,9 +195,24 @@
     "logging_in": "Выполняется вход...",
     "invalid_credentials": "Неверные учетные данные"
   },
+
   "forms": {
-    "selling_method":"Способ продажи",
-    "all_workers":"Все работники",
+    "amount_max":"Макс. сумма",
+    "amount_min":"Мин. сумма",
+    "worker":"Работник",
+    "date_from":"С даты",
+    "date_to":"По дату",
+    "all":"Все Статусы",
+    "payment_status": "Статус оплаты",
+    "min_amount": "Мин. сумма",
+    "max_amount": "Макс. сумма",
+    "due_date_from": "С даты оплаты",
+    "due_date_to": "По дату оплаты",
+    "created_date_from": "С даты создания",
+    "created_date_to": "По дату создания",
+    "all_clients": "Все клиенты",
+    "selling_method": "Способ продажи",
+    "all_workers": "Все работники",
     "payment_method2": "Способ оплаты",
     "current_balance": "Текущий баланс",
     "individual":"Физическое лицо",
@@ -325,6 +341,7 @@
     "edit": "Изменить"
   },
   "placeholders": {
+    "select_worker": "Выберите работника",
     "select_has_color": "Выберите, имеет ли товар цвет",
     "select_expense_name": "Выберите название расхода",
     "select_cash_inflow_name": "Выберите название поступления",
@@ -364,6 +381,12 @@
     "enter_payment_method": "Введите способ оплаты",
     "enter_amount": "Введите сумму",
     "select_user": "Выберите пользователя"
+  },
+  "payment_methods":{
+    "cash": "Наличные",
+    "card": "Карта",
+    "click": "Click",
+    "complex": "Сложная оплата"
   },
   "table": {
     "deposit": "Аванс",
@@ -413,6 +436,7 @@
     "price_history": "История цен"
   },
   "messages": {
+    "no_data_to_display": "Нет данных для отображения",
     "success": {
       "created": " успешно создан",
       "expense_created": "Расход успешно создан",

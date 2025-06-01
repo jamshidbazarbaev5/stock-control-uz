@@ -1,5 +1,13 @@
 import api from './api';
 
+export interface ProductProfitabilityResponse {
+  product_name: string;
+  revenue: string;
+  cost: string;
+  profit: string;
+  margin: number;
+}
+
 export interface UnsoldProductsResponse {
   product_name: string;
 }
@@ -75,5 +83,10 @@ export const getClientDebts = async (): Promise<ClientDebtResponse[]> => {
 
 export const getUnsoldProducts = async (): Promise<UnsoldProductsResponse[]> => {
   const response = await api.get<UnsoldProductsResponse[]>('reports/unsold-products');
+  return response.data;
+};
+
+export const getProductProfitability = async (): Promise<ProductProfitabilityResponse[]> => {
+  const response = await api.get<ProductProfitabilityResponse[]>('reports/product-profitability');
   return response.data;
 };

@@ -63,6 +63,10 @@ export interface DebtPayment {
   amount: number;
   paid_at?: string;
   payment_method: string;
+  worker_read?: {
+    id: number;
+    name: string;
+  };
 }
 
 // API endpoints
@@ -92,11 +96,22 @@ export const useCreateDebtPayment = () => {
   });
 };
 
-export const useGetDebtPayments = (debtId: string | number) => {
+interface DebtPaymentFilters {
+  paid_at_after?: string;
+  paid_at_before?: string;
+  amount_min?: string;
+  amount_max?: string;
+  payment_method?: string;
+  worker?: string;
+}
+
+export const useGetDebtPayments = (debtId: string | number, filters?: DebtPaymentFilters) => {
   return useQuery({
-    queryKey: ['debtPayments', debtId],
+    queryKey: ['debtPayments', debtId, filters],
     queryFn: async () => {
-      const response = await api.get<DebtPayment[]>(`debts/${debtId}/payments/`);
+      const response = await api.get<DebtPayment[]>(`debts/${debtId}/payments/`, {
+        params: filters
+      });
       return response.data;
     },
   });

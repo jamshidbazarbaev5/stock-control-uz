@@ -86,11 +86,11 @@ export default function CreateSale() {
   
   const updateTotalAmount = () => {
     const items = form.getValues('sale_items');
-    const total = items.reduce((sum, item, index) => {
-      // Calculate actual total using quantity * price
+    const total = items.reduce((sum, item) => {
+      // Calculate actual total using quantity * subtotal
       const quantity = item.quantity || 0;
-      const price = selectedPrices[index]?.selling || 0;
-      const actualTotal = quantity * price;
+      const subtotal = parseFloat(item.subtotal) || 0;
+      const actualTotal = quantity * subtotal;
       return sum + actualTotal;
     }, 0);
     form.setValue('total_amount', total.toString());
@@ -123,7 +123,7 @@ export default function CreateSale() {
         }
       }));
       
-      // Set subtotal as the selling price for one quantity
+      // Initialize subtotal with selling price, but allow it to be changed later
       form.setValue(`sale_items.${index}.subtotal`, sellingPrice.toString());
       updateTotalAmount();
     }
@@ -142,13 +142,12 @@ export default function CreateSale() {
       form.setValue(`sale_items.${index}.quantity`, value);
     }
     
-    // Update subtotal based on quantity and selling price
-    if (selectedPrices[index]) {
-      const sellingPrice = selectedPrices[index].selling;
-      const newSubtotal = value * sellingPrice;
-      form.setValue(`sale_items.${index}.subtotal`, newSubtotal.toString());
-    }
-    
+    updateTotalAmount();
+  };
+
+  const handleSubtotalChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const newValue = e.target.value.replace(/[^0-9]/g, '');
+    form.setValue(`sale_items.${index}.subtotal`, newValue);
     updateTotalAmount();
   };
 
@@ -157,17 +156,9 @@ export default function CreateSale() {
       // Validate all items meet minimum price requirements
       const hasInvalidPrices = data.sale_items.some((item, index) => {
         if (selectedPrices[index]) {
-          const quantity = parseInt(item.quantity.toString(), 10);
           const subtotal = parseFloat(item.subtotal);
-          const minTotal = selectedPrices[index].min * quantity;
-          console.log('Price validation:', {
-            quantity,
-            subtotal,
-            minPrice: selectedPrices[index].min,
-            minTotal,
-            isInvalid: subtotal < minTotal
-          });
-          return subtotal < minTotal;
+          const minPrice = selectedPrices[index].min;
+          return subtotal < minPrice; // Compare price per unit with minimum price per unit
         }
         return false;
       });
@@ -379,11 +370,7 @@ export default function CreateSale() {
                             type="text"
                             className="text-right font-medium"
                             {...field}
-                            onChange={(e) => {
-                              const newValue = e.target.value.replace(/[^0-9]/g, '');
-                              field.onChange(newValue);
-                              updateTotalAmount();
-                            }}
+                            onChange={(e) => handleSubtotalChange(e, index)}
                           />
                         </FormControl>
                       </FormItem>
