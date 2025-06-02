@@ -183,7 +183,8 @@
     "measurements": "Ólshem birlikleri",
     "recyclings": "Qayta ishlew",
     "clients": "Klientler",
-    "sale": "Satıwlar"
+    "sale": "Satıwlar",
+    "stock_balance": "Товар қалдығы"
   },
   "auth": {
     "login": "Kiriw",

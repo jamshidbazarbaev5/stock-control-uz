@@ -57,6 +57,7 @@ export default function Layout({ children }: any) {
     {icon:Package,label:t('navigation.dashobard'),href:'/dashboard'},
     { icon: ArrowLeftRight, label: t('navigation.transfers'), href: '/transfers' },
     { icon: Package, label: t('navigation.stocks'), href: '/stock' },
+    { icon: Package, label: t('navigation.stock_balance'), href: '/product-stock-balance' },
     { icon: ShoppingBag, label: t('navigation.sale'), href: '/sales' },
     { icon: UserCheck, label: t('navigation.clients'), href: '/clients' },
     { icon: ShoppingBag, label: t('navigation.debt'), href: '/debts' },

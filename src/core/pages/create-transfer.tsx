@@ -47,9 +47,9 @@ export default function CreateTransfer() {
   console.log('Selected source store:', sourceStore);
   console.log('All stocks:', stocks);
   
-  // Filter stocks based on selected source store
+  // Filter stocks based on selected source store and positive quantity
   const sourceStocks = stocks?.filter(
-    (stock) => stock.store_read?.id === sourceStore
+    (stock) => stock.store_read?.id === sourceStore && stock.quantity > 0
   );
   
   console.log('Filtered source stocks:', sourceStocks);

@@ -189,7 +189,8 @@
     "settings": "Настройки",
     "recyclings": "Переработка",
     "sale": "Продажи",
-    "clients": "Клиенты"
+    "clients": "Клиенты",
+    "stock_balance": "Остаток товаров"
   },
   "client": {
     "individual": "Физическое лицо",

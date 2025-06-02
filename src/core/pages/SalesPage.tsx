@@ -23,6 +23,7 @@ export default function SalesPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
+  const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
   // const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   // const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
@@ -87,6 +88,64 @@ export default function SalesPage() {
     setEndDate('');
     setCreditStatus('all');
     setPage(1);
+  };
+
+  const handleRowClick = (row: Sale) => {
+    if (row.id === expandedRowId) {
+      setExpandedRowId(null);
+    } else {
+      setExpandedRowId(row.id || null);
+    }
+  };
+
+  const renderExpandedRow = (row: Sale) => {
+    if (!row.sale_items?.length) return <div className="p-4 text-center text-gray-500">{t('messages.no_items_found')}</div>;
+    
+    return (
+      <div className="p-4">
+        <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+          {t('common.sale_items')} 
+          <span className="text-sm bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+            {row.sale_items.length}
+          </span>
+        </h3>
+        <div className="space-y-3">
+          {row.sale_items.map((item, index) => (
+            <div key={index} className="bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition-all duration-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <span className="text-sm text-gray-500 block mb-1">{t('table.product')}</span>
+                  <span className="font-medium line-clamp-2" title={item.stock_read?.product_read?.product_name || '-'}>
+                    {item.stock_read?.product_read?.product_name || '-'}
+                  </span>
+                  {item.stock_read?.product_read?.category_read && (
+                    <span className="text-xs text-gray-500">
+                      {item.stock_read.product_read.category_read.category_name}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500 block mb-1">{t('table.quantity')}</span>
+                  <span className="font-medium">
+                    {item.quantity} {item.selling_method === 'Штук' ? t('table.pieces') : t('table.measurement')}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500 block mb-1">{t('table.price')}</span>
+                  <span className="font-medium">
+                    {formatCurrency(Number(item.subtotal) / Number(item.quantity))} 
+                  </span>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-500 block mb-1">{t('forms.amount3')}</span>
+                  <span className="font-medium text-emerald-600">{formatCurrency(item.subtotal)}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   const columns = [
@@ -260,9 +319,11 @@ export default function SalesPage() {
           onDelete={handleDelete}
           onEdit={(row: Sale) => navigate(`/edit-sale/${row.id}`)}
           totalCount={totalCount}
-          pageSize={10}
+          pageSize={20}
           currentPage={page}
           onPageChange={(newPage) => setPage(newPage)}
+          expandedRowRenderer={(row: Sale) => renderExpandedRow(row)}
+          onRowClick={(row: Sale) => handleRowClick(row)}
         />
       </Card>
 
