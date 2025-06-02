@@ -130,15 +130,15 @@ export default function SalesPage() {
                     {item.quantity} {item.selling_method === 'Штук' ? t('table.pieces') : t('table.measurement')}
                   </span>
                 </div>
-                <div>
+                {/* <div>
                   <span className="text-sm text-gray-500 block mb-1">{t('table.price')}</span>
                   <span className="font-medium">
                     {formatCurrency(Number(item.subtotal) / Number(item.quantity))} 
                   </span>
-                </div>
+                </div> */}
                 <div>
                   <span className="text-sm text-gray-500 block mb-1">{t('forms.amount3')}</span>
-                  <span className="font-medium text-emerald-600">{formatCurrency(item.subtotal)}</span>
+                  <span className="font-medium text-emerald-600">{formatCurrency(item.subtotal)} UZS</span>
                 </div>
               </div>
             </div>
