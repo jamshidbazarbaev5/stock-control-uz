@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -53,10 +53,17 @@ interface SaleFormData {
 
 export default function CreateSale() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
+
+  // Get URL parameters
+  const searchParams = new URLSearchParams(location.search);
+  const productId = searchParams.get('productId');
+  const stockId = searchParams.get('stockId');
+
   const form = useForm<SaleFormData>({
     defaultValues: {
-      sale_items: [{ stock_write: 0, selling_method: 'Штук', quantity: 1, subtotal: '0' }],
+      sale_items: [{ stock_write: stockId ? Number(stockId) : 0, selling_method: 'Штук', quantity: 1, subtotal: '0' }],
       sale_payments: [{ payment_method: 'Наличные', amount: 0 }],
       on_credit: false,
       total_amount: '0',
@@ -68,10 +75,12 @@ export default function CreateSale() {
   const [selectedStore, setSelectedStore] = useState<number | null>(null);
   const [selectedStocks, setSelectedStocks] = useState<Record<number, number>>({});
   const [selectedPrices, setSelectedPrices] = useState<Record<number, { min: number; selling: number }>>({});
-  
+  // Using this state to trigger re-renders when needed
+  const [, forceRender] = useState({});
+
   // Fetch data
-  const { data: storesData } = useGetStores({});
-  const { data: stocksData } = useGetStocks({});
+  const { data: storesData, isLoading: storesLoading } = useGetStores({});
+  const { data: stocksData, isLoading: stocksLoading } = useGetStocks({});
   const { data: clientsData } = useGetClients({});
   const createSale = useCreateSale();
 
@@ -82,8 +91,128 @@ export default function CreateSale() {
   const clients = Array.isArray(clientsData) ? clientsData : clientsData?.results || [];
 
   // Filter stocks by selected store
-  const filteredStocks = stocks.filter(stock => stock.store_read?.id === selectedStore);
-  
+  const filteredStocks = useMemo(() => {
+    return stocks.filter(stock => stock.store_read?.id === selectedStore);
+  }, [stocks, selectedStore]);
+
+  // When the component mounts, initialize the form with default values
+  useEffect(() => {
+    const defaultValues: SaleFormData = {
+      store_write: 0,
+      sale_items: [{
+        stock_write: 0,
+        quantity: 1,
+        selling_method: 'Штук',
+        subtotal: '0'
+      }],
+      sale_payments: [{
+        payment_method: 'Наличные',
+        amount: 0
+      }],
+      on_credit: false,
+      total_amount: '0'
+    };
+
+    // If we have URL parameters, don't overwrite them with defaults
+    if (!stockId && !productId) {
+      form.reset(defaultValues);
+    } else {
+      // Only set defaults for fields that haven't been set yet
+      const currentValues = form.getValues();
+      if (!currentValues.store_write) {
+        form.setValue('store_write', defaultValues.store_write);
+      }
+      if (!currentValues.sale_payments || currentValues.sale_payments.length === 0) {
+        form.setValue('sale_payments', defaultValues.sale_payments);
+      }
+      if (!currentValues.total_amount) {
+        form.setValue('total_amount', defaultValues.total_amount);
+      }
+    }
+  }, [form, stockId, productId]);
+
+  // Set initial store and stock if we have parameters from URL
+  useEffect(() => {
+    // Only proceed if data is loaded and we have stocks data
+    if (!stocksLoading && !storesLoading && stocks.length > 0) {
+      console.log('Setting initial values from URL params:', { stockId, productId });
+
+      const currentSaleItems = form.getValues('sale_items');
+      if (!currentSaleItems || currentSaleItems.length === 0) {
+        form.setValue('sale_items', [{ 
+          stock_write: 0, 
+          quantity: 1, 
+          selling_method: 'Штук' as 'Штук', 
+          subtotal: '0' 
+        }]);
+      }
+
+      const handleStock = (stockItem: any) => {
+        if (stockItem?.store_read?.id) {
+          const storeId = stockItem.store_read.id;
+
+          // First set the store
+          setSelectedStore(storeId);
+          form.setValue('store_write', storeId);
+          console.log('Setting store:', storeId);
+
+          // Force a re-render to ensure the filtered stocks are updated
+          forceRender({});
+          
+          // Need to directly manipulate the DOM select element to force selection
+          setTimeout(() => {
+            // Set the stock in the form
+            console.log('Setting stock:', stockItem.id);
+            form.setValue('sale_items.0.stock_write', stockItem.id);
+            setSelectedStocks(prev => ({ ...prev, 0: stockItem.quantity || 0 }));
+
+            // Set the price for the selected stock
+            if (stockItem.selling_price) {
+              setSelectedPrices(prev => ({
+                ...prev,
+                [0]: {
+                  min: parseFloat(stockItem.min_price || '0'),
+                  selling: parseFloat(stockItem.selling_price)
+                }
+              }));
+              form.setValue('sale_items.0.subtotal', stockItem.selling_price);
+              form.setValue('sale_items.0.quantity', 1);
+              form.setValue('sale_items.0.selling_method', 'Штук' as 'Штук');
+              updateTotalAmount();
+            }
+
+            // Try to force UI to update by adding a class
+            document.querySelectorAll('select').forEach(select => {
+              select.classList.add('force-update');
+              setTimeout(() => select.classList.remove('force-update'), 100);
+            });
+          }, 300);
+        }
+      };
+
+      // Use a timeout to ensure the component is fully mounted
+      setTimeout(() => {
+        if (stockId) {
+          // If we have a specific stock ID, use it directly
+          const stockItem = stocks.find(stock => stock.id === Number(stockId));
+          if (stockItem) {
+            handleStock(stockItem);
+          }
+        } else if (productId) {
+          // Find stocks with this product that have quantity > 0
+          const stocksWithProduct = stocks.filter(stock => 
+            stock.product_read?.id === Number(productId) && stock.quantity > 0
+          );
+
+          if (stocksWithProduct.length > 0) {
+            // Use the first available stock with this product
+            handleStock(stocksWithProduct[0]);
+          }
+        }
+      }, 200);
+    }
+  }, [stockId, productId, stocks, form, stocksLoading, storesLoading]);
+
   const updateTotalAmount = () => {
     const items = form.getValues('sale_items');
     const total = items.reduce((sum, item) => {
@@ -94,7 +223,7 @@ export default function CreateSale() {
       return sum + actualTotal;
     }, 0);
     form.setValue('total_amount', total.toString());
-    
+
     // Update payment amount with total
     const payments = form.getValues('sale_payments');
     if (payments.length > 0) {
@@ -104,44 +233,59 @@ export default function CreateSale() {
 
   const handleStockSelection = (value: string, index: number) => {
     const stockId = parseInt(value, 10);
-    const selectedStock = filteredStocks.find(stock => stock.id === stockId);
     
+    // Use the full stocks array to find the selected stock to ensure we're getting the most up-to-date data
+    const selectedStock = stocks.find(stock => stock.id === stockId);
+    
+    console.log('Stock selected:', stockId, selectedStock?.product_read?.product_name);
+
+    if (!selectedStock) return;
+    
+    // First update the store if needed
+    if (selectedStock.store_read?.id && selectedStock.store_read.id !== selectedStore) {
+      console.log('Updating store from stock selection:', selectedStock.store_read.id);
+      setSelectedStore(selectedStock.store_read.id);
+      form.setValue('store_write', selectedStock.store_read.id);
+      // Force a re-render to ensure the filtered stocks are updated
+      forceRender({});
+    }
+
+    // Then update the stock selection state
     setSelectedStocks(prev => ({
       ...prev,
-      [index]: selectedStock?.quantity || 0
+      [index]: selectedStock.quantity || 0
     }));
-    
-    if (selectedStock) {
-      const sellingPrice = parseFloat(selectedStock.selling_price || '0');
-      const minPrice = parseFloat(selectedStock.min_price || '0');
-      
-      setSelectedPrices(prev => ({
-        ...prev,
-        [index]: {
-          min: minPrice,
-          selling: sellingPrice
-        }
-      }));
-      
-      // Initialize subtotal with selling price, but allow it to be changed later
-      form.setValue(`sale_items.${index}.subtotal`, sellingPrice.toString());
-      updateTotalAmount();
-    }
-    
+
+    // Set price information
+    const sellingPrice = parseFloat(selectedStock.selling_price || '0');
+    const minPrice = parseFloat(selectedStock.min_price || '0');
+
+    setSelectedPrices(prev => ({
+      ...prev,
+      [index]: {
+        min: minPrice,
+        selling: sellingPrice
+      }
+    }));
+
+    // Set form values
     form.setValue(`sale_items.${index}.stock_write`, stockId);
+    form.setValue(`sale_items.${index}.subtotal`, sellingPrice.toString());
+    form.setValue(`sale_items.${index}.selling_method`, 'Штук' as 'Штук');
+    updateTotalAmount();
   };
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const value = parseInt(e.target.value, 10);
     const maxQuantity = selectedStocks[index] || 0;
-    
+
     if (value > maxQuantity) {
       toast.error(t('messages.error.insufficient_quantity'));
       form.setValue(`sale_items.${index}.quantity`, maxQuantity);
     } else {
       form.setValue(`sale_items.${index}.quantity`, value);
     }
-    
+
     updateTotalAmount();
   };
 
@@ -166,9 +310,11 @@ export default function CreateSale() {
       if (hasInvalidPrices) {
         toast.error(t('messages.error.invalid_price'));
         return;
-      }        // Get primary payment method from sale_payments
+      }
+
+      // Get primary payment method from sale_payments
       const primaryPayment = data.sale_payments[0];
-      
+
       const formattedData: Sale = {
         store: data.store_write,
         payment_method: primaryPayment?.payment_method || 'Наличные',
@@ -206,9 +352,16 @@ export default function CreateSale() {
   };
 
   const addSaleItem = () => {
-    const items = form.getValues('sale_items');
-    form.setValue('sale_items', [...items, { stock_write: 0, selling_method: 'Штук', quantity: 1, subtotal: '0' } as FormSaleItem]);
-    updateTotalAmount();
+    const currentItems = form.getValues('sale_items') || [];
+    form.setValue('sale_items', [
+      ...currentItems,
+      {
+        stock_write: 0,
+        quantity: 1,
+        selling_method: 'Штук' as 'Штук',
+        subtotal: '0'
+      }
+    ]);
   };
 
   const removeSaleItem = (index: number) => {
@@ -239,8 +392,59 @@ export default function CreateSale() {
                   <Select
                     value={field.value?.toString()}
                     onValueChange={(value) => {
-                      field.onChange(parseInt(value, 10));
-                      setSelectedStore(parseInt(value, 10));
+                      const storeId = parseInt(value, 10);
+                      field.onChange(storeId);
+                      setSelectedStore(storeId);
+                      
+                      // If we have URL parameters, check if there's a matching stock in the selected store
+                      if ((productId || stockId) && stocks.length > 0) {
+                        let matchingStock;
+                        
+                        if (stockId) {
+                          // Find the stock and check if it's in the selected store
+                          matchingStock = stocks.find(stock => 
+                            stock.id === Number(stockId) && stock.store_read?.id === storeId
+                          );
+                        } else if (productId) {
+                          // Find a stock with the product in the selected store
+                          matchingStock = stocks.find(stock => 
+                            stock.product_read?.id === Number(productId) && 
+                            stock.store_read?.id === storeId && 
+                            stock.quantity > 0
+                          );
+                        }
+                        
+                        if (matchingStock) {
+                          // If we found a matching stock in the new store, use it
+                          form.setValue('sale_items.0.stock_write', matchingStock.id);
+                          setSelectedStocks(prev => ({ ...prev, 0: matchingStock.id }));
+                          
+                          if (matchingStock.selling_price) {
+                            setSelectedPrices(prev => ({
+                              ...prev,
+                              [0]: {
+                                min: parseFloat(matchingStock.min_price || '0'),
+                                selling: parseFloat(matchingStock.selling_price)
+                              }
+                            }));
+                            form.setValue('sale_items.0.subtotal', matchingStock.selling_price);
+                            updateTotalAmount();
+                            return;
+                          }
+                        }
+                      }
+                      
+                      // Reset all stock selections when store changes and no matching stock is found
+                      const items = form.getValues('sale_items');
+                      items.forEach((_, idx) => {
+                        form.setValue(`sale_items.${idx}.stock_write`, 0);
+                        form.setValue(`sale_items.${idx}.subtotal`, '0');
+                      });
+                      
+                      // Reset selected stocks and prices
+                      setSelectedStocks({});
+                      setSelectedPrices({});
+                      updateTotalAmount();
                     }}
                   >
                     <SelectTrigger className={form.formState.errors.store_write ? "border-red-500" : ""}>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useTranslation } from 'react-i18next';
 import { 
   getReportsSalesSummary, 
@@ -21,7 +21,7 @@ import {
 } from '../api/reports';
 import { ArrowUpRight, DollarSign, ShoppingCart, TrendingUp, Package, BarChart2, Users, Store, User } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, LineChart, Line, Cell } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, LineChart, Line } from 'recharts';
 import { format, parseISO } from 'date-fns';
 
 const DashboardPage = () => {
@@ -580,130 +580,137 @@ const DashboardPage = () => {
       {/* Product Profitability - Full Width Section */}
       <div className="mb-8">
         <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-2">
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle>{t('dashboard.product_profitability')}</CardTitle>
-                <CardDescription>{t('dashboard.profitability_analysis')}</CardDescription>
-              </div>
-              <TrendingUp className="h-6 w-6 text-primary" />
-            </div>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {productProfitability.length > 0 ? (
-              <div className="space-y-6">
-                {/* Chart visualization */}
-                <div className="h-64">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {/* Full-screen Line Chart */}
+                <div className="h-[480px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={productProfitability} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <LineChart 
+                      data={productProfitability} 
+                      margin={{ top: 10, right: 30, left: 10, bottom: 40 }}
+                    >
+                      <defs>
+                        <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="marginGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                       <XAxis 
                         dataKey="product_name" 
-                        tick={{ fontSize: 12 }} 
+                        tick={{ fontSize: 11 }}
+                        angle={-35}
+                        textAnchor="end"
+                        height={60}
                         axisLine={false}
                         tickLine={false}
                       />
                       <YAxis 
+                        yAxisId="left"
                         axisLine={false}
                         tickLine={false}
+                        tick={{ fontSize: 11 }}
+                        tickCount={5}
                         tickFormatter={(value) => 
                           new Intl.NumberFormat('uz-UZ', { notation: 'compact', compactDisplay: 'short' })
                             .format(value)
                         }
                       />
                       <Tooltip 
-                        formatter={(value, name) => [
-                          new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
-                            .format(Number(value))
-                            .replace('UZS', '')
-                            .trim(),
-                          name === 'profit' ? t('dashboard.profit') : name === 'margin' ? t('dashboard.margin') : name
-                        ]}
-                        labelFormatter={(label) => `Product: ${label}`}
+                        contentStyle={{ borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: 'none', fontSize: '12px' }}
+                        formatter={(value, name) => {
+                          if (name === 'profit') {
+                            return [
+                              new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                                .format(Number(value))
+                                .replace('UZS', '')
+                                .trim(),
+                              ''
+                            ];
+                          }
+                          return [value, ''];
+                        }}
+                        labelFormatter={() => ''}
+                        cursor={{ stroke: '#718096', strokeWidth: 1, strokeDasharray: '5 5' }}
                       />
-                      <Legend verticalAlign="top" height={36} />
-                      <Bar 
+                      <Line 
+                        yAxisId="left"
+                        type="monotone" 
                         dataKey="profit" 
-                        name="Profit" 
-                        radius={[4, 4, 0, 0]}
-                        fillOpacity={0.8}
-                      >
-                        {/* Use shape to customize the color based on value */}
-                        {productProfitability.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={Number(entry.profit) >= 0 ? '#10b981' : '#ef4444'} 
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
+                        name=""
+                        stroke="#10b981" 
+                        strokeWidth={3}
+                        dot={{ r: 5, strokeWidth: 2, fill: 'white', stroke: '#10b981' }}
+                        activeDot={{ r: 7, strokeWidth: 0, fill: '#10b981' }}
+                        fill="url(#profitGradient)"
+                        fillOpacity={1}
+                      />
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
-                
-                {/* Data table with improved styling */}
-                <div className="overflow-x-auto rounded-md border mt-4">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="bg-muted/50">                            <th className="p-3 text-left font-medium text-muted-foreground">{t('dashboard.product')}</th>
-                        <th className="p-3 text-right font-medium text-muted-foreground">{t('dashboard.revenue')}</th>
-                        <th className="p-3 text-right font-medium text-muted-foreground">{t('dashboard.cost')}</th>
-                        <th className="p-3 text-right font-medium text-muted-foreground">{t('dashboard.profit')}</th>
-                        <th className="p-3 text-right font-medium text-muted-foreground">{t('dashboard.margin')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {productProfitability.map((product, index) => {
-                        const isNegativeProfit = Number(product.profit) < 0;
-                        const isNegativeMargin = product.margin < 0;
-                        
-                        return (
-                          <tr key={index} className="border-t hover:bg-muted/30 transition-colors">
-                            <td className="p-3 flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-primary"></div>
-                              <span className="font-medium">{product.product_name}</span>
-                            </td>
-                            <td className="p-3 text-right">
-                              {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
-                                .format(Number(product.revenue))
-                                .replace('UZS', '')
-                                .trim()}
-                            </td>
-                            <td className="p-3 text-right">
-                              {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
-                                .format(Number(product.cost))
-                                .replace('UZS', '')
-                                .trim()}
-                            </td>
-                            <td className="p-3 text-right">
-                              <span 
-                                className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-medium ${isNegativeProfit ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}
-                              >
-                                {isNegativeProfit ? '↓ ' : '↑ '}
-                                {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
-                                  .format(Math.abs(Number(product.profit)))
-                                  .replace('UZS', '')
-                                  .trim()}
-                              </span>
-                            </td>
-                            <td className="p-3 text-right">
-                              <span 
-                                className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-medium ${isNegativeMargin ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}
-                              >
-                                {isNegativeMargin ? '↓ ' : '↑ '}
-                                {Math.abs(product.margin).toFixed(2)}%
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+
+                {/* Area Chart for Margins */}
+                <div className="h-[480px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart 
+                      data={productProfitability} 
+                      margin={{ top: 10, right: 30, left: 10, bottom: 40 }}
+                    >
+                      <defs>
+                        <linearGradient id="colorMargin" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+                      <XAxis 
+                        dataKey="product_name" 
+                        tick={{ fontSize: 11 }}
+                        angle={-35}
+                        textAnchor="end"
+                        height={60}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis 
+                        yAxisId="right"
+                        orientation="right"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 11 }}
+                        tickCount={5}
+                        tickFormatter={(value) => `${value}%`}
+                        domain={[0, 'dataMax + 10']}
+                      />
+                      <Tooltip 
+                        contentStyle={{ borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: 'none', fontSize: '12px' }}
+                        formatter={(value) => [`${value}%`, '']}
+                        labelFormatter={() => ''}
+                        cursor={{ stroke: '#718096', strokeWidth: 1, strokeDasharray: '5 5' }}
+                      />
+                      <Line 
+                        yAxisId="right"
+                        type="monotone" 
+                        dataKey="margin" 
+                        name=""
+                        stroke="#6366f1" 
+                        strokeWidth={3}
+                        dot={{ r: 5, strokeWidth: 2, fill: 'white', stroke: '#6366f1' }}
+                        activeDot={{ r: 7, strokeWidth: 0, fill: '#6366f1' }}
+                        fill="url(#colorMargin)"
+                        fillOpacity={1}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
             ) : (
-              <div className="text-center py-6 text-muted-foreground">
-                {t('dashboard.no_profitability_data')}
-              </div>
+              <div className="h-80"></div>
             )}
           </CardContent>
         </Card>

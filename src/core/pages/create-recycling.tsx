@@ -1,4 +1,5 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ResourceForm } from '../helpers/ResourceForm';
 import type { Recycling } from '../api/recycling';
@@ -79,10 +80,18 @@ const recyclingFields = (t:any)=> [
 
 export default function CreateRecycling() {
   const navigate = useNavigate();
+  const location = useLocation();
   const createRecycling = useCreateRecycling();
   const { t } = useTranslation();
+  
+  // Get URL parameters
+  const searchParams = new URLSearchParams(location.search);
+  const fromProductId = searchParams.get('fromProductId');
+  const fromStockId = searchParams.get('fromStockId');
+  
   const form = useForm<FormValues>({
     defaultValues: {
+      from_to: fromStockId ? Number(fromStockId) : undefined,
       date_of_recycle: new Date().toISOString().split('T')[0], // Today's date
     }
   });
@@ -96,6 +105,33 @@ export default function CreateRecycling() {
   const stocks = Array.isArray(stocksData) ? stocksData : stocksData?.results || [];
   const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
+  
+  // Set initial values based on URL parameters
+  useEffect(() => {
+    if (stocks.length > 0 && products.length > 0) {
+      if (fromStockId) {
+        // If we have a specific stock ID, just ensure it's selected
+        form.setValue('from_to', Number(fromStockId));
+        
+        // Also find the stock's product to set as target product
+        const stockItem = stocks.find(stock => stock.id === Number(fromStockId));
+        if (stockItem?.product_read?.id) {
+          form.setValue('to_product', stockItem.product_read.id);
+        }
+      } 
+      else if (fromProductId) {
+        // If we only have product ID, find a stock with that product
+        const stockWithProduct = stocks.find(
+          stock => stock.product_read?.id === Number(fromProductId) && stock.quantity > 0
+        );
+        
+        if (stockWithProduct) {
+          form.setValue('from_to', stockWithProduct.id);
+          form.setValue('to_product', Number(fromProductId));
+        }
+      }
+    }
+  }, [fromStockId, fromProductId, stocks, products, form]);
 
   // Update fields with dynamic options
   const fields = recyclingFields(t).map(field => {

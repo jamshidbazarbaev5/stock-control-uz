@@ -9,6 +9,8 @@ import type { Product } from '../api/product';
 import type { Store } from '../api/store';
 import type { Measurement } from '../api/measurement';
 import type { Supplier } from '../api/supplier';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
 
 type PaginatedData<T> = { results: T[]; count: number } | T[];
 import { useGetStocks, useDeleteStock, useUpdateStock } from '../api/stock';
@@ -82,6 +84,30 @@ const columns = (t: any, navigate: (path: string) => void) => [
             <path d="M12 7v5l3 3" />
           </svg>
         </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem 
+              onClick={() => navigate(`/create-transfer?fromProductId=${row.product_read?.id}&fromStockId=${row.id}`)}
+            >
+              {t('common.create')} {t('navigation.transfer')}
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => navigate(`/create-sale?productId=${row.product_read?.id}&stockId=${row.id}`)}
+            >
+              {t('common.create')} {t('navigation.sale')}
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => navigate(`/create-recycling?fromProductId=${row.product_read?.id}&fromStockId=${row.id}`)}
+            >
+              {t('common.create')} {t('navigation.recycling')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     ),
   },

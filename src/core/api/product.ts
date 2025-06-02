@@ -13,7 +13,15 @@ export interface Product {
   category_write: number;
   store_write?: number;
   measurements?: ProductMeasurement[];
-  measurement?: ProductMeasurement[];
+  measurement?: Array<{
+    id: number;
+    measurement_read?: {
+      id: number;
+      measurement_name: string;
+    };
+    number: string;
+    for_sale: boolean;
+  }>;
   has_color?: boolean;
   category_read?: {
     id: number;

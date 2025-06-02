@@ -127,7 +127,10 @@ export default function SalesPage() {
                 <div>
                   <span className="text-sm text-gray-500 block mb-1">{t('table.quantity')}</span>
                   <span className="font-medium">
-                    {item.quantity} {item.selling_method === 'Штук' ? t('table.pieces') : t('table.measurement')}
+                    {item.quantity} {item.selling_method === 'Штук' ? 
+                      t('table.pieces') : 
+                      item.stock_read?.product_read?.measurement?.find((m: { for_sale: boolean; measurement_read?: { measurement_name: string } }) => m.for_sale)?.measurement_read?.measurement_name
+                    }
                   </span>
                 </div>
                 {/* <div>

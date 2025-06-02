@@ -25,11 +25,20 @@ interface SaleItem {
         id: number;
         category_name: string;
       };
+      measurement?: Array<{
+        id: number;
+        measurement_read?: {
+          id: number;
+          measurement_name: string;
+        };
+        number: string;
+        for_sale: boolean;
+      }>;
     };
   };
   selling_method: 'Штук' | 'Ед.измерения';
   quantity: string;
- 
+  
   subtotal: string;
 }
 
