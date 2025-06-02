@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { Card } from '@/components/ui/card';
