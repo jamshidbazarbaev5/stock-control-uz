@@ -17,7 +17,12 @@ import {
 } from '@/components/ui/select';
 
 interface MeasurementItem {
+  id?: number;
   measurement_write: number;
+  measurement_read?: {
+    id: number;
+    measurement_name: string;
+  };
   number: number;
   for_sale: boolean;
 }
@@ -61,9 +66,11 @@ export default function CreateProduct() {
         product_name: data.product_name,
         category_write: typeof data.category_write === 'string' ? parseInt(data.category_write, 10) : data.category_write,
         measurement: measurements.map((m: MeasurementItem) => ({
+          id: m.id,
           measurement_write: m.measurement_write,
-          number: m.number,
-          for_sale: m.for_sale,
+          measurement_read: m.measurement_read,
+          number: m.number.toString(),
+          for_sale: m.for_sale
         })),
         has_color: data.has_color === 'true',
         ...(data.has_color === 'true' && { color })

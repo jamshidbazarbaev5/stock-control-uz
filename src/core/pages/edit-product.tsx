@@ -19,6 +19,10 @@ import {
 interface MeasurementItem {
   id?: number;
   measurement_write: number;
+  measurement_read?: {
+    id: number;
+    measurement_name: string;
+  };
   number: number;
   for_sale: boolean;
 }
@@ -84,8 +88,10 @@ export default function EditProduct() {
         has_color: data.has_color === 'true',
         ...(data.has_color === 'true' && { color }),
         measurement: measurements.map((m: MeasurementItem) => ({
+          id: m.id,
           measurement_write: m.measurement_write,
-          number: m.number,
+          measurement_read: m.measurement_read,
+          number: m.number.toString(),
           for_sale: m.for_sale
         }))
       };

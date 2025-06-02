@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -19,7 +21,7 @@ import {
   type ProductProfitabilityResponse,
   type TopSellersResponse
 } from '../api/reports';
-import { ArrowUpRight, DollarSign, ShoppingCart, TrendingUp, Package, BarChart2, Users, Store, User } from 'lucide-react';
+import { ArrowUpRight, DollarSign, ShoppingCart, TrendingUp, Package, BarChart2, Users,  } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, LineChart, Line } from 'recharts';
 import { format, parseISO } from 'date-fns';
@@ -32,12 +34,13 @@ const DashboardPage = () => {
   const [productIntake, setProductIntake] = useState<ProductIntakeResponse | null>(null);
   const [clientDebts, setClientDebts] = useState<ClientDebtResponse[]>([]);
   const [unsoldProducts, setUnsoldProducts] = useState<UnsoldProductsResponse[]>([]);
-  const [productProfitability, setProductProfitability] = useState<ProductProfitabilityResponse[]>([]);
+  const [_productProfitability, setProductProfitability] = useState<ProductProfitabilityResponse[]>([]);
   const [topSellers, setTopSellers] = useState<TopSellersResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('month');
   const [topProductsLimit, setTopProductsLimit] = useState<number>(5);
+  const [topSellersLimit, _setTopSellersLimit] = useState<number>(5);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -51,7 +54,7 @@ const DashboardPage = () => {
           getClientDebts(),
           getUnsoldProducts(),
           getProductProfitability(),
-          getTopSellers(period)
+          getTopSellers(period, )
         ]);
         
         setSalesData(salesSummary);
@@ -71,7 +74,7 @@ const DashboardPage = () => {
     };
 
     fetchDashboardData();
-  }, [period, topProductsLimit]);
+  }, [period, topProductsLimit, topSellersLimit]);
 
   // Format the trend data for the charts
   const formattedData = salesData?.trend.map(item => ({
@@ -103,7 +106,7 @@ const DashboardPage = () => {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="p-6 w-full max-w-none">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">{t('dashboard.title')}</h1>
         <div className="flex items-center gap-4">
@@ -255,104 +258,150 @@ const DashboardPage = () => {
       </Card>
       
       {/* Top Products and Stock by Category */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Top Products */}
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between">
+      <div className="w-full mb-8 space-y-8">
+        {/* Top Products - Full Width */}
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow border-t-4 border-t-blue-500">
+          <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
             <div>
-              <CardTitle>{t('dashboard.top_products')}</CardTitle>
+              <CardTitle className="text-xl font-bold text-blue-700">{t('dashboard.top_products')}</CardTitle>
               <CardDescription>{t('dashboard.best_performing_products')}</CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm">{t('dashboard.show')}:</span>
+            <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg">
+              <span className="text-sm font-medium text-blue-700">{t('dashboard.show')}:</span>
               <Select 
                 value={topProductsLimit.toString()} 
                 onValueChange={(value) => setTopProductsLimit(parseInt(value))}
               >
-                <SelectTrigger className="w-16">
+                <SelectTrigger className="w-16 border-blue-200 bg-white">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="3">3</SelectItem>
                   <SelectItem value="5">5</SelectItem>
                   <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="15">15</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="pt-6">
+            <div>
               {topProducts.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="text-left border-b">
-                        <th className="pb-2">{t('dashboard.product')}</th>
-                        <th className="pb-2 text-right">{t('dashboard.quantity')}</th>
-                        <th className="pb-2 text-right">{t('dashboard.revenue')}</th>
+                <div className="overflow-x-auto rounded-lg border border-gray-200">
+                  <table className="w-full border-collapse bg-white text-sm">
+                    <thead className="bg-gray-50">
+                      <tr className="text-left">
+                        <th className="px-4 py-3 font-medium text-gray-900">{t('dashboard.product')}</th>
+                        <th className="px-4 py-3 font-medium text-gray-900 text-center">{t('dashboard.quantity')}</th>
+                        <th className="px-4 py-3 font-medium text-gray-900 text-right">{t('dashboard.revenue')}</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {topProducts.map((product, index) => (
-                        <tr key={index} className="border-b last:border-0">
-                          <td className="py-3 flex items-center gap-2">
-                            <Package className="h-4 w-4 text-muted-foreground" />
-                            <span>{product.product_name}</span>
-                          </td>
-                          <td className="py-3 text-right">{product.total_quantity}</td>
-                          <td className="py-3 text-right">
-                            {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
-                              .format(Number(product.total_revenue))
-                              .replace('UZS', '')
-                              .trim()}
-                          </td>
-                        </tr>
-                      ))}
+                    <tbody className="divide-y divide-gray-100">
+                      {topProducts.map((product, index) => {
+                        // Calculate a performance score (for visualization purposes)
+                       
+                        return (
+                          <tr key={index} className="hover:bg-blue-50/30 transition-colors">
+                            <td className="px-4 py-3 flex items-center gap-3">
+                              <div className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${index < 3 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}`}>
+                                <Package className="h-4 w-4" />
+                              </div>
+                              <span className="font-medium">{product.product_name}</span>
+                            </td>
+                            <td className="px-4 py-3 text-center font-medium">
+                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                                {product.total_quantity}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right font-medium">
+                              {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                                .format(Number(product.total_revenue))
+                                .replace('UZS', '')
+                                .trim()}
+                            </td>
+                            
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <div className="text-center py-6 text-muted-foreground">
-                  {t('dashboard.no_product_data_available')}
+                <div className="text-center py-8 text-muted-foreground bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                  <Package className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                  <p className="text-gray-500">{t('dashboard.no_product_data_available')}</p>
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Stock by Category */}
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle>{t('dashboard.stock_by_category')}</CardTitle>
+        {/* Stock by Category - Full Width */}
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow border-t-4 border-t-purple-500">
+          <CardHeader className="border-b pb-4">
+            <CardTitle className="text-xl font-bold text-purple-700">{t('dashboard.stock_by_category')}</CardTitle>
             <CardDescription>{t('dashboard.current_inventory_by_category')}</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <CardContent className="pt-6">
+            <div>
               {stockByCategory.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="text-left border-b">
-                        <th className="pb-2">{t('dashboard.category')}</th>
-                        <th className="pb-2 text-right">{t('dashboard.total_stock')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stockByCategory.map((category, index) => (
-                        <tr key={index} className="border-b last:border-0">
-                          <td className="py-3 flex items-center gap-2">
-                            <BarChart2 className="h-4 w-4 text-muted-foreground" />
-                            <span>{category.category}</span>
-                          </td>
-                          <td className="py-3 text-right">{category.total_stock}</td>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="overflow-x-auto rounded-lg border border-gray-200">
+                    <table className="w-full border-collapse bg-white text-sm">
+                      <thead className="bg-gray-50">
+                        <tr className="text-left">
+                          <th className="px-4 py-3 font-medium text-gray-900">{t('dashboard.category')}</th>
+                          <th className="px-4 py-3 font-medium text-gray-900 text-right">{t('dashboard.total_stock')}</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {stockByCategory.map((category, index) => (
+                          <tr key={index} className="hover:bg-purple-50/30 transition-colors">
+                            <td className="px-4 py-3 flex items-center gap-3">
+                              <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-purple-100 text-purple-600">
+                                <BarChart2 className="h-4 w-4" />
+                              </div>
+                              <span className="font-medium">{category.category}</span>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium">
+                                {category.total_stock}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  {/* Add visual chart representation */}
+                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                    <h3 className="text-sm font-medium text-gray-500 mb-4">{t('dashboard.category_distribution')}</h3>
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={stockByCategory.map(cat => ({
+                            name: cat.category,
+                            value: cat.total_stock
+                          }))}
+                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip 
+                            formatter={(value) => [value, t('dashboard.total_stock')]}
+                          />
+                          <Bar dataKey="value" fill="#8884d8" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <div className="text-center py-6 text-muted-foreground">
-                  {t('dashboard.no_category_data_available')}
+                <div className="text-center py-8 text-muted-foreground bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                  <BarChart2 className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                  <p className="text-gray-500">{t('dashboard.no_category_data_available')}</p>
                 </div>
               )}
             </div>
@@ -419,158 +468,248 @@ const DashboardPage = () => {
           </CardContent>
         </Card>
 
-        {/* Client Debts */}
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle>{t('dashboard.client_debts')}</CardTitle>
-            <CardDescription>{t('dashboard.outstanding_client_debts')}</CardDescription>
+        {/* Client Debts - Full Width */}
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow md:col-span-2 lg:col-span-2 mb-8">
+          <CardHeader className="border-b">
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>{t('dashboard.client_debts') || 'Client Debts'}</CardTitle>
+                <CardDescription>{t('dashboard.outstanding_client_debts') || 'Outstanding client debts'}</CardDescription>
+              </div>
+              <div className="bg-amber-100 px-3 py-1 rounded-full text-amber-800 text-sm font-medium">
+                {clientDebts.length > 0 ? clientDebts.length : 0} {t('dashboard.clients') || 'clients'}
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {clientDebts.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="text-left border-b">
-                        <th className="pb-2">{t('dashboard.client')}</th>
-                        <th className="pb-2 text-right">{t('dashboard.total_debt')}</th>
-                        <th className="pb-2 text-right">{t('dashboard.total_paid')}</th>
-                        <th className="pb-2 text-right">{t('dashboard.remaining_debt')}</th>
-                        <th className="pb-2 text-right">{t('dashboard.deposit')}</th>
+          <CardContent className="pt-6">
+            {clientDebts.length > 0 ? (
+              <div>
+                {/* Summary metrics */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col">
+                    <span className="text-sm text-gray-500 mb-1">{t('dashboard.total_debt') || 'Total Debt'}</span>
+                    <span className="text-xl font-bold">
+                      {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                        .format(clientDebts.reduce((sum, client) => sum + Number(client.total_debt), 0))
+                        .replace('UZS', '')
+                        .trim()}
+                    </span>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col">
+                    <span className="text-sm text-gray-500 mb-1">{t('dashboard.total_paid') || 'Total Paid'}</span>
+                    <span className="text-xl font-bold text-green-600">
+                      {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                        .format(clientDebts.reduce((sum, client) => sum + Number(client.total_paid), 0))
+                        .replace('UZS', '')
+                        .trim()}
+                    </span>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col">
+                    <span className="text-sm text-gray-500 mb-1">{t('dashboard.remaining_debt') || 'Remaining Debt'}</span>
+                    <span className="text-xl font-bold text-destructive">
+                      {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                        .format(clientDebts.reduce((sum, client) => sum + Number(client.remaining_debt), 0))
+                        .replace('', '')
+                        .trim()}
+                    </span>
+                  </div>
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col">
+                    <span className="text-sm text-gray-500 mb-1">{t('dashboard.deposit') || 'Deposit'}</span>
+                    <span className="text-xl font-bold text-blue-600">
+                      {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                        .format(clientDebts.reduce((sum, client) => sum + Number(client.deposit), 0))
+                        .replace('', '')
+                        .trim()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Enhanced Table */}
+                <div className="overflow-x-auto rounded-lg border border-gray-200">
+                  <table className="w-full border-collapse bg-white text-sm">
+                    <thead className="bg-gray-50">
+                      <tr className="text-left">
+                        <th className="px-4 py-3 font-medium text-gray-900">{t('dashboard.client') || 'Client'}</th>
+                        <th className="px-4 py-3 font-medium text-gray-900 text-right">{t('dashboard.total_debt') || 'Total Debt'}</th>
+                        <th className="px-4 py-3 font-medium text-gray-900 text-right">{t('dashboard.total_paid') || 'Total Paid'}</th>
+                        <th className="px-4 py-3 font-medium text-gray-900 text-right">{t('dashboard.remaining_debt') || 'Remaining'}</th>
+                        <th className="px-4 py-3 font-medium text-gray-900 text-right">{t('dashboard.deposit') || 'Deposit'}</th>
+                        {/* <th className="px-4 py-3 font-medium text-gray-900 text-right">{t('dashboard.payment_status') || 'Status'}</th> */}
                       </tr>
                     </thead>
-                    <tbody>
-                      {clientDebts.map((client, index) => (
-                        <tr key={index} className="border-b last:border-0">
-                          <td className="py-3 flex items-center gap-2">
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                            <span>{client.client_name}</span>
-                          </td>
-                          <td className="py-3 text-right">
-                            {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
-                              .format(Number(client.total_debt))
-                              .replace('UZS', '')
-                              .trim()}
-                          </td>
-                          <td className="py-3 text-right text-green-600">
-                            {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
-                              .format(Number(client.total_paid))
-                              .replace('UZS', '')
-                              .trim()}
-                          </td>
-                          <td className="py-3 text-right text-destructive">
-                            {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
-                              .format(Number(client.remaining_debt))
-                              .replace('UZS', '')
-                              .trim()}
-                          </td>
-                          <td className="py-3 text-right text-blue-600">
-                            {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
-                              .format(Number(client.deposit))
-                              .replace('UZS', '')
-                              .trim()}
-                          </td>
-                        </tr>
-                      ))}
+                    <tbody className="divide-y divide-gray-100">
+                      {clientDebts.map((client, index) => {
+                        // Calculate payment percentage
+                        // const totalDebt = Number(client.total_debt) || 0;
+                        // const totalPaid = Number(client.total_paid) || 0;
+                        // const paymentPercentage = totalDebt > 0 ? (totalPaid / totalDebt) * 100 : 0;
+                        
+                        return (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 flex items-center gap-2">
+                              <div className="flex items-center gap-3">
+                                <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-500">
+                                  <Users className="h-4 w-4" />
+                                </div>
+                                <div className="font-medium text-gray-900">{client.client_name}</div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-right font-medium">
+                              {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                                .format(Number(client.total_debt))
+                                .replace('UZS', '')
+                                .trim()}
+                            </td>
+                            <td className="px-4 py-3 text-right font-medium text-green-600">
+                              {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                                .format(Number(client.total_paid))
+                                .replace('UZS', '')
+                                .trim()}
+                            </td>
+                            <td className="px-4 py-3 text-right font-medium text-destructive">
+                              {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                                .format(Number(client.remaining_debt))
+                                .replace('UZS', '')
+                                .trim()}
+                            </td>
+                            <td className="px-4 py-3 text-right font-medium text-blue-600">
+                              {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                                .format(Number(client.deposit))
+                                .replace('UZS', '')
+                                .trim()}
+                            </td>
+                           
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
-              ) : (
-                <div className="text-center py-6 text-muted-foreground">
-                  {t('dashboard.no_client_debt_data_available')}
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                <Users className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                <p className="text-gray-500">{t('dashboard.no_client_debt_data_available') || 'No client debt data available'}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
         
         {/* Unsold Products */}
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
-          <CardHeader>
-            <CardTitle>{t('dashboard.unsold_products') || 'Unsold Products'}</CardTitle>
-            <CardDescription>{t('dashboard.products_with_no_sales') || 'Products that have not been sold'}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {unsoldProducts.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="text-left border-b">
-                        <th className="pb-2">{t('dashboard.product') || 'Product'}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {unsoldProducts.map((product, index) => (
-                        <tr key={index} className="border-b last:border-0">
-                          <td className="py-3 flex items-center gap-2">
-                            <Package className="h-4 w-4 text-muted-foreground" />
-                            <span>{product.product_name}</span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-6 text-muted-foreground">
-                  {t('dashboard.no_unsold_products') || 'No unsold products'}
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow md:col-span-2 lg:col-span-2">
+          <CardHeader className="border-b">
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>{t('dashboard.unsold_products') || 'Unsold Products'}</CardTitle>
+                <CardDescription>{t('dashboard.products_with_no_sales') || 'Products that have not been sold'}</CardDescription>
+              </div>
+              {unsoldProducts.length > 0 && (
+                <div className="bg-red-100 px-3 py-1 rounded-full text-red-800 text-sm font-medium">
+                  {unsoldProducts.length} {t('dashboard.items') || 'items'}
                 </div>
               )}
             </div>
+          </CardHeader>
+          <CardContent className="pt-6">
+            {unsoldProducts.length > 0 ? (
+              <div>
+                {/* Grid layout for unsold products */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {unsoldProducts.map((product, index) => (
+                    <div key={index} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-start space-x-3">
+                        <div className="bg-red-50 p-2 rounded-full">
+                          <Package className="h-5 w-5 text-red-500" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900 mb-1 truncate">{product.product_name}</h4>
+                         
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-500 mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                  </svg>
+                </div>
+                <h3 className="text-green-800 text-lg font-medium mb-2">{t('dashboard.no_unsold_products') || 'No unsold products'}</h3>
+                <p className="text-green-700">{t('dashboard.all_products_sold') || 'All products have been sold at least once!'}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
 
       {/* Top Sellers */}
-      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8">
-        <CardHeader>
-          <CardTitle>{t('dashboard.top_sellers') || 'Top Sellers'}</CardTitle>
-          <CardDescription>{t('dashboard.top_performing_stores') || 'Top performing stores and sellers'}</CardDescription>
+      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8 border-t-4 border-t-emerald-500">
+        <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+          <div>
+            <CardTitle className="text-xl font-bold text-emerald-700">{t('dashboard.top_sellers') || 'Top Sellers'}</CardTitle>
+            <CardDescription>{t('dashboard.top_performing_stores') || 'Top performing stores and sellers'}</CardDescription>
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+        <CardContent className="pt-6">
+          <div>
             {topSellers.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="text-left border-b">
-                      <th className="pb-2">{t('dashboard.store') || 'Store'}</th>
-                      <th className="pb-2">{t('dashboard.seller') || 'Seller'}</th>
-                      <th className="pb-2">{t('dashboard.seller_phone') || 'Phone'}</th>
-                      <th className="pb-2 text-right">{t('dashboard.total_sales') || 'Total Sales'}</th>
-                      <th className="pb-2 text-right">{t('dashboard.total_revenue') || 'Total Revenue'}</th>
+              <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+                <table className="w-full border-collapse bg-white text-sm">
+                  <thead className="bg-gray-50">
+                    <tr className="text-left">
+                      <th className="px-4 py-3 font-medium text-gray-900">{t('dashboard.rank') || 'Rank'}</th>
+                      <th className="px-4 py-3 font-medium text-gray-900">{t('dashboard.store') || 'Store'}</th>
+                      <th className="px-4 py-3 font-medium text-gray-900">{t('dashboard.seller') || 'Seller'}</th>
+                      <th className="px-4 py-3 font-medium text-gray-900 text-right">{t('dashboard.revenue') || 'Revenue'}</th>
+                      <th className="px-4 py-3 font-medium text-gray-900 text-right">{t('dashboard.total_sales') || 'Total Sales'}</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {topSellers.map((seller, index) => (
-                      <tr key={index} className="border-b last:border-0">
-                        <td className="py-3 flex items-center gap-2">
-                          <Store className="h-4 w-4 text-muted-foreground" />
-                          <span>{seller.store_name}</span>
-                        </td>
-                        <td className="py-3">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span>{seller.seller_name || t('dashboard.not_specified') || 'Not specified'}</span>
-                          </div>
-                        </td>
-                        <td className="py-3">{seller.seller_phone || '-'}</td>
-                        <td className="py-3 text-right">{seller.total_sales}</td>
-                        <td className="py-3 text-right">
-                          {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
-                            .format(seller.total_revenue)
-                            .replace('UZS', '')
-                            .trim()}
-                        </td>
-                      </tr>
-                    ))}
+                  <tbody className="divide-y divide-gray-100">
+                    {topSellers.map((seller, index) => {
+                      // Get medal colors for top 3 performers
+                      const rankColors = [
+                        'bg-amber-100 text-amber-800',
+                        'bg-gray-100 text-gray-800',
+                        'bg-amber-50 text-amber-700',
+                      ];
+                      
+                      return (
+                        <tr key={index} className="hover:bg-emerald-50/30">
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${index < 3 ? rankColors[index] : 'bg-gray-50 text-gray-600'}`}>
+                              {index + 1}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="font-medium text-gray-900">{seller.store_name}</span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="font-medium text-gray-900">{seller.seller_name || '-'}</span>
+                          </td>
+                          <td className="px-4 py-3 text-right font-medium">
+                            {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                              .format(seller.total_revenue)
+                              .replace('UZS', '')
+                              .trim()}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <span className="bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full text-xs">
+                              {seller.total_sales}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             ) : (
-              <div className="text-center py-6 text-muted-foreground">
-                {t('dashboard.no_sellers_data_available') || 'No sellers data available'}
+              <div className="text-center py-8 text-muted-foreground bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                <Users className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                <p className="text-gray-500">{t('dashboard.no_seller_data')}</p>
               </div>
             )}
           </div>
@@ -578,143 +717,7 @@ const DashboardPage = () => {
       </Card>
 
       {/* Product Profitability - Full Width Section */}
-      <div className="mb-8">
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
-          <CardContent className="p-0">
-            {productProfitability.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {/* Full-screen Line Chart */}
-                <div className="h-[480px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart 
-                      data={productProfitability} 
-                      margin={{ top: 10, right: 30, left: 10, bottom: 40 }}
-                    >
-                      <defs>
-                        <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
-                          <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                        </linearGradient>
-                        <linearGradient id="marginGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2}/>
-                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                      <XAxis 
-                        dataKey="product_name" 
-                        tick={{ fontSize: 11 }}
-                        angle={-35}
-                        textAnchor="end"
-                        height={60}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <YAxis 
-                        yAxisId="left"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 11 }}
-                        tickCount={5}
-                        tickFormatter={(value) => 
-                          new Intl.NumberFormat('uz-UZ', { notation: 'compact', compactDisplay: 'short' })
-                            .format(value)
-                        }
-                      />
-                      <Tooltip 
-                        contentStyle={{ borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: 'none', fontSize: '12px' }}
-                        formatter={(value, name) => {
-                          if (name === 'profit') {
-                            return [
-                              new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
-                                .format(Number(value))
-                                .replace('UZS', '')
-                                .trim(),
-                              ''
-                            ];
-                          }
-                          return [value, ''];
-                        }}
-                        labelFormatter={() => ''}
-                        cursor={{ stroke: '#718096', strokeWidth: 1, strokeDasharray: '5 5' }}
-                      />
-                      <Line 
-                        yAxisId="left"
-                        type="monotone" 
-                        dataKey="profit" 
-                        name=""
-                        stroke="#10b981" 
-                        strokeWidth={3}
-                        dot={{ r: 5, strokeWidth: 2, fill: 'white', stroke: '#10b981' }}
-                        activeDot={{ r: 7, strokeWidth: 0, fill: '#10b981' }}
-                        fill="url(#profitGradient)"
-                        fillOpacity={1}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Area Chart for Margins */}
-                <div className="h-[480px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart 
-                      data={productProfitability} 
-                      margin={{ top: 10, right: 30, left: 10, bottom: 40 }}
-                    >
-                      <defs>
-                        <linearGradient id="colorMargin" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                      <XAxis 
-                        dataKey="product_name" 
-                        tick={{ fontSize: 11 }}
-                        angle={-35}
-                        textAnchor="end"
-                        height={60}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <YAxis 
-                        yAxisId="right"
-                        orientation="right"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 11 }}
-                        tickCount={5}
-                        tickFormatter={(value) => `${value}%`}
-                        domain={[0, 'dataMax + 10']}
-                      />
-                      <Tooltip 
-                        contentStyle={{ borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', border: 'none', fontSize: '12px' }}
-                        formatter={(value) => [`${value}%`, '']}
-                        labelFormatter={() => ''}
-                        cursor={{ stroke: '#718096', strokeWidth: 1, strokeDasharray: '5 5' }}
-                      />
-                      <Line 
-                        yAxisId="right"
-                        type="monotone" 
-                        dataKey="margin" 
-                        name=""
-                        stroke="#6366f1" 
-                        strokeWidth={3}
-                        dot={{ r: 5, strokeWidth: 2, fill: 'white', stroke: '#6366f1' }}
-                        activeDot={{ r: 7, strokeWidth: 0, fill: '#6366f1' }}
-                        fill="url(#colorMargin)"
-                        fillOpacity={1}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            ) : (
-              <div className="h-80"></div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      
     </div>
   );
 };

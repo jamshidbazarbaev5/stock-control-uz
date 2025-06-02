@@ -2,8 +2,14 @@ import { createResourceApiHooks } from '../helpers/createResourceApi';
 
 // Types
 export interface ProductMeasurement {
+  id?: number;
   measurement_write: number;
-  number: number;
+  measurement_read?: {
+    id: number;
+    measurement_name: string;
+  };
+  number: number | string;
+  for_sale: boolean;
 }
 
 export interface Product {
@@ -12,31 +18,12 @@ export interface Product {
   color?: string;
   category_write: number;
   store_write?: number;
-  measurements?: ProductMeasurement[];
-  measurement?: Array<{
-    id: number;
-    measurement_read?: {
-      id: number;
-      measurement_name: string;
-    };
-    number: string;
-    for_sale: boolean;
-  }>;
   has_color?: boolean;
+  measurement?: ProductMeasurement[];
   category_read?: {
     id: number;
     category_name: string;
     store_write: number;
-  };
-  store_read?: {
-    id: number;
-    name: string;
-    address: string;
-    phone_number: string;
-    created_at: string;
-    is_main: boolean;
-    parent_store: number | null;
-    owner: number;
   };
 }
 
