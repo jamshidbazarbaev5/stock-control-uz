@@ -146,25 +146,32 @@ export default function TransfersPage() {
   };
 
   return (
-    <div className="container mx-auto py-6">
-       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">{t('navigation.transfers')}</h1>
+    <div className="container mx-auto py-4 sm:py-6 px-2 sm:px-4">
+      <div className="flex justify-between items-center mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold">{t('navigation.transfers')}</h1>
         {/* <Button onClick={() => navigate('/create-recycling')}>
           {t('common.create')} {t('navigation.recyclings')}
         </Button> */}
       </div>
-      <ResourceTable
-        data={transfers}
-        columns={columns}
-        isLoading={isLoading}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onAdd={() => navigate('/create-transfer')}
-        totalCount={totalCount}
-        pageSize={30}
-        currentPage={page}
-        onPageChange={(newPage) => setPage(newPage)}
-      />
+      
+      <div className="overflow-hidden rounded-lg">
+        <div className="overflow-x-auto">
+          <div className="min-w-[800px]">
+            <ResourceTable
+              data={transfers}
+              columns={columns}
+              isLoading={isLoading}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onAdd={() => navigate('/create-transfer')}
+              totalCount={totalCount}
+              pageSize={30}
+              currentPage={page}
+              onPageChange={(newPage) => setPage(newPage)}
+            />
+          </div>
+        </div>
+      </div>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>

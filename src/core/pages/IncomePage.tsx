@@ -153,53 +153,59 @@ export default function IncomePage() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">{t('navigation.incomes')}</h1>
-        
+    <div className="container mx-auto py-4 sm:py-6 md:py-8 px-2 sm:px-4">
+      <div className="flex justify-between items-center mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold">{t('navigation.incomes')}</h1>
       </div>
 
-      <div className="flex gap-4 mb-6">
-        <Select value={selectedStore} onValueChange={setSelectedStore}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder={t('forms.select_store')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('forms.all_stores')}</SelectItem>
-            {stores.map((store: Store) => (
-              <SelectItem key={store.id} value={String(store.id)}>
-                {store.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* Responsive filter section */}
+      <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-6">
+        <div className="w-full sm:w-auto">
+          <Select value={selectedStore} onValueChange={setSelectedStore}>
+            <SelectTrigger className="w-full sm:w-[180px] md:w-[200px]">
+              <SelectValue placeholder={t('forms.select_store')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('forms.all_stores')}</SelectItem>
+              {stores.map((store: Store) => (
+                <SelectItem key={store.id} value={String(store.id)}>
+                  {store.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <Select value={selectedSource} onValueChange={setSelectedSource}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder={t('forms.select_source')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('forms.all_sources')}</SelectItem>
-            <SelectItem value="Погашение долга">Погашение долга</SelectItem>
-            <SelectItem value="Продажа">Продажа</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="w-full sm:w-auto">
+          <Select value={selectedSource} onValueChange={setSelectedSource}>
+            <SelectTrigger className="w-full sm:w-[180px] md:w-[200px]">
+              <SelectValue placeholder={t('forms.select_source')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('forms.all_sources')}</SelectItem>
+              <SelectItem value="Погашение долга">Погашение долга</SelectItem>
+              <SelectItem value="Продажа">Продажа</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-        <Select value={selectedWorker} onValueChange={setSelectedWorker}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder={t('forms.select_worker')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('forms.all_workers')}</SelectItem>
-            {users.map((user) => (
-              <SelectItem key={user.id} value={String(user.id)}>
-                {user.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="w-full sm:w-auto">
+          <Select value={selectedWorker} onValueChange={setSelectedWorker}>
+            <SelectTrigger className="w-full sm:w-[180px] md:w-[200px]">
+              <SelectValue placeholder={t('forms.select_worker')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('forms.all_workers')}</SelectItem>
+              {users.map((user) => (
+                <SelectItem key={user.id} value={String(user.id)}>
+                  {user.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <div className="flex gap-4">
+        <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4">
           <DatePicker
             selected={startDate}
             onChange={(date: Date | null) => setStartDate(date)}
@@ -208,7 +214,7 @@ export default function IncomePage() {
             endDate={endDate}
             dateFormat="dd/MM/yyyy"
             placeholderText={t('forms.start_date')}
-            className="w-[200px] flex h-10 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full sm:w-[180px] md:w-[200px] flex h-10 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           />
           <DatePicker
             selected={endDate}
@@ -219,24 +225,28 @@ export default function IncomePage() {
             minDate={startDate || undefined}
             dateFormat="dd/MM/yyyy"
             placeholderText={t('forms.end_date')}
-            className="w-[200px] flex h-10 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full sm:w-[180px] md:w-[200px] flex h-10 items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           />
         </div>
       </div>
 
-      <Card>
-        <ResourceTable
-          data={incomes}
-          columns={columns}
-          isLoading={isLoading}
-          totalCount={totalCount}
-          pageSize={10}
-          currentPage={page}
-          onPageChange={(newPage) => setPage(newPage)}
-          expandedRowRenderer={renderExpandedRow}
-          onRowClick={(row) => console.log('Row clicked:', row)}
-        />
-      </Card>
+      <div className="overflow-hidden rounded-lg">
+        <Card className="overflow-x-auto">
+          <div className="min-w-[800px]">
+            <ResourceTable
+              data={incomes}
+              columns={columns}
+              isLoading={isLoading}
+              totalCount={totalCount}
+              pageSize={10}
+              currentPage={page}
+              onPageChange={(newPage) => setPage(newPage)}
+              expandedRowRenderer={renderExpandedRow}
+              onRowClick={(row) => console.log('Row clicked:', row)}
+            />
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }

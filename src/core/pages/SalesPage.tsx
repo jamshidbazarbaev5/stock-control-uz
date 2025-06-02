@@ -232,18 +232,18 @@ export default function SalesPage() {
   ];
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">{t('navigation.sales')}</h1>
-        <Button onClick={() => navigate('/create-sale')} className="bg-primary hover:bg-primary/90">
+    <div className="container mx-auto py-4 sm:py-6 md:py-8 px-2 sm:px-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold">{t('navigation.sales')}</h1>
+        <Button onClick={() => navigate('/create-sale')} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
           {t('common.create')}
         </Button>
       </div>
 
       {/* Filters */}
-      <Card className="p-4 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-medium">{t('common.filters')}</h2>
+      <Card className="p-3 sm:p-4 mb-4 sm:mb-6">
+        <div className="flex justify-between items-center mb-3 sm:mb-4">
+          <h2 className="text-base sm:text-lg font-medium">{t('common.filters')}</h2>
           <Button
             variant="outline"
             size="sm"
@@ -252,14 +252,14 @@ export default function SalesPage() {
             <XCircle className="h-3 w-3" />
           </Button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('table.product')}</label>
             <Select
               value={selectedProduct}
               onValueChange={setSelectedProduct}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder={t('placeholders.select_product')} />
               </SelectTrigger>
               <SelectContent>
@@ -279,6 +279,7 @@ export default function SalesPage() {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
+              className="w-full"
             />
           </div>
 
@@ -288,6 +289,7 @@ export default function SalesPage() {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
+              className="w-full"
             />
           </div>
 
@@ -297,7 +299,7 @@ export default function SalesPage() {
               value={creditStatus}
               onValueChange={setCreditStatus}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder={t('placeholders.select_status')} />
               </SelectTrigger>
               <SelectContent>
@@ -311,21 +313,25 @@ export default function SalesPage() {
       </Card>
 
       {/* Table */}
-      <Card className="mb-6">
-        <ResourceTable
-          data={sales}
-          columns={columns}
-          isLoading={isLoading}
-          onDelete={handleDelete}
-          onEdit={(row: Sale) => navigate(`/edit-sale/${row.id}`)}
-          totalCount={totalCount}
-          pageSize={20}
-          currentPage={page}
-          onPageChange={(newPage) => setPage(newPage)}
-          expandedRowRenderer={(row: Sale) => renderExpandedRow(row)}
-          onRowClick={(row: Sale) => handleRowClick(row)}
-        />
-      </Card>
+      <div className="overflow-hidden rounded-lg mb-4 sm:mb-6">
+        <Card className="overflow-x-auto">
+          <div className="min-w-[800px]">
+            <ResourceTable
+              data={sales}
+              columns={columns}
+              isLoading={isLoading}
+              onDelete={handleDelete}
+              onEdit={(row: Sale) => navigate(`/edit-sale/${row.id}`)}
+              totalCount={totalCount}
+              pageSize={20}
+              currentPage={page}
+              onPageChange={(newPage) => setPage(newPage)}
+              expandedRowRenderer={(row: Sale) => renderExpandedRow(row)}
+              onRowClick={(row: Sale) => handleRowClick(row)}
+            />
+          </div>
+        </Card>
+      </div>
 
       {/*<Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>*/}
       {/*  <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">*/}

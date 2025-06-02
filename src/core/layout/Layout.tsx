@@ -179,7 +179,7 @@ export default function Layout({ children }: any) {
           transition-all duration-300 ease-in-out
           ${isCollapsed ? 'md:w-20' : 'md:w-72'}
           flex-shrink-0
-          overflow-hidden
+          flex flex-col
         `}>
           {/* Desktop Logo and Language Switcher */}
           <div className="hidden md:block px-6 py-6 border-b">
@@ -204,7 +204,7 @@ export default function Layout({ children }: any) {
           </div>
 
           {/* Navigation */}
-          <nav className="px-3 py-4 flex flex-col overflow-y-auto bg-white relative z-50">
+          <nav className="px-3 py-4 flex flex-col bg-white relative z-50 h-[calc(100vh-6rem)] overflow-y-auto">
             {navItems.map((item, index) => (
               <div key={index}>
                 {item.submenu ? (

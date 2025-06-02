@@ -215,6 +215,8 @@
   },
 
   "forms": {
+    "client":"Клиент",
+    "product":"Товар",
     "amount_max":"Макс. сумма",
     "amount_min":"Мин. сумма",
     "worker":"Работник",
@@ -235,7 +237,7 @@
     "current_balance": "Текущий баланс",
     "individual":"Физическое лицо",
     "legal_entity":"Юр лицо",
-    "all_sources":"Все истоцники",
+    "all_sources":"Все источники",
     "new_balance": "Новая Цена",
     "previous_balance": "предыдущий баланс",
     "amount_deducted": "Выцтено сумма",
@@ -407,6 +409,7 @@
     "complex": "Сложная оплата"
   },
   "table": {
+    "source": "Источник",
     "deposit": "Аванс",
     "payment_methods": "Способы оплаты",
     "amount": "Сумма",

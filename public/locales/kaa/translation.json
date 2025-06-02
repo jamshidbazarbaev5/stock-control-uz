@@ -215,11 +215,12 @@
   },
   "forms": {
     "amount_max":"Max summa",
+    "product":"Ónim",
     "amount_min":"Min summa",
     "worker":"Jumisshi",
     "date_from":"Sa'neden",
     "date_to":"Sa'nege",
-
+    "client":"Klient",
     "all": "Hamme status",
     "payment_status": "Tólem statusı",
     "min_amount": "Min summa",
@@ -393,6 +394,7 @@
     "select_user": "Paydalanıwshını tańlań"
   },
   "table": {
+    "source": "Resurs",
     "history_value": "Aldınǵı bahası",
     "credit_status": "Status",
     "deposit": "Avans",
