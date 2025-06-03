@@ -18,7 +18,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 import { useLogout } from '../api/auth';
-import { useCurrentUser } from '../hooks/useCurrentUser';
+import { useAuth } from '../context/AuthContext';
 
 
 export default function Layout({ children }: any) {
@@ -27,7 +27,8 @@ export default function Layout({ children }: any) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
-  const { data: currentUser } = useCurrentUser();
+  const { currentUser } = useAuth();
+  console.log('[Layout] Using Auth context, current user:', currentUser?.name);
 
   // Set active submenu based on current path
   useEffect(() => {

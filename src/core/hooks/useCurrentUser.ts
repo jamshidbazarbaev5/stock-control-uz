@@ -1,6 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
-import api from '../api/api';
-import { getAccessToken } from '../api/auth';
+import { useAuth } from '../context/AuthContext';
 
 export interface CurrentUser {
   id: number;
@@ -20,16 +18,22 @@ export interface CurrentUser {
   };
 }
 
+/**
+ * Hook to get the current user data from the auth context
+ * This is a wrapper around the auth context to maintain backward compatibility
+ * with existing code that uses useCurrentUser()
+ */
 export function useCurrentUser() {
-  return useQuery({
-    queryKey: ['currentUser'],
-    queryFn: async (): Promise<CurrentUser | null> => {
-      const token = getAccessToken();
-      if (!token) return null;
-
-      const response = await api.get('users/me');
-      return response.data;
-    },
-    retry: false
-  });
+  const { currentUser, isLoading } = useAuth();
+  
+  console.log('[useCurrentUser] Using auth context, user:', currentUser?.name, 'loading:', isLoading);
+  
+  // Return in the same format as the original useQuery hook
+  return {
+    data: currentUser,
+    isLoading,
+    isError: false,
+    error: null,
+    isSuccess: !isLoading && currentUser !== null,
+  };
 }

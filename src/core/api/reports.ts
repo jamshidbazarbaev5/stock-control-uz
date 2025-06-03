@@ -1,4 +1,5 @@
 import api from './api';
+import type { ExpensesSummaryResponse } from './types/reports';
 
 export interface ProductProfitabilityResponse {
   product_name: string;
@@ -70,9 +71,14 @@ export interface TopSellersResponse {
 
 type PeriodType = 'day' | 'week' | 'month';
 
-export const getReportsSalesSummary = async (period?: PeriodType): Promise<SalesSummaryResponse> => {
-  const params = period ? { period } : {};
-  const response = await api.get<SalesSummaryResponse>('reports/sales-summary', { params });
+export const getReportsSalesSummary = async (period?: PeriodType, dateParams?: string): Promise<SalesSummaryResponse> => {
+  let url = 'reports/sales-summary';
+  if (dateParams) {
+    url += `?${dateParams}`;
+  } else if (period) {
+    url += `?period=${period}`;
+  }
+  const response = await api.get<SalesSummaryResponse>(url);
   return response.data;
 };
 
@@ -128,5 +134,16 @@ export const getSalesmanSummary = async (): Promise<SalesmanSummaryResponse> => 
 
 export const getSalesmanDebts = async (): Promise<SalesmanDebtsResponse> => {
   const response = await api.get<SalesmanDebtsResponse>('reports/salesman-debts');
+  return response.data;
+};
+
+export const getExpensesSummary = async (period?: PeriodType, dateParams?: string): Promise<ExpensesSummaryResponse> => {
+  let url = 'reports/expenses-summary';
+  if (dateParams) {
+    url += `?${dateParams}`;
+  } else if (period) {
+    url += `?period=${period}`;
+  }
+  const response = await api.get<ExpensesSummaryResponse>(url);
   return response.data;
 };

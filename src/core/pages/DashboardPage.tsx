@@ -15,6 +15,7 @@ import {
   getTopSellers,
   getSalesmanSummary,
   getSalesmanDebts,
+  getExpensesSummary,
   type SalesSummaryResponse,
   type TopProductsResponse,
   type StockByCategoryResponse,
@@ -26,9 +27,10 @@ import {
   type SalesmanSummaryResponse,
   type SalesmanDebtsResponse
 } from '../api/reports';
-import { ArrowUpRight, DollarSign, ShoppingCart, TrendingUp, Package, BarChart2, Users, CreditCard } from 'lucide-react';
+import type { ExpensesSummaryResponse } from '../api/types/reports';
+import { ArrowUpRight, DollarSign, ShoppingCart, TrendingUp, Package, BarChart2, Users, CreditCard, Wallet } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, LineChart, Line } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { format, parseISO } from 'date-fns';
 
 
@@ -44,6 +46,7 @@ const DashboardPage = () => {
   const [topSellers, setTopSellers] = useState<TopSellersResponse[]>([]);
   const [salesmanSummary, setSalesmanSummary] = useState<SalesmanSummaryResponse | null>(null);
   const [salesmanDebts, setSalesmanDebts] = useState<SalesmanDebtsResponse | null>(null);
+  const [expensesSummary, setExpensesSummary] = useState<ExpensesSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // UI period can include 'custom', but API only accepts 'day', 'week', 'month'
@@ -75,26 +78,29 @@ const DashboardPage = () => {
           // For admin, fetch all the dashboard data
           // Format dates for API parameters
           let dateParams = '';
+          let apiPeriod: 'day' | 'week' | 'month' | undefined = undefined;
           
-          // If using custom date range, prepare the date parameters and set period to custom
-          if (period === 'custom' && (startDate || endDate)) {
+          // If using custom dates, prepare the date parameters
+          if (startDate || endDate) {
             const formattedStartDate = startDate ? startDate.toISOString().split('T')[0] : '';
             const formattedEndDate = endDate ? endDate.toISOString().split('T')[0] : '';
             dateParams = `date_from=${formattedStartDate}&date_to=${formattedEndDate}`;
-          } else {
-            // For predefined periods (day, week, month), we don't need date parameters
-            dateParams = 'date_from=&date_to=';
+          } else if (period !== 'custom') {
+            // Only use period if we're not using custom dates
+            apiPeriod = period;
           }
           
-          const [salesSummary, topProductsData, stockByCategoryData, productIntakeData, clientDebtsData, unsoldProductsData, profitabilityData, topSellersData] = await Promise.all([
-            period === 'custom' ? getReportsSalesSummary(undefined) : getReportsSalesSummary(period),
-            period === 'custom' ? getTopProducts(undefined, topProductsLimit) : getTopProducts(period, topProductsLimit),
+          const [salesSummary, topProductsData, stockByCategoryData, productIntakeData, clientDebtsData, unsoldProductsData, profitabilityData, topSellersData, expensesSummaryData] = await Promise.all([
+            // If we have date params, use them, otherwise use period
+            getReportsSalesSummary(apiPeriod, dateParams || undefined),
+            getTopProducts(apiPeriod, topProductsLimit),
             getStockByCategory(),
-            period === 'custom' ? getProductIntake(undefined) : getProductIntake(period),
+            getProductIntake(apiPeriod),
             getClientDebts(dateParams),
             getUnsoldProducts(dateParams),
             getProductProfitability(dateParams),
-            period === 'custom' ? getTopSellers(undefined) : getTopSellers(period)
+            getTopSellers(apiPeriod),
+            getExpensesSummary(apiPeriod, dateParams || undefined)
           ]);
           
           setSalesData(salesSummary);
@@ -105,6 +111,7 @@ const DashboardPage = () => {
           setUnsoldProducts(unsoldProductsData);
           setProductProfitability(profitabilityData);
           setTopSellers(topSellersData);
+          setExpensesSummary(expensesSummaryData);
         }
       } catch (err) {
         setError('Failed to load dashboard data');
@@ -224,16 +231,18 @@ const DashboardPage = () => {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">{t('dashboard.period')}:</span>
-              <Select value={period} onValueChange={(value) => {
-                const newPeriod = value as 'day' | 'week' | 'month' | 'custom';
-                setPeriod(newPeriod);
-                
-                // If switching from custom to a predefined period, reset date range
-                if (newPeriod !== 'custom') {
-                  setStartDate(null);
-                  setEndDate(null);
-                }
-              }}>
+              <Select 
+                value={period} 
+                onValueChange={(value) => {
+                  const newPeriod = value as 'day' | 'week' | 'month' | 'custom';
+                  setPeriod(newPeriod);
+                  // When selecting a predefined period, clear the date range
+                  if (newPeriod !== 'custom') {
+                    setStartDate(null);
+                    setEndDate(null);
+                  }
+                }}
+              >
                 <SelectTrigger className="w-32">
                   <SelectValue placeholder={t('dashboard.select_period')} />
                 </SelectTrigger>
@@ -251,8 +260,8 @@ const DashboardPage = () => {
                 selected={startDate}
                 onChange={(date: Date | null) => {
                   setStartDate(date);
-                  // If selecting dates, automatically switch to custom period
-                  if (date && period !== 'custom') {
+                  // If selecting a date, switch to custom period
+                  if (date) {
                     setPeriod('custom');
                   }
                 }}
@@ -262,7 +271,6 @@ const DashboardPage = () => {
                 dateFormat="dd/MM/yyyy"
                 placeholderText={t('forms.date_from') || 'Date from'}
                 className="w-36 flex h-10 items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                disabled={period !== 'custom'}
               />
             </div>
             
@@ -271,8 +279,8 @@ const DashboardPage = () => {
                 selected={endDate}
                 onChange={(date: Date | null) => {
                   setEndDate(date);
-                  // If selecting dates, automatically switch to custom period
-                  if (date && period !== 'custom') {
+                  // If selecting a date, switch to custom period
+                  if (date) {
                     setPeriod('custom');
                   }
                 }}
@@ -283,7 +291,6 @@ const DashboardPage = () => {
                 dateFormat="dd/MM/yyyy"
                 placeholderText={t('forms.date_to') || 'Date to'}
                 className="w-36 flex h-10 items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                disabled={period !== 'custom'}
               />
             </div>
           </div>
@@ -305,6 +312,8 @@ const DashboardPage = () => {
             </div>
           </CardContent>
         </Card>
+
+       
         
         <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -369,6 +378,121 @@ const DashboardPage = () => {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Detailed Expense Breakdown */}
+      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8">
+        <CardHeader>
+          <CardTitle>{t('dashboard.expense_breakdown') || 'Expense Breakdown'}</CardTitle>
+          <CardDescription>{t('dashboard.expense_categories_detail') || 'Detailed view of expense categories'}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Expense Pie Chart */}
+            <div>
+              <h3 className="font-medium mb-2 flex items-center">
+                <Wallet className="h-4 w-4 mr-2 text-muted-foreground" />
+                {t('dashboard.expense_distribution') || 'Expense Distribution'}
+              </h3>
+              <div className="h-80">
+                {expensesSummary?.expenses?.length ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={expensesSummary.expenses.map((expense) => ({
+                          name: expense.expense_name__name,
+                          value: expensesSummary.total_expense / expensesSummary.expenses.length, // Distributing evenly since we don't have actual values per category
+                        }))}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={true}
+                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {expensesSummary.expenses.map((_expense, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={[
+                              '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#673AB7'
+                            ][index % 8]} 
+                          />
+                        ))}
+                      </Pie>
+                      <Legend />
+                      <Tooltip
+                        formatter={(value) => {
+                          if (typeof value === 'number') {
+                            return new Intl.NumberFormat('uz-UZ', { 
+                              style: 'currency', 
+                              currency: 'UZS' 
+                            }).format(value).replace('UZS', '').trim();
+                          }
+                          return String(value);
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-muted-foreground">{t('dashboard.no_expenses') || 'No expenses data available'}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="font-medium mb-2 flex items-center">
+                <Wallet className="h-4 w-4 mr-2 text-muted-foreground" />
+                {t('dashboard.expense_details') || 'Expense Details'}
+              </h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center p-2 bg-muted rounded-md">
+                  <div className="font-medium">{t('dashboard.expense_name') || 'Expense Name'}</div>
+                  <div className="font-medium">{t('dashboard.amount') || 'Amount'}</div>
+                </div>
+                {expensesSummary?.expenses?.length ? (
+                  <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2">
+                    {expensesSummary.expenses.map((expense, index) => (
+                      <div key={index} className="flex justify-between items-center p-2 hover:bg-muted/50 rounded-md transition-colors">
+                        <div className="flex items-center">
+                          <div className="w-3 h-3 rounded-full mr-2" style={{ 
+                            backgroundColor: [
+                              '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#673AB7'
+                            ][index % 8]
+                          }}></div>
+                          <div className="font-medium">{expense.expense_name__name}</div>
+                        </div>
+                        <div className="font-medium">
+                          {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                            .format(expensesSummary.total_expense / expensesSummary.expenses.length)
+                            .replace('UZS', '')
+                            .trim()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-muted-foreground">
+                    {t('dashboard.no_expenses') || 'No expenses recorded'}
+                  </div>
+                )}
+                <div className="flex justify-between items-center p-2 bg-muted/50 rounded-md">
+                  <div className="font-bold">{t('dashboard.total_expenses') || 'Total Expenses'}</div>
+                  <div className="font-bold text-destructive">
+                    {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                      .format(expensesSummary?.total_expense || 0)
+                      .replace('UZS', '')
+                      .trim()}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        
+        </CardContent>
+      </Card>
       
       {/* Line Chart */}
       <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8">

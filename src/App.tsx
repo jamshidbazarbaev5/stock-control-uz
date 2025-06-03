@@ -5,6 +5,7 @@ import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LoginPage } from "./core/pages/login";
 import { LanguageProvider } from "./core/context/LanguageContext";
+import { AuthProvider } from "./core/context/AuthContext";
 import { PrivateRoute } from "./core/components/PrivateRoute";
 import CreateUser from "./core/pages/create-user";
 import CreateStore from "./core/pages/create-store";
@@ -64,6 +65,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
+        <AuthProvider>
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<LoginPage />} />
@@ -128,6 +130,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
         <Toaster />
+        </AuthProvider>
       </LanguageProvider>
     </QueryClientProvider>
   );

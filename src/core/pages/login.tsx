@@ -1,30 +1,43 @@
 import { useState } from 'react';
-import { useLogin } from '../api/auth';
-import { useNavigate } from 'react-router-dom';
+import { login } from '../api/auth';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export function LoginPage() {
   const [phone_number, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   
   const navigate = useNavigate();
-  const { mutate: login, isPending } = useLogin();
+  const location = useLocation();
+  const { login: authLogin } = useAuth();
+  
+  console.log('[LoginPage] Rendering login page');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
     
-    login(
-      { phone_number, password },
-      {
-        onSuccess: () => {
-          navigate('/');
-        },
-        onError: () => {
-          setError('Неверные учетные данные');
-        },
-      }
-    );
+    try {
+      console.log('[LoginPage] Attempting login with phone:', phone_number);
+      const response = await login({ phone_number, password });
+      console.log('[LoginPage] Login successful, got token');
+      
+      // Use the auth context to set the user
+      authLogin(response.access);
+      
+      // Navigate to the redirected location or home
+      const from = location.state?.from?.pathname || '/';
+      console.log('[LoginPage] Redirecting to:', from);
+      navigate(from, { replace: true });
+    } catch (err) {
+      console.error('[LoginPage] Login error:', err);
+      setError('Неверные учетные данные');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -77,10 +90,10 @@ export function LoginPage() {
           <div>
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isLoading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
             >
-              {isPending ? 'Выполняется вход...' : 'Войти'}
+              {isLoading ? 'Выполняется вход...' : 'Войти'}
             </button>
           </div>
         </form>
