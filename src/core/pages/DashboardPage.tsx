@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-
-
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 import { useTranslation } from 'react-i18next';
 import { 
   getReportsSalesSummary, 
@@ -12,6 +13,8 @@ import {
   getUnsoldProducts,
   getProductProfitability,
   getTopSellers,
+  getSalesmanSummary,
+  getSalesmanDebts,
   type SalesSummaryResponse,
   type TopProductsResponse,
   type StockByCategoryResponse,
@@ -19,12 +22,15 @@ import {
   type ClientDebtResponse,
   type UnsoldProductsResponse,
   type ProductProfitabilityResponse,
-  type TopSellersResponse
+  type TopSellersResponse,
+  type SalesmanSummaryResponse,
+  type SalesmanDebtsResponse
 } from '../api/reports';
-import { ArrowUpRight, DollarSign, ShoppingCart, TrendingUp, Package, BarChart2, Users,  } from 'lucide-react';
+import { ArrowUpRight, DollarSign, ShoppingCart, TrendingUp, Package, BarChart2, Users, CreditCard } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, LineChart, Line } from 'recharts';
 import { format, parseISO } from 'date-fns';
+
 
 const DashboardPage = () => {
   const { t } = useTranslation();
@@ -36,35 +42,70 @@ const DashboardPage = () => {
   const [unsoldProducts, setUnsoldProducts] = useState<UnsoldProductsResponse[]>([]);
   const [_productProfitability, setProductProfitability] = useState<ProductProfitabilityResponse[]>([]);
   const [topSellers, setTopSellers] = useState<TopSellersResponse[]>([]);
+  const [salesmanSummary, setSalesmanSummary] = useState<SalesmanSummaryResponse | null>(null);
+  const [salesmanDebts, setSalesmanDebts] = useState<SalesmanDebtsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState<'day' | 'week' | 'month'>('month');
+  // UI period can include 'custom', but API only accepts 'day', 'week', 'month'
+  const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'custom'>('month');
   const [topProductsLimit, setTopProductsLimit] = useState<number>(5);
   const [topSellersLimit, _setTopSellersLimit] = useState<number>(5);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  
+  // Get current user to determine role
+  const { data: currentUser } = useCurrentUser();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        const [salesSummary, topProductsData, stockByCategoryData, productIntakeData, clientDebtsData, unsoldProductsData, profitabilityData, topSellersData] = await Promise.all([
-          getReportsSalesSummary(period),
-          getTopProducts(period, topProductsLimit),
-          getStockByCategory(),
-          getProductIntake(period),
-          getClientDebts(),
-          getUnsoldProducts(),
-          getProductProfitability(),
-          getTopSellers(period, )
-        ]);
         
-        setSalesData(salesSummary);
-        setTopProducts(topProductsData);
-        setStockByCategory(stockByCategoryData);
-        setProductIntake(productIntakeData);
-        setClientDebts(clientDebtsData);
-        setUnsoldProducts(unsoldProductsData);
-        setProductProfitability(profitabilityData);
-        setTopSellers(topSellersData);
+        // Check if user is a salesman (Продавец)
+        if (currentUser?.role === "Продавец") {
+          // For salesman, fetch only the relevant data
+          const [salesmanSummaryData, salesmanDebtsData] = await Promise.all([
+            getSalesmanSummary(),
+            getSalesmanDebts()
+          ]);
+          
+          setSalesmanSummary(salesmanSummaryData);
+          setSalesmanDebts(salesmanDebtsData);
+        } else {
+          // For admin, fetch all the dashboard data
+          // Format dates for API parameters
+          let dateParams = '';
+          
+          // If using custom date range, prepare the date parameters and set period to custom
+          if (period === 'custom' && (startDate || endDate)) {
+            const formattedStartDate = startDate ? startDate.toISOString().split('T')[0] : '';
+            const formattedEndDate = endDate ? endDate.toISOString().split('T')[0] : '';
+            dateParams = `date_from=${formattedStartDate}&date_to=${formattedEndDate}`;
+          } else {
+            // For predefined periods (day, week, month), we don't need date parameters
+            dateParams = 'date_from=&date_to=';
+          }
+          
+          const [salesSummary, topProductsData, stockByCategoryData, productIntakeData, clientDebtsData, unsoldProductsData, profitabilityData, topSellersData] = await Promise.all([
+            period === 'custom' ? getReportsSalesSummary(undefined) : getReportsSalesSummary(period),
+            period === 'custom' ? getTopProducts(undefined, topProductsLimit) : getTopProducts(period, topProductsLimit),
+            getStockByCategory(),
+            period === 'custom' ? getProductIntake(undefined) : getProductIntake(period),
+            getClientDebts(dateParams),
+            getUnsoldProducts(dateParams),
+            getProductProfitability(dateParams),
+            period === 'custom' ? getTopSellers(undefined) : getTopSellers(period)
+          ]);
+          
+          setSalesData(salesSummary);
+          setTopProducts(topProductsData);
+          setStockByCategory(stockByCategoryData);
+          setProductIntake(productIntakeData);
+          setClientDebts(clientDebtsData);
+          setUnsoldProducts(unsoldProductsData);
+          setProductProfitability(profitabilityData);
+          setTopSellers(topSellersData);
+        }
       } catch (err) {
         setError('Failed to load dashboard data');
         console.error(err);
@@ -74,11 +115,11 @@ const DashboardPage = () => {
     };
 
     fetchDashboardData();
-  }, [period, topProductsLimit, topSellersLimit]);
+  }, [period, topProductsLimit, topSellersLimit, startDate, endDate, currentUser?.role]);
 
   // Format the trend data for the charts
   const formattedData = salesData?.trend.map(item => ({
-    date: format(parseISO(item.day), 'MMM dd'),
+    date: format(parseISO(item.month), 'MMM yyyy'),
     sales: item.total
   })) || [];
 
@@ -105,26 +146,148 @@ const DashboardPage = () => {
     );
   }
 
-  return (
-    <div className="p-6 w-full max-w-none">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">{t('dashboard.title')}</h1>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">{t('dashboard.period')}:</span>
-            <Select value={period} onValueChange={(value) => setPeriod(value as 'day' | 'week' | 'month')}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder={t('dashboard.select_period')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="day">{t('dashboard.day')}</SelectItem>
-                <SelectItem value="week">{t('dashboard.week')}</SelectItem>
-                <SelectItem value="month">{t('dashboard.month')}</SelectItem>
-              </SelectContent>
-            </Select>
+  // Determine which dashboard to show based on user role
+  if (currentUser?.role === "Продавец") {
+      return (
+        <div className="p-6 w-full max-w-none">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold">{t('dashboard.title')}</h1>
+          </div>
+          
+          {/* Salesman Dashboard - Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            {/* Sales Summary Card */}
+            <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-lg font-medium">
+                  {t('dashboard.sales_summary') || 'Sales Summary'}
+                </CardTitle>
+                <ShoppingCart className="h-5 w-5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <div className="text-2xl font-bold">{salesmanSummary?.total_sales || 0}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {t('dashboard.total_sales') || 'Total Sales'}
+                    </p>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold">
+                      {salesmanSummary?.total_revenue?.toLocaleString() || 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t('dashboard.total_revenue') || 'Total Revenue'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Debts Card */}
+            <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-lg font-medium">
+                  {t('dashboard.debts') || 'Debts'}
+                </CardTitle>
+                <CreditCard className="h-5 w-5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <div className="text-2xl font-bold">{salesmanDebts?.total_count || 0}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {t('dashboard.total_debts') || 'Total Debts'}
+                    </p>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold">
+                      {salesmanDebts?.total_debt?.toLocaleString() || 0}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t('dashboard.total_debt_amount') || 'Total Debt Amount'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </div>
+      );
+    }
+    
+    // Admin dashboard content
+    return (
+      <div className="p-6 w-full max-w-none">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">{t('dashboard.title')}</h1>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{t('dashboard.period')}:</span>
+              <Select value={period} onValueChange={(value) => {
+                const newPeriod = value as 'day' | 'week' | 'month' | 'custom';
+                setPeriod(newPeriod);
+                
+                // If switching from custom to a predefined period, reset date range
+                if (newPeriod !== 'custom') {
+                  setStartDate(null);
+                  setEndDate(null);
+                }
+              }}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder={t('dashboard.select_period')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="day">{t('dashboard.day')}</SelectItem>
+                  <SelectItem value="week">{t('dashboard.week')}</SelectItem>
+                  <SelectItem value="month">{t('dashboard.month')}</SelectItem>
+                  <SelectItem value="custom">{t('dashboard.custom') || 'Custom'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <DatePicker
+                selected={startDate}
+                onChange={(date: Date | null) => {
+                  setStartDate(date);
+                  // If selecting dates, automatically switch to custom period
+                  if (date && period !== 'custom') {
+                    setPeriod('custom');
+                  }
+                }}
+                selectsStart
+                startDate={startDate}
+                endDate={endDate}
+                dateFormat="dd/MM/yyyy"
+                placeholderText={t('forms.date_from') || 'Date from'}
+                className="w-36 flex h-10 items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                disabled={period !== 'custom'}
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <DatePicker
+                selected={endDate}
+                onChange={(date: Date | null) => {
+                  setEndDate(date);
+                  // If selecting dates, automatically switch to custom period
+                  if (date && period !== 'custom') {
+                    setPeriod('custom');
+                  }
+                }}
+                selectsEnd
+                startDate={startDate}
+                endDate={endDate}
+                minDate={startDate || undefined}
+                dateFormat="dd/MM/yyyy"
+                placeholderText={t('forms.date_to') || 'Date to'}
+                className="w-36 flex h-10 items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                disabled={period !== 'custom'}
+              />
+            </div>
+          </div>
+        </div>
       
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -201,7 +364,7 @@ const DashboardPage = () => {
                 .trim()} 
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              {salesData?.trend[salesData.trend.length - 1]?.day || ''}
+              {salesData?.trend[salesData.trend.length - 1]?.month || ''}
             </div>
           </CardContent>
         </Card>

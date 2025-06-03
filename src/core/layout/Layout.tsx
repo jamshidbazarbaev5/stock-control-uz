@@ -53,42 +53,45 @@ export default function Layout({ children }: any) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   
-  const navItems = [
-    {icon:Package,label:t('navigation.dashobard'),href:'/dashboard'},
-    { icon: ArrowLeftRight, label: t('navigation.transfers'), href: '/transfers' },
-    { icon: Package, label: t('navigation.stocks'), href: '/stock' },
-    { icon: Package, label: t('navigation.stock_balance'), href: '/product-stock-balance' },
-    { icon: ShoppingBag, label: t('navigation.sale'), href: '/sales' },
-    { icon: UserCheck, label: t('navigation.clients'), href: '/clients' },
-    { icon: ShoppingBag, label: t('navigation.debt'), href: '/debts' },
-    
+  const navItems = currentUser?.role === "Продавец" ? [
+    {icon: Package, label: t('navigation.dashobard'), href: '/dashboard'},
+    {icon: ShoppingBag, label: t('navigation.sale'), href: '/sales'},
+     {icon: Package, label: t('navigation.stock_balance'), href: '/product-stock-balance'},
+        {icon: Package, label: t('navigation.stocks'), href: '/stock'},
+            {icon: UserCheck, label: t('navigation.clients'), href: '/clients'},
+    {icon: ShoppingBag, label: t('navigation.debt'), href: '/debts'}, 
+  ] : [
+    {icon: Package, label: t('navigation.dashobard'), href: '/dashboard'},
+    {icon: ArrowLeftRight, label: t('navigation.transfers'), href: '/transfers'},
+    {icon: Package, label: t('navigation.stocks'), href: '/stock'},
+    {icon: Package, label: t('navigation.stock_balance'), href: '/product-stock-balance'},
+    {icon: ShoppingBag, label: t('navigation.sale'), href: '/sales'},
+    {icon: UserCheck, label: t('navigation.clients'), href: '/clients'},
+    {icon: ShoppingBag, label: t('navigation.debt'), href: '/debts'},
     {
       icon: Wallet,
       label: t('navigation.finance'),
       id: 'finance',
       submenu: [
-        { icon: Receipt, label: t('navigation.expense_name'), href: '/expense-name' },
-        { icon: BanknoteIcon, label: t('navigation.expense'), href: '/expense' },
-        { icon: PlusCircle, label: t('navigation.add_money'), href: '/finance' },
-        { icon: Receipt, label: t('navigation.cash_inflow_names'), href: '/cash-inflow-names' },
-        { icon: BanknoteIcon, label: t('navigation.income'), href: '/income' },
+        {icon: Receipt, label: t('navigation.expense_name'), href: '/expense-name'},
+        {icon: BanknoteIcon, label: t('navigation.expense'), href: '/expense'},
+        {icon: PlusCircle, label: t('navigation.add_money'), href: '/finance'},
+        {icon: Receipt, label: t('navigation.cash_inflow_names'), href: '/cash-inflow-names'},
+        {icon: BanknoteIcon, label: t('navigation.income'), href: '/income'},
       ]
     },
-
     {
       icon: Package,
       label: t('navigation.settings'),
-      id: 'settings',
+      id: 'settings',  
       submenu: [
-        { icon: ShoppingBag, label: t('navigation.stores'), href: '/stores' },
-        { icon: ListView, label: t('navigation.categories'), href: '/categories' },
-        { icon: Ruler, label: t('navigation.measurements'), href: '/measurements' },
-        { icon: ShoppingBag, label: t('navigation.products'), href: '/products' },
-        {icon: ArrowLeftRight, label: t('navigation.recyclings'), href: '/recyclings' },
-        { icon: ListView, label: t('navigation.suppliers'), href: '/suppliers' },
-        { icon: User2, label: t('navigation.users'), href: '/users' },
-        //  { icon: ShoppingBag, label: t('navigation.staff'), href: '/staff' },
-
+        {icon: ShoppingBag, label: t('navigation.stores'), href: '/stores'},
+        {icon: ListView, label: t('navigation.categories'), href: '/categories'},
+        {icon: Ruler, label: t('navigation.measurements'), href: '/measurements'},
+        {icon: ShoppingBag, label: t('navigation.products'), href: '/products'},
+        {icon: ArrowLeftRight, label: t('navigation.recyclings'), href: '/recyclings'},
+        {icon: ListView, label: t('navigation.suppliers'), href: '/suppliers'},
+        {icon: User2, label: t('navigation.users'), href: '/users'},
       ]
     },
   ];

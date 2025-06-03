@@ -5,6 +5,7 @@ import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LoginPage } from "./core/pages/login";
 import { LanguageProvider } from "./core/context/LanguageContext";
+import { PrivateRoute } from "./core/components/PrivateRoute";
 import CreateUser from "./core/pages/create-user";
 import CreateStore from "./core/pages/create-store";
 import { ProfilePage } from "./core/pages/ProfilePage";
@@ -54,8 +55,8 @@ import EditStock from "./core/pages/edit-stock-2";
 import IncomePage from "./core/pages/IncomePage";
 import EditSale from "./core/pages/edit-sale";
 import DashboardPage from "./core/pages/DashboardPage";
-import ProductStockBalancePage from "./core/pages/ProductStockBalancePage";
 import EditTransfer from "./core/pages/edit-transfer";
+// import ProductStockBalancePage from "./core/pages/ProductStockBalancePage";
 
 const queryClient = new QueryClient();
 
@@ -69,55 +70,59 @@ function App() {
           
           {/* Protected routes wrapped in Layout */}
           <Route element={<Layout><Outlet /></Layout>}>
-            <Route path="/create-user" element={<CreateUser />} /> 
-            <Route path="/users" element={<UsersPage />} />
-            <Route path="/create-store" element={<CreateStore />} />
-            <Route path="/stores" element={<StoresPage />} />
-            <Route path="/create-category" element={<CreateCategory />} />
-            <Route path="/categories" element={<CategoriesPage />} />
-            <Route path="/measurements/create" element={<CreateMeasurement />} />
-            <Route path="/measurements" element={<MeasurementsPage />} />
-            <Route path="/products" element={<ProductsPage />} />
-            <Route path="/create-product" element={<CreateProduct />} />
-            <Route path="/stock" element={<StocksPage />} />
-            <Route path="/create-stock" element={<CreateStock />} />
-            <Route path="/edit-stock/:id" element={<EditStock />} />
-            <Route path="/suppliers" element={<SuppliersPage />} />
-            <Route path="/create-supplier" element={<CreateSupplier />} />
-            <Route path="/clients" element={<ClientsPage />} />
-            <Route path="/create-client" element={<CreateClient />} />
-            <Route path="/edit-client/:id" element={<EditClient />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/clients/:id/history" element={<ClientHistoryPage />} />
-            <Route path="/transfers" element={<TransfersPage />} />
-            <Route path="/create-transfer" element={<CreateTransfer />} />
-            <Route path="/recyclings" element={<RecyclingsPage />} />
-            <Route path="/create-recycling" element={<CreateRecycling />} />
-            <Route path="/sales" element={<SalesPage />} />
-            <Route path="/create-sale" element={<CreateSale />} />
-            <Route path="/edit-sale/:id" element={<EditSale />} />
-            <Route path="/debts" element={<DebtsPage />} />
-            <Route path="/debts/:id/history" element={<DebtPaymentHistoryPage />} />
-            <Route path="/debts/:id" element={<DebtDetailsPage />} />
-            <Route path="/expense-name" element={<ExpenseNamesPage />} />
-            <Route path="/create-expense-name" element={<CreateExpenseName />} />
-            <Route path="/expense" element={<ExpensesPage />} />
-            <Route path="/create-expense" element={<CreateExpense />} />
-            <Route path="/staff" element={<StaffPage />} />
-            <Route path="/edit-debt/:id" element={<DebtDetailsPage />} />
-            <Route path="/create-staff" element={<CreateStaff />} />
-            <Route path="/add-money" element={<AddMoney />} />
-            <Route path="/edit-expense/:id" element={<EditExpensePage />} />
-            <Route path="/cash-inflow-names" element={<CashInflowNamesPage />} />
-            <Route path="/finance" element={<CashInflowHistoryPage />} />
-            <Route path="/edit-money/:id" element={<EditMoney />} />
-            <Route path="/edit-product/:id" element={<EditProduct />} />
-            <Route path="/stocks/:id/history" element={<StockPriceHistoryPage />} />
-            <Route path="/income" element={<IncomePage />} />
-            <Route path="/income/:id" element={<IncomeDetailsPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/edit-transfer/:id" element={<EditTransfer />} />
-            <Route path="/product-stock-balance" element={<ProductStockBalancePage />} />
+            {/* Routes accessible only by Администратор */}
+            <Route path="/create-user" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateUser /></PrivateRoute>} />
+            <Route path="/users" element={<PrivateRoute allowedRoles={["Администратор"]}><UsersPage /></PrivateRoute>} />
+            <Route path="/create-store" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateStore /></PrivateRoute>} />
+            <Route path="/stores" element={<PrivateRoute allowedRoles={["Администратор"]}><StoresPage /></PrivateRoute>} />
+            <Route path="/create-category" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateCategory /></PrivateRoute>} />
+            <Route path="/categories" element={<PrivateRoute allowedRoles={["Администратор"]}><CategoriesPage /></PrivateRoute>} />
+            <Route path="/measurements/create" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateMeasurement /></PrivateRoute>} />
+            <Route path="/measurements" element={<PrivateRoute allowedRoles={["Администратор"]}><MeasurementsPage /></PrivateRoute>} />
+            <Route path="/products" element={<PrivateRoute allowedRoles={["Администратор"]}><ProductsPage /></PrivateRoute>} />
+            <Route path="/create-product" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateProduct /></PrivateRoute>} />
+            <Route path="/stock" element={<PrivateRoute allowedRoles={["Администратор"]}><StocksPage /></PrivateRoute>} />
+            <Route path="/create-stock" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateStock /></PrivateRoute>} />
+            <Route path="/edit-stock/:id" element={<PrivateRoute allowedRoles={["Администратор"]}><EditStock /></PrivateRoute>} />
+            <Route path="/suppliers" element={<PrivateRoute allowedRoles={["Администратор"]}><SuppliersPage /></PrivateRoute>} />
+            <Route path="/create-supplier" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateSupplier /></PrivateRoute>} />
+            <Route path="/clients" element={<PrivateRoute allowedRoles={["Администратор"]}><ClientsPage /></PrivateRoute>} />
+            <Route path="/create-client" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateClient /></PrivateRoute>} />
+            <Route path="/edit-client/:id" element={<PrivateRoute allowedRoles={["Администратор"]}><EditClient /></PrivateRoute>} />
+            <Route path="/clients/:id/history" element={<PrivateRoute allowedRoles={["Администратор"]}><ClientHistoryPage /></PrivateRoute>} />
+            <Route path="/transfers" element={<PrivateRoute allowedRoles={["Администратор"]}><TransfersPage /></PrivateRoute>} />
+            <Route path="/create-transfer" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateTransfer /></PrivateRoute>} />
+            <Route path="/recyclings" element={<PrivateRoute allowedRoles={["Администратор"]}><RecyclingsPage /></PrivateRoute>} />
+            <Route path="/create-recycling" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateRecycling /></PrivateRoute>} />
+            <Route path="/debts" element={<PrivateRoute allowedRoles={["Администратор"]}><DebtsPage /></PrivateRoute>} />
+            <Route path="/debts/:id/history" element={<PrivateRoute allowedRoles={["Администратор"]}><DebtPaymentHistoryPage /></PrivateRoute>} />
+            <Route path="/debts/:id" element={<PrivateRoute allowedRoles={["Администратор"]}><DebtDetailsPage /></PrivateRoute>} />
+            <Route path="/expense-name" element={<PrivateRoute allowedRoles={["Администратор"]}><ExpenseNamesPage /></PrivateRoute>} />
+            <Route path="/create-expense-name" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateExpenseName /></PrivateRoute>} />
+            <Route path="/expense" element={<PrivateRoute allowedRoles={["Администратор"]}><ExpensesPage /></PrivateRoute>} />
+            <Route path="/create-expense" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateExpense /></PrivateRoute>} />
+            <Route path="/staff" element={<PrivateRoute allowedRoles={["Администратор"]}><StaffPage /></PrivateRoute>} />
+            <Route path="/edit-debt/:id" element={<PrivateRoute allowedRoles={["Администратор"]}><DebtDetailsPage /></PrivateRoute>} />
+            <Route path="/create-staff" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateStaff /></PrivateRoute>} />
+            <Route path="/add-money" element={<PrivateRoute allowedRoles={["Администратор"]}><AddMoney /></PrivateRoute>} />
+            <Route path="/edit-expense/:id" element={<PrivateRoute allowedRoles={["Администратор"]}><EditExpensePage /></PrivateRoute>} />
+            <Route path="/cash-inflow-names" element={<PrivateRoute allowedRoles={["Администратор"]}><CashInflowNamesPage /></PrivateRoute>} />
+            <Route path="/finance" element={<PrivateRoute allowedRoles={["Администратор"]}><CashInflowHistoryPage /></PrivateRoute>} />
+            <Route path="/edit-money/:id" element={<PrivateRoute allowedRoles={["Администратор"]}><EditMoney /></PrivateRoute>} />
+            <Route path="/edit-product/:id" element={<PrivateRoute allowedRoles={["Администратор"]}><EditProduct /></PrivateRoute>} />
+            <Route path="/stocks/:id/history" element={<PrivateRoute allowedRoles={["Администратор"]}><StockPriceHistoryPage /></PrivateRoute>} />
+            <Route path="/income" element={<PrivateRoute allowedRoles={["Администратор"]}><IncomePage /></PrivateRoute>} />
+            <Route path="/edit-transfers/:id" element={<PrivateRoute allowedRoles={["Администратор"]}><EditTransfer /></PrivateRoute>} />
+            <Route path="/income/:id" element={<PrivateRoute allowedRoles={["Администратор"]}><IncomeDetailsPage /></PrivateRoute>} />
+
+            {/* Routes accessible by both Администратор and Продавец */}
+            <Route path="/sales" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><SalesPage /></PrivateRoute>} />
+            <Route path="/create-sale" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><CreateSale /></PrivateRoute>} />
+            <Route path="/edit-sale/:id" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><EditSale /></PrivateRoute>} />
+            <Route path="/profile" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><ProfilePage /></PrivateRoute>} />
+            <Route path="/dashboard" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><DashboardPage /></PrivateRoute>} />
+            
+            {/* Default route */}
             <Route path="/" element={<Navigate to="/dashboard" />} />
           </Route>
           <Route path="*" element={<Navigate to="/" />} />

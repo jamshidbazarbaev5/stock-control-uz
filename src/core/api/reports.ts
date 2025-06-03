@@ -16,9 +16,19 @@ export interface SalesSummaryResponse {
   total_sales: number;
   total_revenue: number;
   trend: {
-    day: string;
+    month: string;
     total: number;
   }[];
+}
+
+export interface SalesmanSummaryResponse {
+  total_sales: number;
+  total_revenue: number;
+}
+
+export interface SalesmanDebtsResponse {
+  total_count: number;
+  total_debt: number;
 }
 
 export interface TopProductsResponse {
@@ -87,23 +97,36 @@ export const getProductIntake = async (period?: PeriodType): Promise<ProductInta
   return response.data;
 };
 
-export const getClientDebts = async (): Promise<ClientDebtResponse[]> => {
-  const response = await api.get<ClientDebtResponse[]>('reports/client-debts');
+export const getClientDebts = async (dateParams?: string): Promise<ClientDebtResponse[]> => {
+  const url = dateParams ? `reports/client-debts?${dateParams}` : 'reports/client-debts';
+  const response = await api.get<ClientDebtResponse[]>(url);
   return response.data;
 };
 
-export const getUnsoldProducts = async (): Promise<UnsoldProductsResponse[]> => {
-  const response = await api.get<UnsoldProductsResponse[]>('reports/unsold-products');
+export const getUnsoldProducts = async (dateParams?: string): Promise<UnsoldProductsResponse[]> => {
+  const url = dateParams ? `reports/unsold-products?${dateParams}` : 'reports/unsold-products';
+  const response = await api.get<UnsoldProductsResponse[]>(url);
   return response.data;
 };
 
-export const getProductProfitability = async (): Promise<ProductProfitabilityResponse[]> => {
-  const response = await api.get<ProductProfitabilityResponse[]>('reports/product-profitability');
+export const getProductProfitability = async (dateParams?: string): Promise<ProductProfitabilityResponse[]> => {
+  const url = dateParams ? `reports/product-profitability?${dateParams}` : 'reports/product-profitability';
+  const response = await api.get<ProductProfitabilityResponse[]>(url);
   return response.data;
 };
 
 export const getTopSellers = async (period?: PeriodType): Promise<TopSellersResponse[]> => {
   const params = period ? { period } : {};
   const response = await api.get<TopSellersResponse[]>('reports/top-sellers', { params });
+  return response.data;
+};
+
+export const getSalesmanSummary = async (): Promise<SalesmanSummaryResponse> => {
+  const response = await api.get<SalesmanSummaryResponse>('reports/salesman-summary');
+  return response.data;
+};
+
+export const getSalesmanDebts = async (): Promise<SalesmanDebtsResponse> => {
+  const response = await api.get<SalesmanDebtsResponse>('reports/salesman-debts');
   return response.data;
 };
