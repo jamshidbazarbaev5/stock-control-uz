@@ -9,10 +9,9 @@ import type { Product } from '../api/product';
 import type { Store } from '../api/store';
 import type { Measurement } from '../api/measurement';
 import type { Supplier } from '../api/supplier';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
-
-type PaginatedData<T> = { results: T[]; count: number } | T[];
 import { useGetStocks, useDeleteStock, useUpdateStock } from '../api/stock';
 import { useGetProducts } from '../api/product';
 import { useGetStores } from '../api/store';
@@ -23,199 +22,200 @@ import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import {formatDate} from "@/core/helpers/formatDate.ts";
-const columns = (t: any, navigate: (path: string) => void) => [
-  {
-    header: t('table.product'),
-    accessorKey: 'product_read',
-    cell: (row: Stock) => row.product_read?.product_name || '-',
-  },
-  {
-    header: t('table.store'),
-    accessorKey: 'product_read',
-    cell: (row: any) => row.store_read?.name || '-',
-  },
-  {
-    header: t('table.purchase_price'),
-    accessorKey: 'purchase_price_in_uz',
-  },
-  
-  {
-    header: t('table.selling_price'),
-    accessorKey: 'selling_price',
-  },
-  {
-    header: t('table.date_of_arrived'),
-    accessorKey:'date',
-    cell:(row:any)=>(
-        <p>
-          {formatDate(row.history_of_prices.date_of_arrived)}
-        </p>
-    )
-  },
- 
-  {
-    header: t('table.quantity'),
-    accessorKey: 'quantity',
-  },
-  {
-    header: t('table.actions'),
-    accessorKey: 'actions',
-    cell: (row: any) => (
-      <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => navigate(`/stocks/${row.id}/history`)}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 3v5h5" />
-            <path d="M3 3l6.1 6.1" />
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 7v5l3 3" />
-          </svg>
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem 
-              onClick={() => navigate(`/create-transfer?fromProductId=${row.product_read?.id}&fromStockId=${row.id}`)}
-            >
-              {t('common.create')} {t('navigation.transfer')}
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => navigate(`/create-sale?productId=${row.product_read?.id}&stockId=${row.id}`)}
-            >
-              {t('common.create')} {t('navigation.sale')}
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => navigate(`/create-recycling?fromProductId=${row.product_read?.id}&fromStockId=${row.id}`)}
-            >
-              {t('common.create')} {t('navigation.recycling')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    ),
-  },
-];
 
-const stockFields = [
-  {
-    name: 'store_write',
-    label: 'Store',
-    type: 'select',
-    placeholder: 'Select store',
-    required: true,
-    options: [], // Will be populated with stores
-  },
-  {
-    name: 'product_write',
-    label: 'Product',
-    type: 'select',
-    placeholder: 'Select product',
-    required: true,
-    options: [], // Will be populated with products
-  },
-  {
-    name: 'purchase_price_in_us',
-    label: 'Purchase Price (USD)',
-    type: 'text',
-    placeholder: 'Enter purchase price in USD',
-    required: true,
-  },
-  {
-    name: 'exchange_rate',
-    label: 'Exchange Rate',
-    type: 'text',
-    placeholder: 'Enter exchange rate',
-    required: true,
-  },
-  {
-    name: 'purchase_price_in_uz',
-    label: 'Purchase Price (UZS)',
-    type: 'text',
-    placeholder: 'Calculated purchase price in UZS',
-    readOnly: true,
-  },
-  {
-    name: 'selling_price',
-    label: 'Selling Price',
-    type: 'text',
-    placeholder: 'Enter selling price',
-    required: true,
-  },
-  {
-    name: 'min_price',
-    label: 'Minimum Price',
-    type: 'text',
-    placeholder: 'Enter minimum price',
-    required: true,
-  },
-  {
-    name: 'quantity',
-    label: 'Quantity',
-    type: 'text',
-    placeholder: 'Enter quantity',
-    required: true,
-  },
-  {
-    name: 'supplier_write',
-    label: 'Supplier',
-    type: 'select',
-    placeholder: 'Select supplier',
-    required: true,
-    options: [], // Will be populated with suppliers
-  },
-  {
-    name: 'color',
-    label: 'Color',
-    type: 'text',
-    placeholder: 'Enter color',
-    required: true,
-  },
-  {
-    name: 'measurement_write',
-    label: 'Measurement',
-    type: 'select',
-    placeholder: 'Select measurement',
-    required: true,
-    options: [], // Will be populated with measurements
-  },
-];
+type PaginatedData<T> = { results: T[]; count: number } | T[];
 
 export default function StocksPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { data: currentUser } = useCurrentUser();
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
-
-  // Filter states
   const [selectedProduct, setSelectedProduct] = useState<string>('all');
   const [selectedStore, setSelectedStore] = useState<string>('all');
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
+  const pageSize = 10;
 
-  // Get stocks with filters
-  const {
-    data: stocksData,
-    isLoading,
-  } = useGetStocks({
+  // Columns definition
+  const columns = [
+    {
+      header: t('table.product'),
+      accessorKey: 'product_read',
+      cell: (row: Stock) => row.product_read?.product_name || '-',
+    },
+    {
+      header: t('table.store'),
+      accessorKey: 'product_read',
+      cell: (row: any) => row.store_read?.name || '-',
+    },
+    {
+      header: t('table.purchase_price'),
+      accessorKey: 'purchase_price_in_uz',
+    },
+    {
+      header: t('table.selling_price'),
+      accessorKey: 'selling_price',
+    },
+    {
+      header: t('table.date_of_arrived'),
+      accessorKey:'date',
+      cell:(row:any)=>(
+          <p>
+            {formatDate(row.history_of_prices.date_of_arrived)}
+          </p>
+      )
+    },
+    {
+      header: t('table.quantity'),
+      accessorKey: 'quantity',
+    },
+    {
+      header: t('table.actions'),
+      accessorKey: 'actions',
+      cell: (row: any) => (
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate(`/stocks/${row.id}/history`)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 3v5h5" />
+              <path d="M3 3l6.1 6.1" />
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 3" />
+            </svg>
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem 
+                onClick={() => navigate(`/create-sale?productId=${row.product_read?.id}&stockId=${row.id}`)}
+              >
+                {t('common.create')} {t('navigation.sale')}
+              </DropdownMenuItem>
+              {currentUser?.role?.toLowerCase() !== 'продавец' && (
+                <>
+                  <DropdownMenuItem 
+                    onClick={() => navigate(`/create-transfer?fromProductId=${row.product_read?.id}&fromStockId=${row.id}`)}
+                  >
+                    {t('common.create')} {t('navigation.transfer')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => navigate(`/create-recycling?fromProductId=${row.product_read?.id}&fromStockId=${row.id}`)}
+                  >
+                    {t('common.create')} {t('navigation.recycling')}
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ),
+    },
+  ];
+
+  const stockFields = [
+    {
+      name: 'store_write',
+      label: 'Store',
+      type: 'select',
+      placeholder: 'Select store',
+      required: true,
+      options: [], // Will be populated with stores
+    },
+    {
+      name: 'product_write',
+      label: 'Product',
+      type: 'select',
+      placeholder: 'Select product',
+      required: true,
+      options: [], // Will be populated with products
+    },
+    {
+      name: 'purchase_price_in_us',
+      label: 'Purchase Price (USD)',
+      type: 'text',
+      placeholder: 'Enter purchase price in USD',
+      required: true,
+    },
+    {
+      name: 'exchange_rate',
+      label: 'Exchange Rate',
+      type: 'text',
+      placeholder: 'Enter exchange rate',
+      required: true,
+    },
+    {
+      name: 'purchase_price_in_uz',
+      label: 'Purchase Price (UZS)',
+      type: 'text',
+      placeholder: 'Calculated purchase price in UZS',
+      readOnly: true,
+    },
+    {
+      name: 'selling_price',
+      label: 'Selling Price',
+      type: 'text',
+      placeholder: 'Enter selling price',
+      required: true,
+    },
+    {
+      name: 'min_price',
+      label: 'Minimum Price',
+      type: 'text',
+      placeholder: 'Enter minimum price',
+      required: true,
+    },
+    {
+      name: 'quantity',
+      label: 'Quantity',
+      type: 'text',
+      placeholder: 'Enter quantity',
+      required: true,
+    },
+    {
+      name: 'supplier_write',
+      label: 'Supplier',
+      type: 'select',
+      placeholder: 'Select supplier',
+      required: true,
+      options: [], // Will be populated with suppliers
+    },
+    {
+      name: 'color',
+      label: 'Color',
+      type: 'text',
+      placeholder: 'Enter color',
+      required: true,
+    },
+    {
+      name: 'measurement_write',
+      label: 'Measurement',
+      type: 'select',
+      placeholder: 'Select measurement',
+      required: true,
+      options: [], // Will be populated with measurements
+    },
+  ];
+
+  const { data: stocksData, isLoading } = useGetStocks({
     params: {
       product: selectedProduct === 'all' ? undefined : selectedProduct,
       store: selectedStore === 'all' ? undefined : selectedStore,
@@ -413,7 +413,7 @@ export default function StocksPage() {
 
       <ResourceTable
         data={stocks}
-        columns={columns(t, navigate)}
+        columns={columns}
         isLoading={isLoading}
         onEdit={handleEdit}
         onDelete={handleDelete}

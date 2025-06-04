@@ -57,7 +57,7 @@ import IncomePage from "./core/pages/IncomePage";
 import EditSale from "./core/pages/edit-sale";
 import DashboardPage from "./core/pages/DashboardPage";
 import EditTransfer from "./core/pages/edit-transfer";
-// import ProductStockBalancePage from "./core/pages/ProductStockBalancePage";
+import ProductStockBalancePage from "./core/pages/ProductStockBalancePage";
 
 const queryClient = new QueryClient();
 
@@ -123,6 +123,7 @@ function App() {
             <Route path="/edit-sale/:id" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><EditSale /></PrivateRoute>} />
             <Route path="/profile" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><ProfilePage /></PrivateRoute>} />
             <Route path="/dashboard" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><DashboardPage /></PrivateRoute>} />
+            <Route path="/product-stock-balance" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><ProductStockBalancePage /></PrivateRoute>} />
             
             {/* Default route */}
             <Route path="/" element={<Navigate to="/dashboard" />} />

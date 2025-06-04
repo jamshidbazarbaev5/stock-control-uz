@@ -11,9 +11,45 @@ export function PrivateRoute({ children, allowedRoles }: PrivateRouteProps) {
   const { currentUser, isLoading, isAuthenticated } = useAuth();
   const location = useLocation();
   const componentId = useRef(Math.random().toString(36).substring(7));
-  
+
+  const hasAccess = (routeRoles: string[]) => {
+    if (!currentUser) return false;
+    if (currentUser.role === 'Администратор') return true;
+    if (currentUser.role === 'Продавец') {
+      const accessibleRoutes = [
+        '/sales', 
+        '/stock', 
+        '/clients', 
+        
+        '/debts', 
+        '/dashboard',
+        '/create-sale',
+        '/edit-sale/:id',
+        '/stock/:id/history',
+        '/create-stock',
+        '/edit-stock/:id',
+        '/create-client',
+        '/edit-client/:id',
+        '/clients/:id/history',
+        '/debts/:id',
+        '/debts/:id/history',
+        '/profile',
+        '/product-stock-balance'
+      ];
+      // Convert route patterns to regex patterns
+      const matchRoute = (pattern: string, path: string) => {
+        const regexPattern = pattern.replace(/:\w+/g, '[^/]+');
+        const regex = new RegExp(`^${regexPattern}$`);
+        return regex.test(path);
+      };
+      
+      return accessibleRoutes.some(route => matchRoute(route, location.pathname));
+    }
+    return routeRoles.includes(currentUser.role);
+  };
+
   console.log(`[PrivateRoute-${componentId.current}] Path: ${location.pathname}, Roles: ${JSON.stringify(allowedRoles)}, Loading: ${isLoading}, User: ${currentUser ? currentUser.name : 'null'}, Authenticated: ${isAuthenticated}`);
-  
+
   // Show loading screen while auth state is being determined
   if (isLoading) {
     console.log(`[PrivateRoute-${componentId.current}] Showing loading screen, auth is loading`);
@@ -27,15 +63,15 @@ export function PrivateRoute({ children, allowedRoles }: PrivateRouteProps) {
   }
 
   // Check if route requires specific roles and if user has required role
-  if (allowedRoles && !allowedRoles.includes(currentUser.role)) {
-    console.log(`[PrivateRoute-${componentId.current}] User role '${currentUser.role}' not in allowed roles ${JSON.stringify(allowedRoles)}`);
-    
+  if (allowedRoles && !hasAccess(allowedRoles)) {
+    console.log(`[PrivateRoute-${componentId.current}] User role '${currentUser?.role}' not in allowed roles ${JSON.stringify(allowedRoles)}`);
+
     // If user's role is not in the allowed roles, redirect to a default page
     // For sellers, redirect to /sales page
-    if (currentUser.role === "Продавец") {
+    if (currentUser?.role === "Продавец") {
       return <Navigate to="/sales" replace />;
     }
-    
+
     // For other unauthorized roles, redirect to unauthorized page
     return <Navigate to="/unauthorized" replace />;
   }
