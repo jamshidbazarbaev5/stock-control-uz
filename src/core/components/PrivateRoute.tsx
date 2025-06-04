@@ -18,16 +18,13 @@ export function PrivateRoute({ children, allowedRoles }: PrivateRouteProps) {
     if (currentUser.role === 'Продавец') {
       const accessibleRoutes = [
         '/sales', 
-        '/stock', 
         '/clients', 
         
         '/debts', 
         '/dashboard',
         '/create-sale',
         '/edit-sale/:id',
-        '/stock/:id/history',
         '/create-stock',
-        '/edit-stock/:id',
         '/create-client',
         '/edit-client/:id',
         '/clients/:id/history',

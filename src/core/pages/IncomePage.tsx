@@ -78,7 +78,7 @@ export default function IncomePage() {
       cell: (row: any) => row.source || '-',
     },
     {
-      header: t('forms.amount'),
+      header: t('forms.amount3'),
       accessorKey: 'description.Amount',
       cell: (row: any) => (
         <span className="font-medium text-emerald-600">

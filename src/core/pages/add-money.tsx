@@ -43,7 +43,7 @@ export default function AddMoney() {
     },
     {
       name: 'amount',
-      label: t('forms.amount'),
+      label: t('forms.amount3'),
       type: 'number',
       placeholder: t('placeholders.enter_amount'),
       required: true,

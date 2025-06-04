@@ -1,5 +1,7 @@
 {
   "dashboard": {
+    "clients": "Klientler",
+    "category_distribution": "Kategoriya tendentsiyası",
     "expense_breakdown": "Rasxodlar",
     "expense_categories_detail": "Rasxodlar kategoriyaları",
     "expense_distribution": "Rasxodlar tendentsiyası",

@@ -58,7 +58,6 @@ export default function Layout({ children }: any) {
     {icon: Package, label: t('navigation.dashobard'), href: '/dashboard'},
     {icon: ShoppingBag, label: t('navigation.sale'), href: '/sales'},
      {icon: Package, label: t('navigation.stock_balance'), href: '/product-stock-balance'},
-        {icon: Package, label: t('navigation.stocks'), href: '/stock'},
             {icon: UserCheck, label: t('navigation.clients'), href: '/clients'},
     {icon: ShoppingBag, label: t('navigation.debt'), href: '/debts'}, 
   ] : [

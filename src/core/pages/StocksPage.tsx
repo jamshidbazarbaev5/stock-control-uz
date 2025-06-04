@@ -36,7 +36,7 @@ export default function StocksPage() {
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
-  const pageSize = 10;
+  const pageSize = 30;
 
   // Columns definition
   const columns = [
@@ -416,7 +416,7 @@ export default function StocksPage() {
         columns={columns}
         isLoading={isLoading}
         onEdit={handleEdit}
-        onDelete={handleDelete}
+        onDelete={currentUser?.role?.toLowerCase() !== 'продавец' ? handleDelete : undefined}
         pageSize={pageSize}
         totalCount={stocksData?.count || 0}
         currentPage={currentPage}

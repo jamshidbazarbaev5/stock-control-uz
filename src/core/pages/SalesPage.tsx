@@ -5,9 +5,8 @@ import { ResourceTable } from '../helpers/ResourseTable';
 import { type Sale, useGetSales, useDeleteSale } from '../api/sale';
 import { useGetProducts } from '../api/product';
 import { toast } from 'sonner';
-// import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { Button } from '../../components/ui/button';
-// import { ScrollArea } from '../../components/ui/scroll-area';
 import { Card } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
 import {
@@ -24,6 +23,7 @@ export default function SalesPage() {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
+  const { data: currentUser } = useCurrentUser();
   // const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   // const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
@@ -210,7 +210,9 @@ export default function SalesPage() {
       cell: (row: Sale) => (
         <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${row.on_credit ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
           {row.on_credit ? <AlertCircle className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
-          {row.on_credit ? t('common.on_credit') : t('common.paid2')}
+          {row.on_credit ? t('common.on_credit') : t('common.paid2' )}
+          
+
         </div>
       ),
     },
@@ -323,7 +325,7 @@ export default function SalesPage() {
               data={sales}
               columns={columns}
               isLoading={isLoading}
-              onDelete={handleDelete}
+              onDelete={currentUser?.role === "Продавец" ? undefined : handleDelete}
               onEdit={(row: Sale) => navigate(`/edit-sale/${row.id}`)}
               totalCount={totalCount}
               pageSize={20}

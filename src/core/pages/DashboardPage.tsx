@@ -324,14 +324,18 @@ const DashboardPage = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+              {new Intl.NumberFormat('uz-UZ', { 
+                style: 'currency', 
+                currency: 'UZS',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+              })
                 .format(salesData?.total_revenue || 0)
                 .replace('UZS', '')
                 .trim()}
             </div>
             <div className="text-xs text-green-500 flex items-center mt-1">
               <ArrowUpRight className="h-4 w-4 mr-1" />
-              <span>{t('dashboard.since_last_month')}</span>
             </div>
           </CardContent>
         </Card>
@@ -346,11 +350,16 @@ const DashboardPage = () => {
           <CardContent>
             <div className="text-2xl font-bold">
               {salesData && salesData.total_sales > 0 
-                ? new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                ? new Intl.NumberFormat('uz-UZ', { 
+                    style: 'currency', 
+                    currency: 'UZS',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                  })
                     .format(salesData.total_revenue / salesData.total_sales)
                     .replace('UZS', '')
                     .trim()
-                : '0 UZS'}
+                : '0'}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
               {t('dashboard.per_transaction')}
@@ -358,25 +367,7 @@ const DashboardPage = () => {
           </CardContent>
         </Card>
         
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {t('dashboard.current_day')}
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
-                .format(salesData?.trend[salesData.trend.length - 1]?.total || 0)
-                .replace('UZS', '')
-                .trim()} 
-            </div>
-            <div className="text-xs text-muted-foreground mt-1">
-              {salesData?.trend[salesData.trend.length - 1]?.month || ''}
-            </div>
-          </CardContent>
-        </Card>
+       
       </div>
       
       {/* Detailed Expense Breakdown */}
@@ -425,7 +416,9 @@ const DashboardPage = () => {
                           if (typeof value === 'number') {
                             return new Intl.NumberFormat('uz-UZ', { 
                               style: 'currency', 
-                              currency: 'UZS' 
+                              currency: 'UZS',
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0
                             }).format(value).replace('UZS', '').trim();
                           }
                           return String(value);
@@ -464,7 +457,12 @@ const DashboardPage = () => {
                           <div className="font-medium">{expense.expense_name__name}</div>
                         </div>
                         <div className="font-medium">
-                          {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                          {new Intl.NumberFormat('uz-UZ', { 
+                            style: 'currency', 
+                            currency: 'UZS',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                          })
                             .format(expensesSummary.total_expense / expensesSummary.expenses.length)
                             .replace('UZS', '')
                             .trim()}
@@ -480,7 +478,12 @@ const DashboardPage = () => {
                 <div className="flex justify-between items-center p-2 bg-muted/50 rounded-md">
                   <div className="font-bold">{t('dashboard.total_expenses') || 'Total Expenses'}</div>
                   <div className="font-bold text-destructive">
-                    {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                    {new Intl.NumberFormat('uz-UZ', { 
+                      style: 'currency', 
+                      currency: 'UZS',
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0
+                    })
                       .format(expensesSummary?.total_expense || 0)
                       .replace('UZS', '')
                       .trim()}
@@ -497,8 +500,8 @@ const DashboardPage = () => {
       {/* Line Chart */}
       <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8">
         <CardHeader>
-          <CardTitle>{t('dashboard.revenue_analysis')}</CardTitle>
-          <CardDescription>{t('dashboard.detailed_view_of_sales_performance')}</CardDescription>
+          <CardTitle>{t('dashboard.revenue_analysis') || 'Анализ доходов'}</CardTitle>
+          <CardDescription>{t('dashboard.detailed_view_of_sales_performance') || 'Детальный обзор показателей продаж'}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="h-80">
@@ -525,10 +528,15 @@ const DashboardPage = () => {
                 />
                 <Tooltip 
                   formatter={(value) => 
-                    [new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                    [new Intl.NumberFormat('uz-UZ', { 
+                      style: 'currency', 
+                      currency: 'UZS',
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0
+                    })
                       .format(Number(value))
-                      .replace('', '')
-                      .trim(), 'Revenue']}
+                      .replace('UZS', '')
+                      .trim(), 'Доход']}
                 />
                 <Legend />
                 <Line 
@@ -536,7 +544,7 @@ const DashboardPage = () => {
                   dataKey="sales" 
                   stroke="#ff7300" 
                   activeDot={{ r: 8 }} 
-                  name="Revenue"
+                  name="Доходы"
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -601,7 +609,12 @@ const DashboardPage = () => {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-right font-medium">
-                              {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                              {                                new Intl.NumberFormat('uz-UZ', { 
+                                  style: 'currency', 
+                                  currency: 'UZS',
+                                  minimumFractionDigits: 0,
+                                  maximumFractionDigits: 0
+                                })
                                 .format(Number(product.total_revenue))
                                 .replace('UZS', '')
                                 .trim()}
@@ -712,7 +725,12 @@ const DashboardPage = () => {
                   <div className="bg-muted/20 p-4 rounded-lg">
                     <div className="text-sm text-muted-foreground">{t('dashboard.total_sum')}</div>
                     <div className="text-2xl font-bold">
-                      {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                      {new Intl.NumberFormat('uz-UZ', { 
+                        style: 'currency', 
+                        currency: 'UZS',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      })
                         .format(productIntake.total_sum)
                         .replace('UZS', '')
                         .trim()}
@@ -760,8 +778,8 @@ const DashboardPage = () => {
           <CardHeader className="border-b">
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle>{t('dashboard.client_debts') || 'Client Debts'}</CardTitle>
-                <CardDescription>{t('dashboard.outstanding_client_debts') || 'Outstanding client debts'}</CardDescription>
+                <CardTitle>{t('dashboard.client_debts') || 'Долги клиентов'}</CardTitle>
+                <CardDescription>{t('dashboard.outstanding_client_debts') || 'Неоплаченные долги клиентов'}</CardDescription>
               </div>
               <div className="bg-amber-100 px-3 py-1 rounded-full text-amber-800 text-sm font-medium">
                 {clientDebts.length > 0 ? clientDebts.length : 0} {t('dashboard.clients') || 'clients'}
@@ -776,7 +794,12 @@ const DashboardPage = () => {
                   <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col">
                     <span className="text-sm text-gray-500 mb-1">{t('dashboard.total_debt') || 'Total Debt'}</span>
                     <span className="text-xl font-bold">
-                      {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                      {new Intl.NumberFormat('uz-UZ', { 
+                        style: 'currency', 
+                        currency: 'UZS',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      })
                         .format(clientDebts.reduce((sum, client) => sum + Number(client.total_debt), 0))
                         .replace('UZS', '')
                         .trim()}
@@ -785,7 +808,12 @@ const DashboardPage = () => {
                   <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col">
                     <span className="text-sm text-gray-500 mb-1">{t('dashboard.total_paid') || 'Total Paid'}</span>
                     <span className="text-xl font-bold text-green-600">
-                      {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                      {new Intl.NumberFormat('uz-UZ', { 
+                        style: 'currency', 
+                        currency: 'UZS',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      })
                         .format(clientDebts.reduce((sum, client) => sum + Number(client.total_paid), 0))
                         .replace('UZS', '')
                         .trim()}
@@ -794,18 +822,28 @@ const DashboardPage = () => {
                   <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col">
                     <span className="text-sm text-gray-500 mb-1">{t('dashboard.remaining_debt') || 'Remaining Debt'}</span>
                     <span className="text-xl font-bold text-destructive">
-                      {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                      {new Intl.NumberFormat('uz-UZ', { 
+                        style: 'currency', 
+                        currency: 'UZS',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      })
                         .format(clientDebts.reduce((sum, client) => sum + Number(client.remaining_debt), 0))
-                        .replace('', '')
+                        .replace('UZS', '')
                         .trim()}
                     </span>
                   </div>
                   <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col">
                     <span className="text-sm text-gray-500 mb-1">{t('dashboard.deposit') || 'Deposit'}</span>
                     <span className="text-xl font-bold text-blue-600">
-                      {new Intl.NumberFormat('uz-UZ', { style: 'currency', currency: 'UZS' })
+                      {new Intl.NumberFormat('uz-UZ', { 
+                        style: 'currency', 
+                        currency: 'UZS',
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0
+                      })
                         .format(clientDebts.reduce((sum, client) => sum + Number(client.deposit), 0))
-                        .replace('', '')
+                        .replace('UZS', '')
                         .trim()}
                     </span>
                   </div>
@@ -936,8 +974,8 @@ const DashboardPage = () => {
       <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8 border-t-4 border-t-emerald-500">
         <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
           <div>
-            <CardTitle className="text-xl font-bold text-emerald-700">{t('dashboard.top_sellers') || 'Top Sellers'}</CardTitle>
-            <CardDescription>{t('dashboard.top_performing_stores') || 'Top performing stores and sellers'}</CardDescription>
+            <CardTitle className="text-xl font-bold text-emerald-700">{t('dashboard.top_sellers') || 'Лучшие продавцы'}</CardTitle>
+            <CardDescription>{t('dashboard.top_performing_stores') || 'Лучшие магазины и продавцы'}</CardDescription>
           </div>
         </CardHeader>
         <CardContent className="pt-6">

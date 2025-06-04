@@ -18,7 +18,7 @@ export default function CashInflowHistoryPage() {
       cell: (row: any) => row.store_read?.name || '-',
     },
     {
-      header: t('forms.amount'),
+      header: t('forms.amount3'),
       accessorKey: 'amount',
       cell: (row: any) => (
         <div className="text-right font-medium">

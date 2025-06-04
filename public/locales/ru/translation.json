@@ -1,5 +1,7 @@
 {
   "dashboard": {
+    "clients": "Клиенты",
+    "category_distribution": "Распределение по категориям",
     "expense_breakdown": "Расходы",
     "expense_categories_detail": "Расходы по категориям",
     "expense_distribution": "Расходы по времени",
@@ -175,7 +177,7 @@
     "creating": "Создание...",
     "updating": "Обновление...",
     "paid": "Оплачено",
-    "paid2": "Не в долг",
+    "paid2": "Продано",
     "close": "Закрыть",
     "unpaid": "Неоплачено"
   },
