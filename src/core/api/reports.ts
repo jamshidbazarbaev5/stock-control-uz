@@ -30,6 +30,11 @@ export interface SalesmanSummaryResponse {
 export interface SalesmanDebtsResponse {
   total_count: number;
   total_debt: number;
+  debts: Array<{
+    client_name: string;
+    amount: number;
+    date: string;
+  }>;
 }
 
 export interface TopProductsResponse {
@@ -127,13 +132,25 @@ export const getTopSellers = async (period?: PeriodType): Promise<TopSellersResp
   return response.data;
 };
 
-export const getSalesmanSummary = async (): Promise<SalesmanSummaryResponse> => {
-  const response = await api.get<SalesmanSummaryResponse>('reports/salesman-summary');
+export const getSalesmanSummary = async (period?: PeriodType, dateParams?: string): Promise<SalesmanSummaryResponse> => {
+  let url = 'reports/salesman-summary';
+  if (dateParams) {
+    url += `?${dateParams}`;
+  } else if (period) {
+    url += `?period=${period}`;
+  }
+  const response = await api.get<SalesmanSummaryResponse>(url);
   return response.data;
 };
 
-export const getSalesmanDebts = async (): Promise<SalesmanDebtsResponse> => {
-  const response = await api.get<SalesmanDebtsResponse>('reports/salesman-debts');
+export const getSalesmanDebts = async (period?: PeriodType, dateParams?: string): Promise<SalesmanDebtsResponse> => {
+  let url = 'reports/salesman-debts';
+  if (dateParams) {
+    url += `?${dateParams}`;
+  } else if (period) {
+    url += `?period=${period}`;
+  }
+  const response = await api.get<SalesmanDebtsResponse>(url);
   return response.data;
 };
 

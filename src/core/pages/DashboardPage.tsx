@@ -67,9 +67,23 @@ const DashboardPage = () => {
         // Check if user is a salesman (Продавец)
         if (currentUser?.role === "Продавец") {
           // For salesman, fetch only the relevant data
+          // Format dates for API parameters
+          let dateParams = '';
+          let apiPeriod: 'day' | 'week' | 'month' | undefined = undefined;
+          
+          // If using custom dates, prepare the date parameters
+          if (startDate || endDate) {
+            const formattedStartDate = startDate ? startDate.toISOString().split('T')[0] : '';
+            const formattedEndDate = endDate ? endDate.toISOString().split('T')[0] : '';
+            dateParams = `date_from=${formattedStartDate}&date_to=${formattedEndDate}`;
+          } else if (period !== 'custom') {
+            // Only use period if we're not using custom dates
+            apiPeriod = period;
+          }
+
           const [salesmanSummaryData, salesmanDebtsData] = await Promise.all([
-            getSalesmanSummary(),
-            getSalesmanDebts()
+            getSalesmanSummary(apiPeriod, dateParams || undefined),
+            getSalesmanDebts(apiPeriod,dateParams || undefined)
           ]);
           
           setSalesmanSummary(salesmanSummaryData);
@@ -157,8 +171,74 @@ const DashboardPage = () => {
   if (currentUser?.role === "Продавец") {
       return (
         <div className="p-6 w-full max-w-none">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold">{t('dashboard.title')}</h1>
+          <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold">{t('dashboard.title')}</h1>
+            
+            <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center gap-4">
+              {/* Period Selector */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <span className="text-sm font-medium whitespace-nowrap">{t('dashboard.period')}:</span>
+                <Select 
+                  value={period} 
+                  onValueChange={(value) => {
+                    const newPeriod = value as 'day' | 'week' | 'month' | 'custom';
+                    setPeriod(newPeriod);
+                    if (newPeriod !== 'custom') {
+                      setStartDate(null);
+                      setEndDate(null);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full sm:w-32">
+                    <SelectValue placeholder={t('dashboard.select_period')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="day">{t('dashboard.day')}</SelectItem>
+                    <SelectItem value="week">{t('dashboard.week')}</SelectItem>
+                    <SelectItem value="month">{t('dashboard.month')}</SelectItem>
+                    <SelectItem value="custom">{t('dashboard.custom')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date Range Selectors */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full sm:w-auto">
+                <DatePicker
+                  selected={startDate}
+                  onChange={(date: Date | null) => {
+                    setStartDate(date);
+                    // If selecting a date, switch to custom period
+                    if (date) {
+                      setPeriod('custom');
+                    }
+                  }}
+                  selectsStart
+                  startDate={startDate}
+                  endDate={endDate}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText={t('forms.date_from') || 'Date from'}
+                  className="w-full sm:w-36 flex h-10 items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 placeholder:text-muted-foreground"
+                />
+                
+                <DatePicker
+                  selected={endDate}
+                  onChange={(date: Date | null) => {
+                    setEndDate(date);
+                    // If selecting a date, switch to custom period
+                    if (date) {
+                      setPeriod('custom');
+                    }
+                  }}
+                  selectsEnd
+                  startDate={startDate}
+                  endDate={endDate}
+                  minDate={startDate || undefined}
+                  dateFormat="dd/MM/yyyy"
+                  placeholderText={t('forms.date_to') || 'Date to'}
+                  className="w-full sm:w-36 flex h-10 items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 placeholder:text-muted-foreground"
+                />
+              </div>
+            </div>
           </div>
           
           {/* Salesman Dashboard - Summary Cards */}
@@ -226,11 +306,13 @@ const DashboardPage = () => {
     // Admin dashboard content
     return (
       <div className="p-6 w-full max-w-none">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">{t('dashboard.title')}</h1>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{t('dashboard.period')}:</span>
+        <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold">{t('dashboard.title')}</h1>
+          
+          <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center gap-4">
+            {/* Period Selector */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-sm font-medium whitespace-nowrap">{t('dashboard.period')}:</span>
               <Select 
                 value={period} 
                 onValueChange={(value) => {
@@ -243,19 +325,20 @@ const DashboardPage = () => {
                   }
                 }}
               >
-                <SelectTrigger className="w-32">
+                <SelectTrigger className="w-full sm:w-32">
                   <SelectValue placeholder={t('dashboard.select_period')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="day">{t('dashboard.day')}</SelectItem>
                   <SelectItem value="week">{t('dashboard.week')}</SelectItem>
                   <SelectItem value="month">{t('dashboard.month')}</SelectItem>
-                  <SelectItem value="custom">{t('dashboard.custom') || 'Custom'}</SelectItem>
+                  <SelectItem value="custom">{t('dashboard.custom')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
-            <div className="flex items-center gap-2">
+            {/* Date Range Selectors */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full sm:w-auto">
               <DatePicker
                 selected={startDate}
                 onChange={(date: Date | null) => {
@@ -270,11 +353,9 @@ const DashboardPage = () => {
                 endDate={endDate}
                 dateFormat="dd/MM/yyyy"
                 placeholderText={t('forms.date_from') || 'Date from'}
-                className="w-36 flex h-10 items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                className="w-full sm:w-36 flex h-10 items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 placeholder:text-muted-foreground"
               />
-            </div>
-            
-            <div className="flex items-center gap-2">
+              
               <DatePicker
                 selected={endDate}
                 onChange={(date: Date | null) => {
@@ -290,14 +371,14 @@ const DashboardPage = () => {
                 minDate={startDate || undefined}
                 dateFormat="dd/MM/yyyy"
                 placeholderText={t('forms.date_to') || 'Date to'}
-                className="w-36 flex h-10 items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                className="w-full sm:w-36 flex h-10 items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 placeholder:text-muted-foreground"
               />
             </div>
           </div>
         </div>
       
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
         <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -370,6 +451,83 @@ const DashboardPage = () => {
        
       </div>
       
+      {/* Top Products */}
+      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow border-t-4 border-t-blue-500 mb-8">
+        <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
+          <div>
+            <CardTitle className="text-xl font-bold text-blue-700">{t('dashboard.top_products')}</CardTitle>
+            <CardDescription>{t('dashboard.best_performing_products')}</CardDescription>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3 bg-blue-50 px-2 sm:px-4 py-2 sm:py-2.5 rounded-lg">
+            <span className="text-sm font-medium text-blue-700 whitespace-nowrap">{t('dashboard.show')}:</span>
+            <Select 
+              value={topProductsLimit.toString()} 
+              onValueChange={(value) => setTopProductsLimit(parseInt(value))}
+            >
+              <SelectTrigger className="w-20 sm:w-24 border-blue-200 bg-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3">3</SelectItem>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="15">15</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div>
+            {topProducts.length > 0 ? (
+              <div className="overflow-x-auto rounded-lg border border-gray-200">
+                <table className="w-full border-collapse bg-white text-sm">
+                  <thead className="bg-gray-50">
+                    <tr className="text-left">
+                      <th className="px-4 py-3 font-medium text-gray-900">{t('dashboard.product')}</th>
+                      <th className="px-4 py-3 font-medium text-gray-900 text-center">{t('dashboard.quantity')}</th>
+                      <th className="px-4 py-3 font-medium text-gray-900 text-right">{t('dashboard.revenue')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {topProducts.map((product, index) => (
+                      <tr key={index} className="hover:bg-blue-50/30 transition-colors">
+                        <td className="px-4 py-3 flex items-center gap-3">
+                          <div className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${index < 3 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}`}>
+                            <Package className="h-4 w-4" />
+                          </div>
+                          <span className="font-medium">{product.product_name}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center font-medium">
+                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                            {product.total_quantity}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right font-medium">
+                          {new Intl.NumberFormat('uz-UZ', { 
+                            style: 'currency', 
+                            currency: 'UZS',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                          })
+                            .format(Number(product.total_revenue))
+                            .replace('UZS', '')
+                            .trim()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                <Package className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                <p className="text-gray-500">{t('dashboard.no_product_data_available')}</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Detailed Expense Breakdown */}
       <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8">
         <CardHeader>
@@ -377,27 +535,29 @@ const DashboardPage = () => {
           <CardDescription>{t('dashboard.expense_categories_detail') || 'Detailed view of expense categories'}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Expense Pie Chart */}
-            <div>
+            <div className="min-h-[400px] lg:min-h-[350px]">
               <h3 className="font-medium mb-2 flex items-center">
                 <Wallet className="h-4 w-4 mr-2 text-muted-foreground" />
                 {t('dashboard.expense_distribution') || 'Expense Distribution'}
               </h3>
-              <div className="h-80">
+              <div className="h-[300px] sm:h-[350px]">
                 {expensesSummary?.expenses?.length ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
                         data={expensesSummary.expenses.map((expense) => ({
                           name: expense.expense_name__name,
-                          value: expensesSummary.total_expense / expensesSummary.expenses.length, // Distributing evenly since we don't have actual values per category
+                          value: expense.total_amount,
                         }))}
                         cx="50%"
                         cy="50%"
-                        labelLine={true}
-                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                        outerRadius={100}
+                        labelLine={false}
+                        label={({ name, percent }) => 
+                          window.innerWidth > 640 ? `${name} (${(percent * 100).toFixed(0)}%)` : `${(percent * 100).toFixed(0)}%`
+                        }
+                        outerRadius={window.innerWidth > 640 ? 100 : 80}
                         fill="#8884d8"
                         dataKey="value"
                       >
@@ -462,10 +622,9 @@ const DashboardPage = () => {
                             currency: 'UZS',
                             minimumFractionDigits: 0,
                             maximumFractionDigits: 0
-                          })
-                            .format(expensesSummary.total_expense / expensesSummary.expenses.length)
-                            .replace('UZS', '')
-                            .trim()}
+                          })                          .format(expense.total_amount)
+                          .replace('UZS', '')
+                          .trim()}
                         </div>
                       </div>
                     ))}
@@ -554,88 +713,6 @@ const DashboardPage = () => {
       
       {/* Top Products and Stock by Category */}
       <div className="w-full mb-8 space-y-8">
-        {/* Top Products - Full Width */}
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow border-t-4 border-t-blue-500">
-          <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
-            <div>
-              <CardTitle className="text-xl font-bold text-blue-700">{t('dashboard.top_products')}</CardTitle>
-              <CardDescription>{t('dashboard.best_performing_products')}</CardDescription>
-            </div>
-            <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg">
-              <span className="text-sm font-medium text-blue-700">{t('dashboard.show')}:</span>
-              <Select 
-                value={topProductsLimit.toString()} 
-                onValueChange={(value) => setTopProductsLimit(parseInt(value))}
-              >
-                <SelectTrigger className="w-16 border-blue-200 bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="3">3</SelectItem>
-                  <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="15">15</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <div>
-              {topProducts.length > 0 ? (
-                <div className="overflow-x-auto rounded-lg border border-gray-200">
-                  <table className="w-full border-collapse bg-white text-sm">
-                    <thead className="bg-gray-50">
-                      <tr className="text-left">
-                        <th className="px-4 py-3 font-medium text-gray-900">{t('dashboard.product')}</th>
-                        <th className="px-4 py-3 font-medium text-gray-900 text-center">{t('dashboard.quantity')}</th>
-                        <th className="px-4 py-3 font-medium text-gray-900 text-right">{t('dashboard.revenue')}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {topProducts.map((product, index) => {
-                        // Calculate a performance score (for visualization purposes)
-                       
-                        return (
-                          <tr key={index} className="hover:bg-blue-50/30 transition-colors">
-                            <td className="px-4 py-3 flex items-center gap-3">
-                              <div className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${index < 3 ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'}`}>
-                                <Package className="h-4 w-4" />
-                              </div>
-                              <span className="font-medium">{product.product_name}</span>
-                            </td>
-                            <td className="px-4 py-3 text-center font-medium">
-                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                                {product.total_quantity}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-right font-medium">
-                              {                                new Intl.NumberFormat('uz-UZ', { 
-                                  style: 'currency', 
-                                  currency: 'UZS',
-                                  minimumFractionDigits: 0,
-                                  maximumFractionDigits: 0
-                                })
-                                .format(Number(product.total_revenue))
-                                .replace('UZS', '')
-                                .trim()}
-                            </td>
-                            
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                  <Package className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                  <p className="text-gray-500">{t('dashboard.no_product_data_available')}</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Stock by Category - Full Width */}
         <Card className="bg-white shadow-md hover:shadow-lg transition-shadow border-t-4 border-t-purple-500">
           <CardHeader className="border-b pb-4">

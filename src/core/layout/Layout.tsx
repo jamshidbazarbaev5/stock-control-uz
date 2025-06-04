@@ -120,8 +120,8 @@ export default function Layout({ children }: any) {
                 <User2 size={20} className="text-emerald-600" />
               </div>
             </button>
-            {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-60 bg-white rounded-lg shadow-lg py-3 z-50">
+            {dropdownOpen  &&  currentUser && (
+              <div className="absolute right-0 mt-2 w-60 bg-white rounded-lg shadow-lg py-3" style={{ zIndex: 9999 }}>
                 {currentUser && (
                   <div className="px-4 py-2 border-b mb-2">
                     <div className="font-medium text-gray-800">{currentUser.name}</div>
@@ -130,8 +130,11 @@ export default function Layout({ children }: any) {
                   </div>
                 )}
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     setDropdownOpen(false);
+                    setMobileMenuOpen(false);
                     navigate('/profile');
                   }}
                   className="w-full px-4 py-2 text-left text-sm text-gray-600 hover:bg-gray-50 flex items-center gap-2"
@@ -140,7 +143,13 @@ export default function Layout({ children }: any) {
                   {t('common.profile')}
                 </button>
                 <button
-                  onClick={handleLogout}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDropdownOpen(false);
+                    setMobileMenuOpen(false);
+                    handleLogout();
+                  }}
                   className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50 flex items-center gap-2"
                 >
                   <ArrowLeftRight size={16} />
