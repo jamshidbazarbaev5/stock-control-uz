@@ -23,6 +23,7 @@ import { useGetStores } from '../api/store';
 import { useGetStocks } from '../api/stock';
 import { useGetClients } from '../api/client';
 import { useCreateSale, type Sale } from '@/core/api/sale';
+import { addDays } from 'date-fns';
 
 interface FormSaleItem {
   stock_write: number;
@@ -67,7 +68,8 @@ export default function CreateSale() {
       sale_payments: [{ payment_method: 'Наличные', amount: 0 }],
       on_credit: false,
       total_amount: '0',
-      store_write: 0
+      store_write: 0,
+      sale_debt: { client: 0, due_date: addDays(new Date(), 30).toISOString().split('T')[0] }
     },
     mode: 'onChange'
   });
@@ -75,13 +77,16 @@ export default function CreateSale() {
   const [selectedStore, setSelectedStore] = useState<number | null>(null);
   const [selectedStocks, setSelectedStocks] = useState<Record<number, number>>({});
   const [selectedPrices, setSelectedPrices] = useState<Record<number, { min: number; selling: number }>>({});
+  const [searchTerm, setSearchTerm] = useState('');
   // Using this state to trigger re-renders when needed
   const [, forceRender] = useState({});
 
-  // Fetch data
+  // Fetch data with search term for clients
   const { data: storesData, isLoading: storesLoading } = useGetStores({});
   const { data: stocksData, isLoading: stocksLoading } = useGetStocks({});
-  const { data: clientsData } = useGetClients({});
+  const { data: clientsData } = useGetClients({ 
+    params: form.watch('on_credit') ? { name: searchTerm } : undefined 
+  });
   const createSale = useCreateSale();
 
   // Prepare data arrays
@@ -752,14 +757,45 @@ export default function CreateSale() {
                     <SelectTrigger>
                       <SelectValue placeholder={t('placeholders.select_client')} />
                     </SelectTrigger>
-                    <SelectContent>
-                      {clients
-                        .filter(client => form.watch('on_credit') ? true : client.type === 'Юр.лицо')
-                        .map((client) => (
-                          <SelectItem key={client.id} value={client.id?.toString() || ''}>
-                            {client.name} {client.type !== 'Юр.лицо' && `(${client.type})`}
-                          </SelectItem>
-                      ))}
+                    <SelectContent onPointerDownOutside={(e) => {
+                      // Prevent dropdown from closing when clicking inside it
+                      const target = e.target as Node;
+                      const selectContent = document.querySelector('.select-content-wrapper');
+                      if (selectContent && selectContent.contains(target)) {
+                        e.preventDefault();
+                      }
+                    }}>
+                      <div className="p-2 sticky top-0 bg-white z-10 border-b select-content-wrapper">
+                        <Input
+                          type="text"
+                          placeholder={`Search clients...`}
+                          value={searchTerm}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            setSearchTerm(e.target.value);
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          className="flex-1"
+                          autoFocus
+                        />
+                      </div>
+                      <div className="max-h-[200px] overflow-y-auto">
+                        {clients && clients.length > 0 ? (
+                          clients
+                            .filter(client => form.watch('on_credit') ? true : client.type === 'Юр.лицо')
+                            .map((client) => (
+                              <SelectItem key={client.id} value={client.id?.toString() || ''}>
+                                {client.name} {client.type !== 'Юр.лицо' && `(${client.type})`}
+                              </SelectItem>
+                            ))
+                        ) : (
+                          <div className="p-2 text-center text-gray-500 text-sm">
+                            No clients found
+                          </div>
+                        )}
+                      </div>
                     </SelectContent>
                   </Select>
                 </FormItem>
