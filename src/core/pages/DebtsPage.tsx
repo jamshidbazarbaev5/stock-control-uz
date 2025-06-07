@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -22,10 +21,6 @@ import { ResourceTable } from '../helpers/ResourseTable';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import { useGetStores } from '../api/store';
-import { useGetClients } from '../api/client';
 import { ResourceForm } from '../helpers/ResourceForm';
 
 interface PaymentFormData {
@@ -41,33 +36,12 @@ export default function DebtsPage() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   // Filter states
-  const [selectedStore, setSelectedStore] = useState<string>('all');
-  const [selectedClient, setSelectedClient] = useState<string>('all');
-  const [isPaid, setIsPaid] = useState<string>('all');
-  const [startDueDate, setStartDueDate] = useState<Date | null>(null);
-  const [endDueDate, setEndDueDate] = useState<Date | null>(null);
-  const [startCreatedDate, setStartCreatedDate] = useState<Date | null>(null);
-  const [endCreatedDate, setEndCreatedDate] = useState<Date | null>(null);
-  const [totalAmountMin, setTotalAmountMin] = useState<string>('');
-  const [totalAmountMax, setTotalAmountMax] = useState<string>('');
-
-  // Get filter data
-  const { data: storesData } = useGetStores({});
-  const { data: clientsData } = useGetClients({});
-
-  const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
-  const clients = Array.isArray(clientsData) ? clientsData : clientsData?.results || [];
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [searchName, setSearchName] = useState<string>('');
 
   const { data: debtsByClients = [], isLoading } = useGetDebtsByClients({
-    ...(selectedStore !== 'all' && { store: selectedStore }),
-    ...(selectedClient !== 'all' && { client: selectedClient }),
-    ...(startDueDate && { due_date_after: format(startDueDate, 'yyyy-MM-dd') }),
-    ...(endDueDate && { due_date_before: format(endDueDate, 'yyyy-MM-dd') }),
-    ...(startCreatedDate && { created_at_after: format(startCreatedDate, 'yyyy-MM-dd') }),
-    ...(endCreatedDate && { created_at_before: format(endCreatedDate, 'yyyy-MM-dd') }),
-    ...(totalAmountMin && { total_amount_min: totalAmountMin }),
-    ...(totalAmountMax && { total_amount_max: totalAmountMax }),
-    ...(isPaid !== 'all' && { is_paid: isPaid === 'true' }),
+    ...(searchName && { name: searchName }),
+    ...(selectedType !== 'all' && { type: selectedType }),
   });
 
   const createPayment = useCreateDebtPayment();
@@ -205,112 +179,23 @@ export default function DebtsPage() {
     <div className="container mx-auto py-8">
       {/* Filters */}
       <Card className="p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          <Select value={selectedStore} onValueChange={setSelectedStore}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Select value={selectedType} onValueChange={setSelectedType}>
             <SelectTrigger>
-              <SelectValue placeholder={t('forms.select_store')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('forms.all_stores')}</SelectItem>
-              {stores.map((store) => (
-                <SelectItem key={store.id} value={String(store.id)}>
-                  {store.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={selectedClient} onValueChange={setSelectedClient}>
-            <SelectTrigger>
-              <SelectValue placeholder={t('forms.select_client')} />
+              <SelectValue placeholder={t('forms.select_client_type')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t('forms.all_clients')}</SelectItem>
-              {clients.map((client) => (
-                <SelectItem key={client.id} value={String(client.id)}>
-                  {client.name} {client.type !== 'Юр.лицо' && `(${client.type})`}
-                </SelectItem>
-              ))}
+              <SelectItem value="Физ.лицо">{t('forms.individual')}</SelectItem>
+              <SelectItem value="Юр.лицо">{t('forms.legal_entity')}</SelectItem>
             </SelectContent>
           </Select>
 
-          <Select value={isPaid} onValueChange={setIsPaid}>
-            <SelectTrigger>
-              <SelectValue placeholder={t('forms.payment_status')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('forms.all')}</SelectItem>
-              <SelectItem value="true">{t('common.paid')}</SelectItem>
-              <SelectItem value="false">{t('common.unpaid')}</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <div>
-            <DatePicker
-              selected={startDueDate}
-              onChange={(date: Date | null) => setStartDueDate(date)}
-              selectsStart
-              startDate={startDueDate}
-              endDate={endDueDate}
-              dateFormat="dd/MM/yyyy"
-              placeholderText={t('forms.due_date_from')}
-              className="w-full flex h-10 items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            />
-          </div>
-
-          <div>
-            <DatePicker
-              selected={endDueDate}
-              onChange={(date: Date | null) => setEndDueDate(date)}
-              selectsEnd
-              startDate={startDueDate}
-              endDate={endDueDate}
-              minDate={startDueDate || undefined}
-              dateFormat="dd/MM/yyyy"
-              placeholderText={t('forms.due_date_to')}
-              className="w-full flex h-10 items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            />
-          </div>
-
-          <div>
-            <DatePicker
-              selected={startCreatedDate}
-              onChange={(date: Date | null) => setStartCreatedDate(date)}
-              selectsStart
-              startDate={startCreatedDate}
-              endDate={endCreatedDate}
-              dateFormat="dd/MM/yyyy"
-              placeholderText={t('forms.created_date_from')}
-              className="w-full flex h-10 items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            />
-          </div>
-
-          <div>
-            <DatePicker
-              selected={endCreatedDate}
-              onChange={(date: Date | null) => setEndCreatedDate(date)}
-              selectsEnd
-              startDate={startCreatedDate}
-              endDate={endCreatedDate}
-              minDate={startCreatedDate || undefined}
-              dateFormat="dd/MM/yyyy"
-              placeholderText={t('forms.created_date_to')}
-              className="w-full flex h-10 items-center rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            />
-          </div>
-
           <Input
-            type="number"
-            value={totalAmountMin}
-            onChange={(e) => setTotalAmountMin(e.target.value)}
-            placeholder={t('forms.min_amount')}
-          />
-
-          <Input
-            type="number"
-            value={totalAmountMax}
-            onChange={(e) => setTotalAmountMax(e.target.value)}
-            placeholder={t('forms.max_amount')}
+            type="text"
+            value={searchName}
+            onChange={(e) => setSearchName(e.target.value)}
+            placeholder={t('forms.search_by_name')}
           />
         </div>
       </Card>

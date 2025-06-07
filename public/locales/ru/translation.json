@@ -238,6 +238,7 @@
   "forms": {
     "payment_info": "Информация о платеже",
     "client":"Клиент",
+    "search_by_name":"Поиск по имени",  
     "product":"Товар",
     "amount_max":"Макс. сумма",
     "amount_min":"Мин. сумма",

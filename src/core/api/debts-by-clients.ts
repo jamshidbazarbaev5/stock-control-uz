@@ -16,6 +16,8 @@ export interface DebtByClient {
 interface DebtsByClientsFilters {
   store?: string;
   client?: string;
+  type?: string;
+  name?: string;
   is_paid?: boolean;
   due_date_after?: string;
   due_date_before?: string;
