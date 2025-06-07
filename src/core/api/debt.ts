@@ -116,3 +116,13 @@ export const useGetDebtPayments = (debtId: string | number, filters?: DebtPaymen
     },
   });
 };
+
+export const useGetDebtsHistory = (clientId:number)=>{
+  return useQuery({
+    queryKey: ['debtsHistory', clientId],
+    queryFn: async () => {
+      const response = await api.get<Debt[]>(`debts?client=${clientId}`);
+      return response.data;
+    },
+  });
+}

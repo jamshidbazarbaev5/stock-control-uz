@@ -8,7 +8,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '../../../@/components/ui/dialog';
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -16,8 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useGetDebts, useCreateDebtPayment, type Debt } from '../api/debt';
-import { ResourceForm } from '../helpers/ResourceForm';
+import { useCreateDebtPayment } from '../api/debt';
+import { useGetDebtsByClients, type DebtByClient } from '../api/debts-by-clients';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -26,6 +26,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useGetStores } from '../api/store';
 import { useGetClients } from '../api/client';
+import { ResourceForm } from '../helpers/ResourceForm';
 
 interface PaymentFormData {
   amount: number;
@@ -36,7 +37,7 @@ export default function DebtsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
+  const [selectedDebtClient, setSelectedDebtClient] = useState<DebtByClient | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   // Filter states
@@ -53,138 +54,48 @@ export default function DebtsPage() {
   // Get filter data
   const { data: storesData } = useGetStores({});
   const { data: clientsData } = useGetClients({});
-  const createPayment = useCreateDebtPayment();
 
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
   const clients = Array.isArray(clientsData) ? clientsData : clientsData?.results || [];
 
-  const { data: debtsData, isLoading } = useGetDebts({
-    params: {
-      ...(selectedStore !== 'all' && { store: selectedStore }),
-      ...(selectedClient !== 'all' && { client: selectedClient }),
-      ...(startDueDate && { due_date_after: format(startDueDate, 'yyyy-MM-dd') }),
-      ...(endDueDate && { due_date_before: format(endDueDate, 'yyyy-MM-dd') }),
-      ...(startCreatedDate && { created_at_after: format(startCreatedDate, 'yyyy-MM-dd') }),
-      ...(endCreatedDate && { created_at_before: format(endCreatedDate, 'yyyy-MM-dd') }),
-      ...(totalAmountMin && { total_amount_min: totalAmountMin }),
-      ...(totalAmountMax && { total_amount_max: totalAmountMax }),
-      ...(isPaid !== 'all' && { is_paid: isPaid === 'true' }),
-    },
+  const { data: debtsByClients = [], isLoading } = useGetDebtsByClients({
+    ...(selectedStore !== 'all' && { store: selectedStore }),
+    ...(selectedClient !== 'all' && { client: selectedClient }),
+    ...(startDueDate && { due_date_after: format(startDueDate, 'yyyy-MM-dd') }),
+    ...(endDueDate && { due_date_before: format(endDueDate, 'yyyy-MM-dd') }),
+    ...(startCreatedDate && { created_at_after: format(startCreatedDate, 'yyyy-MM-dd') }),
+    ...(endCreatedDate && { created_at_before: format(endCreatedDate, 'yyyy-MM-dd') }),
+    ...(totalAmountMin && { total_amount_min: totalAmountMin }),
+    ...(totalAmountMax && { total_amount_max: totalAmountMax }),
+    ...(isPaid !== 'all' && { is_paid: isPaid === 'true' }),
   });
 
-  const debts = Array.isArray(debtsData) ? debtsData : debtsData?.results || [];
+  const createPayment = useCreateDebtPayment();
 
-  const columns = [
-    {
-      accessorKey: 'client_read.name',
-      header: t('forms.client_name'),
-      cell: (debt: Debt) => (
-        <div>
-          <div>
-            <button
-              onClick={() => navigate(`/debts/${debt.id}`)}
-              className="text-blue-600 hover:underline hover:text-blue-800"
-            >
-              {debt.client_read.name}{' '}
-              <span className="text-gray-500">({t(`${debt.client_read.type}`)})</span>
-            </button>
-          </div>
-          <div className="text-sm text-gray-500">
-            {debt.client_read.phone_number}
-          </div>
-        </div>
-      ),
-    },
-
-    {
-      accessorKey: 'total_amount',
-      header: t('forms.total_amount'),
-      cell: (debt: Debt) => debt.total_amount?.toLocaleString(),
-    },
-    {
-      accessorKey: 'deposit',
-      header: t('forms.deposit'),
-      cell: (debt: Debt) => debt.deposit?.toLocaleString(),
-    },
-    {
-      accessorKey: 'remainder',
-      header: t('forms.remainder'),
-      cell: (debt: Debt) => (
-        <span className={debt.remainder < 0 ? 'text-green-600' : 'text-red-600'}>
-          {debt.remainder?.toLocaleString()}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'created_at',
-      header: t('forms.created_date'),
-      cell: (debt: Debt) => new Date(debt.created_at).toLocaleDateString(),
-    },
-    {
-      accessorKey: 'due_date',
-      header: t('forms.due_date'),
-      cell: (debt: Debt) => new Date(debt.due_date).toLocaleDateString(),
-    },
-    {
-      accessorKey: 'is_paid',
-      header: t('forms.status'),
-      cell: (debt: Debt) => (
-        <span className={debt.is_paid ? 'text-green-600' : 'text-red-600'}>
-          {debt.is_paid ? t('common.paid') : t('common.unpaid')}
-        </span>
-      ),
-    },
-    {
-      accessorKey: 'actions',
-      header: t('forms.actions'),
-      cell: (debt: Debt) => (
-        <div className="space-x-2">
-          <button
-            onClick={() => handlePayClick(debt)}
-            disabled={debt.is_paid || debt.remainder <= 0}
-            className={`px-3 py-1 rounded ${
-              debt.is_paid || debt.remainder <= 0
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-500 hover:bg-blue-600 text-white'
-            }`}
-          >
-            {t('forms.payment_method')}
-          </button>
-          <button
-            onClick={() => navigate(`/debts/${debt.id}/history`)}
-            className="px-3 py-1 rounded bg-green-500 hover:bg-green-600 text-white"
-          >
-            {t('forms.history')}
-          </button>
-        </div>
-      ),
-    },
-  ];
-
-  const handlePayClick = (debt: Debt) => {
-    setSelectedDebt(debt);
+  const handlePayClick = (client: DebtByClient) => {
+    setSelectedDebtClient(client);
     setIsPaymentModalOpen(true);
   };
 
   const handlePaymentSubmit = async (data: PaymentFormData) => {
-    if (!selectedDebt) return;
+    if (!selectedDebtClient) return;
 
-    if (data.amount > selectedDebt.remainder) {
+    if (data.amount > Number(selectedDebtClient.balance)) {
       toast.error(t('validation.amount_exceeds_remainder'));
       return;
     }
 
     try {
       await createPayment.mutateAsync({
-        debt: selectedDebt.id!,
+        debt: selectedDebtClient.id,
         amount: data.amount,
         payment_method: data.payment_method,
       });
       toast.success(t('messages.success.payment_created'));
       // Invalidate and refetch debts
-      await queryClient.invalidateQueries({ queryKey: ['debts'] });
+      await queryClient.invalidateQueries({ queryKey: ['debtsByClients'] });
       setIsPaymentModalOpen(false);
-      setSelectedDebt(null);
+      setSelectedDebtClient(null);
     } catch (error) {
       toast.error(t('messages.error.payment_create'));
       console.error('Failed to create payment:', error);
@@ -204,7 +115,7 @@ export default function DebtsPage() {
           message: t('validation.amount_must_be_positive'),
         },
         max: {
-          value: selectedDebt?.remainder || 0,
+          value: selectedDebtClient?.balance || 0,
           message: t('validation.amount_exceeds_remainder'),
         },
       },
@@ -220,6 +131,73 @@ export default function DebtsPage() {
         { value: 'Карта', label: t('forms.card') },
         { value: 'Click', label: t('forms.click') },
       ],
+    },
+  ];
+
+  const columns = [
+    {
+      accessorKey: 'name',
+      header: t('forms.client_name'),
+      cell: (client: DebtByClient) => (
+        <div>
+          <div>
+            <button
+              onClick={() => navigate(`/debts/${client.id}`)}
+              className="text-blue-600 hover:underline hover:text-blue-800"
+            >
+              {client.name}{' '}
+              <span className="text-gray-500">({t(`${client.type}`)})</span>
+            </button>
+          </div>
+          <div className="text-sm text-gray-500">
+            {client.phone_number}
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'total_amount',
+      header: t('forms.total_amount'),
+      cell: (client: DebtByClient) => client.total_amount?.toLocaleString(),
+    },
+    {
+      accessorKey: 'total_deposit',
+      header: t('forms.deposit'),
+      cell: (client: DebtByClient) => client.total_deposit?.toLocaleString(),
+    },
+    {
+      accessorKey: 'balance',
+      header: t('forms.balance'),
+      cell: (client: DebtByClient) => (
+        <span className={Number(client.balance) < 0 ? 'text-red-600' : 'text-green-600'}>
+          {client.balance?.toLocaleString() || '0'}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'actions',
+      header: t('forms.actions'),
+      cell: (client: DebtByClient) => (
+        <div className="space-x-2">
+          <button
+            onClick={() => handlePayClick(client)}
+            disabled={Number(client.balance) <= 0}
+            className={`px-3 py-1 rounded ${
+              Number(client.balance) <= 0
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-500 hover:bg-blue-600 text-white'
+            }`}
+          >
+            {t('forms.payment_method')}
+          </button>
+          <button
+            onClick={() => navigate(`/clients/${client.id}/history`)}
+            className="px-3 py-1 rounded bg-green-500 hover:bg-green-600 text-white"
+          >
+            {t('forms.history')}
+          </button>
+        </div>
+      ),
     },
   ];
 
@@ -339,7 +317,7 @@ export default function DebtsPage() {
 
       <ResourceTable
         columns={columns}
-        data={debts}
+        data={debtsByClients}
         isLoading={isLoading}
       />
 

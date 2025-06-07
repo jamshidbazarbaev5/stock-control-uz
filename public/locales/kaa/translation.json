@@ -232,6 +232,7 @@
     "amount_exceeds_remainder": "Summa qalǵan summadan artıq bolmawı kerek"
   },
   "forms": {
+    "paymnet_info": "Tólem maǵlıwmatı",
     "amount_max":"Max summa",
     "product":"Ónim",
     "amount_min":"Min summa",
