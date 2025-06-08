@@ -17,7 +17,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CheckCircle2, AlertCircle,  CreditCard, Wallet, SmartphoneNfc,XCircle } from 'lucide-react';
-
+import {type Store, useGetStores} from "@/core/api/store.ts";
+type PaginatedData<T> = { results: T[]; count: number } | T[];
 export default function SalesPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -32,20 +33,25 @@ export default function SalesPage() {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [creditStatus, setCreditStatus] = useState<string>('all');
-  
+  const [selectedStore, setSelectedStore] = useState<string>('all');
+  const { data: storesData } = useGetStores({});
   const { data: salesData, isLoading } = useGetSales({ 
     params: { 
       page,
       product: selectedProduct !== 'all' ? selectedProduct : undefined,
+      store: selectedStore === 'all' ? undefined : selectedStore,
       start_date: startDate || undefined,
       end_date: endDate || undefined,
       on_credit: creditStatus !== 'all' ? creditStatus === 'true' : undefined
     }
   });
-
+  const getPaginatedData = <T extends { id?: number }>(data: PaginatedData<T> | undefined): T[] => {
+    if (!data) return [];
+    return Array.isArray(data) ? data : data.results;
+  };
   const { data: productsData } = useGetProducts({});
   const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
-
+  const stores = getPaginatedData<Store>(storesData);
   const deleteSale = useDeleteSale();
 
   // Get sales array and total count
@@ -276,7 +282,21 @@ export default function SalesPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={selectedStore} onValueChange={setSelectedStore}>
+              <SelectTrigger>
+                <SelectValue placeholder={t('forms.select_store')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('forms.all_stores')}</SelectItem>
+                {stores?.map((store: Store) => store.id ? (
+                    <SelectItem key={store.id} value={store.id.toString()}>
+                      {store.name}
+                    </SelectItem>
+                ) : null) || null}
+              </SelectContent>
+            </Select>
           </div>
+
 
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('forms.start_date')}</label>

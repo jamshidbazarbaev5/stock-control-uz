@@ -54,7 +54,7 @@ export default function DebtsPage() {
   const handlePaymentSubmit = async (data: PaymentFormData) => {
     if (!selectedDebtClient) return;
 
-    if (data.amount > Number(selectedDebtClient.balance)) {
+    if (data.amount > Number(selectedDebtClient.total_amount)) {
       toast.error(t('validation.amount_exceeds_remainder'));
       return;
     }
@@ -155,9 +155,9 @@ export default function DebtsPage() {
         <div className="space-x-2">
           <button
             onClick={() => handlePayClick(client)}
-            disabled={Number(client.balance) <= 0}
+            disabled={Number(client.total_amount) <= 0}
             className={`px-3 py-1 rounded ${
-              Number(client.balance) <= 0
+              Number(client.total_amount) <= 0
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-blue-500 hover:bg-blue-600 text-white'
             }`}
