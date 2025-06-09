@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -10,7 +9,6 @@ import { useGetStocks, type Stock } from '../api/stock';
 import { useGetStores, type Store } from '../api/store';
 
 export default function TransfersPage() {
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [isFormOpen, setIsFormOpen] = useState(false);

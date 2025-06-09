@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { toast } from 'sonner';
@@ -45,7 +44,6 @@ const columns = (t: any) => [
 ];
 
 export default function RecyclingsPage() {
-  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const { t } = useTranslation();
 
