@@ -398,7 +398,7 @@ export default function DebtDetailsPage() {
         ))}
 
         {/* Pagination Controls */}
-        {totalPages > 1 && (
+        {totalPages  && (
           <div className="flex justify-center items-center gap-2 mt-6">
             <Button
               variant="outline"

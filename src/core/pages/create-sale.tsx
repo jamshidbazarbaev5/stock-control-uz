@@ -97,22 +97,23 @@ export default function CreateSale() {
   const productId = searchParams.get('productId');
   const stockId = searchParams.get('stockId');
 
-  // Set store for seller
+  const isAdmin = currentUser?.role === 'Администратор';
+  const users = Array.isArray(usersData) ? usersData : usersData?.results || [];
+
+  // Initialize selectedStore with seller's store right away
+  const [selectedStore, setSelectedStore] = useState<number | null>(
+    !isAdmin && currentUser?.store_read?.id ? currentUser.store_read.id : null
+  );
+  const [selectedStocks, setSelectedStocks] = useState<Record<number, number>>({});
+  const [selectedPrices, setSelectedPrices] = useState<Record<number, { min: number; selling: number }>>({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [, forceRender] = useState({});
+
+  // Effect for enforcing seller's store
   useEffect(() => {
     if (!isAdmin && currentUser?.store_read?.id) {
       setSelectedStore(currentUser.store_read.id);
       form.setValue('store_write', currentUser.store_read.id);
-    }
-  }, [currentUser?.store_read?.id]);
-
-  const isAdmin = currentUser?.role === 'Администратор';
-  const users = Array.isArray(usersData) ? usersData : usersData?.results || [];
-  console.log('Current user:', usersData);
-  
-  // Initialize selectedStore with the seller's store
-  useEffect(() => {
-    if (!isAdmin && currentUser?.store_read?.id) {
-      setSelectedStore(currentUser.store_read.id);
     }
   }, [isAdmin, currentUser?.store_read?.id]);
 
@@ -123,36 +124,20 @@ export default function CreateSale() {
       on_credit: false,
       total_amount: '0',
       store_write: currentUser?.store_read?.id || 0,
-      sold_by: currentUser?.id,
-      sale_debt: { client: 0, due_date: addDays(new Date(), 30).toISOString().split('T')[0] }
-    },
-    values: {
-      // This will override defaultValues and ensure store is always set correctly
-      store_write: currentUser?.store_read?.id || 0,
-      sale_items: [{ stock_write: stockId ? Number(stockId) : 0, selling_method: 'Штук', quantity: 1, subtotal: '0' }],
-      sale_payments: [{ payment_method: 'Наличные', amount: 0 }],
-      on_credit: false,
-      total_amount: '0',
-      sold_by: currentUser?.id,
+      sold_by: isAdmin ? undefined : currentUser?.id,
       sale_debt: { client: 0, due_date: addDays(new Date(), 30).toISOString().split('T')[0] }
     },
     mode: 'onChange'
   });
 
+  // For non-admin (seller), we don't show the store selection as it's automatic
   useEffect(() => {
-    // Ensure store is always set to seller's store when it's available
     if (!isAdmin && currentUser?.store_read?.id) {
       form.setValue('store_write', currentUser.store_read.id);
+      form.setValue('sold_by', currentUser.id);
     }
-  }, [isAdmin, currentUser?.store_read?.id]);
+  }, [isAdmin, currentUser?.store_read?.id, currentUser?.id]);
   
-  const [selectedStore, setSelectedStore] = useState<number | null>(null);
-  const [selectedStocks, setSelectedStocks] = useState<Record<number, number>>({});
-  const [selectedPrices, setSelectedPrices] = useState<Record<number, { min: number; selling: number }>>({});
-  const [searchTerm, setSearchTerm] = useState('');
-  // Using this state to trigger re-renders when needed
-  const [, forceRender] = useState({});
-
   // Fetch data with search term for clients
   const { data: storesData, isLoading: storesLoading } = useGetStores({});
   const { data: stocksData, isLoading: stocksLoading } = useGetStocks({});
@@ -463,7 +448,7 @@ export default function CreateSale() {
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
-          {/* Store and Seller Selection */}
+          {/* Store and Seller Selection - Only shown for admin */}
           {isAdmin ? (
             <>
               <div className="w-full sm:w-2/3 lg:w-1/2">
@@ -541,57 +526,6 @@ export default function CreateSale() {
                 />
               </div>
             </>
-          ) : currentUser?.store_read ? (
-            <div className="w-full sm:w-2/3 lg:w-1/2">
-              <FormField
-                control={form.control}
-                name="store_write"
-                render={({ field }) => {
-                  // Set selected store for seller
-                  React.useEffect(() => {
-                    if (currentUser?.store_read?.id) {
-                      setSelectedStore(currentUser.store_read.id);
-                      field.onChange(currentUser.store_read.id);
-                    }
-                  }, []);
-
-                  // Ensure store_read exists before rendering
-                  if (!currentUser?.store_read?.id || !currentUser?.store_read?.name) {
-                    return <FormItem>
-                      <FormLabel>{t('table.store')}</FormLabel>
-                      <Select disabled value="">
-                        <SelectTrigger>
-                          <SelectValue>Loading...</SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="">Loading...</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormItem>;
-                  }
-
-                  return (
-                    <FormItem>
-                      <FormLabel>{t('table.store')}</FormLabel>
-                      <Select 
-                        value={currentUser.store_read.id.toString()} 
-                        disabled
-                        onValueChange={field.onChange}
-                      >
-                        <SelectTrigger>
-                          <SelectValue>{currentUser.store_read.name}</SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={currentUser.store_read.id.toString()}>
-                            {currentUser.store_read.name}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  );
-                }}
-              />
-            </div>
           ) : null}
           
           {/* Sale Items */}

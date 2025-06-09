@@ -4,7 +4,9 @@
     "amount_exceeds_total": "Summa ulıwma qarz summasınan artıq bolmawı kerek"
   },
   "dashboard": {
+    "no_expenses":"Rasxodlar yoq",
     "clients": "Klientler",
+    "all_stores":"Barcha dúkanlar",
     "category_distribution": "Kategoriya tendentsiyası",
     "expense_breakdown": "Rasxodlar",
     "expense_categories_detail": "Rasxodlar kategoriyaları",
@@ -82,7 +84,7 @@
     "total_debt": "Barlıq qarz",
     "total_paid": "Barlıq tólendi",
     "remaining_debt": "Qalǵan qarz",
-    "deposit": "Depozit",
+    "deposit": "Avans",
     "no_client_debt_data_available": "Klient qarzları haqqında maǵlıwmat yoq"
   },
   "stock": {
@@ -388,6 +390,7 @@
     "invalid_stock_selection": "Osi  skladǵa transfer jaratiw múmkin emes"
   },
   "placeholders": {
+    "select_seller": "Satıwshını tańlań",
     "select_has_color": "Reń bar ma?",
     "select_cash_inflow_name": "Tusim atın tańlań",
     "select_payment_method": "Tólew usılın tańlań",

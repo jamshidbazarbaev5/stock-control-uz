@@ -32,6 +32,7 @@ import { ArrowUpRight, DollarSign, ShoppingCart, TrendingUp, Package, BarChart2,
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { format, parseISO } from 'date-fns';
+import { useGetStores } from '../api/store';
 
 
 const DashboardPage = () => {
@@ -55,9 +56,12 @@ const DashboardPage = () => {
   const [topSellersLimit, _setTopSellersLimit] = useState<number>(5);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [selectedStore, setSelectedStore] = useState<string>('all');
   
   // Get current user to determine role
   const { data: currentUser } = useCurrentUser();
+  const { data: storesData } = useGetStores({});
+  const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -81,9 +85,14 @@ const DashboardPage = () => {
             apiPeriod = period;
           }
 
+          // Add store parameter if a specific store is selected
+          if (selectedStore !== 'all') {
+            dateParams = dateParams ? `${dateParams}&store=${selectedStore}` : `store=${selectedStore}`;
+          }
+
           const [salesmanSummaryData, salesmanDebtsData] = await Promise.all([
             getSalesmanSummary(apiPeriod, dateParams || undefined),
-            getSalesmanDebts(apiPeriod,dateParams || undefined)
+            getSalesmanDebts(apiPeriod, dateParams || undefined)
           ]);
           
           setSalesmanSummary(salesmanSummaryData);
@@ -102,6 +111,11 @@ const DashboardPage = () => {
           } else if (period !== 'custom') {
             // Only use period if we're not using custom dates
             apiPeriod = period;
+          }
+
+          // Add store parameter if a specific store is selected
+          if (selectedStore !== 'all') {
+            dateParams = dateParams ? `${dateParams}&store=${selectedStore}` : `store=${selectedStore}`;
           }
           
           const [salesSummary, topProductsData, stockByCategoryData, productIntakeData, clientDebtsData, unsoldProductsData, profitabilityData, topSellersData, expensesSummaryData] = await Promise.all([
@@ -136,7 +150,7 @@ const DashboardPage = () => {
     };
 
     fetchDashboardData();
-  }, [period, topProductsLimit, topSellersLimit, startDate, endDate, currentUser?.role]);
+  }, [period, topProductsLimit, topSellersLimit, startDate, endDate, selectedStore, currentUser?.role]);
 
   // Format the trend data for the charts
   const formattedData = salesData?.trend.map(item => ({
@@ -175,6 +189,9 @@ const DashboardPage = () => {
             <h1 className="text-2xl sm:text-3xl font-bold">{t('dashboard.title')}</h1>
             
             <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center gap-4">
+              {/* Store Selector */}
+             
+
               {/* Period Selector */}
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <span className="text-sm font-medium whitespace-nowrap">{t('dashboard.period')}:</span>
@@ -307,10 +324,28 @@ const DashboardPage = () => {
     return (
       <div className="p-6 w-full max-w-none">
         <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:justify-between sm:items-center mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold">{t('dashboard.title')}</h1>
           
           <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center gap-4">
             {/* Period Selector */}
+             <div className="flex items-center gap-2 w-full sm:w-auto">
+                <span className="text-sm font-medium whitespace-nowrap">{t('dashboard.store')}:</span>
+                <Select 
+                  value={selectedStore} 
+                  onValueChange={setSelectedStore}
+                >
+                  <SelectTrigger className="w-full sm:w-32">
+                    <SelectValue placeholder={t('dashboard.select_store')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t('dashboard.all_stores')}</SelectItem>
+                    {stores.map((store) => (
+                      <SelectItem key={store.id} value={store.id?.toString() || ''}>
+                        {store.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <span className="text-sm font-medium whitespace-nowrap">{t('dashboard.period')}:</span>
               <Select 

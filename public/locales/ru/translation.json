@@ -3,8 +3,10 @@
     "amount_must_be_positive": "Сумма должна быть положительной",
     "amount_exceeds_total": "Сумма не может превышать общую сумму долга"
   },
+
   "dashboard": {
     "clients": "Клиенты",
+    "no_expenses":"Нет расходы",
     "category_distribution": "Распределение по категориям",
     "expense_breakdown": "Расходы",
     "expense_categories_detail": "Расходы по категориям",
@@ -82,7 +84,9 @@
     "total_debt": "Общий долг",
     "total_paid": "Всего оплачено",
     "remaining_debt": "Остаток долга",
-    "deposit": "Депозит",
+    "deposit": "Аванс",
+    "all_stores":"Все магазины",
+
     "no_client_debt_data_available": "Нет данных о долгах клиентов"
   },
   "stock": {
@@ -393,6 +397,7 @@
     "edit": "Изменить"
   },
   "placeholders": {
+    "select_seller": "Выберите продавца",
     "select_worker": "Выберите работника",
     "select_has_color": "Выберите, имеет ли товар цвет",
     "select_expense_name": "Выберите название расхода",
