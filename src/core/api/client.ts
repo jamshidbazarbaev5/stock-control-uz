@@ -1,6 +1,7 @@
 import { createResourceApiHooks } from '../helpers/createResourceApi';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from './api';
+import { toast } from 'sonner';
 
 // Types
 export interface BaseClient {
@@ -38,6 +39,10 @@ export interface ClientHistoryEntry {
   timestamp: string;
 }
 
+export interface IncrementBalancePayload {
+  amount: number;
+}
+
 // API endpoints
 const CLIENT_URL = 'clients/';
 
@@ -59,5 +64,27 @@ export const useGetClientHistory = (clientId: number, params?: { sale?: string; 
       return response.data;
     },
     enabled: !!clientId,
+  });
+};
+
+// Increment balance mutation hook
+export const useIncrementBalance = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, amount }: { id: number; amount: number }) => {
+      const response = await api.post<Client>(`${CLIENT_URL}${id}/increment-balance/`, { amount });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      if (data.id) {
+        queryClient.invalidateQueries({ queryKey: ['clients', data.id] });
+        queryClient.invalidateQueries({ queryKey: ['clientHistory', data.id] });
+      }
+    },
+    onError: (error: any) => {
+      console.error('Error incrementing balance:', error);
+      toast.error(error?.response?.data?.detail || 'Failed to increment balance');
+    },
   });
 };

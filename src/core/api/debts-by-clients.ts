@@ -1,6 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import api from './api';
 
+interface DebtsByClientsResponse {
+  results: DebtByClient[];
+  count: number;
+}
+
 export interface DebtByClient {
   id: number;
   type: string;
@@ -25,13 +30,15 @@ interface DebtsByClientsFilters {
   created_at_before?: string;
   total_amount_min?: string;
   total_amount_max?: string;
+  page?: number;
+  page_size?: number;
 }
 
 export const useGetDebtsByClients = (filters?: DebtsByClientsFilters) => {
   return useQuery({
     queryKey: ['debtsByClients', filters],
     queryFn: async () => {
-      const response = await api.get<DebtByClient[]>('debts-by-clients', {
+      const response = await api.get<DebtsByClientsResponse>('debts-by-clients', {
         params: filters,
       });
       return response.data;

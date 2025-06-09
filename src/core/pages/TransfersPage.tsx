@@ -163,7 +163,7 @@ export default function TransfersPage() {
               isLoading={isLoading}
               onEdit={handleEdit}
               onDelete={handleDelete}
-              onAdd={() => navigate('/create-transfer')}
+              // onAdd={() => navigate('/create-transfer')}
               totalCount={totalCount}
               pageSize={30}
               currentPage={page}

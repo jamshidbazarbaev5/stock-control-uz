@@ -8,19 +8,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCreateDebtPayment } from '../api/debt';
 import { useGetDebtsByClients, type DebtByClient } from '../api/debts-by-clients';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { useNavigate } from 'react-router-dom';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { ResourceForm } from '../helpers/ResourceForm';
 
 interface PaymentFormData {
@@ -34,22 +28,23 @@ export default function DebtsPage() {
   const queryClient = useQueryClient();
   const [selectedDebtClient, setSelectedDebtClient] = useState<DebtByClient | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-
-  // Filter states
-  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedTab, setSelectedTab] = useState<'Физ.лицо' | 'Юр.лицо'>('Физ.лицо');
   const [searchName, setSearchName] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 30;
 
-  const { data: debtsByClients = [], isLoading } = useGetDebtsByClients({
+  const { data: debtsByClientsData, isLoading } = useGetDebtsByClients({
     ...(searchName && { name: searchName }),
-    ...(selectedType !== 'all' && { type: selectedType }),
+    type: selectedTab,
+    page: currentPage,
+    page_size: pageSize,
   });
+
+  const debtsByClients = debtsByClientsData?.results || [];
+  const totalCount = debtsByClientsData?.count || 0;
 
   const createPayment = useCreateDebtPayment();
 
-  const handlePayClick = (client: DebtByClient) => {
-    setSelectedDebtClient(client);
-    setIsPaymentModalOpen(true);
-  };
 
   const handlePaymentSubmit = async (data: PaymentFormData) => {
     if (!selectedDebtClient) return;
@@ -108,89 +103,76 @@ export default function DebtsPage() {
     },
   ];
 
-  const columns = [
-    {
-      accessorKey: 'name',
-      header: t('forms.client_name'),
-      cell: (client: DebtByClient) => (
-        <div>
+  const getColumns = () => {
+    const baseColumns = [
+      {
+        accessorKey: 'name',
+        header: t('forms.client_name'),
+        cell: (client: DebtByClient) => (
           <div>
-            <button
-              onClick={() => navigate(`/debts/${client.id}`)}
-              className="text-blue-600 hover:underline hover:text-blue-800"
-            >
-              {client.name}{' '}
-              <span className="text-gray-500">({t(`${client.type}`)})</span>
-            </button>
+            <div>
+              <button
+                onClick={() => navigate(`/debts/${client.id}`)}
+                className="text-blue-600 hover:underline hover:text-blue-800"
+              >
+                {client.name}
+              </button>
+            </div>
+            <div className="text-sm text-gray-500">
+              {client.phone_number}
+            </div>
           </div>
-          <div className="text-sm text-gray-500">
-            {client.phone_number}
-          </div>
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'total_amount',
-      header: t('forms.total_amount'),
-      cell: (client: DebtByClient) => client.total_amount?.toLocaleString(),
-    },
-    {
-      accessorKey: 'total_deposit',
-      header: t('forms.deposit'),
-      cell: (client: DebtByClient) => client.total_deposit?.toLocaleString(),
-    },
-    {
-      accessorKey: 'balance',
-      header: t('forms.balance'),
-      cell: (client: DebtByClient) => (
-        <span className={Number(client.balance) < 0 ? 'text-red-600' : 'text-green-600'}>
-          {client.balance?.toLocaleString() || '0'}
-        </span>
-      ),
-    },
-    {
+        ),
+      },
+      {
+        accessorKey: 'total_amount',
+        header: t('forms.total_amount'),
+        cell: (client: DebtByClient) => client.total_amount?.toLocaleString(),
+      },
+      {
+        accessorKey: 'total_deposit',
+        header: t('forms.deposit'),
+        cell: (client: DebtByClient) => client.total_deposit?.toLocaleString(),
+      }
+    ];
+
+    // Add balance column only for legal entities
+    if (selectedTab === 'Юр.лицо') {
+      baseColumns.push({
+        accessorKey: 'balance',
+        header: t('forms.balance'),
+        cell: (client: DebtByClient) => (
+          <span className={Number(client.balance) < 0 ? 'text-red-600' : 'text-green-600'}>
+            {client.balance?.toLocaleString() || '0'}
+          </span>
+        ),
+      });
+    }
+
+    baseColumns.push({
       accessorKey: 'actions',
       header: t('forms.actions'),
       cell: (client: DebtByClient) => (
         <div className="space-x-2">
-          <button
-            onClick={() => handlePayClick(client)}
-            disabled={Number(client.total_amount) <= 0}
-            className={`px-3 py-1 rounded ${
-              Number(client.total_amount) <= 0
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-500 hover:bg-blue-600 text-white'
-            }`}
-          >
-            {t('forms.payment_method')}
-          </button>
-          <button
-            onClick={() => navigate(`/clients/${client.id}/history`)}
-            className="px-3 py-1 rounded bg-green-500 hover:bg-green-600 text-white"
-          >
-            {t('forms.history')}
-          </button>
+          {selectedTab === 'Юр.лицо' && (
+            <button
+              onClick={() => navigate(`/clients/${client.id}/history`)}
+              className="px-3 py-1 rounded bg-green-500 hover:bg-green-600 text-white"
+            >
+              {t('forms.history')}
+            </button>
+          )}
         </div>
       ),
-    },
-  ];
+    });
+
+    return baseColumns;
+  };
 
   return (
     <div className="container mx-auto py-8">
-      {/* Filters */}
       <Card className="p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Select value={selectedType} onValueChange={setSelectedType}>
-            <SelectTrigger>
-              <SelectValue placeholder={t('forms.select_client_type')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('forms.all_clients')}</SelectItem>
-              <SelectItem value="Физ.лицо">{t('forms.individual')}</SelectItem>
-              <SelectItem value="Юр.лицо">{t('forms.legal_entity')}</SelectItem>
-            </SelectContent>
-          </Select>
-
+        <div className="grid grid-cols-1 gap-6">
           <Input
             type="text"
             value={searchName}
@@ -200,10 +182,21 @@ export default function DebtsPage() {
         </div>
       </Card>
 
+      <Tabs value={selectedTab} onValueChange={setSelectedTab as (value: string) => void} className="mb-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="Физ.лицо">{t('forms.individual')}</TabsTrigger>
+          <TabsTrigger value="Юр.лицо">{t('forms.legal_entity')}</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       <ResourceTable
-        columns={columns}
+        columns={getColumns()}
         data={debtsByClients}
         isLoading={isLoading}
+        pageSize={pageSize}
+        totalCount={totalCount}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
       />
 
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>

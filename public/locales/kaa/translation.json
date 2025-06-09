@@ -1,4 +1,8 @@
 {
+  "validation": {
+    "amount_must_be_positive": "Summa oń san bolıwı kerek",
+    "amount_exceeds_total": "Summa ulıwma qarz summasınan artıq bolmawı kerek"
+  },
   "dashboard": {
     "clients": "Klientler",
     "category_distribution": "Kategoriya tendentsiyası",
@@ -92,6 +96,7 @@
   },
   "common": {
     "paid": "Tólendi",
+    "increment_balance": "Balans kóbeytiw",
     "unpaid": "Tólenbegen",
     "update": "O'zgertiw",
     "history": "Tarix",
@@ -114,7 +119,7 @@
     "details": "Tovar haqqinda ",
     "on_credit": "Qarzg'a",
     "save": "Saqlaw",
-    "cancel": "Biykarlaw",
+    "cancel": "Biykar etiw",
     "edit": "Ózgertiw",
     "delete": "Óshiriw",
     "create": "Jaratıw",
@@ -232,6 +237,9 @@
     "amount_exceeds_remainder": "Summa qalǵan summadan artıq bolmawı kerek"
   },
   "forms": {
+    "increment_balance": "Balans kóbeytiw",
+
+    "add_payment":"Добавить платеж",
     "search_by_name": "Atı boyınsha izdeń",
     "paymnet_info": "Tólem maǵlıwmatı",
     "amount_max":"Max summa",
@@ -358,7 +366,8 @@
       "deleted": " áwmetli óshirildi",
       "money_added": "Tusim áwmetli qosıldı",
       "money_updated": "Tusim áwmetli jańalandı",
-      "payment_created": "Tólem áwmetli jaratıldı"
+      "payment_created": "Tólem áwmetli jaratıldı",
+      "balance_incremented": "Balans tabıslı kóbeytirildi"
     },
     "error": {
       "create": " jaratıw ámelge aspadı",
@@ -369,7 +378,8 @@
       "general": "Qátelik júz berdi",
       "invalid_stock_selection": "Невозможно создать приход на этот склад",
       "same_store_transfer": "Bir dúkandaǵı skladlar arasında transfer múmkin emes",
-      "payment_create": "Tólem jaratıw ámelge aspadı"
+      "payment_create": "Tólem jaratıw ámelge aspadı",
+      "balance_increment": "Balanstı kóbeytiw ámelge aspadı"
     },
     "confirmation": {
       "delete": "Bul zattı óshiriwge isenimlisiz be?"
@@ -415,6 +425,7 @@
   },
   "table": {
     "source": "Resurs",
+    "seller":"Satıwshı",
     "history_value": "Aldınǵı bahası",
     "credit_status": "Status",
     "deposit": "Avans",

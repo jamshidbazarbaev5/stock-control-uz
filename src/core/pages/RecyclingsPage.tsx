@@ -81,7 +81,6 @@ export default function RecyclingsPage() {
         columns={columns(t)}
         isLoading={isLoading}
         onDelete={handleDelete}
-        onAdd={() => navigate('/create-recycling')}
         pageSize={10}
         totalCount={totalCount}
         currentPage={page}

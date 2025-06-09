@@ -1,9 +1,16 @@
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import {  useGetDebtsHistory } from '../api/debt';
+import { useGetDebtsHistory, useCreateDebtPayment } from '../api/debt';
 import {
   Card,
 } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import {
   User2,
   Phone,
@@ -16,18 +23,43 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
+import { ResourceForm } from '../helpers/ResourceForm';
 
 interface DebtListItem {
   id: number;
   isExpanded: boolean;
 }
 
+interface PaymentFormData {
+  amount: number;
+  payment_method: string;
+}
+
 export default function DebtDetailsPage() {
   const { t } = useTranslation();
   const { id: clientId } = useParams();
+  const queryClient = useQueryClient();
   const [expandedDebts, setExpandedDebts] = useState<DebtListItem[]>([]);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedDebt, setSelectedDebt] = useState<{ id: number; remainder: number } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const { data: debts = [], isLoading } = useGetDebtsHistory(Number(clientId));
+  const { data: debtsData, isLoading } = useGetDebtsHistory(Number(clientId), currentPage);
+  const createPayment = useCreateDebtPayment();
+
+  // Access the paginated data
+  const debts = debtsData?.results || [];
+  const totalPages = debtsData?.total_pages || 1;
+
+  // Function to handle page changes
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Reset expanded states when changing page
+    setExpandedDebts([]);
+  };
+
 
   // Function to handle debt expansion
   const handleDebtClick = (debtId: number) => {
@@ -43,6 +75,93 @@ export default function DebtDetailsPage() {
   // Check if a debt is expanded
   const isDebtExpanded = (debtId: number) => {
     return expandedDebts.find(d => d.id === debtId)?.isExpanded || false;
+  };
+
+  // Payment handling
+  const paymentFields = [
+    {
+      name: 'amount',
+      label: t('forms.amount'),
+      type: 'number',
+      placeholder: t('placeholders.enter_amount'),
+      required: true,
+      validation: {
+        min: {
+          value: 0.01,
+          message: t('validation.amount_must_be_positive')
+        },
+        max: {
+          value: selectedDebt?.remainder || 0,
+          message: t('validation.amount_exceeds_total')
+        },
+        validate: {
+          notGreaterThanRemainder: (value: number) => {
+            if (!selectedDebt) return true;
+            return value <= selectedDebt.remainder || t('validation.amount_exceeds_remainder');
+          }
+        }
+      }
+    },
+    {
+      name: 'payment_method',
+      label: t('forms.payment_method'),
+      type: 'select',
+      placeholder: t('placeholders.select_payment_method'),
+      required: true,
+      options: [
+        { value: 'Наличные', label: t('payment.cash') },
+        { value: 'Click', label: t('payment.click') },
+        { value: 'Карта', label: t('payment.card') }
+      ]
+    }
+  ];
+
+  const handlePaymentClick = (debt: { id: number; remainder: number }) => {
+    setSelectedDebt(debt);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handlePaymentSubmit = async (data: PaymentFormData) => {
+    if (!selectedDebt) return;
+
+    // Additional validation to prevent overpayment
+    if (data.amount > selectedDebt.remainder) {
+      toast.error(t('validation.amount_exceeds_remainder'));
+      return;
+    }
+
+    try {
+      await createPayment.mutateAsync({
+        debt: selectedDebt.id,
+        ...data
+      });
+
+      // Update the debts data locally
+      const updatedDebts = debts.map(debt => {
+        if (debt.id === selectedDebt.id) {
+          return {
+            ...debt,
+            remainder: debt.remainder - data.amount,
+            deposit: (Number(debt.deposit) + data.amount).toString(),
+            is_paid: debt.remainder - data.amount <= 0
+          };
+        }
+        return debt;
+      });
+
+      // Update the query cache with new data
+      queryClient.setQueryData(['debtsHistory', Number(clientId), currentPage], {
+        ...debtsData,
+        results: updatedDebts
+      });
+
+      toast.success(t('messages.success.payment_created'));
+      setIsPaymentModalOpen(false);
+      setSelectedDebt(null);
+    } catch (error) {
+      console.error('Failed to create payment:', error);
+      toast.error(t('messages.error.payment_create'));
+    }
   };
 
   if (isLoading) {
@@ -80,10 +199,37 @@ export default function DebtDetailsPage() {
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl animate-in fade-in duration-500">
       <div className="mb-8 animate-in slide-in-from-left duration-500">
-        <h1 className="text-3xl font-bold flex items-center gap-3 bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold flex items-center gap-3 bg-gradient-to-r from-emerald-600 to-emerald-400 bg-clip-text text-transparent mb-6">
           <DollarSign className="w-10 h-10 text-emerald-500" />
-          {t('pages.debt_details')} - {debts[0].client_read.name}
+          {t('pages.debt_details')} - {debts[0]?.client_read.name}
         </h1>
+
+        {debts[0] && (
+          <Card className="overflow-hidden mb-8">
+            <div className="bg-gray-50/50 rounded-lg p-6">
+              <h4 className="text-lg font-semibold flex items-center gap-2 mb-4 text-emerald-700">
+                <User2 className="w-5 h-5 text-emerald-500" />
+                {t('forms.client_info')}
+              </h4>
+              <dl className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex items-start gap-3">
+                  <Phone className="w-4 h-4 text-emerald-500 mt-1" />
+                  <div>
+                    <dt className="text-sm text-gray-500">{t('forms.phone')}</dt>
+                    <dd className="font-medium text-gray-900">{debts[0].client_read.phone_number}</dd>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-4 h-4 text-emerald-500 mt-1" />
+                  <div>
+                    <dt className="text-sm text-gray-500">{t('forms.address')}</dt>
+                    <dd className="font-medium text-gray-900">{debts[0].client_read.address}</dd>
+                  </div>
+                </div>
+              </dl>
+            </div>
+          </Card>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-6">
@@ -127,29 +273,6 @@ export default function DebtDetailsPage() {
               }`}>
                 <div className="border-t">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
-                    <div className="bg-gray-50/50 rounded-lg p-6 hover:bg-gray-50 transition-colors duration-200">
-                      <h4 className="text-lg font-semibold flex items-center gap-2 mb-4 text-emerald-700">
-                        <User2 className="w-5 h-5 text-emerald-500" />
-                        {t('forms.client_info')}
-                      </h4>
-                      <dl className="space-y-4">
-                        <div className="flex items-start gap-3">
-                          <Phone className="w-4 h-4 text-emerald-500 mt-1" />
-                          <div>
-                            <dt className="text-sm text-gray-500">{t('forms.phone')}</dt>
-                            <dd className="font-medium text-gray-900">{debt.client_read.phone_number}</dd>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <MapPin className="w-4 h-4 text-emerald-500 mt-1" />
-                          <div>
-                            <dt className="text-sm text-gray-500">{t('forms.address')}</dt>
-                            <dd className="font-medium text-gray-900">{debt.client_read.address}</dd>
-                          </div>
-                        </div>
-                      </dl>
-                    </div>
-
                     <div className="bg-gray-50/50 rounded-lg p-6 hover:bg-gray-50 transition-colors duration-200">
                       <h4 className="text-lg font-semibold flex items-center gap-2 mb-4 text-emerald-700">
                         <Store className="w-5 h-5 text-emerald-500" />
@@ -212,7 +335,9 @@ export default function DebtDetailsPage() {
                           ))}
                           <tr className="font-bold bg-gray-50">
                             <td colSpan={3} className="text-right py-4 px-4">{t('forms.total_amount')}</td>
-                            <td className="text-right py-4 px-4 text-emerald-600">{formatCurrency(debt.total_amount)}</td>
+                            <td className="text-right py-4 px-4 text-emerald-600">
+                              {formatCurrency(debt.total_amount)}
+                            </td>
                           </tr>
                         </tbody>
                       </table>
@@ -220,10 +345,20 @@ export default function DebtDetailsPage() {
                   </div>
 
                   <div className="border-t p-6 bg-gray-50/30">
-                    <h4 className="text-lg font-semibold flex items-center gap-2 mb-6 text-emerald-700">
-                      <DollarSign className="w-5 h-5 text-emerald-500" />
-                      {t('forms.payment_info')}
-                    </h4>
+                    <div className="flex justify-between items-center mb-6">
+                      <h4 className="text-lg font-semibold flex items-center gap-2 text-emerald-700">
+                        <DollarSign className="w-5 h-5 text-emerald-500" />
+                        {t('forms.payment_info')}
+                      </h4>
+                      {!debt.is_paid && (
+                        <Button
+                          onClick={() => handlePaymentClick({ id: debt.id!, remainder: debt.remainder })}
+                          className="bg-emerald-500 hover:bg-emerald-600"
+                        >
+                          {t('forms.add_payment')}
+                        </Button>
+                      )}
+                    </div>
                     <dl className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
                         <div className="flex items-start gap-3">
@@ -261,7 +396,55 @@ export default function DebtDetailsPage() {
             </Card>
           </div>
         ))}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2"
+            >
+              {t('common.previous')}
+            </Button>
+            <div className="flex items-center gap-2">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <Button
+                  key={page}
+                  variant={currentPage === page ? "default" : "outline"}
+                  onClick={() => handlePageChange(page)}
+                  className="w-10 h-10 p-0"
+                >
+                  {page}
+                </Button>
+              ))}
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2"
+            >
+              {t('common.next')}
+            </Button>
+          </div>
+        )}
+
+        {/* Payment Dialog */}
+        <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('forms.add_payment')}</DialogTitle>
+            </DialogHeader>
+            <ResourceForm
+              fields={paymentFields}
+              onSubmit={handlePaymentSubmit}
+              isSubmitting={createPayment.isPending}
+              title=""
+            />
+          </DialogContent>
+        </Dialog>
       </div>
-    </div>
-  );
+    </div>);
 }

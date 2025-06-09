@@ -244,6 +244,7 @@ export default function SalesPage() {
 
   return (
     <div className="container mx-auto py-4 sm:py-6 md:py-8 px-2 sm:px-4">
+     
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">{t('navigation.sales')}</h1>
         <Button onClick={() => navigate('/create-sale')} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">

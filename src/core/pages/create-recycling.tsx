@@ -1,5 +1,5 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ResourceForm } from '../helpers/ResourceForm';
 import type { Recycling } from '../api/recycling';
@@ -9,10 +9,11 @@ import { useGetProducts } from '../api/product';
 import { useGetStores } from '../api/store';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
+
+
 interface FormValues extends Partial<Recycling> {}
 
-
-const recyclingFields = (t:any)=> [
+const recyclingFields = (t:any, productSearchTerm: string)=> [
   {
     name: 'from_to',
     label: t('table.from_product'),
@@ -24,10 +25,12 @@ const recyclingFields = (t:any)=> [
   {
     name: 'to_product',
     label: t('table.to_product'),
-    type: 'select',
+    type: 'searchable-select',
     placeholder: t('placeholders.select_product'),
     required: true,
     options: [], // Will be populated with products
+    searchTerm: productSearchTerm,
+    onSearch: productSearchTerm
   },
   {
     name: 'store',
@@ -83,6 +86,7 @@ export default function CreateRecycling() {
   const location = useLocation();
   const createRecycling = useCreateRecycling();
   const { t } = useTranslation();
+  const [productSearchTerm, setProductSearchTerm] = useState('');
   
   // Get URL parameters
   const searchParams = new URLSearchParams(location.search);
@@ -98,7 +102,14 @@ export default function CreateRecycling() {
 
   // Fetch data for dropdowns
   const { data: stocksData } = useGetStocks();
-  const { data: productsData } = useGetProducts();
+  const { data: productsData } = useGetProducts({
+    params: {
+      product_name: productSearchTerm,
+      page: 1,
+      page_size: 10,
+      ordering: '-created_at'
+    }
+  });
   const { data: storesData } = useGetStores();
 
   // Get arrays from response data
@@ -134,7 +145,7 @@ export default function CreateRecycling() {
   }, [fromStockId, fromProductId, stocks, products, form]);
 
   // Update fields with dynamic options
-  const fields = recyclingFields(t).map(field => {
+  const fields = recyclingFields(t, productSearchTerm).map(field => {
     if (field.name === 'from_to') {
       return {
         ...field,
@@ -150,7 +161,8 @@ export default function CreateRecycling() {
         options: products.map(product => ({
           value: product.id,
           label: product.product_name
-        })).filter(opt => opt.value)
+        })).filter(opt => opt.value),
+        onSearch: setProductSearchTerm
       };
     }
     if (field.name === 'store') {

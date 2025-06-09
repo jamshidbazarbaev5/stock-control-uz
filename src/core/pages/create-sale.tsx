@@ -11,6 +11,20 @@ import {
   FormItem,
   FormLabel,
 } from '@/components/ui/form';
+
+interface ExtendedUser extends User {
+  store_read?: {
+    id: number;
+    name: string;
+    address: string;
+    phone_number: string;
+    budget: string;
+    created_at: string;
+    is_main: boolean;
+    parent_store: number | null;
+    owner: number;
+  };
+}
 import {
   Select,
   SelectContent,
@@ -22,8 +36,26 @@ import { Input } from '@/components/ui/input';
 import { useGetStores } from '../api/store';
 import { useGetStocks } from '../api/stock';
 import { useGetClients } from '../api/client';
+import { useGetUsers } from '../api/user';
 import { useCreateSale, type Sale } from '@/core/api/sale';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { addDays } from 'date-fns';
+import React from 'react';
+import { type User } from '../api/user';
+
+interface ExtendedUser extends User {
+  store_read?: {
+    id: number;
+    name: string;
+    address: string;
+    phone_number: string;
+    budget: string;
+    created_at: string;
+    is_main: boolean;
+    parent_store: number | null;
+    owner: number;
+  };
+}
 
 interface FormSaleItem {
   stock_write: number;
@@ -45,6 +77,7 @@ interface SaleFormData {
   on_credit: boolean;
   total_amount: string;
   sale_payments: FormSalePayment[];
+  sold_by?: number;
   sale_debt?: {
     client: number;
     due_date: string;
@@ -56,11 +89,32 @@ export default function CreateSale() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+  const { data: currentUser } = useCurrentUser();
+  const { data: usersData } = useGetUsers({});
 
   // Get URL parameters
   const searchParams = new URLSearchParams(location.search);
   const productId = searchParams.get('productId');
   const stockId = searchParams.get('stockId');
+
+  // Set store for seller
+  useEffect(() => {
+    if (!isAdmin && currentUser?.store_read?.id) {
+      setSelectedStore(currentUser.store_read.id);
+      form.setValue('store_write', currentUser.store_read.id);
+    }
+  }, [currentUser?.store_read?.id]);
+
+  const isAdmin = currentUser?.role === 'Администратор';
+  const users = Array.isArray(usersData) ? usersData : usersData?.results || [];
+  console.log('Current user:', usersData);
+  
+  // Initialize selectedStore with the seller's store
+  useEffect(() => {
+    if (!isAdmin && currentUser?.store_read?.id) {
+      setSelectedStore(currentUser.store_read.id);
+    }
+  }, [isAdmin, currentUser?.store_read?.id]);
 
   const form = useForm<SaleFormData>({
     defaultValues: {
@@ -68,12 +122,30 @@ export default function CreateSale() {
       sale_payments: [{ payment_method: 'Наличные', amount: 0 }],
       on_credit: false,
       total_amount: '0',
-      store_write: 0,
+      store_write: currentUser?.store_read?.id || 0,
+      sold_by: currentUser?.id,
+      sale_debt: { client: 0, due_date: addDays(new Date(), 30).toISOString().split('T')[0] }
+    },
+    values: {
+      // This will override defaultValues and ensure store is always set correctly
+      store_write: currentUser?.store_read?.id || 0,
+      sale_items: [{ stock_write: stockId ? Number(stockId) : 0, selling_method: 'Штук', quantity: 1, subtotal: '0' }],
+      sale_payments: [{ payment_method: 'Наличные', amount: 0 }],
+      on_credit: false,
+      total_amount: '0',
+      sold_by: currentUser?.id,
       sale_debt: { client: 0, due_date: addDays(new Date(), 30).toISOString().split('T')[0] }
     },
     mode: 'onChange'
   });
 
+  useEffect(() => {
+    // Ensure store is always set to seller's store when it's available
+    if (!isAdmin && currentUser?.store_read?.id) {
+      form.setValue('store_write', currentUser.store_read.id);
+    }
+  }, [isAdmin, currentUser?.store_read?.id]);
+  
   const [selectedStore, setSelectedStore] = useState<number | null>(null);
   const [selectedStocks, setSelectedStocks] = useState<Record<number, number>>({});
   const [selectedPrices, setSelectedPrices] = useState<Record<number, { min: number; selling: number }>>({});
@@ -302,6 +374,11 @@ export default function CreateSale() {
 
   const handleSubmit = async (data: SaleFormData) => {
     try {
+      // Ensure store is set correctly for sellers
+      if (!isAdmin && currentUser?.store_read?.id) {
+        data.store_write = currentUser.store_read.id;
+      }
+      
       // Validate all items meet minimum price requirements
       const hasInvalidPrices = data.sale_items.some((item, index) => {
         if (selectedPrices[index]) {
@@ -322,6 +399,7 @@ export default function CreateSale() {
 
       const formattedData: Sale = {
         store: data.store_write,
+        ...(isAdmin ? { sold_by: data.sold_by } : {}),
         payment_method: primaryPayment?.payment_method || 'Наличные',
         sale_items: data.sale_items.map(item => ({
           stock_write: item.stock_write,
@@ -335,7 +413,7 @@ export default function CreateSale() {
         })),
         on_credit: data.on_credit,
         total_amount: data.total_amount.toString(),
-        // If client is selected but not on credit, send client directly
+        // If client is selected but on credit, send client directly
         ...(data.sale_debt?.client && !data.on_credit ? { client: data.sale_debt.client } : {}),
         // If on credit and client selected, include in sale_debt
         ...(data.on_credit && data.sale_debt?.client ? {
@@ -385,92 +463,137 @@ export default function CreateSale() {
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
-          {/* Store Selection */}
-          <div className="w-full sm:w-2/3 lg:w-1/2">
-            <FormField
-              control={form.control}
-              name="store_write"
-              rules={{ required: t('validation.required') }}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('table.store')}</FormLabel>
-                  <Select
-                    value={field.value?.toString()}
-                    onValueChange={(value) => {
-                      const storeId = parseInt(value, 10);
-                      field.onChange(storeId);
-                      setSelectedStore(storeId);
-                      
-                      // If we have URL parameters, check if there's a matching stock in the selected store
-                      if ((productId || stockId) && stocks.length > 0) {
-                        let matchingStock;
-                        
-                        if (stockId) {
-                          // Find the stock and check if it's in the selected store
-                          matchingStock = stocks.find(stock => 
-                            stock.id === Number(stockId) && stock.store_read?.id === storeId
-                          );
-                        } else if (productId) {
-                          // Find a stock with the product in the selected store
-                          matchingStock = stocks.find(stock => 
-                            stock.product_read?.id === Number(productId) && 
-                            stock.store_read?.id === storeId && 
-                            stock.quantity > 0
-                          );
-                        }
-                        
-                        if (matchingStock) {
-                          // If we found a matching stock in the new store, use it
-                          form.setValue('sale_items.0.stock_write', matchingStock.id);
-                          setSelectedStocks(prev => ({ ...prev, 0: matchingStock.id }));
-                          
-                          if (matchingStock.selling_price) {
-                            setSelectedPrices(prev => ({
-                              ...prev,
-                              [0]: {
-                                min: parseFloat(matchingStock.min_price || '0'),
-                                selling: parseFloat(matchingStock.selling_price)
-                              }
-                            }));
-                            form.setValue('sale_items.0.subtotal', matchingStock.selling_price);
-                            updateTotalAmount();
-                            return;
-                          }
-                        }
-                      }
-                      
-                      // Reset all stock selections when store changes and no matching stock is found
-                      const items = form.getValues('sale_items');
-                      items.forEach((_, idx) => {
-                        form.setValue(`sale_items.${idx}.stock_write`, 0);
-                        form.setValue(`sale_items.${idx}.subtotal`, '0');
-                      });
-                      
-                      // Reset selected stocks and prices
-                      setSelectedStocks({});
-                      setSelectedPrices({});
-                      updateTotalAmount();
-                    }}
-                  >
-                    <SelectTrigger className={form.formState.errors.store_write ? "border-red-500" : ""}>
-                      <SelectValue placeholder={t('placeholders.select_store')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {stores.map((store) => (
-                        <SelectItem key={store.id} value={store.id?.toString() || ''}>
-                          {store.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {form.formState.errors.store_write && (
-                    <p className="text-sm text-red-500 mt-1">{form.formState.errors.store_write.message}</p>
+          {/* Store and Seller Selection */}
+          {isAdmin ? (
+            <>
+              <div className="w-full sm:w-2/3 lg:w-1/2">
+                <FormField
+                  control={form.control}
+                  name="store_write"
+                  rules={{ required: t('validation.required') }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('table.store')}</FormLabel>
+                      <Select
+                        value={field.value?.toString()}
+                        onValueChange={(value) => {
+                          const storeId = parseInt(value, 10);
+                          field.onChange(storeId);
+                          setSelectedStore(storeId);
+                          // Reset sold_by when store changes
+                          form.setValue('sold_by', undefined);
+                        }}
+                      >
+                        <SelectTrigger className={form.formState.errors.store_write ? "border-red-500" : ""}>
+                          <SelectValue placeholder={t('placeholders.select_store')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {stores.map((store) => (
+                            <SelectItem key={store.id} value={store.id?.toString() || ''}>
+                              {store.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {form.formState.errors.store_write && (
+                        <p className="text-sm text-red-500 mt-1">{form.formState.errors.store_write.message}</p>
+                      )}
+                    </FormItem>
                   )}
-                </FormItem>
-              )}
-            />
-          </div>
+                />
+              </div>
 
+              <div className="w-full sm:w-2/3 lg:w-1/2">
+                <FormField
+                  control={form.control}
+                  name="sold_by"
+                  rules={{ required: t('validation.required') }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('table.seller')}</FormLabel>
+                      <Select
+                        value={field.value?.toString()}
+                        onValueChange={(value) => {
+                          field.onChange(parseInt(value, 10));
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('placeholders.select_seller')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {users
+                            .filter(user => {
+                              const selectedStore = form.watch('store_write');
+                              // Cast user to ExtendedUser to access store_read
+                              const extendedUser = user as ExtendedUser;
+                              return user.role === 'Продавец' && 
+                                (!selectedStore || extendedUser.store_read?.id === selectedStore);
+                            })
+                            .map((user) => (
+                              <SelectItem key={user.id} value={user.id?.toString() || ''}>
+                                {user.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </>
+          ) : currentUser?.store_read ? (
+            <div className="w-full sm:w-2/3 lg:w-1/2">
+              <FormField
+                control={form.control}
+                name="store_write"
+                render={({ field }) => {
+                  // Set selected store for seller
+                  React.useEffect(() => {
+                    if (currentUser?.store_read?.id) {
+                      setSelectedStore(currentUser.store_read.id);
+                      field.onChange(currentUser.store_read.id);
+                    }
+                  }, []);
+
+                  // Ensure store_read exists before rendering
+                  if (!currentUser?.store_read?.id || !currentUser?.store_read?.name) {
+                    return <FormItem>
+                      <FormLabel>{t('table.store')}</FormLabel>
+                      <Select disabled value="">
+                        <SelectTrigger>
+                          <SelectValue>Loading...</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Loading...</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>;
+                  }
+
+                  return (
+                    <FormItem>
+                      <FormLabel>{t('table.store')}</FormLabel>
+                      <Select 
+                        value={currentUser.store_read.id.toString()} 
+                        disabled
+                        onValueChange={field.onChange}
+                      >
+                        <SelectTrigger>
+                          <SelectValue>{currentUser.store_read.name}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={currentUser.store_read.id.toString()}>
+                            {currentUser.store_read.name}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  );
+                }}
+              />
+            </div>
+          ) : null}
+          
           {/* Sale Items */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">

@@ -1,16 +1,97 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ResourceTable } from '../helpers/ResourseTable';
-import { type Client, useGetClients, useDeleteClient } from '../api/client';
+import { type Client, useGetClients, useDeleteClient, useIncrementBalance } from '../api/client';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const formSchema = z.object({
+  amount: z.number().min(0.01, 'Amount must be greater than 0'),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
+interface BalanceIncrementDialogProps {
+  clientId: number;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+function BalanceIncrementDialog({ clientId, isOpen, onClose }: BalanceIncrementDialogProps) {
+  const { t } = useTranslation();
+  const incrementBalance = useIncrementBalance();
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      amount: 0,
+    },
+  });
+
+  const onSubmit = async (data: FormData) => {
+    try {
+      await incrementBalance.mutateAsync({ id: clientId, amount: data.amount });
+      toast.success(t('messages.success.balance_incremented'));
+      form.reset();
+      onClose();
+    } catch (error) {
+      toast.error(t('messages.error.balance_increment'));
+      console.error('Failed to increment balance:', error);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t('forms.increment_balance')}</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('forms.amount')}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      {...field}
+                      onChange={e => field.onChange(parseFloat(e.target.value))}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                {t('common.cancel')}
+              </Button>
+              <Button type="submit" disabled={incrementBalance.isPending}>
+                {t('common.save')}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function ClientsPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const { data: clientsData, isLoading } = useGetClients({ params: selectedType === 'all' ? {} : { type: selectedType } });
   const deleteClient = useDeleteClient();
 
@@ -40,7 +121,7 @@ export default function ClientsPage() {
     },
     {
       header: '',
-      id: 'history',
+      id: 'actions',
       accessorKey: 'id',
       cell: (row: Client) => 
         row.type === 'Юр.лицо' ? (
@@ -50,6 +131,12 @@ export default function ClientsPage() {
               onClick={() => navigate(`/clients/${row.id}/history`)}
             >
               {t('common.history')}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => row.id && setSelectedClientId(row.id)}
+            >
+              {t('common.increment_balance')}
             </Button>
           </div>
         ) : null,
@@ -89,6 +176,13 @@ export default function ClientsPage() {
         onDelete={handleDelete}
         totalCount={totalCount}
       />
+      {selectedClientId && (
+        <BalanceIncrementDialog
+          clientId={selectedClientId}
+          isOpen={!!selectedClientId}
+          onClose={() => setSelectedClientId(null)}
+        />
+      )}
     </div>
   );
 }

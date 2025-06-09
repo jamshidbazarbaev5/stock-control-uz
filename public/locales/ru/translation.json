@@ -1,4 +1,8 @@
 {
+  "validation": {
+    "amount_must_be_positive": "Сумма должна быть положительной",
+    "amount_exceeds_total": "Сумма не может превышать общую сумму долга"
+  },
   "dashboard": {
     "clients": "Клиенты",
     "category_distribution": "Распределение по категориям",
@@ -102,6 +106,7 @@
     "create_expense": "Создать расход"
   },
   "common": {
+    "increment_balance": "Увеличить баланс",
     "update": "Изменить",
     "profile": "Профиль",
     "change_password": "Изменить пароль",
@@ -223,7 +228,9 @@
   },
   "validation": {
     "amount_exceeds_budget": "Сумма не может превышать бюджет",
-    "amount_exceeds_remainder": "Сумма не может превышать остаток"
+    "amount_exceeds_remainder": "Сумма не может превышать остаток",
+    "amount_exceeds_total": "Сумма не может превышать общую сумму долга",
+    "amount_must_be_positive": "Сумма должна быть положительной"
   },
   "auth": {
     "login": "Войти",
@@ -236,6 +243,8 @@
   },
 
   "forms": {
+    "increment_balance": "Увеличить баланс",
+    "add_payment": "Добавить платеж",
     "payment_info": "Информация о платеже",
     "client":"Клиент",
     "search_by_name":"Поиск по имени",  
@@ -296,7 +305,7 @@
     "due_date": "Срок оплаты",
     "on_credit": "В кредит",
     "remainder": "Остаток",
-    "deposit": "Депозит",
+    "deposit": "Аванс",
 
     "from_product": "Найменование товара",
     "from_store": "Откуда",
@@ -433,6 +442,7 @@
   },
   "table": {
     "source": "Источник",
+    "seller": "Продавец",
     "deposit": "Аванс",
     "payment_methods": "Способы оплаты",
     "amount": "Сумма",

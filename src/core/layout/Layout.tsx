@@ -1,4 +1,4 @@
-import { 
+import {
   ShoppingBag,
   User2,
   List as ListView,
@@ -8,21 +8,19 @@ import {
   Menu,
   X,
   UserCheck,
-  Wallet,
   Receipt,
   PlusCircle,
   BanknoteIcon,
   LogOut,
   User,
   ChevronDown,
-} from 'lucide-react';
-import {  useLocation, useNavigate } from 'react-router-dom';
-import { useState, useRef, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { LanguageSwitcher } from '@/components/LanguageSwitcher';
-import { useLogout } from '../api/auth';
-import { useAuth } from '../context/AuthContext';
-
+} from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useLogout } from "../api/auth";
+import { useAuth } from "../context/AuthContext";
 
 export default function Layout({ children }: any) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -38,85 +36,151 @@ export default function Layout({ children }: any) {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setDropdownOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Set active submenu based on current path
   useEffect(() => {
     const currentPath = location.pathname;
-    navItems.forEach(item => {
-      if (item.submenu && item.submenu.some(subItem => subItem.href === currentPath)) {
+    navItems.forEach((item) => {
+      if (
+        item.submenu &&
+        item.submenu.some((subItem) => subItem.href === currentPath)
+      ) {
         setActiveSubmenu(item.id);
       }
     });
   }, [location.pathname]);
-  
-  const navItems = currentUser?.role === "Продавец" ? [
-    {icon: Package, label: t('navigation.dashobard'), href: '/dashboard'},
-    {icon: ShoppingBag, label: t('navigation.sale'), href: '/sales'},
-     {icon: Package, label: t('navigation.stock_balance'), href: '/product-stock-balance'},
-            {icon: UserCheck, label: t('navigation.clients'), href: '/clients'},
-    {icon: ShoppingBag, label: t('navigation.debt'), href: '/debts'}, 
-  ] : [
-    {icon: Package, label: t('navigation.dashobard'), href: '/dashboard'},
-    {icon: ArrowLeftRight, label: t('navigation.transfers'), href: '/transfers'},
-    {icon: Package, label: t('navigation.stocks'), href: '/stock'},
-    {icon: Package, label: t('navigation.stock_balance'), href: '/product-stock-balance'},
-    {icon: ShoppingBag, label: t('navigation.sale'), href: '/sales'},
-    {icon: UserCheck, label: t('navigation.clients'), href: '/clients'},
-    {icon: ShoppingBag, label: t('navigation.debt'), href: '/debts'},
-    {
-      icon: Wallet,
-      label: t('navigation.finance'),
-      id: 'finance',
-      submenu: [
-        {icon: Receipt, label: t('navigation.expense_name'), href: '/expense-name'},
-        {icon: BanknoteIcon, label: t('navigation.expense'), href: '/expense'},
-        {icon: PlusCircle, label: t('navigation.add_money'), href: '/finance'},
-        {icon: Receipt, label: t('navigation.cash_inflow_names'), href: '/cash-inflow-names'},
-        {icon: BanknoteIcon, label: t('navigation.income'), href: '/income'},
-      ]
-    },
-    {
-      icon: Package,
-      label: t('navigation.settings'),
-      id: 'settings',  
-      submenu: [
-        {icon: ShoppingBag, label: t('navigation.stores'), href: '/stores'},
-        {icon: ListView, label: t('navigation.categories'), href: '/categories'},
-        {icon: Ruler, label: t('navigation.measurements'), href: '/measurements'},
-        {icon: ShoppingBag, label: t('navigation.products'), href: '/products'},
-        {icon: ArrowLeftRight, label: t('navigation.recyclings'), href: '/recyclings'},
-        {icon: ListView, label: t('navigation.suppliers'), href: '/suppliers'},
-        {icon: User2, label: t('navigation.users'), href: '/users'},
-      ]
-    },
-  ];
+
+  const navItems =
+    currentUser?.role === "Продавец"
+      ? [
+          {
+            icon: Package,
+            label: t("navigation.dashobard"),
+            href: "/dashboard",
+          },
+          { icon: ShoppingBag, label: t("navigation.sale"), href: "/sales" },
+          {
+            icon: Package,
+            label: t("navigation.stock_balance"),
+            href: "/product-stock-balance",
+          },
+          { icon: UserCheck, label: t("navigation.clients"), href: "/clients" },
+          { icon: ShoppingBag, label: t("navigation.debt"), href: "/debts" },
+        ]
+      : [
+          {
+            icon: Package,
+            label: t("navigation.dashobard"),
+            href: "/dashboard",
+          },
+          {
+            icon: ArrowLeftRight,
+            label: t("navigation.transfers"),
+            href: "/transfers",
+          },
+          { icon: Package, label: t("navigation.stocks"), href: "/stock" },
+          {
+            icon: Package,
+            label: t("navigation.stock_balance"),
+            href: "/product-stock-balance",
+          },
+          { icon: ShoppingBag, label: t("navigation.sale"), href: "/sales" },
+          { icon: UserCheck, label: t("navigation.clients"), href: "/clients" },
+          { icon: ShoppingBag, label: t("navigation.debt"), href: "/debts" },
+           {
+                icon: BanknoteIcon,
+                label: t("navigation.expense"),
+                href: "/expense",
+              },
+              {
+                icon: PlusCircle,
+                label: t("navigation.add_money"),
+                href: "/finance",
+              },
+             
+              {
+                icon: BanknoteIcon,
+                label: t("navigation.income"),
+                href: "/income",
+              },
+       
+          {
+            icon: Package,
+            label: t("navigation.settings"),
+            id: "settings",
+            submenu: [
+              {
+                icon: ShoppingBag,
+                label: t("navigation.stores"),
+                href: "/stores",
+              },
+              {
+                icon: ListView,
+                label: t("navigation.categories"),
+                href: "/categories",
+              },
+              {
+                icon: Ruler,
+                label: t("navigation.measurements"),
+                href: "/measurements",
+              },
+              {
+                icon: ShoppingBag,
+                label: t("navigation.products"),
+                href: "/products",
+              },
+              {
+                icon: ArrowLeftRight,
+                label: t("navigation.recyclings"),
+                href: "/recyclings",
+              },
+              {
+                icon: ListView,
+                label: t("navigation.suppliers"),
+                href: "/suppliers",
+              },
+               {
+                icon: Receipt,
+                label: t("navigation.cash_inflow_names"),
+                href: "/cash-inflow-names",
+              },
+              {
+                icon: Receipt,
+                label: t("navigation.expense_name"),
+                href: "/expense-name",
+              },
+              { icon: User2, label: t("navigation.users"), href: "/users" },
+            ],
+          },
+        ];
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col overflow-x-hidden">
       {/* Mobile Header */}
       <header className="md:hidden bg-white shadow-sm px-4 py-2 flex items-center justify-between fixed top-0 left-0 right-0 z-50">
         <div className="flex items-center gap-2">
-          <div className="font-semibold text-gray-800">
-            Stock-control
-          </div>
+          <div className="font-semibold text-gray-800">Stock-control</div>
         </div>
         <div className="flex items-center gap-3">
           <LanguageSwitcher />
-          
+
           {/* Mobile Profile Dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
@@ -138,8 +202,12 @@ export default function Layout({ children }: any) {
                           <User size={24} className="text-emerald-600" />
                         </div>
                         <div className="flex-1">
-                          <div className="font-semibold text-gray-800 text-lg">{currentUser.name}</div>
-                          <div className="text-sm text-gray-500">{currentUser.phone_number}</div>
+                          <div className="font-semibold text-gray-800 text-lg">
+                            {currentUser.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {currentUser.phone_number}
+                          </div>
                           <div className="inline-block px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full mt-1">
                             {currentUser.role}
                           </div>
@@ -147,9 +215,15 @@ export default function Layout({ children }: any) {
                       </div>
                       {currentUser.store_read && (
                         <div className="mt-3 p-2 bg-gray-50 rounded-lg">
-                          <div className="text-xs font-medium text-gray-600 mb-1">Store Information</div>
-                          <div className="text-sm font-medium text-gray-800">{currentUser.store_read.name}</div>
-                          <div className="text-xs text-gray-500">{currentUser.store_read.address}</div>
+                          <div className="text-xs font-medium text-gray-600 mb-1">
+                            Store Information
+                          </div>
+                          <div className="text-sm font-medium text-gray-800">
+                            {currentUser.store_read.name}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {currentUser.store_read.address}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -157,12 +231,12 @@ export default function Layout({ children }: any) {
                       <button
                         onClick={() => {
                           setDropdownOpen(false);
-                          navigate('/profile');
+                          navigate("/profile");
                         }}
                         className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
                       >
                         <User size={16} className="text-gray-500" />
-                        {t('common.profile')}
+                        {t("common.profile")}
                       </button>
                       <button
                         onClick={() => {
@@ -172,7 +246,7 @@ export default function Layout({ children }: any) {
                         className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
                       >
                         <LogOut size={16} className="text-red-500" />
-                        {t('common.logout')}
+                        {t("common.logout")}
                       </button>
                     </div>
                   </>
@@ -180,7 +254,7 @@ export default function Layout({ children }: any) {
               </div>
             )}
           </div>
-          
+
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 rounded-lg hover:bg-gray-100"
@@ -197,15 +271,16 @@ export default function Layout({ children }: any) {
       <div className="flex flex-1 flex-col md:flex-row relative mt-14 md:mt-0">
         {/* Mobile menu overlay */}
         {mobileMenuOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
             onClick={() => setMobileMenuOpen(false)}
           />
         )}
-        
+
         {/* Sidebar - Desktop and Mobile */}
-        <aside className={`
-          ${mobileMenuOpen ? 'block' : 'hidden'}
+        <aside
+          className={`
+          ${mobileMenuOpen ? "block" : "hidden"}
           md:block
           w-full bg-white shadow-lg
           fixed md:sticky
@@ -213,10 +288,11 @@ export default function Layout({ children }: any) {
           h-[calc(100vh-3.5rem)] md:h-screen
           z-50
           transition-all duration-300 ease-in-out
-          ${isCollapsed ? 'md:w-20' : 'md:w-72'}
+          ${isCollapsed ? "md:w-20" : "md:w-72"}
           flex-shrink-0
           flex flex-col
-        `}>
+        `}
+        >
           {/* Desktop Logo and Language Switcher */}
           <div className="hidden md:block px-6 py-6 border-b">
             <div className="flex items-center justify-between">
@@ -243,26 +319,53 @@ export default function Layout({ children }: any) {
                 {item.submenu ? (
                   <div>
                     <button
-                      onClick={() => setActiveSubmenu(activeSubmenu === item.id ? null : item.id)}
+                      onClick={() =>
+                        setActiveSubmenu(
+                          activeSubmenu === item.id ? null : item.id
+                        )
+                      }
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left mb-1 transition-colors
-                        ${activeSubmenu === item.id ? 'bg-emerald-100 text-emerald-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                        ${
+                          activeSubmenu === item.id
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }`}
                     >
-                      <item.icon size={20} className={activeSubmenu === item.id ? 'text-emerald-500' : 'text-gray-500'} />
+                      <item.icon
+                        size={20}
+                        className={
+                          activeSubmenu === item.id
+                            ? "text-emerald-500"
+                            : "text-gray-500"
+                        }
+                      />
                       {!isCollapsed && (
                         <>
                           <span className="font-medium">{item.label}</span>
                           <svg
-                            className={`ml-auto h-5 w-5 transform transition-transform ${activeSubmenu === item.id ? 'rotate-180' : ''}`}
+                            className={`ml-auto h-5 w-5 transform transition-transform ${
+                              activeSubmenu === item.id ? "rotate-180" : ""
+                            }`}
                             viewBox="0 0 20 20"
                             fill="currentColor"
                           >
-                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                            <path
+                              fillRule="evenodd"
+                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                              clipRule="evenodd"
+                            />
                           </svg>
                         </>
                       )}
                     </button>
                     {activeSubmenu === item.id && (
-                      <div className={`ml-2 ${isCollapsed ? 'absolute left-full top-0 ml-2 bg-white shadow-lg rounded-lg p-2 min-w-[200px] max-h-[80vh] overflow-y-auto' : ''}`}>
+                      <div
+                        className={`ml-2 ${
+                          isCollapsed
+                            ? "absolute left-full top-0 ml-2 bg-white shadow-lg rounded-lg p-2 min-w-[200px] max-h-[80vh] overflow-y-auto"
+                            : ""
+                        }`}
+                      >
                         {item.submenu.map((subItem, subIndex) => (
                           <a
                             key={subIndex}
@@ -273,9 +376,20 @@ export default function Layout({ children }: any) {
                               navigate(subItem.href);
                             }}
                             className={`flex items-center gap-3 px-3 py-2 rounded-lg text-left mb-1 transition-colors
-                              ${location.pathname === subItem.href ? 'bg-emerald-100 text-emerald-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                              ${
+                                location.pathname === subItem.href
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "text-gray-700 hover:bg-gray-100"
+                              }`}
                           >
-                            <subItem.icon size={20} className={location.pathname === subItem.href ? 'text-emerald-500' : 'text-gray-500'} />
+                            <subItem.icon
+                              size={20}
+                              className={
+                                location.pathname === subItem.href
+                                  ? "text-emerald-500"
+                                  : "text-gray-500"
+                              }
+                            />
                             <span className="font-medium">{subItem.label}</span>
                           </a>
                         ))}
@@ -291,10 +405,23 @@ export default function Layout({ children }: any) {
                       navigate(item.href);
                     }}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-left mb-1 transition-colors
-                      ${location.pathname === item.href ? 'bg-emerald-100 text-emerald-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                      ${
+                        location.pathname === item.href
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
                   >
-                    <item.icon size={20} className={location.pathname === item.href ? 'text-emerald-500' : 'text-gray-500'} />
-                    {!isCollapsed && <span className="font-medium">{item.label}</span>}
+                    <item.icon
+                      size={20}
+                      className={
+                        location.pathname === item.href
+                          ? "text-emerald-500"
+                          : "text-gray-500"
+                      }
+                    />
+                    {!isCollapsed && (
+                      <span className="font-medium">{item.label}</span>
+                    )}
                   </a>
                 )}
               </div>
@@ -319,7 +446,12 @@ export default function Layout({ children }: any) {
                   <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
                     <User size={18} className="text-emerald-600" />
                   </div>
-                  <ChevronDown size={16} className={`text-gray-500 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown
+                    size={16}
+                    className={`text-gray-500 transition-transform duration-200 ${
+                      dropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
                 </button>
 
                 {dropdownOpen && (
@@ -332,25 +464,30 @@ export default function Layout({ children }: any) {
                               <User size={24} className="text-emerald-600" />
                             </div>
                             <div className="flex-1">
-                              <div className="font-semibold text-gray-800 text-lg">{currentUser.name}</div>
-                              <div className="text-sm text-gray-500">{currentUser.phone_number}</div>
+                              <div className="font-semibold text-gray-800 text-lg">
+                                {currentUser.name}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {currentUser.phone_number}
+                              </div>
                               <div className="inline-block px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full mt-1">
                                 {currentUser.role}
                               </div>
                             </div>
                           </div>
-                          
                         </div>
                         <div className="py-1">
                           <button
                             onClick={() => {
                               setDropdownOpen(false);
-                              navigate('/profile');
+                              navigate("/profile");
                             }}
                             className="w-full px-4 py-3 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
                           >
                             <User size={16} className="text-gray-500" />
-                            <span className="font-medium">{t('common.profile')}</span>
+                            <span className="font-medium">
+                              {t("common.profile")}
+                            </span>
                           </button>
                           <button
                             onClick={() => {
@@ -360,7 +497,9 @@ export default function Layout({ children }: any) {
                             className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
                           >
                             <LogOut size={16} className="text-red-500" />
-                            <span className="font-medium">{t('common.logout')}</span>
+                            <span className="font-medium">
+                              {t("common.logout")}
+                            </span>
                           </button>
                         </div>
                       </>
@@ -371,9 +510,7 @@ export default function Layout({ children }: any) {
             </div>
 
             <div className="flex-1 p-4 md:p-6 overflow-y-auto">
-              <div className="max-w-[1920px] mx-auto">
-                {children}
-              </div>
+              <div className="max-w-[1920px] mx-auto">{children}</div>
             </div>
           </div>
         </main>

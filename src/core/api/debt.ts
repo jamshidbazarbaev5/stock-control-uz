@@ -3,6 +3,20 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from './api';
 
 // Types
+export interface PaginatedResponse<T> {
+  links: {
+    first: string | null;
+    last: string | null;
+    next: string | null;
+    previous: string | null;
+  };
+  total_pages: number;
+  current_page: number;
+  page_range: number[];
+  page_size: number;
+  results: T[];
+}
+
 export interface Debt {
   id?: number;
   sale_read: {
@@ -117,11 +131,11 @@ export const useGetDebtPayments = (debtId: string | number, filters?: DebtPaymen
   });
 };
 
-export const useGetDebtsHistory = (clientId:number)=>{
+export const useGetDebtsHistory = (clientId: number, page: number = 1) => {
   return useQuery({
-    queryKey: ['debtsHistory', clientId],
+    queryKey: ['debtsHistory', clientId, page],
     queryFn: async () => {
-      const response = await api.get<Debt[]>(`debts?client=${clientId}`);
+      const response = await api.get<PaginatedResponse<Debt>>(`debts?client=${clientId}&page=${page}`);
       return response.data;
     },
   });
