@@ -105,7 +105,12 @@ export default function CreateSale() {
     !isAdmin && currentUser?.store_read?.id ? currentUser.store_read.id : null
   );
   const [selectedStocks, setSelectedStocks] = useState<Record<number, number>>({});
-  const [selectedPrices, setSelectedPrices] = useState<Record<number, { min: number; selling: number }>>({});
+  const [selectedPrices, setSelectedPrices] = useState<Record<number, { 
+    min: number; 
+    selling: number;
+    purchasePrice: number; // Add purchase price
+    profit: number;        // Add profit tracking
+  }>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [, forceRender] = useState({});
 
@@ -234,7 +239,9 @@ export default function CreateSale() {
                 ...prev,
                 [0]: {
                   min: parseFloat(stockItem.min_price || '0'),
-                  selling: parseFloat(stockItem.selling_price)
+                  selling: parseFloat(stockItem.selling_price),
+                  purchasePrice: parseFloat(stockItem.purchase_price || '0'),
+                  profit: 0
                 }
               }));
               form.setValue('sale_items.0.subtotal', stockItem.selling_price);
@@ -295,8 +302,6 @@ export default function CreateSale() {
 
   const handleStockSelection = (value: string, index: number) => {
     const stockId = parseInt(value, 10);
-    
-    // Use the full stocks array to find the selected stock to ensure we're getting the most up-to-date data
     const selectedStock = stocks.find(stock => stock.id === stockId);
     
     console.log('Stock selected:', stockId, selectedStock?.product_read?.product_name);
@@ -318,15 +323,24 @@ export default function CreateSale() {
       [index]: selectedStock.quantity || 0
     }));
 
-    // Set price information
+    // Calculate purchase price per unit
+    const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
+    const stockQuantity = parseFloat(selectedStock.quantity || '1');
+    const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
+
+    // Set price information including purchase price per unit
     const sellingPrice = parseFloat(selectedStock.selling_price || '0');
     const minPrice = parseFloat(selectedStock.min_price || '0');
+    const quantity = form.getValues(`sale_items.${index}.quantity`) || 1;
+    const initialProfit = (sellingPrice - purchasePricePerUnit) * quantity;
 
     setSelectedPrices(prev => ({
       ...prev,
       [index]: {
         min: minPrice,
-        selling: sellingPrice
+        selling: sellingPrice,
+        purchasePrice: purchasePricePerUnit, // Now storing price per unit
+        profit: initialProfit
       }
     }));
 
@@ -340,12 +354,28 @@ export default function CreateSale() {
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const value = parseInt(e.target.value, 10);
     const maxQuantity = selectedStocks[index] || 0;
+    const subtotal = parseFloat(form.getValues(`sale_items.${index}.subtotal`)) || 0;
 
     if (value > maxQuantity) {
       toast.error(t('messages.error.insufficient_quantity'));
       form.setValue(`sale_items.${index}.quantity`, maxQuantity);
     } else {
       form.setValue(`sale_items.${index}.quantity`, value);
+      
+      // Recalculate profit with new quantity
+      if (selectedPrices[index]) {
+        const { purchasePrice } = selectedPrices[index];
+        const costPerUnit = purchasePrice;
+        const profit = (subtotal - costPerUnit) * value;
+        
+        setSelectedPrices(prev => ({
+          ...prev,
+          [index]: {
+            ...prev[index],
+            profit: profit
+          }
+        }));
+      }
     }
 
     updateTotalAmount();
@@ -353,6 +383,23 @@ export default function CreateSale() {
 
   const handleSubtotalChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const newValue = e.target.value.replace(/[^0-9]/g, '');
+    const quantity = form.getValues(`sale_items.${index}.quantity`) || 1;
+    const subtotal = parseFloat(newValue) || 0;
+    
+    // Calculate profit if we have price information
+    if (selectedPrices[index]) {
+      const { purchasePrice } = selectedPrices[index];
+      const profit = (subtotal - purchasePrice) * quantity;
+      
+      setSelectedPrices(prev => ({
+        ...prev,
+        [index]: {
+          ...prev[index],
+          profit: profit
+        }
+      }));
+    }
+
     form.setValue(`sale_items.${index}.subtotal`, newValue);
     updateTotalAmount();
   };
@@ -569,6 +616,12 @@ export default function CreateSale() {
                             <div className="flex items-center justify-between px-2 py-1 bg-gray-50 rounded">
                               <span className="text-gray-600">{t('table.min_price')}:</span>
                               <span className="font-medium text-red-600">{selectedPrices[index].min}</span>
+                            </div>
+                            <div className="flex items-center justify-between px-2 py-1 bg-green-50 rounded">
+                              <span className="text-gray-600">{t('table.profit')}:</span>
+                              <span className="font-medium text-green-600">
+                                {selectedPrices[index].profit.toLocaleString()}
+                              </span>
                             </div>
                           </div>
                         )}
@@ -904,13 +957,27 @@ export default function CreateSale() {
             </div>
           )}
 
-          {/* Total Amount Display */}
+          {/* Total Amount and Profit Display */}
           <div className="mt-6 sm:mt-8 p-4 sm:p-6 border rounded-lg bg-gray-50">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-700">{t('table.total_amount')}</h3>
-              <p className="text-xl sm:text-3xl font-bold text-green-600">
-                {parseFloat(form.watch('total_amount') || '0').toLocaleString()}
-              </p>
+            <div className="flex flex-col space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-700">
+                  {t('table.total_amount')}
+                </h3>
+                <p className="text-xl sm:text-3xl font-bold text-green-600">
+                  {parseFloat(form.watch('total_amount') || '0').toLocaleString()}
+                </p>
+              </div>
+              <div className="flex items-center justify-between border-t pt-2">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-700">
+                  {t('table.total_profit')}
+                </h3>
+                <p className="text-xl sm:text-3xl font-bold text-blue-600">
+                  {Object.values(selectedPrices)
+                    .reduce((sum, item) => sum + item.profit, 0)
+                    .toLocaleString()}
+                </p>
+              </div>
             </div>
           </div>
 
