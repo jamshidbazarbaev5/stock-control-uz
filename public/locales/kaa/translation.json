@@ -240,7 +240,8 @@
   },
   "forms": {
     "increment_balance": "Balans kóbeytiw",
-
+    "has_kub":"Kub barma?",
+    "kube":"Kub",
     "add_payment":"Добавить платеж",
     "search_by_name": "Atı boyınsha izdeń",
     "paymnet_info": "Tólem maǵlıwmatı",
@@ -428,6 +429,7 @@
   },
   "table": {
     "source": "Resurs",
+    "total_kub_volume":"Kub muǵdarı",
     "seller":"Satıwshı",
     "history_value": "Aldınǵı bahası",
     "credit_status": "Status",

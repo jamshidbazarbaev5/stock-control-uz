@@ -968,16 +968,7 @@ export default function CreateSale() {
                   {parseFloat(form.watch('total_amount') || '0').toLocaleString()}
                 </p>
               </div>
-              <div className="flex items-center justify-between border-t pt-2">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-700">
-                  {t('table.total_profit')}
-                </h3>
-                <p className="text-xl sm:text-3xl font-bold text-blue-600">
-                  {Object.values(selectedPrices)
-                    .reduce((sum, item) => sum + item.profit, 0)
-                    .toLocaleString()}
-                </p>
-              </div>
+              
             </div>
           </div>
 

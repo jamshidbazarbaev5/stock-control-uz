@@ -36,6 +36,8 @@ export default function EditProduct() {
   const [measurements, setMeasurements] = useState<MeasurementItem[]>([]);
   const [hasColor, setHasColor] = useState(false);
   const [color, setColor] = useState('');
+  const [hasKub, setHasKub] = useState(false);
+  const [kub, setKub] = useState('');
 
   // Fetch categories and measurements for the select dropdowns
   const { data: categoriesData } = useGetCategories({});
@@ -57,6 +59,10 @@ export default function EditProduct() {
     if (product?.has_color) {
       setHasColor(product.has_color);
       setColor(product.color || '');
+    }
+    if (product?.has_kub) {
+      setHasKub(product.has_kub);
+      setKub(product.kub?.toString() || '');
     }
   }, [product]);
 
@@ -87,6 +93,8 @@ export default function EditProduct() {
         category_write: typeof data.category_write === 'string' ? parseInt(data.category_write, 10) : data.category_write,
         has_color: data.has_color === 'true',
         ...(data.has_color === 'true' && { color }),
+        has_kub: data.has_kub === 'true',
+        ...(data.has_kub === 'true' && { kub: parseInt(kub, 10) }),
         measurement: measurements.map((m: MeasurementItem) => ({
           id: m.id,
           measurement_write: m.measurement_write,
@@ -142,6 +150,18 @@ export default function EditProduct() {
               { value: 'true', label: t('common.yes') }
             ],
             onChange: (value: string) => setHasColor(value === 'true')
+          },
+          {
+            name: 'has_kub',
+            label: t('forms.has_kub'),
+            type: 'select',
+            placeholder: t('placeholders.select_has_kub'),
+            required: true,
+            options: [
+              { value: 'false', label: t('common.no') },
+              { value: 'true', label: t('common.yes') }
+            ],
+            onChange: (value: string) => setHasKub(value === 'true')
           }
         ]}
         onSubmit={handleSubmit}
@@ -150,7 +170,8 @@ export default function EditProduct() {
         defaultValues={{
           product_name: product.product_name,
           category_write: product.category_read?.id || product.category_write,
-          has_color: (product.has_color || false),
+          has_color: product.has_color || false,
+          has_kub: product.has_kub || false,
         }}
       >
         {hasColor && (
@@ -162,6 +183,18 @@ export default function EditProduct() {
               placeholder={t('placeholders.enter_color')}
               value={color}
               onChange={(e) => setColor(e.target.value)}
+            />
+          </div>
+        )}
+        {hasKub && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">{t('forms.kub')}</label>
+            <input
+              type="number"
+              className="w-full px-3 py-2 border rounded-md"
+              placeholder={t('placeholders.enter_kub')}
+              value={kub}
+              onChange={(e) => setKub(e.target.value)}
             />
           </div>
         )}

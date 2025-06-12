@@ -25,6 +25,8 @@ export interface Product {
     category_name: string;
     store_write: number;
   };
+  has_kub?: boolean;
+  kub?: number;
 }
 
 // API endpoints

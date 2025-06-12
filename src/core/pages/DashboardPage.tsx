@@ -15,7 +15,7 @@ import {
   getTopSellers,
   getSalesmanSummary,
   getSalesmanDebts,
-  getExpensesSummary,
+  getSalesProfitReport,
   type SalesSummaryResponse,
   type TopProductsResponse,
   type StockByCategoryResponse,
@@ -25,7 +25,9 @@ import {
   type ProductProfitabilityResponse,
   type TopSellersResponse,
   type SalesmanSummaryResponse,
-  type SalesmanDebtsResponse
+  type SalesmanDebtsResponse,
+  type SalesProfitResponse,
+  getExpensesSummary,
 } from '../api/reports';
 import type { ExpensesSummaryResponse } from '../api/types/reports';
 import { ArrowUpRight, DollarSign, ShoppingCart, TrendingUp, Package, BarChart2, Users, CreditCard, Wallet } from 'lucide-react';
@@ -48,6 +50,7 @@ const DashboardPage = () => {
   const [salesmanSummary, setSalesmanSummary] = useState<SalesmanSummaryResponse | null>(null);
   const [salesmanDebts, setSalesmanDebts] = useState<SalesmanDebtsResponse | null>(null);
   const [expensesSummary, setExpensesSummary] = useState<ExpensesSummaryResponse | null>(null);
+  const [salesProfit, setSalesProfit] = useState<SalesProfitResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // UI period can include 'custom', but API only accepts 'day', 'week', 'month'
@@ -118,7 +121,7 @@ const DashboardPage = () => {
             dateParams = dateParams ? `${dateParams}&store=${selectedStore}` : `store=${selectedStore}`;
           }
           
-          const [salesSummary, topProductsData, stockByCategoryData, productIntakeData, clientDebtsData, unsoldProductsData, profitabilityData, topSellersData, expensesSummaryData] = await Promise.all([
+          const [salesSummary, topProductsData, stockByCategoryData, productIntakeData, clientDebtsData, unsoldProductsData, profitabilityData, topSellersData, expensesSummaryData, salesProfitData] = await Promise.all([
             // If we have date params, use them, otherwise use period
             getReportsSalesSummary(apiPeriod, dateParams || undefined),
             getTopProducts(apiPeriod, topProductsLimit),
@@ -128,7 +131,8 @@ const DashboardPage = () => {
             getUnsoldProducts(dateParams),
             getProductProfitability(dateParams),
             getTopSellers(apiPeriod),
-            getExpensesSummary(apiPeriod, dateParams || undefined)
+            getExpensesSummary(apiPeriod, dateParams || undefined),
+            getSalesProfitReport(apiPeriod, dateParams || undefined)
           ]);
           
           setSalesData(salesSummary);
@@ -140,6 +144,7 @@ const DashboardPage = () => {
           setProductProfitability(profitabilityData);
           setTopSellers(topSellersData);
           setExpensesSummary(expensesSummaryData);
+          setSalesProfit(salesProfitData);
         }
       } catch (err) {
         setError('Failed to load dashboard data');
@@ -1154,7 +1159,50 @@ const DashboardPage = () => {
       </Card>
 
       {/* Product Profitability - Full Width Section */}
-      
+      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8">
+        <CardHeader>
+          <CardTitle>{t('dashboard.sales_profit') || 'Sales Profit'}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+              <span className="text-sm text-gray-500 mb-1">{t('dashboard.total_sales') || 'Total Sales'}</span>
+              <div className="text-2xl font-bold">{salesProfit?.total_sales || 0}</div>
+            </div>
+            
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+              <span className="text-sm text-gray-500 mb-1">{t('dashboard.total_revenue') || 'Total Revenue'}</span>
+              <div className="text-2xl font-bold text-green-600">
+                {new Intl.NumberFormat('uz-UZ', { 
+                  style: 'currency', 
+                  currency: 'UZS',
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0
+                })
+                  .format(salesProfit?.total_revenue || 0)
+                  .replace('UZS', '')
+                  .trim()}
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+              <span className="text-sm text-gray-500 mb-1">{t('dashboard.pure_revenue') || 'Pure Revenue'}</span>
+              <div className={`text-2xl font-bold ${(salesProfit?.total_pure_revenue || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {new Intl.NumberFormat('uz-UZ', { 
+                  style: 'currency', 
+                  currency: 'UZS',
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0
+                })
+                  .format(salesProfit?.total_pure_revenue || 0)
+                  .replace('UZS', '')
+                  .trim()}
+              </div>
+            </div>
+          </div>
+
+        </CardContent>
+      </Card>
     </div>
   );
 };

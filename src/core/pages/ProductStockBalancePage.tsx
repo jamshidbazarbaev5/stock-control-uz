@@ -44,7 +44,7 @@ export default function ProductStockBalancePage() {
     queryFn: async () => {
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        page_size: '10'
+        page_size: '30'
       });
       
       if (selectedStore !== 'all') {
@@ -69,6 +69,11 @@ export default function ProductStockBalancePage() {
       header: t('table.quantity'),
       accessorKey: 'total_quantity',
       cell: (row: any) => row.total_quantity.toLocaleString(),
+    },
+     {
+      header: t('table.total_kub_volume'),
+      accessorKey: 'total_kub_volume',
+      cell: (row: any) => row?.total_kub_volume?.toLocaleString() || '0',
     },
   ];
 
@@ -102,7 +107,7 @@ export default function ProductStockBalancePage() {
           data={data?.results.info_products || []}
           columns={columns}
           isLoading={isLoading}
-          pageSize={10}
+          pageSize={30}
           totalCount={data?.count || 0}
           currentPage={currentPage}
           onPageChange={setCurrentPage}

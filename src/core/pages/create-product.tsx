@@ -34,6 +34,8 @@ export default function CreateProduct() {
   const [color, setColor] = useState('');
   const [hasColor, setHasColor] = useState(false);
   const [measurements, setMeasurements] = useState<MeasurementItem[]>([{ measurement_write: 0, number: 0, for_sale: false }]);
+  const [hasKub, setHasKub] = useState(false);
+  const [kub, setKub] = useState('');
 
   // Fetch categories, stores and measurements for the select dropdowns
   const { data: categoriesData } = useGetCategories({});
@@ -73,7 +75,9 @@ export default function CreateProduct() {
           for_sale: m.for_sale
         })),
         has_color: data.has_color === 'true',
-        ...(data.has_color === 'true' && { color })
+        ...(data.has_color === 'true' && { color }),
+        has_kub: data.has_kub === 'true',
+        ...(data.has_kub === 'true' && { kub: parseInt(kub, 10) })
       };
 
       await createProduct.mutateAsync(formattedData);
@@ -118,6 +122,18 @@ export default function CreateProduct() {
               { value: 'true', label: t('common.yes') }
             ],
             onChange: (value: string) => setHasColor(value === 'true')
+          },
+          {
+            name: 'has_kub',
+            label: t('forms.has_kub'),
+            type: 'select',
+            placeholder: t('placeholders.select_has_kub'),
+            required: true,
+            options: [
+              { value: 'false', label: t('common.no') },
+              { value: 'true', label: t('common.yes') }
+            ],
+            onChange: (value: string) => setHasKub(value === 'true')
           }
         ]}
         onSubmit={handleSubmit}
@@ -133,6 +149,18 @@ export default function CreateProduct() {
               placeholder={t('placeholders.enter_color')}
               value={color}
               onChange={(e) => setColor(e.target.value)}
+            />
+          </div>
+        )}
+        {hasKub && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">{t('forms.kub')}</label>
+            <input
+              type="number"
+              className="w-full px-3 py-2 border rounded-md"
+              placeholder={t('placeholders.enter_kub')}
+              value={kub}
+              onChange={(e) => setKub(e.target.value)}
             />
           </div>
         )}

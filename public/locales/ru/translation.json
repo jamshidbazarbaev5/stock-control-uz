@@ -6,6 +6,9 @@
 
   "dashboard": {
     "clients": "Клиенты",
+    "pure_revenue": "Чистый доход",
+    "sales_profit":"Прибыль от продаж",
+    "sales_profit_description": "Прибыль от продаж - это разница между доходами от продаж и расходами на товары, что позволяет оценить эффективность бизнеса.",
     "no_expenses":"Нет расходы",
     "category_distribution": "Распределение по категориям",
     "expense_breakdown": "Расходы",
@@ -247,6 +250,8 @@
   },
 
   "forms": {
+    "kub":"Куб",
+    "has_kub":"Имеет куб?",
     "increment_balance": "Увеличить баланс",
     "add_payment": "Добавить платеж",
     "payment_info": "Информация о платеже",
@@ -447,6 +452,8 @@
   },
   "table": {
     "profit":"Прибыль",
+
+    "total_kub_volume": "Общий объем куба",
     "source": "Источник",
     "seller": "Продавец",
     "deposit": "Аванс",

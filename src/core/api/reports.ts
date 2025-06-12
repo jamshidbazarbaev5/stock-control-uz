@@ -74,6 +74,21 @@ export interface TopSellersResponse {
   total_sales: number;
 }
 
+export interface SalesProfitResponse {
+  total_sales: number;
+  total_revenue: number;
+  total_pure_revenue: number;
+  sale_items: Array<{
+    id: number;
+    product_name: string;
+    quantity: number;
+    selling_method: string;
+    subtotal: number;
+    sold_date: string;
+    sold_by: string;
+  }>;
+}
+
 type PeriodType = 'day' | 'week' | 'month';
 
 export const getReportsSalesSummary = async (period?: PeriodType, dateParams?: string): Promise<SalesSummaryResponse> => {
@@ -89,10 +104,10 @@ export const getReportsSalesSummary = async (period?: PeriodType, dateParams?: s
 
 export const getTopProducts = async (period?: PeriodType, limit?: number): Promise<TopProductsResponse[]> => {
   const params: Record<string, string | number> = {};
-  
+
   if (period) params.period = period;
   if (limit) params.limit = limit;
-  
+
   const response = await api.get<TopProductsResponse[]>('reports/top-products', { params });
   return response.data;
 };
@@ -162,5 +177,20 @@ export const getExpensesSummary = async (period?: PeriodType, dateParams?: strin
     url += `?period=${period}`;
   }
   const response = await api.get<ExpensesSummaryResponse>(url);
+  return response.data;
+};
+
+export const getSalesProfitReport = async (
+  period?: 'day' | 'week' | 'month',
+  dateParams?: string
+): Promise<SalesProfitResponse> => {
+  let url = 'reports/sales-profit/';
+  if (dateParams) {
+    url += `?${dateParams}`;
+  } else if (period) {
+    url += `?period=${period}`;
+  }
+  
+  const response = await api.get<SalesProfitResponse>(url);
   return response.data;
 };
