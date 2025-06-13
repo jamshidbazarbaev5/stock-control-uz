@@ -175,10 +175,7 @@ export default function CreateStock() {
   const suppliers = Array.isArray(suppliersData) ? suppliersData : suppliersData?.results || [];
   const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData?.results || [];
   
-  // Handlers for creating new items
-  const handleCreateProduct = () => {
-    setCreateProductOpen(true);
-  };
+ 
   
   const handleCreateSupplier = () => {
     setCreateSupplierOpen(true);
