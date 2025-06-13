@@ -620,7 +620,7 @@ export default function CreateSale() {
                             <div className="flex items-center justify-between px-2 py-1 bg-green-50 rounded">
                               <span className="text-gray-600">{t('table.profit')}:</span>
                               <span className="font-medium text-green-600">
-                                {selectedPrices[index].profit.toLocaleString()}
+                                {selectedPrices[index].profit.toFixed(1).toLocaleString()}
                               </span>
                             </div>
                           </div>

@@ -23,7 +23,8 @@ export interface FormField {
   options?: { value: string | number; label: string }[];
   required?: boolean;
   readOnly?: boolean;
-  hidden?: boolean; // Add hidden property
+  hidden?: boolean;
+  helperText?: string;
   imageUrl?: string;
   preview?: string;
   existingImage?: string;
@@ -285,6 +286,9 @@ export function ResourceForm<T extends Record<string, any>>({
                         />
                       )}
                     </FormControl>
+                    {field.helperText && (
+                      <p className="text-sm text-muted-foreground mt-1">{field.helperText}</p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

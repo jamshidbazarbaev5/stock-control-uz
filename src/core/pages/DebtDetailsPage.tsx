@@ -76,8 +76,8 @@ export default function DebtDetailsPage() {
   const isDebtExpanded = (debtId: number) => {
     return expandedDebts.find(d => d.id === debtId)?.isExpanded || false;
   };
-  const goToPaymentHistory  =()=>{
-    navigation(`/debts/${selectedDebt?.id}/payments`)
+  const goToPaymentHistory = (debtId: number) => {
+    navigation(`/debts/${debtId}/payments`);
   }
 
   // Payment handling
@@ -362,10 +362,10 @@ export default function DebtDetailsPage() {
                         </Button>
                       )}
                         <Button
-                          onClick={() => goToPaymentHistory()}
+                          onClick={() => goToPaymentHistory(debt.id!)}
                           className="bg-emerald-500 hover:bg-emerald-600"
                         >
-                          {t('forms.add_payment')}
+                          {t('forms.payment_history')}
                         </Button>
                     </div>
                     <dl className="grid grid-cols-1 md:grid-cols-3 gap-6">

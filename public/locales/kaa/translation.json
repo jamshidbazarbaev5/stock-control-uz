@@ -97,7 +97,9 @@
     "complex": "Quramalı tólem"
   },
   "common": {
+    "price_per_unit":" Ólshem bahası",
     "paid": "Tólendi",
+    "per_unit_cost":" Ólshemge sheshilgen baha",
     "increment_balance": "Balans kóbeytiw",
     "unpaid": "Tólenbegen",
     "update": "O'zgertiw",
@@ -239,6 +241,7 @@
     "amount_exceeds_remainder": "Summa qalǵan summadan artıq bolmawı kerek"
   },
   "forms": {
+    "payment_history": "Tólem tarixi",
     "increment_balance": "Balans kóbeytiw",
     "has_kub":"Kub barma?",
     "kube":"Kub",
@@ -473,6 +476,7 @@
     "client": "Klient"
   },
   "pages": {
+    "debt_payments": "Qarz tólémderi",
     "debt_details": "Qarız maǵlıwmatı",
     "create_expense_name": "Rasxod atın jaratıw",
     "create_expense": "Rasxod jaratıw"

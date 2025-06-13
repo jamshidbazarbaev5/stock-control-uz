@@ -42,6 +42,7 @@ export default function CreateStock() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [perUnitPrice, setPerUnitPrice] = useState<number | null>(null);
   
   // Define stock fields with translations
   const stockFields = [
@@ -60,6 +61,13 @@ export default function CreateStock() {
       placeholder: t('common.product'),
       required: true,
       options: [], // Will be populated with products
+    },
+     {
+      name: 'quantity',
+      label: t('common.quantity'),
+      type: 'text',
+      placeholder: t('common.enter_quantity'),
+      required: true,
     },
     {
       name: 'purchase_price_in_us',
@@ -88,6 +96,7 @@ export default function CreateStock() {
       type: 'text',
       placeholder: t('common.enter_selling_price'),
       required: true,
+      helperText: perUnitPrice ? `${t('common.per_unit_cost')}: ${perUnitPrice.toFixed(2)} UZS` : '',
     },
     {
       name: 'min_price',
@@ -103,13 +112,7 @@ export default function CreateStock() {
       placeholder: t('common.enter_arrival_date'),
       required: true,
     },
-    {
-      name: 'quantity',
-      label: t('common.quantity'),
-      type: 'text',
-      placeholder: t('common.enter_quantity'),
-      required: true,
-    },
+   
     {
       name: 'supplier_write',
       label: t('common.supplier'),
@@ -177,22 +180,31 @@ export default function CreateStock() {
 
 
 
-  // Effect to update purchase_price_in_uz when its dependencies change
+  // Effect to update purchase_price_in_uz and per unit price when dependencies change
   useEffect(() => {
     if (usdPrice && exchangeRate) {
       const priceInUSD = parseFloat(usdPrice);
       const rate = parseFloat(exchangeRate);
+      const quantityString = form.watch('quantity')?.toString() || '0';
+      const quantity = parseFloat(quantityString);
       
       if (!isNaN(priceInUSD) && !isNaN(rate)) {
         const calculatedPrice = priceInUSD * rate;
-        console.log('Calculated price in UZS:', calculatedPrice);
         form.setValue('purchase_price_in_uz', calculatedPrice.toString(), {
           shouldValidate: false,
           shouldDirty: true
         });
+
+        // Calculate per unit price
+        if (!isNaN(quantity) && quantity > 0) {
+          const perUnit = calculatedPrice / quantity;
+          setPerUnitPrice(perUnit);
+        } else {
+          setPerUnitPrice(null);
+        }
       }
     }
-  }, [usdPrice, exchangeRate, form]);
+  }, [usdPrice, exchangeRate, form, form.watch('quantity')]);
 
   // Update fields with product, store, measurement and supplier options
   const fields = stockFields.map(field => {
@@ -340,7 +352,9 @@ export default function CreateStock() {
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
-                    <SelectItem key={category.id?.toString() || ''} value={(category.id || 0).toString()}>
+                    <SelectItem 
+                      key={String(category.id)} 
+                      value={String(category.id || '')}>
                       {category.category_name}
                     </SelectItem>
                   ))}
