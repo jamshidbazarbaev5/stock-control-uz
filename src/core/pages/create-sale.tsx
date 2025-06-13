@@ -319,7 +319,6 @@ export default function CreateSale() {
       console.log('Updating store from stock selection:', selectedStock.store_read.id);
       setSelectedStore(selectedStock.store_read.id);
       form.setValue('store_write', selectedStock.store_read.id);
-      // Force a re-render to ensure the filtered stocks are updated
       forceRender({});
     }
 
@@ -329,9 +328,9 @@ export default function CreateSale() {
       [index]: selectedStock.quantity || 0
     }));
 
-    // Calculate purchase price per unit
+    // Calculate purchase price per unit using quantity_for_history if available
     const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
-    const stockQuantity = parseFloat(selectedStock.quantity || '1');
+    const stockQuantity = selectedStock.quantity_for_history || selectedStock.quantity || 1;
     const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
 
     // Set price information including purchase price per unit
@@ -345,7 +344,7 @@ export default function CreateSale() {
       [index]: {
         min: minPrice,
         selling: sellingPrice,
-        purchasePrice: purchasePricePerUnit, // Now storing price per unit
+        purchasePrice: purchasePricePerUnit,
         profit: initialProfit
       }
     }));
@@ -361,6 +360,8 @@ export default function CreateSale() {
     const value = parseInt(e.target.value, 10);
     const maxQuantity = selectedStocks[index] || 0;
     const subtotal = parseFloat(form.getValues(`sale_items.${index}.subtotal`)) || 0;
+    const stockId = form.getValues(`sale_items.${index}.stock_write`);
+    const selectedStock = stocks.find(stock => stock.id === stockId);
 
     if (value > maxQuantity) {
       toast.error(t('messages.error.insufficient_quantity'));
@@ -368,11 +369,12 @@ export default function CreateSale() {
     } else {
       form.setValue(`sale_items.${index}.quantity`, value);
       
-      // Recalculate profit with new quantity
-      if (selectedPrices[index]) {
-        const { purchasePrice } = selectedPrices[index];
-        const costPerUnit = purchasePrice;
-        const profit = (subtotal - costPerUnit) * value;
+      // Recalculate profit with new quantity using quantity_for_history if available
+      if (selectedPrices[index] && selectedStock) {
+        const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
+        const stockQuantity = selectedStock.quantity_for_history || selectedStock.quantity || 1;
+        const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
+        const profit = (subtotal - purchasePricePerUnit) * value;
         
         setSelectedPrices(prev => ({
           ...prev,
@@ -435,9 +437,6 @@ export default function CreateSale() {
       // Get primary payment method from sale_payments
       const primaryPayment = data.sale_payments[0];
 
-      // Calculate total amount from payments
-      const totalFromPayments = data.sale_payments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
-      
       const formattedData: Sale = {
         store: data.store_write,
         ...(isAdmin ? { sold_by: data.sold_by } : {}),
@@ -453,7 +452,7 @@ export default function CreateSale() {
           amount: payment.amount.toString()
         })),
         on_credit: data.on_credit,
-        total_amount: totalFromPayments.toString(),
+        total_amount: data.total_amount.toString(),
         // If client is selected but on credit, send client directly
         ...(data.sale_debt?.client && !data.on_credit ? { client: data.sale_debt.client } : {}),
         // If on credit and client selected, include in sale_debt
@@ -490,48 +489,7 @@ export default function CreateSale() {
 
   const removeSaleItem = (index: number) => {
     const items = form.getValues('sale_items');
-    
-    // Remove the item from sale_items
     form.setValue('sale_items', items.filter((_, i) => i !== index));
-    
-    // Remove the profit calculation for the removed item
-    setSelectedPrices(prev => {
-      const updated = { ...prev };
-      delete updated[index];
-      
-      // Reindex the remaining prices
-      const reindexed: typeof prev = {};
-      Object.entries(updated).forEach(([key, value]) => {
-        const numKey = parseInt(key);
-        if (numKey > index) {
-          reindexed[numKey - 1] = value;
-        } else {
-          reindexed[numKey] = value;
-        }
-      });
-      
-      return reindexed;
-    });
-    
-    // Remove from selected stocks
-    setSelectedStocks(prev => {
-      const updated = { ...prev };
-      delete updated[index];
-      
-      // Reindex the remaining stocks
-      const reindexed: typeof prev = {};
-      Object.entries(updated).forEach(([key, value]) => {
-        const numKey = parseInt(key);
-        if (numKey > index) {
-          reindexed[numKey - 1] = value;
-        } else {
-          reindexed[numKey] = value;
-        }
-      });
-      
-      return reindexed;
-    });
-    
     updateTotalAmount();
   };
 

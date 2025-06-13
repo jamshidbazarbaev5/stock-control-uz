@@ -6,7 +6,7 @@
 
   "dashboard": {
     "clients": "Клиенты",
-    "pure_revenue": "Чистый доход",
+    "pure_revenue": "Прибыль",
     "sales_profit":"Прибыль от продаж",
     "sales_profit_description": "Прибыль от продаж - это разница между доходами от продаж и расходами на товары, что позволяет оценить эффективность бизнеса.",
     "no_expenses":"Нет расходы",
@@ -51,7 +51,8 @@
     "month": "Месяц",
     "total_sales": "Всего продаж",
     "total_revenue": "Общий доход",
-    "average_sale": "Средняя продажа",
+    "average_sale": "Средный чек",
+
     "current_day": "Текущий день",
     "transactions": "транзакций",
     "since_last_month": "с прошлого месяца",
