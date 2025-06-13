@@ -112,6 +112,7 @@ export default function CreateSale() {
     profit: number;        // Add profit tracking
   }>>({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [productSearchTerm, setProductSearchTerm] = useState('');
   const [, forceRender] = useState({});
 
   // Effect for enforcing seller's store
@@ -143,9 +144,13 @@ export default function CreateSale() {
     }
   }, [isAdmin, currentUser?.store_read?.id, currentUser?.id]);
   
-  // Fetch data with search term for clients
+  // Fetch data with search term for stocks
+  const { data: stocksData, isLoading: stocksLoading } = useGetStocks({
+    params: {
+      product_name: productSearchTerm.length > 0 ? productSearchTerm : undefined
+    }
+  });
   const { data: storesData, isLoading: storesLoading } = useGetStores({});
-  const { data: stocksData, isLoading: stocksLoading } = useGetStocks({});
   const { data: clientsData } = useGetClients({ 
     params: form.watch('on_credit') ? { name: searchTerm } : undefined 
   });
@@ -300,6 +305,7 @@ export default function CreateSale() {
     }
   };
 
+  
   const handleStockSelection = (value: string, index: number) => {
     const stockId = parseInt(value, 10);
     const selectedStock = stocks.find(stock => stock.id === stockId);
@@ -602,6 +608,22 @@ export default function CreateSale() {
                             <SelectValue placeholder={t('placeholders.select_product')} />
                           </SelectTrigger>
                           <SelectContent>
+                            <div className="p-2 sticky top-0 bg-white z-10 border-b select-content-wrapper">
+                              <Input
+                                type="text"
+                                placeholder={t('placeholders.search_products')}
+                                value={productSearchTerm}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  setProductSearchTerm(e.target.value);
+                                }}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => e.stopPropagation()}
+                                className="flex-1"
+                                autoFocus
+                              />
+                            </div>
                             {filteredStocks
                               .filter(stock => stock.quantity > 0)
                               .map((stock) => (

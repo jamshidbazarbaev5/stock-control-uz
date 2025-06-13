@@ -407,6 +407,7 @@
     "edit": "Изменить"
   },
   "placeholders": {
+    "search_products": "Поиск товара",
     "select_seller": "Выберите продавца",
     "select_worker": "Выберите работника",
     "select_has_color": "Выберите, имеет ли товар цвет",

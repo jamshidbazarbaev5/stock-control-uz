@@ -394,6 +394,7 @@
     "invalid_stock_selection": "Osi  skladǵa transfer jaratiw múmkin emes"
   },
   "placeholders": {
+    "search_products": "Ónim izdeń",
     "select_seller": "Satıwshını tańlań",
     "select_has_color": "Reń bar ma?",
     "select_cash_inflow_name": "Tusim atın tańlań",
