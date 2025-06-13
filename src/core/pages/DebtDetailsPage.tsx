@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useGetDebtsHistory, useCreateDebtPayment } from '../api/debt';
 import {
   Card,
@@ -71,11 +71,14 @@ export default function DebtDetailsPage() {
       return prev.map(d => d.id === debtId ? { ...d, isExpanded: !d.isExpanded } : d);
     });
   };
-
-  // Check if a debt is expanded
+  const navigation = useNavigate()
+    // Check if a debt is expanded
   const isDebtExpanded = (debtId: number) => {
     return expandedDebts.find(d => d.id === debtId)?.isExpanded || false;
   };
+  const goToPaymentHistory  =()=>{
+    navigation(`/debts/${selectedDebt?.id}/payments`)
+  }
 
   // Payment handling
   const paymentFields = [
@@ -142,7 +145,7 @@ export default function DebtDetailsPage() {
           return {
             ...debt,
             remainder: debt.remainder - data.amount,
-            deposit: (Number(debt.deposit) + data.amount).toString(),
+            deposit: (Number(debt.deposit)),
             is_paid: debt.remainder - data.amount <= 0
           };
         }
@@ -358,6 +361,12 @@ export default function DebtDetailsPage() {
                           {t('forms.add_payment')}
                         </Button>
                       )}
+                        <Button
+                          onClick={() => goToPaymentHistory()}
+                          className="bg-emerald-500 hover:bg-emerald-600"
+                        >
+                          {t('forms.add_payment')}
+                        </Button>
                     </div>
                     <dl className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200">

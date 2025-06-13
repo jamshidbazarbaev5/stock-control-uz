@@ -83,6 +83,32 @@ export interface DebtPayment {
   };
 }
 
+interface DebtPaymentResponse {
+  id: number;
+  debt: number;
+  worker_read: {
+    id: number;
+    name: string;
+    phone_number: string;
+    role: string;
+    store_read: {
+      id: number;
+      name: string;
+      address: string;
+      phone_number: string;
+      budget: string;
+      created_at: string;
+      is_main: boolean;
+      parent_store: number | null;
+      owner: number;
+    };
+    is_superuser: boolean;
+  };
+  amount: string;
+  payment_method: string;
+  paid_at: string;
+}
+
 // API endpoints
 const DEBT_URL = 'debts/';
 
@@ -110,24 +136,16 @@ export const useCreateDebtPayment = () => {
   });
 };
 
-interface DebtPaymentFilters {
-  paid_at_after?: string;
-  paid_at_before?: string;
-  amount_min?: string;
-  amount_max?: string;
-  payment_method?: string;
-  worker?: string;
-}
 
-export const useGetDebtPayments = (debtId: string | number, filters?: DebtPaymentFilters) => {
-  return useQuery({
-    queryKey: ['debtPayments', debtId, filters],
+
+export const useGetDebtPayments = (debtId: number) => {
+  return useQuery<DebtPaymentResponse[]>({
+    queryKey: ['debtPayments', debtId],
     queryFn: async () => {
-      const response = await api.get<DebtPayment[]>(`debts/${debtId}/payments/`, {
-        params: filters
-      });
-      return response.data;
+      const { data } = await api.get(`debts/${debtId}/payments`);
+      return data;
     },
+    enabled: !!debtId,
   });
 };
 

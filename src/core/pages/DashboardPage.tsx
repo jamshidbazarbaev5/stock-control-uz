@@ -487,7 +487,32 @@ const DashboardPage = () => {
             </div>
           </CardContent>
         </Card>
-        
+
+ <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {t('dashboard.pure_revenue')}
+            </CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+               <div className={`text-2xl font-bold ${(salesProfit?.total_pure_revenue || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {new Intl.NumberFormat('uz-UZ', { 
+                  style: 'currency', 
+                  currency: 'UZS',
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0
+                })
+                  .format(salesProfit?.total_pure_revenue || 0)
+                  .replace('UZS', '')
+                  .trim()}
+              </div>
+              
+            </div>
+         
+          </CardContent>
+        </Card>        
        
       </div>
       
@@ -1158,51 +1183,7 @@ const DashboardPage = () => {
         </CardContent>
       </Card>
 
-      {/* Product Profitability - Full Width Section */}
-      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8">
-        <CardHeader>
-          <CardTitle>{t('dashboard.sales_profit') || 'Sales Profit'}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-              <span className="text-sm text-gray-500 mb-1">{t('dashboard.total_sales') || 'Total Sales'}</span>
-              <div className="text-2xl font-bold">{salesProfit?.total_sales || 0}</div>
-            </div>
-            
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-              <span className="text-sm text-gray-500 mb-1">{t('dashboard.total_revenue') || 'Total Revenue'}</span>
-              <div className="text-2xl font-bold text-green-600">
-                {new Intl.NumberFormat('uz-UZ', { 
-                  style: 'currency', 
-                  currency: 'UZS',
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0
-                })
-                  .format(salesProfit?.total_revenue || 0)
-                  .replace('UZS', '')
-                  .trim()}
-              </div>
-            </div>
-            
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-              <span className="text-sm text-gray-500 mb-1">{t('dashboard.pure_revenue') || 'Pure Revenue'}</span>
-              <div className={`text-2xl font-bold ${(salesProfit?.total_pure_revenue || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {new Intl.NumberFormat('uz-UZ', { 
-                  style: 'currency', 
-                  currency: 'UZS',
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0
-                })
-                  .format(salesProfit?.total_pure_revenue || 0)
-                  .replace('UZS', '')
-                  .trim()}
-              </div>
-            </div>
-          </div>
-
-        </CardContent>
-      </Card>
+    
     </div>
   );
 };

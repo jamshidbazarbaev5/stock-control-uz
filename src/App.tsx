@@ -36,7 +36,7 @@ import { Toaster } from "sonner";
 import DebtsPage from "./core/pages/DebtsPage";
 import StaffPage from "./core/pages/StaffPage";
 import CreateStaff from "./core/pages/create-staff";
-import DebtPaymentHistoryPage from "./core/pages/DebtPaymentHistoryPage";
+// import DebtPaymentHistoryPage from "./core/pages/DebtPaymentHistoryPage";
 import IncomeDetailsPage from "./core/pages/IncomeDetailsPage";
 // import EditSale from "÷./core/pages/edit-sale";
 import DebtDetailsPage from "./core/pages/DebtDetailsPage";
@@ -58,6 +58,7 @@ import EditSale from "./core/pages/edit-sale";
 import DashboardPage from "./core/pages/DashboardPage";
 import EditTransfer from "./core/pages/edit-transfer";
 import ProductStockBalancePage from "./core/pages/ProductStockBalancePage";
+import DebtPaymentsPage from "./core/pages/DebtPaymentsPage";
 
 const queryClient = new QueryClient();
 
@@ -97,7 +98,7 @@ function App() {
             <Route path="/recyclings" element={<PrivateRoute allowedRoles={["Администратор"]}><RecyclingsPage /></PrivateRoute>} />
             <Route path="/create-recycling" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateRecycling /></PrivateRoute>} />
             <Route path="/debts" element={<PrivateRoute allowedRoles={["Администратор"]}><DebtsPage /></PrivateRoute>} />
-            <Route path="/debts/:id/history" element={<PrivateRoute allowedRoles={["Администратор"]}><DebtPaymentHistoryPage /></PrivateRoute>} />
+            {/* <Route path="/debts/:id/history" element={<PrivateRoute allowedRoles={["Администратор"]}><DebtPaymentHistoryPage /></PrivateRoute>} /> */}
             <Route path="/debts/:id" element={<PrivateRoute allowedRoles={["Администратор"]}><DebtDetailsPage /></PrivateRoute>} />
             <Route path="/expense-name" element={<PrivateRoute allowedRoles={["Администратор"]}><ExpenseNamesPage /></PrivateRoute>} />
             <Route path="/create-expense-name" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateExpenseName /></PrivateRoute>} />
@@ -124,6 +125,8 @@ function App() {
             <Route path="/profile" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><ProfilePage /></PrivateRoute>} />
             <Route path="/dashboard" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><DashboardPage /></PrivateRoute>} />
             <Route path="/product-stock-balance" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><ProductStockBalancePage /></PrivateRoute>} />
+             <Route path="/debts/:id/payments" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><DebtPaymentsPage/></PrivateRoute>} />
+            
             
             {/* Default route */}
             <Route path="/" element={<Navigate to="/dashboard" />} />

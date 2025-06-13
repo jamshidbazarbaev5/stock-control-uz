@@ -5,6 +5,7 @@ export interface CurrentUser {
   name: string;
   phone_number: string;
   role: string;
+  is_superuser: boolean;
   store_read?: {
     id: number;
     name: string;
