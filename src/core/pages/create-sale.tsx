@@ -780,11 +780,35 @@ export default function CreateSale() {
                               .filter((_, i) => i !== index)
                               .reduce((sum, p) => sum + (p.amount || 0), 0);
                             
+                            // Update payment amount
                             if (newAmount + otherPaymentsTotal > totalAmount) {
                               onChange(totalAmount - otherPaymentsTotal);
                             } else {
                               onChange(newAmount);
                             }
+
+                            // Update sale item profits based on the new payment distribution
+                            const saleItems = form.getValues('sale_items');
+                            const totalPayments = newAmount + otherPaymentsTotal;
+                            const paymentRatio = totalPayments / totalAmount;
+
+                            saleItems.forEach((item, itemIndex) => {
+                              if (selectedPrices[itemIndex]) {
+                                const quantity = item.quantity || 1;
+                                const subtotal = parseFloat(item.subtotal) || 0;
+                                const { purchasePrice } = selectedPrices[itemIndex];
+                                // Adjust profit based on payment ratio
+                                const adjustedProfit = ((subtotal * paymentRatio) - purchasePrice) * quantity;
+                                
+                                setSelectedPrices(prev => ({
+                                  ...prev,
+                                  [itemIndex]: {
+                                    ...prev[itemIndex],
+                                    profit: adjustedProfit
+                                  }
+                                }));
+                              }
+                            });
                           }}
                         />
                       </FormControl>
@@ -981,16 +1005,23 @@ export default function CreateSale() {
 
           {/* Total Amount and Profit Display */}
           <div className="mt-6 sm:mt-8 p-4 sm:p-6 border rounded-lg bg-gray-50">
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="flex flex-col space-y-4">
+              <div className="flex items-center justify-between border-b pb-4">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-700">
                   {t('table.total_amount')}
                 </h3>
                 <p className="text-xl sm:text-3xl font-bold text-green-600">
-                  {parseFloat(form.watch('total_amount') || '0').toLocaleString()}
+                  {form.watch('sale_payments').reduce((sum, payment) => sum + (payment.amount || 0), 0).toLocaleString()}
                 </p>
               </div>
-              
+              <div className="flex items-center justify-between">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-700">
+                  {t('table.profit')}
+                </h3>
+                <p className="text-xl sm:text-3xl font-bold text-green-600">
+                  {Object.values(selectedPrices).reduce((total, item) => total + item.profit, 0).toFixed(1).toLocaleString()}
+                </p>
+              </div>
             </div>
           </div>
 
