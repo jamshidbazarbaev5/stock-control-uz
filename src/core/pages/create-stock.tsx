@@ -43,6 +43,7 @@ export default function CreateStock() {
   const { t } = useTranslation();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [perUnitPrice, setPerUnitPrice] = useState<number | null>(null);
+  const [productSearchTerm, setProductSearchTerm] = useState('');
   
   // Define stock fields with translations
   const stockFields = [
@@ -57,10 +58,12 @@ export default function CreateStock() {
     {
       name: 'product_write',
       label: t('common.product'),
-      type: 'select',
+      type: 'searchable-select',
       placeholder: t('common.product'),
       required: true,
       options: [], // Will be populated with products
+      searchTerm: productSearchTerm,
+      onSearch: (value: string) => setProductSearchTerm(value),
     },
      {
       name: 'quantity',
@@ -155,7 +158,11 @@ export default function CreateStock() {
   const exchangeRate = form.watch('exchange_rate');
   
   // Fetch products, stores, measurements, suppliers and categories for the select dropdowns
-  const { data: productsData, isLoading: productsLoading } = useGetProducts({});
+  const { data: productsData } = useGetProducts({
+    params: {
+      product_name: productSearchTerm || undefined,
+    }
+  });
   const { data: storesData, isLoading: storesLoading } = useGetStores({});
 
   const { data: suppliersData, isLoading: suppliersLoading } = useGetSuppliers({});
@@ -215,9 +222,6 @@ export default function CreateStock() {
           value: product.id,
           label: product.product_name
         })),
-        createNewLabel: t('common.create_new_product'),
-        onCreateNew: handleCreateProduct,
-        isLoading: productsLoading,
         onChange: (value: string) => {
           const product = products.find(p => p.id === parseInt(value));
           setSelectedProduct(product);
