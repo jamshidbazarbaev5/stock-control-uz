@@ -77,7 +77,7 @@ export default function CreateProduct() {
         has_color: data.has_color === 'true',
         ...(data.has_color === 'true' && { color }),
         has_kub: data.has_kub === 'true',
-        ...(data.has_kub === 'true' && { kub: parseInt(kub, 10) })
+        ...(data.has_kub === 'true' && { kub: parseFloat(kub) || 0 })
       };
 
       await createProduct.mutateAsync(formattedData);

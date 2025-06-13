@@ -56,12 +56,14 @@ export default function EditProduct() {
         for_sale: m.for_sale || false
       })));
     }
+    // Set hasColor and color if product has color data
+    setHasColor(!!product?.has_color);
     if (product?.has_color) {
-      setHasColor(product.has_color);
       setColor(product.color || '');
     }
-    if (product?.has_kub) {
-      setHasKub(product.has_kub);
+    // Set hasKub and kub value if product has kub data
+    setHasKub(!!product?.has_kub);
+    if (product?.has_kub || product?.kub) {
       setKub(product.kub?.toString() || '');
     }
   }, [product]);
@@ -93,8 +95,9 @@ export default function EditProduct() {
         category_write: typeof data.category_write === 'string' ? parseInt(data.category_write, 10) : data.category_write,
         has_color: data.has_color === 'true',
         ...(data.has_color === 'true' && { color }),
-        has_kub: data.has_kub === 'true',
-        ...(data.has_kub === 'true' && { kub: parseInt(kub, 10) }),
+        // If kub has a value, has_kub should be true
+        has_kub: data.has_kub === 'true' || (kub !== '' && parseFloat(kub) > 0),
+        ...(kub !== '' && parseFloat(kub) > 0 && { kub: parseFloat(kub) }),
         measurement: measurements.map((m: MeasurementItem) => ({
           id: m.id,
           measurement_write: m.measurement_write,
@@ -170,8 +173,8 @@ export default function EditProduct() {
         defaultValues={{
           product_name: product.product_name,
           category_write: product.category_read?.id || product.category_write,
-          has_color: product.has_color || false,
-          has_kub: product.has_kub || false,
+          has_color: product.has_color ?? false,
+          has_kub: product.has_kub ?? false,
         }}
       >
         {hasColor && (
@@ -195,6 +198,7 @@ export default function EditProduct() {
               placeholder={t('placeholders.enter_kub')}
               value={kub}
               onChange={(e) => setKub(e.target.value)}
+              step="0.1"
             />
           </div>
         )}

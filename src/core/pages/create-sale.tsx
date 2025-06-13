@@ -97,10 +97,10 @@ export default function CreateSale() {
   const productId = searchParams.get('productId');
   const stockId = searchParams.get('stockId');
 
-  const isAdmin = currentUser?.role === 'Администратор';
   const users = Array.isArray(usersData) ? usersData : usersData?.results || [];
 
   // Initialize selectedStore with seller's store right away
+  const isAdmin = currentUser?.role === 'Администратор' || currentUser?.is_superuser === true;
   const [selectedStore, setSelectedStore] = useState<number | null>(
     !isAdmin && currentUser?.store_read?.id ? currentUser.store_read.id : null
   );
