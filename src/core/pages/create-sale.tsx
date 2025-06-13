@@ -435,6 +435,9 @@ export default function CreateSale() {
       // Get primary payment method from sale_payments
       const primaryPayment = data.sale_payments[0];
 
+      // Calculate total amount from payments
+      const totalFromPayments = data.sale_payments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+      
       const formattedData: Sale = {
         store: data.store_write,
         ...(isAdmin ? { sold_by: data.sold_by } : {}),
@@ -450,7 +453,7 @@ export default function CreateSale() {
           amount: payment.amount.toString()
         })),
         on_credit: data.on_credit,
-        total_amount: data.total_amount.toString(),
+        total_amount: totalFromPayments.toString(),
         // If client is selected but on credit, send client directly
         ...(data.sale_debt?.client && !data.on_credit ? { client: data.sale_debt.client } : {}),
         // If on credit and client selected, include in sale_debt
@@ -487,7 +490,48 @@ export default function CreateSale() {
 
   const removeSaleItem = (index: number) => {
     const items = form.getValues('sale_items');
+    
+    // Remove the item from sale_items
     form.setValue('sale_items', items.filter((_, i) => i !== index));
+    
+    // Remove the profit calculation for the removed item
+    setSelectedPrices(prev => {
+      const updated = { ...prev };
+      delete updated[index];
+      
+      // Reindex the remaining prices
+      const reindexed: typeof prev = {};
+      Object.entries(updated).forEach(([key, value]) => {
+        const numKey = parseInt(key);
+        if (numKey > index) {
+          reindexed[numKey - 1] = value;
+        } else {
+          reindexed[numKey] = value;
+        }
+      });
+      
+      return reindexed;
+    });
+    
+    // Remove from selected stocks
+    setSelectedStocks(prev => {
+      const updated = { ...prev };
+      delete updated[index];
+      
+      // Reindex the remaining stocks
+      const reindexed: typeof prev = {};
+      Object.entries(updated).forEach(([key, value]) => {
+        const numKey = parseInt(key);
+        if (numKey > index) {
+          reindexed[numKey - 1] = value;
+        } else {
+          reindexed[numKey] = value;
+        }
+      });
+      
+      return reindexed;
+    });
+    
     updateTotalAmount();
   };
 
