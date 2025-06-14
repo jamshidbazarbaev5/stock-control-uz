@@ -1,16 +1,22 @@
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { useGetBudgets } from '../api/budget';
+import { useDeleteBudget, useGetBudgets } from '../api/budget';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function CashInflowHistoryPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: budgetData, isLoading } = useGetBudgets({});
-  
+  const { mutate: deleteBuget } = useDeleteBudget();
   const budgets = Array.isArray(budgetData) ? budgetData : budgetData?.results || [];
-
+  const handleDelete = (id: number) => {
+    deleteBuget(id, {
+      onSuccess: () => toast.success(t('messages.success.deleted', { item: t('navigation.categories') })),
+      onError: () => toast.error(t('messages.error.delete', { item: t('navigation.categories') })),
+    });
+  };
   const columns = [
     {
       header: t('forms.store'),
@@ -64,6 +70,7 @@ export default function CashInflowHistoryPage() {
         ]}
         data={budgets}
         isLoading={isLoading}
+        onDelete={handleDelete}
       />
     </div>
   );
