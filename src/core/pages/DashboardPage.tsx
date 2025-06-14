@@ -57,10 +57,16 @@ const DashboardPage = () => {
   const [period, setPeriod] = useState<'day' | 'week' | 'month' | 'custom'>('month');
   const [topProductsLimit, setTopProductsLimit] = useState<number>(5);
   const [topSellersLimit, _setTopSellersLimit] = useState<number>(5);
+  const [displayedUnsoldProducts, setDisplayedUnsoldProducts] = useState<number>(9);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [selectedStore, setSelectedStore] = useState<string>('all');
   
+  // Handler for showing more unsold products
+  const handleShowMoreUnsoldProducts = () => {
+    setDisplayedUnsoldProducts(prev => Math.min(prev + 9, unsoldProducts.length));
+  };
+
   // Get current user to determine role
   const { data: currentUser } = useCurrentUser();
   const { data: storesData } = useGetStores({});
@@ -1082,7 +1088,7 @@ const DashboardPage = () => {
               <div>
                 {/* Grid layout for unsold products */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {unsoldProducts.map((product, index) => (
+                  {unsoldProducts.slice(0, displayedUnsoldProducts).map((product, index) => (
                     <div key={index} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
                       <div className="flex items-start space-x-3">
                         <div className="bg-red-50 p-2 rounded-full">
@@ -1096,6 +1102,18 @@ const DashboardPage = () => {
                     </div>
                   ))}
                 </div>
+
+                {/* Show more button */}
+                {displayedUnsoldProducts < unsoldProducts.length && (
+                  <div className="mt-4">
+                    <button
+                      onClick={handleShowMoreUnsoldProducts}
+                      className="w-full inline-flex items-center justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 transition-colors"
+                    >
+                      {t('dashboard.show_more') || 'Show More'}
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">

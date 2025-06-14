@@ -6,6 +6,7 @@
   "dashboard": {
     "no_expenses":"Rasxodlar yoq",
     "clients": "Klientler",
+    "show_more": "Kóbrik kórsetiw",
     "all_stores":"Barcha dúkanlar",
     "category_distribution": "Kategoriya tendentsiyası",
     "expense_breakdown": "Rasxodlar",
