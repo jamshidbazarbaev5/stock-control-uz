@@ -128,15 +128,15 @@ const DashboardPage = () => {
           }
           
           const [salesSummary, topProductsData, stockByCategoryData, productIntakeData, clientDebtsData, unsoldProductsData, profitabilityData, topSellersData, expensesSummaryData, salesProfitData] = await Promise.all([
-            // If we have date params, use them, otherwise use period
+            // Apply filters to all API calls consistently
             getReportsSalesSummary(apiPeriod, dateParams || undefined),
-            getTopProducts(apiPeriod, topProductsLimit),
-            getStockByCategory(),
-            getProductIntake(apiPeriod),
-            getClientDebts(dateParams),
-            getUnsoldProducts(dateParams),
-            getProductProfitability(dateParams),
-            getTopSellers(apiPeriod),
+            getTopProducts(apiPeriod, topProductsLimit, dateParams || undefined),
+            getStockByCategory(apiPeriod, dateParams || undefined),
+            getProductIntake(apiPeriod, dateParams || undefined),
+            getClientDebts(apiPeriod, dateParams || undefined),
+            getUnsoldProducts(apiPeriod, dateParams || undefined),
+            getProductProfitability(apiPeriod, dateParams || undefined),
+            getTopSellers(apiPeriod, dateParams || undefined),
             getExpensesSummary(apiPeriod, dateParams || undefined),
             getSalesProfitReport(apiPeriod, dateParams || undefined)
           ]);

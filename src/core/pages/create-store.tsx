@@ -46,13 +46,7 @@ const storeFields = (t: (key: string) => string) => [
     placeholder: t('placeholders.select_store'),
     required: false,
   },
-  {
-    name: 'owner',
-    label: t('forms.owner'),
-    type: 'select',
-    placeholder: t('placeholders.select_owner'),
-    required: true,
-  },
+  
 ];
 
 export default function CreateStore() {

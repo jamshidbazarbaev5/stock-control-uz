@@ -93,7 +93,9 @@ type PeriodType = 'day' | 'week' | 'month';
 
 export const getReportsSalesSummary = async (period?: PeriodType, dateParams?: string): Promise<SalesSummaryResponse> => {
   let url = 'reports/sales-summary';
-  if (dateParams) {
+  if (dateParams && period) {
+    url += `?${dateParams}&period=${period}`;
+  } else if (dateParams) {
     url += `?${dateParams}`;
   } else if (period) {
     url += `?period=${period}`;
@@ -102,54 +104,108 @@ export const getReportsSalesSummary = async (period?: PeriodType, dateParams?: s
   return response.data;
 };
 
-export const getTopProducts = async (period?: PeriodType, limit?: number): Promise<TopProductsResponse[]> => {
+export const getTopProducts = async (period?: PeriodType, limit?: number, dateParams?: string): Promise<TopProductsResponse[]> => {
+  let url = 'reports/top-products';
   const params: Record<string, string | number> = {};
+  
+  if (dateParams && period) {
+    url += `?${dateParams}&period=${period}`;
+    if (limit) url += `&limit=${limit}`;
+  } else if (dateParams) {
+    url += `?${dateParams}`;
+    if (limit) url += `&limit=${limit}`;
+  } else {
+    if (period) params.period = period;
+    if (limit) params.limit = limit;
+  }
 
-  if (period) params.period = period;
-  if (limit) params.limit = limit;
-
-  const response = await api.get<TopProductsResponse[]>('reports/top-products', { params });
+  const response = await api.get<TopProductsResponse[]>(url, { params: dateParams ? undefined : params });
   return response.data;
 };
 
-export const getStockByCategory = async (): Promise<StockByCategoryResponse[]> => {
-  const response = await api.get<StockByCategoryResponse[]>('reports/stock-by-category');
+export const getStockByCategory = async (period?: PeriodType, dateParams?: string): Promise<StockByCategoryResponse[]> => {
+  let url = 'reports/stock-by-category';
+  if (dateParams && period) {
+    url += `?${dateParams}&period=${period}`;
+  } else if (dateParams) {
+    url += `?${dateParams}`;
+  } else if (period) {
+    url += `?period=${period}`;
+  }
+  const response = await api.get<StockByCategoryResponse[]>(url);
   return response.data;
 };
 
-export const getProductIntake = async (period?: PeriodType): Promise<ProductIntakeResponse> => {
-  const params = period ? { period } : {};
-  const response = await api.get<ProductIntakeResponse>('reports/product-intake', { params });
+export const getProductIntake = async (period?: PeriodType, dateParams?: string): Promise<ProductIntakeResponse> => {
+  let url = 'reports/product-intake';
+  if (dateParams && period) {
+    url += `?${dateParams}&period=${period}`;
+  } else if (dateParams) {
+    url += `?${dateParams}`;
+  } else if (period) {
+    url += `?period=${period}`;
+  }
+  const response = await api.get<ProductIntakeResponse>(url);
   return response.data;
 };
 
-export const getClientDebts = async (dateParams?: string): Promise<ClientDebtResponse[]> => {
-  const url = dateParams ? `reports/client-debts?${dateParams}` : 'reports/client-debts';
+export const getClientDebts = async (period?: PeriodType, dateParams?: string): Promise<ClientDebtResponse[]> => {
+  let url = 'reports/client-debts';
+  if (dateParams && period) {
+    url += `?${dateParams}&period=${period}`;
+  } else if (dateParams) {
+    url += `?${dateParams}`;
+  } else if (period) {
+    url += `?period=${period}`;
+  }
   const response = await api.get<ClientDebtResponse[]>(url);
   return response.data;
 };
 
-export const getUnsoldProducts = async (dateParams?: string): Promise<UnsoldProductsResponse[]> => {
-  const url = dateParams ? `reports/unsold-products?${dateParams}` : 'reports/unsold-products';
+export const getUnsoldProducts = async (period?: PeriodType, dateParams?: string): Promise<UnsoldProductsResponse[]> => {
+  let url = 'reports/unsold-products';
+  if (dateParams && period) {
+    url += `?${dateParams}&period=${period}`;
+  } else if (dateParams) {
+    url += `?${dateParams}`;
+  } else if (period) {
+    url += `?period=${period}`;
+  }
   const response = await api.get<UnsoldProductsResponse[]>(url);
   return response.data;
 };
 
-export const getProductProfitability = async (dateParams?: string): Promise<ProductProfitabilityResponse[]> => {
-  const url = dateParams ? `reports/product-profitability?${dateParams}` : 'reports/product-profitability';
+export const getProductProfitability = async (period?: PeriodType, dateParams?: string): Promise<ProductProfitabilityResponse[]> => {
+  let url = 'reports/product-profitability';
+  if (dateParams && period) {
+    url += `?${dateParams}&period=${period}`;
+  } else if (dateParams) {
+    url += `?${dateParams}`;
+  } else if (period) {
+    url += `?period=${period}`;
+  }
   const response = await api.get<ProductProfitabilityResponse[]>(url);
   return response.data;
 };
 
-export const getTopSellers = async (period?: PeriodType): Promise<TopSellersResponse[]> => {
-  const params = period ? { period } : {};
-  const response = await api.get<TopSellersResponse[]>('reports/top-sellers', { params });
+export const getTopSellers = async (period?: PeriodType, dateParams?: string): Promise<TopSellersResponse[]> => {
+  let url = 'reports/top-sellers';
+  if (dateParams && period) {
+    url += `?${dateParams}&period=${period}`;
+  } else if (dateParams) {
+    url += `?${dateParams}`;
+  } else if (period) {
+    url += `?period=${period}`;
+  }
+  const response = await api.get<TopSellersResponse[]>(url);
   return response.data;
 };
 
 export const getSalesmanSummary = async (period?: PeriodType, dateParams?: string): Promise<SalesmanSummaryResponse> => {
   let url = 'reports/salesman-summary';
-  if (dateParams) {
+  if (dateParams && period) {
+    url += `?${dateParams}&period=${period}`;
+  } else if (dateParams) {
     url += `?${dateParams}`;
   } else if (period) {
     url += `?period=${period}`;
@@ -160,7 +216,9 @@ export const getSalesmanSummary = async (period?: PeriodType, dateParams?: strin
 
 export const getSalesmanDebts = async (period?: PeriodType, dateParams?: string): Promise<SalesmanDebtsResponse> => {
   let url = 'reports/salesman-debts';
-  if (dateParams) {
+  if (dateParams && period) {
+    url += `?${dateParams}&period=${period}`;
+  } else if (dateParams) {
     url += `?${dateParams}`;
   } else if (period) {
     url += `?period=${period}`;
@@ -171,7 +229,9 @@ export const getSalesmanDebts = async (period?: PeriodType, dateParams?: string)
 
 export const getExpensesSummary = async (period?: PeriodType, dateParams?: string): Promise<ExpensesSummaryResponse> => {
   let url = 'reports/expenses-summary';
-  if (dateParams) {
+  if (dateParams && period) {
+    url += `?${dateParams}&period=${period}`;
+  } else if (dateParams) {
     url += `?${dateParams}`;
   } else if (period) {
     url += `?period=${period}`;
@@ -180,17 +240,30 @@ export const getExpensesSummary = async (period?: PeriodType, dateParams?: strin
   return response.data;
 };
 
-export const getSalesProfitReport = async (
-  period?: 'day' | 'week' | 'month',
-  dateParams?: string
-): Promise<SalesProfitResponse> => {
-  let url = 'reports/sales-profit/';
-  if (dateParams) {
+export const getSalesProfitReport = async (period?: PeriodType, dateParams?: string): Promise<SalesProfitResponse> => {
+  let url = 'reports/sales-profit';
+  if (dateParams && period) {
+    url += `?${dateParams}&period=${period}`;
+  } else if (dateParams) {
     url += `?${dateParams}`;
   } else if (period) {
     url += `?period=${period}`;
   }
-  
   const response = await api.get<SalesProfitResponse>(url);
   return response.data;
 };
+
+// export const getSalesProfitReport = async (
+//   period?: 'day' | 'week' | 'month',
+//   dateParams?: string
+// ): Promise<SalesProfitResponse> => {
+//   let url = 'reports/sales-profit/';
+//   if (dateParams) {
+//     url += `?${dateParams}`;
+//   } else if (period) {
+//     url += `?period=${period}`;
+//   }
+  
+//   const response = await api.get<SalesProfitResponse>(url);
+//   return response.data;
+// };

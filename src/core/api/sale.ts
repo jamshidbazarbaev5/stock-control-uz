@@ -59,6 +59,7 @@ export interface Sale {
   payment_method: string;
   sale_items: SaleItem[];
   on_credit: boolean;
+  is_paid?: boolean;
   sale_debt?: SaleDebt;
   total_amount: string;
   sale_payments?: {
@@ -67,6 +68,7 @@ export interface Sale {
   }[] | undefined;
   client?: number;
   created_at?: string;
+  sold_date?: string;
 }
 
 // API endpoints

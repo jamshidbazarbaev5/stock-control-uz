@@ -146,7 +146,7 @@ export default function SalesPage() {
                   </span>
                 </div> */}
                 <div>
-                  <span className="text-sm text-gray-500 block mb-1">{t('forms.amount3')}</span>
+                  <span className="text-sm text-gray-500 block mb-1">{t('forms.amount4')}</span>
                   <span className="font-medium text-emerald-600">{formatCurrency(item.subtotal)} UZS</span>
                 </div>
               </div>
@@ -214,11 +214,34 @@ export default function SalesPage() {
       header: t('table.status'),
       accessorKey: 'on_credit',
       cell: (row: Sale) => (
-        <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${row.on_credit ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
-          {row.on_credit ? <AlertCircle className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
-          {row.on_credit ? t('common.on_credit') : t('common.paid2' )}
-          
-
+        <div className="flex flex-col gap-1">
+          {row.is_paid ? (
+            <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+              <CheckCircle2 className="h-3 w-3" />
+              {t('common.paid')}
+            </div>
+          ) : (
+            <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${row.on_credit ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+              {row.on_credit ? <AlertCircle className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
+              {row.on_credit ? t('common.on_credit') : t('common.paid2')}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    
+    {
+      header: t('table.sold_date'),
+      accessorKey: 'sold_date',
+      cell: (row: Sale) => (
+        <div className="whitespace-nowrap">
+          {row.sold_date ? new Date(row.sold_date).toLocaleDateString('ru-RU', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          }) : '-'}
         </div>
       ),
     },

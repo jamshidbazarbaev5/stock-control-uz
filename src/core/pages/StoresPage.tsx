@@ -18,7 +18,6 @@ interface StoreFormData {
   budget: string;
   is_main: boolean;
   parent_store: string;
-  owner: string;
 }
 
 const storeFields = (t: (key: string) => string) => [
@@ -62,14 +61,7 @@ const storeFields = (t: (key: string) => string) => [
     required: false,
     options: [], // Will be populated with stores
   },
-  {
-    name: 'owner',
-    label: t('forms.owner'),
-    type: 'select',
-    placeholder: t('placeholders.select_owner'),
-    required: true,
-    options: [], // Will be populated with users
-  },
+  
 ];
 
 export default function StoresPage() {
@@ -132,7 +124,6 @@ export default function StoresPage() {
       ...store,
       is_main: store.is_main,
       parent_store: store.parent_store?.toString() ?? '0',
-      owner: store.owner.toString()
     };
     setEditingStore(formattedStore);
     setIsFormOpen(true);
@@ -144,7 +135,6 @@ export default function StoresPage() {
     const formattedData = {
       ...data,
       id: editingStore.id,
-      owner: parseInt(data.owner, 10),
       parent_store: data.parent_store === '0' ? null : parseInt(data.parent_store, 10),
       is_main: data.is_main === true || data.is_main.toString() === 'true'
     };

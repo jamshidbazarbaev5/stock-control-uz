@@ -242,6 +242,7 @@
     "amount_exceeds_remainder": "Summa qalǵan summadan artıq bolmawı kerek"
   },
   "forms": {
+    "amount4": "Bir tovardin senasi",
     "payment_history": "Tólem tarixi",
     "increment_balance": "Balans kóbeytiw",
     "has_kub":"Kub barma?",
@@ -433,6 +434,7 @@
     "select_user": "Paydalanıwshını tańlań"
   },
   "table": {
+    "sold_date":"Satilg'an sane",
     "source": "Resurs",
     "total_kub_volume":"Kub muǵdarı",
     "seller":"Satıwshı",
