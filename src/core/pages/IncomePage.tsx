@@ -78,7 +78,7 @@ export default function IncomePage() {
       cell: (row: any) => row.source || '-',
     },
     {
-      header: t('forms.amount4'),
+      header: t('forms.amount3'),
       accessorKey: 'description.Amount',
       cell: (row: any) => (
         <span className="font-medium text-emerald-600">
@@ -135,7 +135,7 @@ export default function IncomePage() {
               <TableHead className="text-xs">{t('table.product')}</TableHead>
               <TableHead className="text-xs">{t('table.quantity')}</TableHead>
               <TableHead className="text-xs">{t('forms.selling_method')}</TableHead>
-              <TableHead className="text-xs">{t('forms.amount3')}</TableHead>
+              <TableHead className="text-xs">{t('forms.amount4')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
