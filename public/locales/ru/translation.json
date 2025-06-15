@@ -256,9 +256,12 @@
   },
 
   "forms": {
+    "categories_selected": "Выбранные категории",
+    "has_kub": "Имеет куб?",
     "amount4":"Стоимость за единицу",
     "kub":"Куб",
-    "has_kub":"Имеет куб?",
+    "categories_for_recycling":"Категории для переработки",
+    "has_recycling":"Имеет переработку?",
     "increment_balance": "Увеличить баланс",
     "add_payment": "Добавить платеж",
     "payment_info": "Информация о платеже",
@@ -410,8 +413,10 @@
     "edit": "Изменить"
   },
   "placeholders": {
-    "search_products": "Поиск товара",
+    "select_has_recycling": "Выберите, имеет ли товар переработку",
+    "select_categories": "Выберите категории",
     "select_seller": "Выберите продавца",
+    "select_has_kub": "Выберите, имеет ли товар куб",
     "select_worker": "Выберите работника",
     "select_has_color": "Выберите, имеет ли товар цвет",
     "select_expense_name": "Выберите название расхода",

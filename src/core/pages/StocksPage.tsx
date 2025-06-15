@@ -117,11 +117,13 @@ export default function StocksPage() {
                   >
                     {t('common.create')} {t('navigation.transfer')}
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    onClick={() => navigate(`/create-recycling?fromProductId=${row.product_read?.id}&fromStockId=${row.id}`)}
-                  >
-                    {t('common.create')} {t('navigation.recycling')}
-                  </DropdownMenuItem>
+                  {row.product_read?.has_recycling && (
+                    <DropdownMenuItem 
+                      onClick={() => navigate(`/create-recycling?fromProductId=${row.product_read?.id}&fromStockId=${row.id}`)}
+                    >
+                      {t('common.create')} {t('navigation.recycling')}
+                    </DropdownMenuItem>
+                  )}
                 </>
               )}
             </DropdownMenuContent>

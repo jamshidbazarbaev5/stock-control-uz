@@ -242,6 +242,7 @@
     "amount_exceeds_remainder": "Summa qalǵan summadan artıq bolmawı kerek"
   },
   "forms": {
+    "has_recycling": "Qayta ishlew bar ma?",
     "amount4": "Bir tovardin senasi",
     "payment_history": "Tólem tarixi",
     "increment_balance": "Balans kóbeytiw",
@@ -396,6 +397,7 @@
     "invalid_stock_selection": "Osi  skladǵa transfer jaratiw múmkin emes"
   },
   "placeholders": {
+    "select_has_kub": "Kub bar ma?",
     "search_products": "Ónim izdeń",
     "select_seller": "Satıwshını tańlań",
     "select_has_color": "Reń bar ma?",

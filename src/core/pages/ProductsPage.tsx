@@ -42,8 +42,6 @@ export default function ProductsPage() {
   const { data: productsData, isLoading } = useGetProducts({
     params: {
       page,
-      page_size: 10,
-      ordering: '-created_at',
       ...(searchTerm && { product_name: searchTerm }),
       ...(selectedCategory && { category: selectedCategory }),
       ...(selectedMeasurement && { measurement: selectedMeasurement }),
@@ -134,7 +132,7 @@ export default function ProductsPage() {
         onDelete={handleDelete}
         onAdd={() => navigate('/create-product')}
         totalCount={totalCount}
-        pageSize={10}
+        pageSize={30}
         currentPage={page}
         onPageChange={(newPage) => setPage(newPage)}
       />

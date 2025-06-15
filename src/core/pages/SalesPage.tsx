@@ -372,7 +372,7 @@ export default function SalesPage() {
               onDelete={currentUser?.role === "Продавец" ? undefined : handleDelete}
               onEdit={(row: Sale) => navigate(`/edit-sale/${row.id}`)}
               totalCount={totalCount}
-              pageSize={20}
+              pageSize={30}
               currentPage={page}
               onPageChange={(newPage) => setPage(newPage)}
               expandedRowRenderer={(row: Sale) => renderExpandedRow(row)}

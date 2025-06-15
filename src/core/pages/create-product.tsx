@@ -14,7 +14,14 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface MeasurementItem {
   id?: number;
@@ -36,6 +43,8 @@ export default function CreateProduct() {
   const [measurements, setMeasurements] = useState<MeasurementItem[]>([{ measurement_write: 0, number: 0, for_sale: false }]);
   const [hasKub, setHasKub] = useState(false);
   const [kub, setKub] = useState('');
+  const [hasRecycling, setHasRecycling] = useState(false);
+  const [categoriesForRecycling, setCategoriesForRecycling] = useState<number[]>([]);
 
   // Fetch categories, stores and measurements for the select dropdowns
   const { data: categoriesData } = useGetCategories({});
@@ -64,7 +73,7 @@ export default function CreateProduct() {
 
   const handleSubmit = async (data: any) => {
     try {
-      const formattedData = {
+      const formattedData: Product = {
         product_name: data.product_name,
         category_write: typeof data.category_write === 'string' ? parseInt(data.category_write, 10) : data.category_write,
         measurement: measurements.map((m: MeasurementItem) => ({
@@ -77,7 +86,9 @@ export default function CreateProduct() {
         has_color: data.has_color === 'true',
         ...(data.has_color === 'true' && { color }),
         has_kub: data.has_kub === 'true',
-        ...(data.has_kub === 'true' && { kub: parseFloat(kub) || 0 })
+        ...(data.has_kub === 'true' && { kub: parseFloat(kub) || 0 }),
+        has_recycling: data.has_recycling === 'true',
+        ...((data.has_recycling === 'true' && categoriesForRecycling.length > 0) && { categories_for_recycling: categoriesForRecycling })
       };
 
       await createProduct.mutateAsync(formattedData);
@@ -134,6 +145,18 @@ export default function CreateProduct() {
               { value: 'true', label: t('common.yes') }
             ],
             onChange: (value: string) => setHasKub(value === 'true')
+          },
+          {
+            name: 'has_recycling',
+            label: t('forms.has_recycling'),
+            type: 'select',
+            placeholder: t('placeholders.select_has_recycling'),
+            required: true,
+            options: [
+              { value: 'false', label: t('common.no') },
+              { value: 'true', label: t('common.yes') }
+            ],
+            onChange: (value: string) => setHasRecycling(value === 'true')
           }
         ]}
         onSubmit={handleSubmit}
@@ -162,6 +185,41 @@ export default function CreateProduct() {
               value={kub}
               onChange={(e) => setKub(e.target.value)}
             />
+          </div>
+        )}
+        {hasRecycling && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">{t('forms.categories_for_recycling')}</label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full flex justify-between items-center">
+                  <span>
+                    {categoriesForRecycling.length
+                      ? `${categoriesForRecycling.length} ${t('forms.categories_selected')}`
+                      : t('placeholders.select_categories')}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="start">
+                <ScrollArea className="h-[200px] p-2">
+                  {categories.map(category => (
+                    <DropdownMenuCheckboxItem
+                      key={category.id?.toString()}
+                      checked={categoriesForRecycling.includes(category.id || 0)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setCategoriesForRecycling([...categoriesForRecycling, category.id || 0]);
+                        } else {
+                          setCategoriesForRecycling(categoriesForRecycling.filter(id => id !== category.id));
+                        }
+                      }}
+                    >
+                      {category.category_name}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </ScrollArea>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
         <div className="space-y-4">

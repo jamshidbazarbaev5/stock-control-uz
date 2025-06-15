@@ -27,6 +27,8 @@ export interface Product {
   };
   has_kub?: boolean;
   kub?: number;
+  has_recycling?: boolean;
+  categories_for_recycling?: number[];
 }
 
 // API endpoints

@@ -15,6 +15,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface MeasurementItem {
   id?: number;
@@ -38,6 +45,8 @@ export default function EditProduct() {
   const [color, setColor] = useState('');
   const [hasKub, setHasKub] = useState(false);
   const [kub, setKub] = useState('');
+  const [hasRecycling, setHasRecycling] = useState(false);
+  const [categoriesForRecycling, setCategoriesForRecycling] = useState<number[]>([]);
 
   // Fetch categories and measurements for the select dropdowns
   const { data: categoriesData } = useGetCategories({});
@@ -66,6 +75,11 @@ export default function EditProduct() {
     if (product?.has_kub || product?.kub) {
       setKub(product.kub?.toString() || '');
     }
+    // Set hasRecycling and categories for recycling if product has recycling data
+    setHasRecycling(!!product?.has_recycling);
+    if (product?.has_recycling && product?.categories_for_recycling) {
+      setCategoriesForRecycling(product.categories_for_recycling || []);
+    }
   }, [product]);
 
   const handleAddMeasurement = () => {
@@ -89,15 +103,14 @@ export default function EditProduct() {
     if (!id) return;
 
     try {
-      const formattedData = {
+      const formattedData: any = {
         id: Number(id),
         product_name: data.product_name,
         category_write: typeof data.category_write === 'string' ? parseInt(data.category_write, 10) : data.category_write,
-        has_color: data.has_color === 'true',
-        ...(data.has_color === 'true' && { color }),
+        has_color: (data.has_color === 'true') as boolean,
         // If kub has a value, has_kub should be true
-        has_kub: data.has_kub === 'true' || (kub !== '' && parseFloat(kub) > 0),
-        ...(kub !== '' && parseFloat(kub) > 0 && { kub: parseFloat(kub) }),
+        has_kub: (data.has_kub === 'true' || (kub !== '' && parseFloat(kub) > 0)) as boolean,
+        has_recycling: (data.has_recycling === 'true') as boolean,
         measurement: measurements.map((m: MeasurementItem) => ({
           id: m.id,
           measurement_write: m.measurement_write,
@@ -106,6 +119,21 @@ export default function EditProduct() {
           for_sale: m.for_sale
         }))
       };
+
+      // Only add color if has_color is true
+      if (data.has_color === 'true') {
+        formattedData.color = color;
+      }
+
+      // Only add kub if has_kub is true or kub has a value
+      if (kub !== '' && parseFloat(kub) > 0) {
+        formattedData.kub = parseFloat(kub);
+      }
+
+      // Only add categories_for_recycling if has_recycling is true and categories are selected
+      if (data.has_recycling === 'true' && categoriesForRecycling.length > 0) {
+        formattedData.categories_for_recycling = categoriesForRecycling;
+      }
 
       await updateProduct.mutateAsync(formattedData);
       toast.success(t('messages.success.updated', { item: t('table.product') }));
@@ -165,6 +193,18 @@ export default function EditProduct() {
               { value: 'true', label: t('common.yes') }
             ],
             onChange: (value: string) => setHasKub(value === 'true')
+          },
+          {
+            name: 'has_recycling',
+            label: t('forms.has_recycling'),
+            type: 'select',
+            placeholder: t('placeholders.select_has_recycling'),
+            required: true,
+            options: [
+              { value: 'false', label: t('common.no') },
+              { value: 'true', label: t('common.yes') }
+            ],
+            onChange: (value: string) => setHasRecycling(value === 'true')
           }
         ]}
         onSubmit={handleSubmit}
@@ -173,8 +213,9 @@ export default function EditProduct() {
         defaultValues={{
           product_name: product.product_name,
           category_write: product.category_read?.id || product.category_write,
-          has_color: product.has_color ?? false,
-          has_kub: product.has_kub ?? false,
+          has_color: (product.has_color ? 'true' : 'false') as any,
+          has_kub: (product.has_kub ? 'true' : 'false') as any,
+          has_recycling: (product.has_recycling ? 'true' : 'false') as any,
         }}
       >
         {hasColor && (
@@ -200,6 +241,41 @@ export default function EditProduct() {
               onChange={(e) => setKub(e.target.value)}
               step="0.1"
             />
+          </div>
+        )}
+        {hasRecycling && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">{t('forms.categories_for_recycling')}</label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full flex justify-between items-center">
+                  <span>
+                    {categoriesForRecycling.length
+                      ? `${categoriesForRecycling.length} ${t('forms.categories_selected')}`
+                      : t('placeholders.select_categories')}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="start">
+                <ScrollArea className="h-[200px] p-2">
+                  {categories.map(category => (
+                    <DropdownMenuCheckboxItem
+                      key={category.id?.toString()}
+                      checked={categoriesForRecycling.includes(category.id || 0)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setCategoriesForRecycling([...categoriesForRecycling, category.id || 0]);
+                        } else {
+                          setCategoriesForRecycling(categoriesForRecycling.filter(id => id !== category.id));
+                        }
+                      }}
+                    >
+                      {category.category_name}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </ScrollArea>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
         <div className="space-y-4">

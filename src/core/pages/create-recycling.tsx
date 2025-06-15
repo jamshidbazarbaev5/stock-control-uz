@@ -87,6 +87,7 @@ export default function CreateRecycling() {
   const createRecycling = useCreateRecycling();
   const { t } = useTranslation();
   const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [allowedCategories, setAllowedCategories] = useState<number[] | null>(null);
   
   // Get URL parameters
   const searchParams = new URLSearchParams(location.search);
@@ -117,21 +118,35 @@ export default function CreateRecycling() {
   const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
   
+  // Watch for changes in the from_to field to update allowed categories
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'from_to' && value.from_to) {
+        const selectedStock = stocks.find(stock => stock.id === Number(value.from_to));
+        if (selectedStock?.product_read?.has_recycling) {
+          setAllowedCategories(selectedStock.product_read.categories_for_recycling || null);
+          // Clear the to_product selection when changing from_to
+          form.setValue('to_product', undefined);
+        } else {
+          setAllowedCategories(null);
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, stocks]);
+
   // Set initial values based on URL parameters
   useEffect(() => {
     if (stocks.length > 0 && products.length > 0) {
       if (fromStockId) {
-        // If we have a specific stock ID, just ensure it's selected
         form.setValue('from_to', Number(fromStockId));
         
-        // Also find the stock's product to set as target product
         const stockItem = stocks.find(stock => stock.id === Number(fromStockId));
         if (stockItem?.product_read?.id) {
           form.setValue('to_product', stockItem.product_read.id);
         }
       } 
       else if (fromProductId) {
-        // If we only have product ID, find a stock with that product
         const stockWithProduct = stocks.find(
           stock => stock.product_read?.id === Number(fromProductId) && stock.quantity > 0
         );
@@ -158,10 +173,18 @@ export default function CreateRecycling() {
     if (field.name === 'to_product') {
       return {
         ...field,
-        options: products.map(product => ({
-          value: product.id,
-          label: product.product_name
-        })).filter(opt => opt.value),
+        options: products
+          .filter(product => {
+            // If no categories are specified or the product has no category, show all products
+            if (!allowedCategories || !product.category_read) return true;
+            // Otherwise only show products in allowed categories
+            return allowedCategories.includes(product.category_read.id);
+          })
+          .map(product => ({
+            value: product.id,
+            label: product.product_name
+          }))
+          .filter(opt => opt.value),
         onSearch: setProductSearchTerm
       };
     }
