@@ -200,7 +200,7 @@
     "unpaid": "Неоплачено"
   },
   "navigation": {
-    "dashobard": "Панель управления",
+    "dashobard": "Дашбоард",
     "profile": "Профиль",
     "transfer": "Перемещение",
     "create_transfer": "Создать перемещение",
@@ -413,6 +413,7 @@
     "edit": "Изменить"
   },
   "placeholders": {
+    "enter_kub": "Введите куб",
     "select_has_recycling": "Выберите, имеет ли товар переработку",
     "select_categories": "Выберите категории",
     "select_seller": "Выберите продавца",

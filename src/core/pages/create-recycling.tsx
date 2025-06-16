@@ -3,12 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ResourceForm } from '../helpers/ResourceForm';
 import type { Recycling } from '../api/recycling';
+import type { Product } from '../api/product';
 import { useCreateRecycling } from '../api/recycling';
 import { useGetStocks } from '../api/stock';
-import { useGetProducts } from '../api/product';
 import { useGetStores } from '../api/store';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
+import api from '../api/api';
 
 
 interface FormValues extends Partial<Recycling> {}
@@ -88,6 +89,8 @@ export default function CreateRecycling() {
   const { t } = useTranslation();
   const [productSearchTerm, setProductSearchTerm] = useState('');
   const [allowedCategories, setAllowedCategories] = useState<number[] | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   
   // Get URL parameters
   const searchParams = new URLSearchParams(location.search);
@@ -103,19 +106,53 @@ export default function CreateRecycling() {
 
   // Fetch data for dropdowns
   const { data: stocksData } = useGetStocks();
-  const { data: productsData } = useGetProducts({
-    params: {
-      product_name: productSearchTerm,
-      page: 1,
-      page_size: 10,
-      ordering: '-created_at'
-    }
-  });
   const { data: storesData } = useGetStores();
 
-  // Get arrays from response data
+  // Function to fetch all pages of products
+  const fetchAllProducts = async (searchTerm: string) => {
+    try {
+      setIsLoadingProducts(true);
+      let allResults: Product[] = [];
+      let currentPage = 1;
+      let hasMore = true;
+
+      while (hasMore) {
+        const response = await api.get('items/product/', {
+          params: {
+            page: currentPage,
+            product_name: searchTerm || undefined
+          }
+        });
+        const data = response.data;
+        
+        allResults = [...allResults, ...(data.results || [])];
+        
+        if (!data.links?.next) {
+          hasMore = false;
+        }
+        currentPage++;
+      }
+
+      setAllProducts(allResults);
+    } catch (error) {
+      console.error('Error fetching all products:', error);
+      toast.error(t('messages.error.load', { item: t('navigation.products') }));
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  };
+
+  // Effect to fetch all products when search term changes
+  useEffect(() => {
+    const debouncedFetch = setTimeout(() => {
+      fetchAllProducts(productSearchTerm);
+    }, 300);
+
+    return () => clearTimeout(debouncedFetch);
+  }, [productSearchTerm]);
+
+  // Get arrays from response data 
   const stocks = Array.isArray(stocksData) ? stocksData : stocksData?.results || [];
-  const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
   
   // Watch for changes in the from_to field to update allowed categories
@@ -137,7 +174,7 @@ export default function CreateRecycling() {
 
   // Set initial values based on URL parameters
   useEffect(() => {
-    if (stocks.length > 0 && products.length > 0) {
+    if (stocks.length > 0 && allProducts.length > 0) {
       if (fromStockId) {
         form.setValue('from_to', Number(fromStockId));
         
@@ -157,7 +194,7 @@ export default function CreateRecycling() {
         }
       }
     }
-  }, [fromStockId, fromProductId, stocks, products, form]);
+  }, [fromStockId, fromProductId, stocks, allProducts, form]);
 
   // Update fields with dynamic options
   const fields = recyclingFields(t, productSearchTerm).map(field => {
@@ -173,7 +210,7 @@ export default function CreateRecycling() {
     if (field.name === 'to_product') {
       return {
         ...field,
-        options: products
+        options: allProducts
           .filter(product => {
             // If no categories are specified or the product has no category, show all products
             if (!allowedCategories || !product.category_read) return true;
@@ -185,7 +222,8 @@ export default function CreateRecycling() {
             label: product.product_name
           }))
           .filter(opt => opt.value),
-        onSearch: setProductSearchTerm
+        onSearch: setProductSearchTerm,
+        isLoading: isLoadingProducts
       };
     }
     if (field.name === 'store') {
@@ -211,7 +249,6 @@ export default function CreateRecycling() {
         spent_amount: String(data.spent_amount || ''),
         get_amount: String(data.get_amount || ''),
         date_of_recycle: data.date_of_recycle || '',
-       
       };
 
       await createRecycling.mutateAsync(formattedData);
