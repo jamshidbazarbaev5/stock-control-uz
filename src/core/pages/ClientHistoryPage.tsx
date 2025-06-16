@@ -1,10 +1,9 @@
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useGetClient, useGetClientHistory } from '../api/client';
+import { useGetClient, useGetClientHistory, type ClientHistoryEntry } from '../api/client';
 import { format } from 'date-fns';
 import { ResourceTable } from '../helpers/ResourseTable';
-import { CalendarIcon, CoinsIcon, PiggyBankIcon, WalletIcon } from 'lucide-react';
-import type { ClientHistoryEntry } from '../api/client';
+import { CalendarIcon, CoinsIcon, PiggyBankIcon, UserIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState } from 'react';
 
@@ -37,12 +36,48 @@ export default function ClientHistoryPage() {
       ),
     },
     {
-      header: t('forms.amount_deducted'),
-      accessorKey: 'amount_deducted',
-      cell: (row: ClientHistoryEntry) => (
+      header: t('forms.type'),
+      accessorKey: 'type',
+
+
+      cell: (row: any) => (
         <div className="flex items-center gap-2">
-          <CoinsIcon className="h-4 w-4 text-gray-500" />
-          {row.amount_deducted}
+          {row.type === 'Расход' ? (
+            <div className="flex items-center gap-2 text-red-600">
+              <CoinsIcon className="h-4 w-4" />
+              {row.type}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-green-600">
+              <PiggyBankIcon className="h-4 w-4" />
+              {row.type}
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      header: t('forms.amount'),
+      accessorKey: 'amount_deducted',
+      cell: (row: any) => {
+        const amount = row.type === 'Расход' 
+          ? row.amount_deducted 
+          : (parseFloat(row.new_balance) - parseFloat(row.previous_balance)).toString();
+        return (
+          <div className={`flex items-center gap-2 ${row.type === 'Расход' ? 'text-red-600' : 'text-green-600'}`}>
+            <CoinsIcon className="h-4 w-4" />
+            {new Intl.NumberFormat('ru-RU').format(parseFloat(amount || '0'))}
+          </div>
+        );
+      },
+    },
+    {
+      header: t('forms.worker'),
+      accessorKey: 'worker_read',
+      cell: (row: any) => (
+        <div className="flex items-center gap-2">
+          <UserIcon className="h-4 w-4 text-gray-500" />
+          {row.worker_read.name}
         </div>
       ),
     },
@@ -51,8 +86,8 @@ export default function ClientHistoryPage() {
       accessorKey: 'previous_balance',
       cell: (row: ClientHistoryEntry) => (
         <div className="flex items-center gap-2">
-          <WalletIcon className="h-4 w-4 text-gray-500" />
-          {row.previous_balance}
+          <CoinsIcon className="h-4 w-4 text-gray-500" />
+          {new Intl.NumberFormat('ru-RU').format(parseFloat(row.previous_balance))}
         </div>
       ),
     },
@@ -62,11 +97,10 @@ export default function ClientHistoryPage() {
       cell: (row: ClientHistoryEntry) => (
         <div className="flex items-center gap-2">
           <PiggyBankIcon className="h-4 w-4 text-gray-500" />
-          {row.new_balance}
+          {new Intl.NumberFormat('ru-RU').format(parseFloat(row.new_balance))}
         </div>
       ),
     },
-   
   ];
 
   return (
@@ -74,7 +108,7 @@ export default function ClientHistoryPage() {
       <div className="mb-6">
         <h2 className="text-2xl font-bold">{client.name}</h2>
         <p className="text-gray-600">{t('forms.ceo_name')}: {client.ceo_name}</p>
-        <p className="text-gray-600">{t('forms.current_balance')}: {client.balance}</p>
+        <p className="text-gray-600">{t('forms.current_balance')}: {new Intl.NumberFormat('ru-RU').format(parseFloat(String(client.balance)))}</p>
       </div>
 
       <div className="mb-4 w-[200px]">
@@ -94,7 +128,6 @@ export default function ClientHistoryPage() {
         data={history || []}
         columns={columns}
         isLoading={isHistoryLoading}
-        
       />
     </div>
   );
