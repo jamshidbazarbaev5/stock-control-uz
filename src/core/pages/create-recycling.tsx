@@ -7,6 +7,7 @@ import type { Product } from '../api/product';
 import { useCreateRecycling } from '../api/recycling';
 import { useGetStocks } from '../api/stock';
 import { useGetStores } from '../api/store';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import api from '../api/api';
@@ -14,7 +15,7 @@ import api from '../api/api';
 
 interface FormValues extends Partial<Recycling> {}
 
-const recyclingFields = (t:any, productSearchTerm: string)=> [
+const recyclingFields = (t:any, productSearchTerm: string, perUnitPrice: number | null)=> [
   {
     name: 'from_to',
     label: t('table.from_product'),
@@ -69,10 +70,28 @@ const recyclingFields = (t:any, productSearchTerm: string)=> [
     placeholder: t('placeholders.enter_price'),
     required: true,
   },
-  
-  
-  
- 
+  {
+    name: 'purchase_price_in_us',
+    label: t('common.enter_purchase_price_usd'),
+    type: 'text',
+    placeholder: t('common.enter_purchase_price_usd'),
+    required: true,
+  },
+  {
+    name: 'exchange_rate',
+    label: t('common.enter_exchange_rate'),
+    type: 'text',
+    placeholder: t('common.enter_exchange_rate'),
+    required: true,
+  },
+  {
+    name: 'purchase_price_in_uz',
+    label: t('common.calculated_purchase_price_uzs'),
+    type: 'text',
+    placeholder: t('common.calculated_purchase_price_uzs'),
+    readOnly: true,
+    helperText: perUnitPrice ? `${t('common.per_unit_cost')}: ${perUnitPrice.toFixed(2)} UZS` : '',
+  },
   {
     name: 'date_of_recycle',
     label: t('table.date'),
@@ -87,26 +106,37 @@ export default function CreateRecycling() {
   const location = useLocation();
   const createRecycling = useCreateRecycling();
   const { t } = useTranslation();
+  const { data: currentUser } = useCurrentUser();
   const [productSearchTerm, setProductSearchTerm] = useState('');
   const [allowedCategories, setAllowedCategories] = useState<number[] | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [perUnitPrice, setPerUnitPrice] = useState<number | null>(null);
   
   // Get URL parameters
   const searchParams = new URLSearchParams(location.search);
   const fromProductId = searchParams.get('fromProductId');
   const fromStockId = searchParams.get('fromStockId');
   
+  // Initialize form with default values
   const form = useForm<FormValues>({
     defaultValues: {
       from_to: fromStockId ? Number(fromStockId) : undefined,
       date_of_recycle: new Date().toISOString().split('T')[0], // Today's date
+      store: currentUser?.role === 'Администратор' ? currentUser.store_read?.id : undefined,
     }
   });
 
   // Fetch data for dropdowns
   const { data: stocksData } = useGetStocks();
   const { data: storesData } = useGetStores();
+
+  // Effect to ensure store is set and locked for admin
+  useEffect(() => {
+    if (currentUser?.role === 'Администратор' && currentUser?.store_read?.id) {
+      form.setValue('store', currentUser.store_read.id);
+    }
+  }, [currentUser, form]);
 
   // Function to fetch all pages of products
   const fetchAllProducts = async (searchTerm: string) => {
@@ -197,7 +227,7 @@ export default function CreateRecycling() {
   }, [fromStockId, fromProductId, stocks, allProducts, form]);
 
   // Update fields with dynamic options
-  const fields = recyclingFields(t, productSearchTerm).map(field => {
+  const fields = recyclingFields(t, productSearchTerm, perUnitPrice).map(field => {
     if (field.name === 'from_to') {
       return {
         ...field,
@@ -212,9 +242,7 @@ export default function CreateRecycling() {
         ...field,
         options: allProducts
           .filter(product => {
-            // If no categories are specified or the product has no category, show all products
             if (!allowedCategories || !product.category_read) return true;
-            // Otherwise only show products in allowed categories
             return allowedCategories.includes(product.category_read.id);
           })
           .map(product => ({
@@ -227,16 +255,48 @@ export default function CreateRecycling() {
       };
     }
     if (field.name === 'store') {
+      const isAdmin = currentUser?.role === 'Администратор';
       return {
         ...field,
         options: stores.map(store => ({
           value: store.id,
           label: store.name
-        })).filter(opt => opt.value)
+        })).filter(opt => isAdmin ? opt.value === currentUser?.store_read?.id : opt.value),
+        disabled: isAdmin
       };
     }
     return field;
   });
+
+  // Watch specific fields for changes
+  const usdPrice = form.watch('purchase_price_in_us') as number | undefined;
+  const exchangeRate = form.watch('exchange_rate') as number | undefined;
+  const quantity = form.watch('spent_amount') as number | undefined;  // Changed from 'quantity' to 'spent_amount' to match form field
+
+  // Effect to update purchase_price_in_uz and per unit price when dependencies change
+  useEffect(() => {
+    if (usdPrice && exchangeRate) {
+      const priceInUSD = Number(usdPrice);
+      const rate = Number(exchangeRate);
+      const quantityValue = Number(quantity || 0);
+      
+      if (!isNaN(priceInUSD) && !isNaN(rate)) {
+        const calculatedPrice = priceInUSD * rate;
+        form.setValue('purchase_price_in_uz', calculatedPrice, {
+          shouldValidate: false,
+          shouldDirty: true
+        });
+
+        // Calculate per unit price
+        if (!isNaN(quantityValue) && quantityValue > 0) {
+          const perUnit = calculatedPrice / quantityValue;
+          setPerUnitPrice(perUnit);
+        } else {
+          setPerUnitPrice(null);
+        }
+      }
+    }
+  }, [usdPrice, exchangeRate, quantity, form]);
 
   const handleSubmit = async (data: FormValues) => {
     try {

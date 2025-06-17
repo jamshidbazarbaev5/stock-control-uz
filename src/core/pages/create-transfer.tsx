@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useGetStocks, type Stock } from '../api/stock';
 import { useGetStores, type Store } from '../api/store';
 import { useCreateTransfer, type Transfer } from '../api/transfer';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 
@@ -23,6 +24,7 @@ export default function CreateTransfer() {
   const location = useLocation();
   const { t } = useTranslation();
   const [sourceStore, setSourceStore] = useState<number | null>(null);
+  const { data: currentUser } = useCurrentUser();
   
   // Get URL parameters
   const searchParams = new URLSearchParams(location.search);
@@ -54,7 +56,13 @@ export default function CreateTransfer() {
   const sourceStocks = stocks?.filter(
     (stock) => stock.store_read?.id === sourceStore && stock.quantity > 0
   );
-  
+
+  // Set administrator's store as source store
+  useEffect(() => {
+    if (currentUser?.role === 'Администратор' && currentUser?.store_read?.id) {
+      setSourceStore(currentUser.store_read.id);
+    }
+  }, [currentUser]);
     
   // If we have a fromStockId from the URL, set the sourceStore and handle product selection
   useEffect(() => {
@@ -64,9 +72,11 @@ export default function CreateTransfer() {
       if (fromStockId) {
         const selectedStock = stocks.find((stock: Stock) => stock.id === Number(fromStockId));
         if (selectedStock?.store_read?.id) {
-          // Set the source store
-          const storeId = selectedStock.store_read.id;
-          setSourceStore(storeId);
+          // Set the source store only if user is not an administrator
+          if (currentUser?.role !== 'Администратор') {
+            const storeId = selectedStock.store_read.id;
+            setSourceStore(storeId);
+          }
           
           // Make sure the from_stock is set in the form
           form.setValue('from_stock', Number(fromStockId));
@@ -75,30 +85,31 @@ export default function CreateTransfer() {
       // If we have a product ID but no specific stock, try to find a stock with that product
       else if (fromProductId) {
         const stockWithProduct = stocks.find(
-          (stock: Stock) => stock.product_read?.id === Number(fromProductId) && stock.quantity > 0
+          (stock: Stock) => stock.product_read?.id === Number(fromProductId) && stock.quantity > 0 &&
+          (currentUser?.role === 'Администратор' ? stock.store_read?.id === currentUser?.store_read?.id : true)
         );
         if (stockWithProduct) {
           // Set the from_stock in the form
           form.setValue('from_stock', stockWithProduct.id);
           
-          if (stockWithProduct.store_read?.id) {
-            // Set the source store
+          if (stockWithProduct.store_read?.id && currentUser?.role !== 'Администратор') {
+            // Set the source store only if user is not an administrator
             setSourceStore(stockWithProduct.store_read.id);
           }
         }
       }
     }
-  }, [fromStockId, fromProductId, stocks, form, stocksLoading, storesLoading]);
+  }, [fromStockId, fromProductId, stocks, form, stocksLoading, storesLoading, currentUser]);
   
-  // Update source store when from_stock changes
+  // Update source store when from_stock changes - only for non-administrators
   useEffect(() => {
-    if (!stocksLoading && fromStock && stocks?.length) {
+    if (!stocksLoading && fromStock && stocks?.length && currentUser?.role !== 'Администратор') {
       const selectedStock = stocks.find((stock: Stock) => stock.id === fromStock);
       if (selectedStock?.store_read?.id) {
         setSourceStore(selectedStock.store_read.id);
       }
     }
-  }, [fromStock, stocks, stocksLoading]);
+  }, [fromStock, stocks, stocksLoading, currentUser]);
 
   const onSubmit = async (data: Transfer) => {
     try {
@@ -132,59 +143,72 @@ export default function CreateTransfer() {
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {/* Source Store Selection */}
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              {t('forms.from_store')}
-            </label>
-            <Select
-              onValueChange={(value) => {
-                const storeId = Number(value);
-                setSourceStore(storeId);
-                
-                // Check if we have URL parameters and if there's a matching stock in the selected store
-                if ((fromProductId || fromStockId) && stocks?.length) {
-                  let matchingStock;
+          {/* Source Store Selection - Only shown for non-administrators */}
+          {currentUser?.role !== 'Администратор' && (
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                {t('forms.from_store')}
+              </label>
+              <Select
+                onValueChange={(value) => {
+                  const storeId = Number(value);
+                  setSourceStore(storeId);
                   
-                  if (fromStockId) {
-                    // Find the stock and check if it's in the selected store
-                    matchingStock = stocks.find((stock: Stock) => 
-                      stock.id === Number(fromStockId) && stock.store_read?.id === storeId
-                    );
-                  } else if (fromProductId) {
-                    // Find a stock with the product in the selected store
-                    matchingStock = stocks.find((stock: Stock) => 
-                      stock.product_read?.id === Number(fromProductId) && 
-                      stock.store_read?.id === storeId && 
-                      stock.quantity > 0
-                    );
+                  // Check if we have URL parameters and if there's a matching stock in the selected store
+                  if ((fromProductId || fromStockId) && stocks?.length) {
+                    let matchingStock;
+                    
+                    if (fromStockId) {
+                      // Find the stock and check if it's in the selected store
+                      matchingStock = stocks.find((stock: Stock) => 
+                        stock.id === Number(fromStockId) && stock.store_read?.id === storeId
+                      );
+                    } else if (fromProductId) {
+                      // Find a stock with the product in the selected store
+                      matchingStock = stocks.find((stock: Stock) => 
+                        stock.product_read?.id === Number(fromProductId) && 
+                        stock.store_read?.id === storeId && 
+                        stock.quantity > 0
+                      );
+                    }
+                    
+                    if (matchingStock) {
+                      // If we found a matching stock in the new store, use it
+                      form.setValue('from_stock', matchingStock.id);
+                      return; // Don't reset the stock selection if we found a match
+                    }
                   }
                   
-                  if (matchingStock) {
-                    // If we found a matching stock in the new store, use it
-                    form.setValue('from_stock', matchingStock.id);
-                    return; // Don't reset the stock selection if we found a match
-                  }
-                }
-                
-                // Reset selections if no match was found
-                form.setValue('from_stock', null as unknown as number); // Reset stock selection
-                form.setValue('to_stock', null as unknown as number); // Reset destination store
-              }}
-              value={sourceStore?.toString()}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t('placeholders.select_store')} />
-              </SelectTrigger>
-              <SelectContent>
-                {stores?.map((store: Store) => store.id && (
-                  <SelectItem key={store.id} value={store.id.toString()}>
-                    {store.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                  // Reset selections if no match was found
+                  form.setValue('from_stock', null as unknown as number); // Reset stock selection
+                  form.setValue('to_stock', null as unknown as number); // Reset destination store
+                }}
+                value={sourceStore?.toString()}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={t('placeholders.select_store')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {stores?.map((store: Store) => store.id && (
+                    <SelectItem key={store.id} value={store.id.toString()}>
+                      {store.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {/* For administrators, show their assigned store */}
+          {currentUser?.role === 'Администратор' && currentUser?.store_read && (
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                {t('forms.from_store')}
+              </label>
+              <div className="p-2 border rounded-md bg-gray-50">
+                {currentUser.store_read.name}
+              </div>
+            </div>
+          )}
 
           {/* Destination Store Selection */}
           {sourceStore && (

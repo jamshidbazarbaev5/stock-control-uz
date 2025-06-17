@@ -6,6 +6,7 @@ import api from '../api/api';
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useGetStores } from '../api/store';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 
 interface ProductStockBalance {
   product__product_name: string;
@@ -38,13 +39,12 @@ export default function ProductStockBalancePage() {
   
   const { data: storesData } = useGetStores({});
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
-  
+  const {data:currentUser} = useCurrentUser();
   const { data, isLoading } = useQuery<StockBalanceResponse>({
     queryKey: ['stockBalance', currentPage, selectedStore],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        page_size: '30'
       });
       
       if (selectedStore !== 'all') {
@@ -83,7 +83,7 @@ export default function ProductStockBalancePage() {
         <h1 className="text-2xl font-bold">{t('navigation.stock_balance')}</h1>
         
         <div className="w-full sm:w-[250px]">
-          <Select
+          {currentUser?.is_superuser && ( <Select
             value={selectedStore}
             onValueChange={setSelectedStore}
           >
@@ -98,7 +98,8 @@ export default function ProductStockBalancePage() {
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </Select>)}
+         
         </div>
       </div>
       

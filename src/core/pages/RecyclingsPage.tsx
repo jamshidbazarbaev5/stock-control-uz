@@ -4,6 +4,7 @@ import { ResourceTable } from '../helpers/ResourseTable';
 import { toast } from 'sonner';
 import { useGetRecyclings, useDeleteRecycling } from '../api/recycling';
 import { format } from 'date-fns';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 
 const columns = (t: any) => [
   {
@@ -60,7 +61,7 @@ export default function RecyclingsPage() {
   const totalCount = recyclingsData?.count || 0;
 
   const { mutate: deleteRecycling } = useDeleteRecycling();
-
+  const {data:currentUser} = useCurrentUser();
   const handleDelete = (id: number) => {
     deleteRecycling(id, {
       onSuccess: () => toast.success(t('messages.success.deleted', { item: t('navigation.recyclings') })),
@@ -78,7 +79,7 @@ export default function RecyclingsPage() {
         data={recyclings}
         columns={columns(t)}
         isLoading={isLoading}
-        onDelete={handleDelete}
+        onDelete={currentUser?.is_superuser ? handleDelete : undefined}
         pageSize={10}
         totalCount={totalCount}
         currentPage={page}

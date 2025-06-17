@@ -19,6 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '../../components/ui/table';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 
 export default function IncomePage() {
   const { t } = useTranslation();
@@ -33,7 +34,7 @@ export default function IncomePage() {
   const { data: usersData } = useGetUsers();
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
   const users = Array.isArray(usersData) ? usersData : usersData?.results || [];
-  
+  const {data:currentUser} = useCurrentUser();
   const { data: incomesData, isLoading } = useGetIncomes({
     params: {
       ...(selectedStore !== 'all' && { store: selectedStore }),
@@ -161,7 +162,8 @@ export default function IncomePage() {
       </div>
 
       <div className="flex gap-4 mb-6">
-        <Select value={selectedStore} onValueChange={setSelectedStore}>
+        {currentUser?.is_superuser && (
+    <Select value={selectedStore} onValueChange={setSelectedStore}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder={t('forms.select_store')} />
           </SelectTrigger>
@@ -174,6 +176,8 @@ export default function IncomePage() {
             ))}
           </SelectContent>
         </Select>
+        )}
+    
 
         <Select value={selectedSource} onValueChange={setSelectedSource}>
           <SelectTrigger className="w-[200px]">

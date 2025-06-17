@@ -306,7 +306,7 @@ export default function SalesPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={selectedStore} onValueChange={setSelectedStore}>
+            {currentUser?.is_superuser && ( <Select value={selectedStore} onValueChange={setSelectedStore}>
               <SelectTrigger>
                 <SelectValue placeholder={t('forms.select_store')} />
               </SelectTrigger>
@@ -318,7 +318,8 @@ export default function SalesPage() {
                     </SelectItem>
                 ) : null) || null}
               </SelectContent>
-            </Select>
+            </Select>)}
+           
           </div>
 
 

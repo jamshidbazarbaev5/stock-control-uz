@@ -21,8 +21,7 @@ import { ResourceTable } from '../helpers/ResourseTable';
 import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import {formatDate} from "@/core/helpers/formatDate.ts";
-
+ 
 type PaginatedData<T> = { results: T[]; count: number } | T[];
 
 export default function StocksPage() {
@@ -37,6 +36,20 @@ export default function StocksPage() {
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const pageSize = 30;
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('ru-RU', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return '-';
+    }
+  }
 
   // Columns definition
   const columns = [
@@ -63,7 +76,7 @@ export default function StocksPage() {
       accessorKey:'date',
       cell:(row:any)=>(
           <p>
-            {formatDate(row.history_of_prices.date_of_arrived)}
+            {formatDate(row.date_of_arrived)}
           </p>
       )
     },
@@ -369,8 +382,7 @@ export default function StocksPage() {
                 ) : null) || null}
               </SelectContent>
             </Select>
-
-            <Select value={selectedStore} onValueChange={setSelectedStore}>
+              {currentUser?.is_superuser && ( <Select value={selectedStore} onValueChange={setSelectedStore}>
               <SelectTrigger>
                 <SelectValue placeholder={t('forms.select_store')} />
               </SelectTrigger>
@@ -382,7 +394,8 @@ export default function StocksPage() {
                   </SelectItem>
                 ) : null) || null}
               </SelectContent>
-            </Select>
+            </Select>)}
+           
 
             <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
               <SelectTrigger>
@@ -418,7 +431,7 @@ export default function StocksPage() {
         columns={columns}
         isLoading={isLoading}
         onEdit={handleEdit}
-        onDelete={currentUser?.role?.toLowerCase() !== 'продавец' ? handleDelete : undefined}
+        onDelete={currentUser?.is_superuser ? handleDelete : undefined}
         pageSize={pageSize}
         totalCount={stocksData?.count || 0}
         currentPage={currentPage}

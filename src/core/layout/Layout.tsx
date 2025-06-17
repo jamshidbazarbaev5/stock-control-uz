@@ -14,6 +14,7 @@ import {
   LogOut,
   User,
   ChevronDown,
+  type LucideIcon,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
@@ -22,7 +23,15 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLogout } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
 
-export default function Layout({ children }: any) {
+type NavItem = {
+  icon: LucideIcon;
+  label: string;
+  href?: string;
+  id?: string;
+  submenu?: NavItem[];
+};
+
+export default function Layout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -57,8 +66,9 @@ export default function Layout({ children }: any) {
   // Set active submenu based on current path
   useEffect(() => {
     const currentPath = location.pathname;
-    navItems.forEach((item) => {
+    navItems.forEach((item: NavItem) => {
       if (
+        item.id &&
         item.submenu &&
         item.submenu.some((subItem) => subItem.href === currentPath)
       ) {
@@ -67,109 +77,123 @@ export default function Layout({ children }: any) {
     });
   }, [location.pathname]);
 
-  const navItems =
-    currentUser?.role === "Продавец"
-      ? [
-          {
-            icon: Package,
-            label: t("navigation.dashobard"),
-            href: "/dashboard",
-          },
-          { icon: ShoppingBag, label: t("navigation.sale"), href: "/sales" },
-          {
-            icon: Package,
-            label: t("navigation.stock_balance"),
-            href: "/product-stock-balance",
-          },
-          { icon: UserCheck, label: t("navigation.clients"), href: "/clients" },
-          { icon: ShoppingBag, label: t("navigation.debt"), href: "/debts" },
-        ]
-      : [
-          {
-            icon: Package,
-            label: t("navigation.dashobard"),
-            href: "/dashboard",
-          },
-          {
+  const navItems: NavItem[] = (() => {
+    // Base navigation items that all users can see
+    const baseItems: NavItem[] = [
+      {
+        icon: Package,
+        label: t("navigation.dashobard"),
+        href: "/dashboard",
+      },
+      {
+        icon: ArrowLeftRight,
+        label: t("navigation.transfers"),
+        href: "/transfers",
+      },
+      { icon: Package, label: t("navigation.stocks"), href: "/stock" },
+      {
+        icon: Package,
+        label: t("navigation.stock_balance"),
+        href: "/product-stock-balance",
+      },
+      { icon: ShoppingBag, label: t("navigation.sale"), href: "/sales" },
+      { icon: UserCheck, label: t("navigation.clients"), href: "/clients" },
+      { icon: ShoppingBag, label: t("navigation.debt"), href: "/debts" },
+      {
+        icon: BanknoteIcon,
+        label: t("navigation.expense"),
+        href: "/expense",
+      },
+      {
+        icon: BanknoteIcon,
+        label: t("navigation.income"),
+        href: "/income",
+      },
+      {
             icon: ArrowLeftRight,
-            label: t("navigation.transfers"),
-            href: "/transfers",
+            label: t("navigation.recyclings"),
+            href: "/recyclings",
           },
-          { icon: Package, label: t("navigation.stocks"), href: "/stock" },
+    ];
+
+    // Add money to budget - only for superuser
+    if (currentUser?.is_superuser) {
+      baseItems.push({
+        icon: PlusCircle,
+        label: t("navigation.add_money"),
+        href: "/finance",
+      });
+    }
+
+    // Settings section - not for "Администратор" and customized for "Продавец"
+    if (currentUser?.role === "Продавец") {
+      return [
+        {
+          icon: Package,
+          label: t("navigation.dashobard"),
+          href: "/dashboard",
+        },
+        { icon: ShoppingBag, label: t("navigation.sale"), href: "/sales" },
+        {
+          icon: Package,
+          label: t("navigation.stock_balance"),
+          href: "/product-stock-balance",
+        },
+        { icon: UserCheck, label: t("navigation.clients"), href: "/clients" },
+        { icon: ShoppingBag, label: t("navigation.debt"), href: "/debts" },
+      ];
+    }
+
+    // Add settings section for all roles except "Администратор"
+    if (currentUser?.role !== "Администратор") {
+      baseItems.push({
+        icon: Package,
+        label: t("navigation.settings"),
+        id: "settings",
+        submenu: [
           {
-            icon: Package,
-            label: t("navigation.stock_balance"),
-            href: "/product-stock-balance",
+            icon: ShoppingBag,
+            label: t("navigation.stores"),
+            href: "/stores",
           },
-          { icon: ShoppingBag, label: t("navigation.sale"), href: "/sales" },
-          { icon: UserCheck, label: t("navigation.clients"), href: "/clients" },
-          { icon: ShoppingBag, label: t("navigation.debt"), href: "/debts" },
-           {
-                icon: BanknoteIcon,
-                label: t("navigation.expense"),
-                href: "/expense",
-              },
-              {
-                icon: PlusCircle,
-                label: t("navigation.add_money"),
-                href: "/finance",
-              },
-             
-              {
-                icon: BanknoteIcon,
-                label: t("navigation.income"),
-                href: "/income",
-              },
-       
           {
-            icon: Package,
-            label: t("navigation.settings"),
-            id: "settings",
-            submenu: [
-              {
-                icon: ShoppingBag,
-                label: t("navigation.stores"),
-                href: "/stores",
-              },
-              {
-                icon: ListView,
-                label: t("navigation.categories"),
-                href: "/categories",
-              },
-              {
-                icon: Ruler,
-                label: t("navigation.measurements"),
-                href: "/measurements",
-              },
-              {
-                icon: ShoppingBag,
-                label: t("navigation.products"),
-                href: "/products",
-              },
-              {
-                icon: ArrowLeftRight,
-                label: t("navigation.recyclings"),
-                href: "/recyclings",
-              },
-              {
-                icon: ListView,
-                label: t("navigation.suppliers"),
-                href: "/suppliers",
-              },
-               {
-                icon: Receipt,
-                label: t("navigation.cash_inflow_names"),
-                href: "/cash-inflow-names",
-              },
-              {
-                icon: Receipt,
-                label: t("navigation.expense_name"),
-                href: "/expense-name",
-              },
-              { icon: User2, label: t("navigation.users"), href: "/users" },
-            ],
+            icon: ListView,
+            label: t("navigation.categories"),
+            href: "/categories",
           },
-        ];
+          {
+            icon: Ruler,
+            label: t("navigation.measurements"),
+            href: "/measurements",
+          },
+          {
+            icon: ShoppingBag,
+            label: t("navigation.products"),
+            href: "/products",
+          },
+          
+          {
+            icon: ListView,
+            label: t("navigation.suppliers"),
+            href: "/suppliers",
+          },
+          {
+            icon: Receipt,
+            label: t("navigation.cash_inflow_names"),
+            href: "/cash-inflow-names",
+          },
+          {
+            icon: Receipt,
+            label: t("navigation.expense_name"),
+            href: "/expense-name",
+          },
+          { icon: User2, label: t("navigation.users"), href: "/users" },
+        ],
+      });
+    }
+
+    return baseItems;
+  })();
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col overflow-x-hidden">
@@ -319,11 +343,13 @@ export default function Layout({ children }: any) {
                 {item.submenu ? (
                   <div>
                     <button
-                      onClick={() =>
-                        setActiveSubmenu(
-                          activeSubmenu === item.id ? null : item.id
-                        )
-                      }
+                      onClick={() => {
+                        if (item.id) {
+                          setActiveSubmenu(
+                            activeSubmenu === item.id ? null : item.id
+                          );
+                        }
+                      }}
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left mb-1 transition-colors
                         ${
                           activeSubmenu === item.id
@@ -373,7 +399,7 @@ export default function Layout({ children }: any) {
                             onClick={(e) => {
                               e.preventDefault();
                               setMobileMenuOpen(false);
-                              navigate(subItem.href);
+                              if (subItem.href) navigate(subItem.href);
                             }}
                             className={`flex items-center gap-3 px-3 py-2 rounded-lg text-left mb-1 transition-colors
                               ${
@@ -402,7 +428,7 @@ export default function Layout({ children }: any) {
                     onClick={(e) => {
                       e.preventDefault();
                       setMobileMenuOpen(false);
-                      navigate(item.href);
+                      if (item.href) navigate(item.href);
                     }}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-left mb-1 transition-colors
                       ${

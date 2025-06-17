@@ -339,7 +339,9 @@ const DashboardPage = () => {
           <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center gap-4">
             {/* Period Selector */}
              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <span className="text-sm font-medium whitespace-nowrap">{t('dashboard.store')}:</span>
+              {currentUser?.is_superuser && (
+                <>
+                 <span className="text-sm font-medium whitespace-nowrap">{t('dashboard.store')}:</span>
                 <Select 
                   value={selectedStore} 
                   onValueChange={setSelectedStore}
@@ -356,6 +358,9 @@ const DashboardPage = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                </>
+              )}
+               
               </div>
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <span className="text-sm font-medium whitespace-nowrap">{t('dashboard.period')}:</span>
@@ -1069,7 +1074,9 @@ const DashboardPage = () => {
         </Card>
         
         {/* Unsold Products */}
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow md:col-span-2 lg:col-span-2">
+
+            {currentUser?.is_superuser  &&(
+              <Card className="bg-white shadow-md hover:shadow-lg transition-shadow md:col-span-2 lg:col-span-2">
           <CardHeader className="border-b">
             <div className="flex justify-between items-center">
               <div>
@@ -1128,6 +1135,9 @@ const DashboardPage = () => {
             )}
           </CardContent>
         </Card>
+            )}
+
+        
       </div>
 
       {/* Top Sellers */}

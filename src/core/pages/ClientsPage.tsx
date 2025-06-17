@@ -12,6 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 
 const formSchema = z.object({
   amount: z.number().min(0.01, 'Amount must be greater than 0'),
@@ -94,7 +95,7 @@ export default function ClientsPage() {
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
   const { data: clientsData, isLoading } = useGetClients({ params: selectedType === 'all' ? {} : { type: selectedType } });
   const deleteClient = useDeleteClient();
-
+  const {data:currentUser}  = useCurrentUser()
   const clients = Array.isArray(clientsData) ? clientsData : clientsData?.results || [];
   const totalCount = Array.isArray(clientsData) ? clients.length : clientsData?.count || 0;
 
@@ -132,21 +133,26 @@ export default function ClientsPage() {
             >
               {t('common.history')}
             </Button>
-            <Button
+            {currentUser?.is_superuser && ( <Button
               variant="outline"
               onClick={() => row.id && setSelectedClientId(row.id)}
             >
               {t('common.increment_balance')}
-            </Button>
+            </Button>)}
+           
           </div>
         ) : null,
     },
   ];
 
+
   const handleDelete = async (id: number) => {
+
     try {
-      await deleteClient.mutateAsync(id);
-      toast.success(t('messages.success.deleted', { item: t('navigation.clients') }));
+      if (currentUser?.is_superuser) {
+        await deleteClient.mutateAsync(id);
+        toast.success(t('messages.success.deleted', { item: t('navigation.clients') }));
+      }
     } catch (error) {
       toast.error(t('messages.error.delete', { item: t('navigation.clients') }));
       console.error('Failed to delete client:', error);
@@ -172,8 +178,8 @@ export default function ClientsPage() {
         columns={columns}
         isLoading={isLoading}
         onAdd={() => navigate('/create-client')}
-        onEdit={(client) => navigate(`/edit-client/${client.id}`)}
-        onDelete={handleDelete}
+        onEdit={currentUser?.is_superuser ? (client) => navigate(`/edit-client/${client.id}`) : undefined}
+        onDelete={currentUser?.is_superuser ? handleDelete : undefined}
         totalCount={totalCount}
       />
       {selectedClientId && (
