@@ -242,6 +242,7 @@
     "amount_exceeds_remainder": "Summa qalǵan summadan artıq bolmawı kerek"
   },
   "forms": {
+    "type": "Túr",
     "has_recycling": "Qayta ishlew bar ma?",
     "amount4": "Bir tovardin senasi",
     "payment_history": "Tólem tarixi",

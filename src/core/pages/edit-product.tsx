@@ -41,11 +41,8 @@ export default function EditProduct() {
   const updateProduct = useUpdateProduct();
   const { data: product } = useGetProduct(Number(id));
   const [measurements, setMeasurements] = useState<MeasurementItem[]>([]);
-  const [hasColor, setHasColor] = useState(false);
   const [color, setColor] = useState('');
-  const [hasKub, setHasKub] = useState(false);
   const [kub, setKub] = useState('');
-  const [hasRecycling, setHasRecycling] = useState(false);
   const [categoriesForRecycling, setCategoriesForRecycling] = useState<number[]>([]);
 
   // Fetch categories and measurements for the select dropdowns
@@ -65,18 +62,13 @@ export default function EditProduct() {
         for_sale: m.for_sale || false
       })));
     }
-    // Set hasColor and color if product has color data
-    setHasColor(!!product?.has_color);
+    // Set initial values if product data exists
     if (product?.has_color) {
       setColor(product.color || '');
     }
-    // Set hasKub and kub value if product has kub data
-    setHasKub(!!product?.has_kub);
     if (product?.has_kub || product?.kub) {
       setKub(product.kub?.toString() || '');
     }
-    // Set hasRecycling and categories for recycling if product has recycling data
-    setHasRecycling(!!product?.has_recycling);
     if (product?.has_recycling && product?.categories_for_recycling) {
       setCategoriesForRecycling(product.categories_for_recycling || []);
     }
@@ -180,7 +172,16 @@ export default function EditProduct() {
               { value: 'false', label: t('common.no') },
               { value: 'true', label: t('common.yes') }
             ],
-            onChange: (value: string) => setHasColor(value === 'true')
+            // No need for onChange since visibility is handled by nestedField
+            nestedField: (
+              <input
+                type="text"
+                className="w-full px-3 py-2 border rounded-md"
+                placeholder={t('placeholders.enter_color')}
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+              />
+            )
           },
           {
             name: 'has_kub',
@@ -192,7 +193,17 @@ export default function EditProduct() {
               { value: 'false', label: t('common.no') },
               { value: 'true', label: t('common.yes') }
             ],
-            onChange: (value: string) => setHasKub(value === 'true')
+            // No need for onChange since visibility is handled by nestedField
+            nestedField: (
+              <input
+                type="number"
+                className="w-full px-3 py-2 border rounded-md"
+                placeholder={t('placeholders.enter_kub')}
+                value={kub}
+                onChange={(e) => setKub(e.target.value)}
+                step="0.1"
+              />
+            )
           },
           {
             name: 'has_recycling',
@@ -204,7 +215,39 @@ export default function EditProduct() {
               { value: 'false', label: t('common.no') },
               { value: 'true', label: t('common.yes') }
             ],
-            onChange: (value: string) => setHasRecycling(value === 'true')
+            // No need for onChange since visibility is handled by nestedField
+            nestedField: (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full flex justify-between items-center">
+                    <span>
+                      {categoriesForRecycling.length
+                        ? `${categoriesForRecycling.length} ${t('forms.categories_selected')}`
+                        : t('placeholders.select_categories')}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="start">
+                  <ScrollArea className="h-[200px] p-2">
+                    {categories.map(category => (
+                      <DropdownMenuCheckboxItem
+                        key={category.id?.toString()}
+                        checked={categoriesForRecycling.includes(category.id || 0)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setCategoriesForRecycling([...categoriesForRecycling, category.id || 0]);
+                          } else {
+                            setCategoriesForRecycling(categoriesForRecycling.filter(id => id !== category.id));
+                          }
+                        }}
+                      >
+                        {category.category_name}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </ScrollArea>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )
           }
         ]}
         onSubmit={handleSubmit}
@@ -218,66 +261,6 @@ export default function EditProduct() {
           has_recycling: (product.has_recycling ? 'true' : 'false') as any,
         }}
       >
-        {hasColor && (
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">{t('forms.color')}</label>
-            <input
-              type="text"
-              className="w-full px-3 py-2 border rounded-md"
-              placeholder={t('placeholders.enter_color')}
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-            />
-          </div>
-        )}
-        {hasKub && (
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">{t('forms.kub')}</label>
-            <input
-              type="number"
-              className="w-full px-3 py-2 border rounded-md"
-              placeholder={t('placeholders.enter_kub')}
-              value={kub}
-              onChange={(e) => setKub(e.target.value)}
-              step="0.1"
-            />
-          </div>
-        )}
-        {hasRecycling && (
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">{t('forms.categories_for_recycling')}</label>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full flex justify-between items-center">
-                  <span>
-                    {categoriesForRecycling.length
-                      ? `${categoriesForRecycling.length} ${t('forms.categories_selected')}`
-                      : t('placeholders.select_categories')}
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="start">
-                <ScrollArea className="h-[200px] p-2">
-                  {categories.map(category => (
-                    <DropdownMenuCheckboxItem
-                      key={category.id?.toString()}
-                      checked={categoriesForRecycling.includes(category.id || 0)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setCategoriesForRecycling([...categoriesForRecycling, category.id || 0]);
-                        } else {
-                          setCategoriesForRecycling(categoriesForRecycling.filter(id => id !== category.id));
-                        }
-                      }}
-                    >
-                      {category.category_name}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-                </ScrollArea>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">{t('table.measurements')}</h3>
           {measurements.map((measurement: MeasurementItem, index: number) => (

@@ -115,7 +115,7 @@ export default function CategoriesPage() {
         onDelete={handleDelete}
         onAdd={() => navigate('/create-category')}
         totalCount={enhancedCategories.length}
-        pageSize={10}
+        pageSize={30}
         currentPage={1}
         onPageChange={() => {}}
       />
