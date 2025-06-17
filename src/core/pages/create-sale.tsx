@@ -641,12 +641,14 @@ export default function CreateSale() {
                               <span className="text-gray-600">{t('table.min_price')}:</span>
                               <span className="font-medium text-red-600">{selectedPrices[index].min}</span>
                             </div>
-                            <div className="flex items-center justify-between px-2 py-1 bg-green-50 rounded">
-                              <span className="text-gray-600">{t('table.profit')}:</span>
-                              <span className="font-medium text-green-600">
-                                {selectedPrices[index].profit.toFixed(1).toLocaleString()}
-                              </span>
-                            </div>
+                            {(isAdmin || currentUser?.is_superuser) && (
+                              <div className="flex items-center justify-between px-2 py-1 bg-green-50 rounded">
+                                <span className="text-gray-600">{t('table.profit')}:</span>
+                                <span className="font-medium text-green-600">
+                                  {selectedPrices[index].profit.toFixed(1).toLocaleString()}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         )}
                       </FormItem>
@@ -1016,14 +1018,16 @@ export default function CreateSale() {
                   {form.watch('sale_payments').reduce((sum, payment) => sum + (payment.amount || 0), 0).toLocaleString()}
                 </p>
               </div>
-              <div className="flex items-center justify-between">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-700">
-                  {t('table.profit')}
-                </h3>
-                <p className="text-xl sm:text-3xl font-bold text-green-600">
-                  {Object.values(selectedPrices).reduce((total, item) => total + item.profit, 0).toFixed(1).toLocaleString()}
-                </p>
-              </div>
+              {(isAdmin || currentUser?.is_superuser) && (
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-700">
+                    {t('table.profit')}
+                  </h3>
+                  <p className="text-xl sm:text-3xl font-bold text-green-600">
+                    {Object.values(selectedPrices).reduce((total, item) => total + item.profit, 0).toFixed(1).toLocaleString()}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
