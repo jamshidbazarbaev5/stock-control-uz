@@ -9,12 +9,14 @@ import { useGetStock, useUpdateStock } from '../api/stock';
 import { useGetProducts } from '../api/product';
 import { useGetStores } from '../api/store';
 import { useGetSuppliers } from '../api/supplier';
+import api from '../api/api';
 
 interface FormValues extends Partial<Stock> {
   purchase_price_in_us: string;
   exchange_rate: string;
   purchase_price_in_uz: string;
   date_of_arrived: string;
+  income_weight?: string;
 }
 
 export default function EditStock() {
@@ -22,6 +24,8 @@ export default function EditStock() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [isLoadingAllProducts, setIsLoadingAllProducts] = useState(false);
   
   // Fetch the stock and related data
   const { data: stock, isLoading: stockLoading } = useGetStock(Number(id));
@@ -35,13 +39,15 @@ export default function EditStock() {
       purchase_price_in_us: '',
       exchange_rate: '',
       purchase_price_in_uz: '',
-      date_of_arrived: ''
+      date_of_arrived: '',
+      income_weight: ''
     }
   });
 
   // Watch specific fields for changes
   const usdPrice = form.watch('purchase_price_in_us');
   const exchangeRate = form.watch('exchange_rate');
+  const incomeWeight = form.watch('income_weight' as any) as string | undefined;
 
   // Get the arrays from response data
   const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
@@ -62,16 +68,38 @@ export default function EditStock() {
     if (usdPrice && exchangeRate) {
       const priceInUSD = parseFloat(usdPrice);
       const rate = parseFloat(exchangeRate);
-      
+      // const quantityString = form.watch('quantity')?.toString() || '0';
+      // const quantity = parseFloat(quantityString);
       if (!isNaN(priceInUSD) && !isNaN(rate)) {
         const calculatedPrice = priceInUSD * rate;
         form.setValue('purchase_price_in_uz', calculatedPrice.toString(), {
           shouldValidate: false,
           shouldDirty: true
         });
+        // Calculate per unit price (optional, for helper text)
+        // if (!isNaN(quantity) && quantity > 0) {
+        //   const perUnit = calculatedPrice / quantity;
+        //   setPerUnitPrice(perUnit);
+        // } else {
+        //   setPerUnitPrice(null);
+        // }
       }
     }
-  }, [usdPrice, exchangeRate, form]);
+  }, [usdPrice, exchangeRate, form, form.watch('quantity')]);
+
+  // Watch income_weight and update quantity for is_list products
+  useEffect(() => {
+    if (selectedProduct?.is_list) {
+      const weight = parseFloat(incomeWeight || '');
+      const staticWeight = selectedProduct.static_weight || 0;
+      if (!isNaN(weight) && staticWeight) {
+        form.setValue('quantity', (weight * staticWeight).toString() as any);
+      } else {
+        form.setValue('quantity', '' as any);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incomeWeight, selectedProduct]);
 
   // Load stock data when it's available and related data is loaded
   useEffect(() => {
@@ -92,7 +120,8 @@ export default function EditStock() {
         min_price: stock.min_price?.toString() || '',
         quantity: stock.quantity || 0,
         supplier_write: stock.supplier_read?.id ? Number(stock.supplier_read.id) : undefined,
-        date_of_arrived: new Date(stock.date_of_arrived || '').toISOString().slice(0, 16)
+        date_of_arrived: new Date(stock.date_of_arrived || '').toISOString().slice(0, 16),
+        income_weight: stock.income_weight?.toString() || ''
       };
 
       console.log('Setting form values:', formValues);
@@ -122,7 +151,7 @@ export default function EditStock() {
   }, [stock, products, stores, suppliers, form]);
 
   // Define stock fields with translations
-  const stockFields = [
+  let stockFields = [
     {
       name: 'store_write',
       label: t('common.store'),
@@ -198,18 +227,39 @@ export default function EditStock() {
     },
   ];
 
+  // Add dynamic fields for is_list products
+  if (selectedProduct?.is_list) {
+    const quantityIndex = stockFields.findIndex(f => f.name === 'quantity');
+    if (quantityIndex !== -1) {
+      stockFields.splice(quantityIndex, 0, {
+        name: 'income_weight',
+        label: t('common.income_weight') || 'Income Weight',
+        type: 'number',
+        placeholder: t('common.enter_income_weight') || 'Enter income weight',
+        required: true,
+        // Only add onChange if your ResourceForm supports it
+      });
+      // Make quantity readOnly if supported
+      const quantityField = stockFields.find(f => f.name === 'quantity');
+      if (quantityField) {
+        (quantityField as any).readOnly = true;
+        // Only add helperText if your ResourceForm supports it
+      }
+    }
+  }
+
   // Update fields with product, store, and supplier options
   const fields = stockFields.map(field => {
     if (field.name === 'product_write') {
       return {
         ...field,
-        options: products.map(product => ({
+        options: allProducts.map(product => ({
           value: product.id,
           label: product.product_name
         })),
-        isLoading: productsLoading,
+        isLoading: isLoadingAllProducts,
         onChange: (value: number) => {
-          const product = products.find(p => p.id === value);
+          const product = allProducts.find(p => p.id === value);
           setSelectedProduct(product);
         }
       };
@@ -247,10 +297,7 @@ export default function EditStock() {
 
   const handleSubmit = async (data: FormValues) => {
     if (!id) return;
-
     try {
-      const quantity = typeof data.quantity === 'string' ? parseInt(data.quantity, 10) : data.quantity!;
-      
       // Format data for API
       const formattedData: Stock = {
         id: Number(id),
@@ -262,12 +309,12 @@ export default function EditStock() {
         purchase_price_in_uz: data.purchase_price_in_uz,
         selling_price: data.selling_price!,
         min_price: data.min_price!,
-        quantity: quantity,
+        quantity: typeof data.quantity === 'string' ? parseFloat(data.quantity) : data.quantity!,
         supplier_write: typeof data.supplier_write === 'string' ? parseInt(data.supplier_write, 10) : data.supplier_write!,
         date_of_arrived: data.date_of_arrived,
+        income_weight: data.income_weight,
         measurement_write: []
       };
-
       await updateStock.mutateAsync(formattedData);
       toast.success(t('messages.success.updated', { item: t('navigation.stock') }));
       navigate('/stock');
@@ -277,7 +324,35 @@ export default function EditStock() {
     }
   };
 
-  if (stockLoading || productsLoading || storesLoading || suppliersLoading) {
+  // Fetch all products across all pages
+  useEffect(() => {
+    async function fetchAllProducts() {
+      setIsLoadingAllProducts(true);
+      let results: any[] = [];
+      let page = 1;
+      let hasMore = true;
+      try {
+        while (hasMore) {
+          const response = await api.get('items/product/', { params: { page } });
+          const data = response.data;
+          results = results.concat(data.results || []);
+          if (!data.links?.next) {
+            hasMore = false;
+          } else {
+            page++;
+          }
+        }
+        setAllProducts(results);
+      } catch (error) {
+        toast.error(t('messages.error.load', { item: t('navigation.products') }));
+      } finally {
+        setIsLoadingAllProducts(false);
+      }
+    }
+    fetchAllProducts();
+  }, []);
+
+  if (stockLoading || productsLoading || storesLoading || suppliersLoading || isLoadingAllProducts) {
     return <div className="container mx-auto py-8 px-4">{t('common.loading')}</div>;
   }
 
