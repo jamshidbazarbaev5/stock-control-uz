@@ -48,7 +48,6 @@ const userFields = (t: any, stores: any[] = []) => [
     placeholder: t('placeholders.select_role'),
     required: true,
     options: [
-      { value: t('roles.owner'), label: t('roles.owner') },
       { value: t('roles.admin'), label: t('roles.admin') },
       { value: t('roles.seller'), label: t('roles.seller') },
     ],

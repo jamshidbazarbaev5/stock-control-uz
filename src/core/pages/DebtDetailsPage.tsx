@@ -114,7 +114,9 @@ export default function DebtDetailsPage() {
       options: [
         { value: 'Наличные', label: t('payment.cash') },
         { value: 'Click', label: t('payment.click') },
-        { value: 'Карта', label: t('payment.card') }
+        { value: 'Карта', label: t('payment.card') },
+
+         { value: 'Перечисление', label: t('payment.per') }
       ]
     }
   ];

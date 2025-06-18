@@ -106,7 +106,8 @@
   "payment":{
     "cash": "Наличные",
     "card": "Карта",
-    "click": "Click"
+    "click": "Click",
+    "per":"Перечисление"
   },
   "pages": {
     "debt_payments": "Платежи по долгам",

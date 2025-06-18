@@ -99,8 +99,9 @@ export default function CreateSale() {
 
   const users = Array.isArray(usersData) ? usersData : usersData?.results || [];
 
-  // Initialize selectedStore with seller's store right away
-  const isAdmin = currentUser?.role === 'Администратор' || currentUser?.is_superuser === true;
+  // Initialize selectedStore and check user roles
+  const isAdmin = currentUser?.role === 'Администратор';
+  const isSuperUser = currentUser?.is_superuser === true;
   const [selectedStore, setSelectedStore] = useState<number | null>(
     currentUser?.store_read?.id || null
   );
@@ -115,13 +116,13 @@ export default function CreateSale() {
   const [productSearchTerm, setProductSearchTerm] = useState('');
   const [, forceRender] = useState({});
 
-  // Effect for enforcing user's store
+  // Effect for enforcing seller's store
   useEffect(() => {
-    if (currentUser?.store_read?.id) {
+    if (!isAdmin && currentUser?.store_read?.id) {
       setSelectedStore(currentUser.store_read.id);
       form.setValue('store_write', currentUser.store_read.id);
     }
-  }, [currentUser?.store_read?.id]);
+  }, [isAdmin, currentUser?.store_read?.id]);
 
   const form = useForm<SaleFormData>({
     defaultValues: {
@@ -130,19 +131,30 @@ export default function CreateSale() {
       on_credit: false,
       total_amount: '0',
       store_write: currentUser?.store_read?.id || 0,
-      sold_by: currentUser?.id,
+      sold_by: (!isSuperUser && !isAdmin) ? currentUser?.id : undefined,
       sale_debt: { client: 0, due_date: addDays(new Date(), 30).toISOString().split('T')[0] }
     },
     mode: 'onChange'
   });
 
-  // Always use current user's store
+  // Effect for handling store selection
   useEffect(() => {
     if (currentUser?.store_read?.id) {
+      setSelectedStore(currentUser.store_read.id);
+      form.setValue('store_write', currentUser.store_read.id);
+    }
+    if (!isSuperUser && !isAdmin && currentUser?.id) {
+      form.setValue('sold_by', currentUser.id);
+    }
+  }, [currentUser?.store_read?.id, currentUser?.id, isAdmin, isSuperUser]);
+
+  // For non-admin (seller), we don't show the store selection as it's automatic
+  useEffect(() => {
+    if (!isAdmin && currentUser?.store_read?.id) {
       form.setValue('store_write', currentUser.store_read.id);
       form.setValue('sold_by', currentUser.id);
     }
-  }, [currentUser?.store_read?.id, currentUser?.id]);
+  }, [isAdmin, currentUser?.store_read?.id, currentUser?.id]);
   
   // Fetch data with search term for stocks
   const { data: stocksData, isLoading: stocksLoading } = useGetStocks({
@@ -150,11 +162,14 @@ export default function CreateSale() {
       product_name: productSearchTerm.length > 0 ? productSearchTerm : undefined
     }
   });
-  const { isLoading: storesLoading } = useGetStores({});
+  const { data: storesData, isLoading: storesLoading } = useGetStores({});
   const { data: clientsData } = useGetClients({ 
     params: form.watch('on_credit') ? { name: searchTerm } : undefined 
   });
   const createSale = useCreateSale();
+
+  // Prepare data arrays
+  const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
   const stocks = Array.isArray(stocksData) ? stocksData : stocksData?.results || [];
   // Remove the filter to show all clients
   const clients = Array.isArray(clientsData) ? clientsData : clientsData?.results || [];
@@ -411,8 +426,8 @@ export default function CreateSale() {
 
   const handleSubmit = async (data: SaleFormData) => {
     try {
-      // Always use current user's store
-      if (currentUser?.store_read?.id) {
+      // Ensure store is set correctly for sellers
+      if (!isAdmin && currentUser?.store_read?.id) {
         data.store_write = currentUser.store_read.id;
       }
       
@@ -500,8 +515,48 @@ export default function CreateSale() {
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
-          {/* Only Seller Selection - shown for admin */}
-          {isAdmin ? (
+          {/* Store Selection - Only shown for superuser */}
+          {isSuperUser && (
+            <div className="w-full sm:w-2/3 lg:w-1/2">
+              <FormField
+                control={form.control}
+                name="store_write"
+                rules={{ required: t('validation.required') }}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('table.store')}</FormLabel>
+                    <Select
+                      value={field.value?.toString()}
+                      onValueChange={(value) => {
+                        const storeId = parseInt(value, 10);
+                        field.onChange(storeId);
+                        setSelectedStore(storeId);
+                        // Reset sold_by when store changes
+                        form.setValue('sold_by', undefined);
+                      }}
+                    >
+                      <SelectTrigger className={form.formState.errors.store_write ? "border-red-500" : ""}>
+                        <SelectValue placeholder={t('placeholders.select_store')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {stores.map((store) => (
+                          <SelectItem key={store.id} value={store.id?.toString() || ''}>
+                            {store.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {form.formState.errors.store_write && (
+                      <p className="text-sm text-red-500 mt-1">{form.formState.errors.store_write.message}</p>
+                    )}
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
+
+          {/* Seller Selection - Only shown for superuser or admin */}
+          {(isSuperUser || isAdmin) && (
             <div className="w-full sm:w-2/3 lg:w-1/2">
               <FormField
                 control={form.control}
@@ -522,6 +577,7 @@ export default function CreateSale() {
                       <SelectContent>
                         {users
                           .filter(user => {
+                            const selectedStore = form.watch('store_write');
                             // Cast user to ExtendedUser to access store_read
                             const extendedUser = user as ExtendedUser;
                             return user.role === 'Продавец' && 
@@ -538,7 +594,7 @@ export default function CreateSale() {
                 )}
               />
             </div>
-          ) : null}
+          )}
           
           {/* Sale Items */}
           <div className="space-y-4">
@@ -595,12 +651,8 @@ export default function CreateSale() {
                         {selectedPrices[index] && (
                           <div className="mt-2 space-y-1 text-xs">
                             <div className="flex items-center justify-between px-2 py-1 bg-gray-50 rounded">
-                              {(currentUser?.role!=='Продавец') && (
-                                <>
-                                  <span className="text-gray-600">{t('table.min_price')}:</span>
-                                  <span className="font-medium text-red-600">{selectedPrices[index].min}</span>
-                                </>
-                              )}
+                              <span className="text-gray-600">{t('table.min_price')}:</span>
+                              <span className="font-medium text-red-600">{selectedPrices[index].min}</span>
                             </div>
                             {(isAdmin || currentUser?.is_superuser) && (
                               <div className="flex items-center justify-between px-2 py-1 bg-green-50 rounded">

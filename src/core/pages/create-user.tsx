@@ -43,7 +43,6 @@ export default function CreateUser() {
       placeholder: t('placeholders.select_role'),
       required: true,
       options: [
-        { value: 'Владелец', label: t('roles.owner') },
         { value: 'Администратор', label: t('roles.admin') },
         { value: 'Продавец', label: t('roles.seller') },
       ],
