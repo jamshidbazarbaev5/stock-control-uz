@@ -98,6 +98,8 @@
     "complex": "Quramalı tólem"
   },
   "common": {
+    "income_weight":"Tonna",
+    "enter_income_weight":"Tonnani kiriting",
     "price_per_unit":" Ólshem bahası",
     "paid": "Tólendi",
     "per_unit_cost":" Ólshemge sheshilgen baha",
@@ -243,6 +245,9 @@
   },
   "forms": {
     "type": "Túr",
+    "length":"Uzinliq",
+    "static_weight":"",
+    "is_list":"List pa?",
     "has_recycling": "Qayta ishlew bar ma?",
     "amount4": "Bir tovardin senasi",
     "payment_history": "Tólem tarixi",
@@ -367,6 +372,7 @@
     "seller": "Satıwshı"
   },
   "messages": {
+    "select_is_list":"Bul listpa?",
     "no_data_to_display": "Kórsetiw úshin maǵlıwmat joq",
     "created_successfully": "áwmetli jaratıldı",
     "success": {

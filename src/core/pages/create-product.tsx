@@ -42,6 +42,9 @@ export default function CreateProduct() {
   const [measurements, setMeasurements] = useState<MeasurementItem[]>([{ measurement_write: 0, number: 0, for_sale: false }]);
   const [kub, setKub] = useState('');
   const [categoriesForRecycling, setCategoriesForRecycling] = useState<number[]>([]);
+  const [isList, setIsList] = useState<'true' | 'false'>('false');
+  const [length, setLength] = useState('');
+  const [staticWeight, setStaticWeight] = useState('');
 
   // Fetch categories, stores and measurements for the select dropdowns
   const { data: categoriesData } = useGetCategories({});
@@ -69,6 +72,10 @@ export default function CreateProduct() {
   };
 
   const handleSubmit = async (data: any) => {
+    console.log('Form data received:', data);
+    console.log('Length state:', length);
+    console.log('Static weight state:', staticWeight);
+    
     try {
       const formattedData: Product = {
         product_name: data.product_name,
@@ -85,9 +92,16 @@ export default function CreateProduct() {
         has_kub: data.has_kub === 'true',
         ...(data.has_kub === 'true' && { kub: parseFloat(kub) || 0 }),
         has_recycling: data.has_recycling === 'true',
-        ...((data.has_recycling === 'true' && categoriesForRecycling.length > 0) && { categories_for_recycling: categoriesForRecycling })
+        ...((data.has_recycling === 'true' && categoriesForRecycling.length > 0) && { categories_for_recycling: categoriesForRecycling }),
+        is_list: isList === 'true',
+        ...(isList === 'true' && { 
+          length: data.length ? parseFloat(data.length) : (parseFloat(length) || 0),
+          static_weight: data.static_weight ? parseFloat(data.static_weight) : (parseFloat(staticWeight) || 0)
+        })
       };
 
+      console.log('Formatted data:', formattedData);
+      
       await createProduct.mutateAsync(formattedData);
       toast.success(t('messages.success.created', { item: t('table.product') }));
       navigate('/products');
@@ -204,7 +218,42 @@ export default function CreateProduct() {
                 </DropdownMenuContent>
               </DropdownMenu>
             )
-          }
+          },
+          {
+            name: 'is_list',
+            label: t('forms.is_list'),
+            type: 'select',
+            placeholder: t('placeholders.select_is_list'),
+            required: true,
+            options: [
+              { value: 'false', label: t('common.no') },
+              { value: 'true', label: t('common.yes') }
+            ],
+            defaultValue: isList,
+            onChange: (value: 'true' | 'false') => setIsList(value)
+          },
+          ...(isList === 'true'
+            ? [
+                {
+                  name: 'length',
+                  label: t('forms.length'),
+                  type: 'number',
+                  placeholder: t('placeholders.enter_length'),
+                  required: true,
+                  value: length,
+                  onChange: (value: string) => setLength(value)
+                },
+                {
+                  name: 'static_weight',
+                  label: t('forms.static_weight'),
+                  type: 'number',
+                  placeholder: t('placeholders.enter_static_weight'),
+                  required: true,
+                  value: staticWeight,
+                  onChange: (value: string) => setStaticWeight(value)
+                }
+              ]
+            : []),
         ]}
         onSubmit={handleSubmit}
         isSubmitting={createProduct.isPending}

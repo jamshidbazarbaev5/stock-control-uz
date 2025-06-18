@@ -158,7 +158,12 @@ export function ResourceForm<T extends Record<string, any>>({
                           </>
                         ) : field.type === 'searchable-select' ? (
                           <Select
-                            onValueChange={formField.onChange}
+                            onValueChange={(value) => {
+                              formField.onChange(value);
+                              if (field.onChange) {
+                                field.onChange(value);
+                              }
+                            }}
                             value={formField.value !== undefined && formField.value !== null ? formField.value.toString() : undefined}
                             defaultValue={formField.value !== undefined && formField.value !== null ? formField.value.toString() : undefined}
                           >

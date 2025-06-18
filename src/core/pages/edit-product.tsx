@@ -43,6 +43,8 @@ export default function EditProduct() {
   const [measurements, setMeasurements] = useState<MeasurementItem[]>([]);
   const [color, setColor] = useState('');
   const [kub, setKub] = useState('');
+  const [length, setLength] = useState('');
+  const [staticWeight, setStaticWeight] = useState('');
   const [categoriesForRecycling, setCategoriesForRecycling] = useState<number[]>([]);
 
   // Fetch categories and measurements for the select dropdowns
@@ -71,6 +73,10 @@ export default function EditProduct() {
     }
     if (product?.has_recycling && product?.categories_for_recycling) {
       setCategoriesForRecycling(product.categories_for_recycling || []);
+    }
+    if (product?.is_list) {
+      setLength(product.length?.toString() || '');
+      setStaticWeight(product.static_weight?.toString() || '');
     }
   }, [product]);
 
@@ -103,6 +109,7 @@ export default function EditProduct() {
         // If kub has a value, has_kub should be true
         has_kub: (data.has_kub === 'true' || (kub !== '' && parseFloat(kub) > 0)) as boolean,
         has_recycling: (data.has_recycling === 'true') as boolean,
+        is_list: (data.is_list === 'true') as boolean,
         measurement: measurements.map((m: MeasurementItem) => ({
           id: m.id,
           measurement_write: m.measurement_write,
@@ -125,6 +132,16 @@ export default function EditProduct() {
       // Only add categories_for_recycling if has_recycling is true and categories are selected
       if (data.has_recycling === 'true' && categoriesForRecycling.length > 0) {
         formattedData.categories_for_recycling = categoriesForRecycling;
+      }
+
+      // Only add length and static_weight if is_list is true
+      if (data.is_list === 'true') {
+        if (length !== '' && parseFloat(length) > 0) {
+          formattedData.length = parseFloat(length);
+        }
+        if (staticWeight !== '' && parseFloat(staticWeight) > 0) {
+          formattedData.static_weight = parseFloat(staticWeight);
+        }
       }
 
       await updateProduct.mutateAsync(formattedData);
@@ -172,7 +189,6 @@ export default function EditProduct() {
               { value: 'false', label: t('common.no') },
               { value: 'true', label: t('common.yes') }
             ],
-            // No need for onChange since visibility is handled by nestedField
             nestedField: (
               <input
                 type="text"
@@ -193,7 +209,6 @@ export default function EditProduct() {
               { value: 'false', label: t('common.no') },
               { value: 'true', label: t('common.yes') }
             ],
-            // No need for onChange since visibility is handled by nestedField
             nestedField: (
               <input
                 type="number"
@@ -215,7 +230,6 @@ export default function EditProduct() {
               { value: 'false', label: t('common.no') },
               { value: 'true', label: t('common.yes') }
             ],
-            // No need for onChange since visibility is handled by nestedField
             nestedField: (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -248,6 +262,47 @@ export default function EditProduct() {
                 </DropdownMenuContent>
               </DropdownMenu>
             )
+          },
+          {
+            name: 'is_list',
+            label: t('forms.is_list'),
+            type: 'select',
+            placeholder: t('placeholders.select_is_list'),
+            required: true,
+            options: [
+              { value: 'false', label: t('common.no') },
+              { value: 'true', label: t('common.yes') }
+            ],
+            nestedField: (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {t('forms.length')}
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full px-3 py-2 border rounded-md"
+                    placeholder={t('placeholders.enter_length')}
+                    value={length}
+                    onChange={(e) => setLength(e.target.value)}
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {t('forms.static_weight')}
+                  </label>
+                  <input
+                    type="number"
+                    className="w-full px-3 py-2 border rounded-md"
+                    placeholder={t('placeholders.enter_static_weight')}
+                    value={staticWeight}
+                    onChange={(e) => setStaticWeight(e.target.value)}
+                    step="0.01"
+                  />
+                </div>
+              </div>
+            )
           }
         ]}
         onSubmit={handleSubmit}
@@ -259,6 +314,7 @@ export default function EditProduct() {
           has_color: (product.has_color ? 'true' : 'false') as any,
           has_kub: (product.has_kub ? 'true' : 'false') as any,
           has_recycling: (product.has_recycling ? 'true' : 'false') as any,
+          is_list: (product.is_list ? 'true' : 'false') as any,
         }}
       >
         <div className="space-y-4">

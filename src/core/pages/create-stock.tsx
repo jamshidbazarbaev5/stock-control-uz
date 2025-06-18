@@ -22,6 +22,7 @@ interface FormValues extends Partial<Stock> {
   purchase_price_in_us: string;
   exchange_rate: string;
   purchase_price_in_uz: string;
+  income_weight:string;
   date_of_arrived: string;
 }
 
@@ -259,15 +260,61 @@ export default function CreateStock() {
     return field;
   });
 
+  // Add dynamic fields for is_list products
+  if (selectedProduct?.is_list) {
+    // Insert income_weight field before quantity
+    const quantityIndex = fields.findIndex(f => f.name === 'quantity');
+    if (quantityIndex !== -1) {
+      fields.splice(quantityIndex, 0, {
+        name: 'income_weight',
+        label: t('common.income_weight') || 'Income Weight',
+        type: 'number',
+        placeholder: t('common.enter_income_weight') || 'Enter income weight',
+        required: true,
+        onChange: (value: string) => {
+          const weight = parseFloat(value);
+          const staticWeight = selectedProduct.static_weight || 0;
+          if (!isNaN(weight) && staticWeight) {
+            form.setValue('quantity', weight * staticWeight as any); // Pass as number
+          } else {
+            form.setValue('quantity', '' as any);
+          }
+        },
+      });
+      // Make quantity readOnly
+      const quantityField = fields.find(f => f.name === 'quantity');
+      if (quantityField) {
+        quantityField.readOnly = true;
+        quantityField.helperText = t('common.calculated_quantity') || 'Calculated automatically';
+      }
+    }
+  }
+
+  // Watch income_weight and update quantity for is_list products
+  // Use 'as any' for dynamic field names not in FormValues
+  const incomeWeight = form.watch('income_weight' as any) as string | number | undefined;
+  useEffect(() => {
+    if (selectedProduct?.is_list) {
+      const weight = typeof incomeWeight === 'string' ? parseFloat(incomeWeight) : Number(incomeWeight);
+      const staticWeight = selectedProduct.static_weight || 0;
+      if (!isNaN(weight) && staticWeight) {
+        form.setValue('quantity', weight * staticWeight as any); // Pass as number
+      } else {
+        form.setValue('quantity', '' as any);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incomeWeight, selectedProduct]);
+
   const handleSubmit = async (data: FormValues) => {
     try {
-      const quantity = typeof data.quantity === 'string' ? parseInt(data.quantity, 10) : data.quantity!;
-      
-      // Calculate the UZS price from USD and exchange rate
-      const purchasePriceUSD = data.purchase_price_in_us;
-      const exchangeRate = data.exchange_rate;
-      const purchasePriceUZS = data.purchase_price_in_uz;
-
+      // Always parse numbers for numeric fields
+      const quantity = typeof data.quantity === 'string' ? parseFloat(data.quantity) : data.quantity!;
+      const purchasePriceUSD = data.purchase_price_in_us !== undefined && data.purchase_price_in_us !== null ? String(data.purchase_price_in_us) : '';
+      const exchangeRate = data.exchange_rate !== undefined && data.exchange_rate !== null ? String(data.exchange_rate) : '';
+      const purchasePriceUZS = data.purchase_price_in_uz !== undefined && data.purchase_price_in_uz !== null ? String(data.purchase_price_in_uz) : '';
+      const sellingPrice = data.selling_price !== undefined && data.selling_price !== null ? String(data.selling_price) : '';
+      const minPrice = data.min_price !== undefined && data.min_price !== null ? String(data.min_price) : '';
       const formattedData: CreateStockDTO = {
         store_write: typeof data.store_write === 'string' ? parseInt(data.store_write, 10) : data.store_write!,
         product_write: typeof data.product_write === 'string' ? parseInt(data.product_write, 10) : data.product_write!,
@@ -275,12 +322,12 @@ export default function CreateStock() {
         purchase_price_in_us: purchasePriceUSD,
         exchange_rate: exchangeRate,
         purchase_price_in_uz: purchasePriceUZS,
-        selling_price: data.selling_price!,
-        min_price: data.min_price!,
+        selling_price: sellingPrice,
+        min_price: minPrice,
         quantity: quantity,
         supplier_write: typeof data.supplier_write === 'string' ? parseInt(data.supplier_write, 10) : data.supplier_write!,
-
         date_of_arrived: data.date_of_arrived,
+        income_weight:data.income_weight,
         measurement_write: [] // Empty array since we removed measurement selection
       };
 

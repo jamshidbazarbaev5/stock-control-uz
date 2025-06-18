@@ -20,6 +20,7 @@ export interface CreateStockDTO {
   exchange_rate: string;
   purchase_price_in_uz: string;
   date_of_arrived?: string;
+  income_weight?: string;
   date?:string;
 }
 
