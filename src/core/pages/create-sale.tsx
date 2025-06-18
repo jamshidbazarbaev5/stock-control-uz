@@ -651,8 +651,13 @@ export default function CreateSale() {
                         {selectedPrices[index] && (
                           <div className="mt-2 space-y-1 text-xs">
                             <div className="flex items-center justify-between px-2 py-1 bg-gray-50 rounded">
-                              <span className="text-gray-600">{t('table.min_price')}:</span>
+                              {(isAdmin || currentUser?.is_superuser) && (
+                                <>
+                                 <span className="text-gray-600">{t('table.min_price')}:</span>
                               <span className="font-medium text-red-600">{selectedPrices[index].min}</span>
+                                </>
+                              )}
+                             
                             </div>
                             {(isAdmin || currentUser?.is_superuser) && (
                               <div className="flex items-center justify-between px-2 py-1 bg-green-50 rounded">
