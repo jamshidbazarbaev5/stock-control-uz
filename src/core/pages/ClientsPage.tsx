@@ -1,30 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ResourceTable } from '../helpers/ResourseTable';
-import { type Client, useGetClients, useDeleteClient, useIncrementBalance } from '../api/client';
+import { type Client, useGetClients, useDeleteClient } from '../api/client';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 
-const formSchema = z.object({
-  amount: z.number().min(0.01, 'Amount must be greater than 0'),
-});
 
-type FormData = z.infer<typeof formSchema>;
-
-interface BalanceIncrementDialogProps {
-  clientId: number;
-  isOpen: boolean;
-  onClose: () => void;
-}
 
 // function BalanceIncrementDialog({ clientId, isOpen, onClose }: BalanceIncrementDialogProps) {
 //   const { t } = useTranslation();
