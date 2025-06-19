@@ -236,7 +236,9 @@ export default function StocksPage() {
       store: selectedStore === 'all' ? undefined : selectedStore,
       supplier: selectedSupplier === 'all' ? undefined : selectedSupplier,
       date_of_arrived_gte: dateFrom || undefined,
-      date_of_arrived_lte: dateTo || undefined
+      date_of_arrived_lte: dateTo || undefined,
+      page: currentPage, // <-- ensure correct page is fetched
+      page_size: pageSize // <-- optional, if your API supports it
     }
   });
 
