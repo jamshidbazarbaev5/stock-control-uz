@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
-import { type User, useCustomUpdateUser, useDeleteUser, useGetUsers } from '../api/user';
+import { type User, useUpdateUser, useDeleteUser, useGetUsers } from '../api/user';
 import { useTranslation } from 'react-i18next';
 import { Users, User as UserIcon, Pencil, Trash2, Plus, Phone, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,6 @@ interface ExtendedUser extends User {
     owner: number;
   };
   displayId?: number;
-  is_superuser?: boolean;
 }
 
 const userFields = (t: any, stores: any[] = []) => [
@@ -49,7 +48,6 @@ const userFields = (t: any, stores: any[] = []) => [
     placeholder: t('placeholders.select_role'),
     required: true,
     options: [
-      { value: t('roles.owner'), label: t('roles.owner') },
       { value: t('roles.admin'), label: t('roles.admin') },
       { value: t('roles.seller'), label: t('roles.seller') },
     ],
@@ -103,7 +101,7 @@ export default function UsersPage() {
     displayId: (page - 1) * 10 + index + 1,
   }));
 
-  const { mutate: updateUser, isPending: isUpdating } = useCustomUpdateUser();
+  const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
   const { mutate: deleteUser } = useDeleteUser();
 
   const handleEdit = (user: ExtendedUser) => {
@@ -115,8 +113,8 @@ export default function UsersPage() {
     if (!editingUser?.id) return;
 
     // Create the update payload
-    const updateData: Partial<User> & { id: number; is_superuser?: boolean } = {
-      id: editingUser.id!,
+    const updateData: Partial<User> = {
+      id: editingUser.id,
       name: data.name || '',
       phone_number: data.phone_number || '',
       role: data.role || '',
@@ -128,12 +126,8 @@ export default function UsersPage() {
     if (data.password) {
       updateData.password = data.password;
     }
-    // Pass is_superuser flag for custom update logic
-    if (editingUser.is_superuser) {
-      updateData.is_superuser = true;
-    }
 
-    updateUser(updateData, {
+    updateUser(updateData as User, {
       onSuccess: () => {
         const message = data.password 
           ? t('messages.user_password_updated')

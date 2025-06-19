@@ -21,7 +21,7 @@ export const {
   useGetResources: useGetUsers,
   useGetResource: useGetUser,
   useCreateResource: useCreateUser,
-  // useUpdateResource: useUpdateUser,
+  useUpdateResource: useUpdateUser,
   useDeleteResource: useDeleteUser,
 } = createResourceApiHooks<User>(USER_URL, 'users');
 
@@ -30,22 +30,6 @@ export const useUpdateCurrentUser = () => {
   return useMutation({
     mutationFn: async (data: Partial<User>) => {
       const response = await api.patch<User>('users/me/', data);
-      return response.data;
-    }
-  });
-};
-
-// Custom hook for updating a user, omitting 'role' if is_superuser is true
-export const useCustomUpdateUser = () => {
-  return useMutation({
-    mutationFn: async (data: Partial<User> & { id: number; is_superuser?: boolean }) => {
-      const { id, ...rest } = data;
-      // If superuser, remove 'role' from payload
-      const payload = rest.is_superuser ? { ...rest } : rest;
-      if (payload.is_superuser) {
-        delete payload.role;
-      }
-      const response = await api.patch<User>(`${USER_URL}${id}/`, payload);
       return response.data;
     }
   });
