@@ -46,7 +46,13 @@ const storeFields = (t: (key: string) => string) => [
     placeholder: t('placeholders.select_store'),
     required: false,
   },
-  
+  {
+    name: 'color',
+    label: t('forms.color'),
+    type: 'color', // Use a color input for hex palette
+    placeholder: '#000000',
+    required: true,
+  },
 ];
 
 export default function CreateStore() {
@@ -82,6 +88,7 @@ export default function CreateStore() {
       // Convert string values to proper types
       const formattedData = {
         ...data,
+        color: data.color, // Ensure color is sent as hex
         owner: typeof data.owner === 'string' ? parseInt(data.owner, 10) : data.owner,
         parent_store: data.parent_store 
           ? (typeof data.parent_store === 'string' 

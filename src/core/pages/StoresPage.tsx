@@ -18,6 +18,7 @@ interface StoreFormData {
   budget: string;
   is_main: boolean;
   parent_store: string;
+  color: string; // hex color
 }
 
 const storeFields = (t: (key: string) => string) => [
@@ -61,7 +62,13 @@ const storeFields = (t: (key: string) => string) => [
     required: false,
     options: [], // Will be populated with stores
   },
-  
+  {
+    name: 'color',
+    label: t('forms.color'),
+    type: 'color',
+    placeholder: '#000000',
+    required: true,
+  },
 ];
 
 export default function StoresPage() {
@@ -122,6 +129,7 @@ export default function StoresPage() {
   const handleEdit = (store: Store) => {
     const formattedStore: StoreFormData = {
       ...store,
+      color: store.color || '#000000',
       is_main: store.is_main,
       parent_store: store.parent_store?.toString() ?? '0',
     };
@@ -134,6 +142,7 @@ export default function StoresPage() {
 
     const formattedData = {
       ...data,
+      color: data.color,
       id: editingStore.id,
       parent_store: data.parent_store === '0' ? null : parseInt(data.parent_store, 10),
       is_main: data.is_main === true || data.is_main.toString() === 'true'
@@ -198,6 +207,7 @@ export default function StoresPage() {
                 >
                   <CardHeader className="relative">
                     <CardTitle className="flex items-center gap-2 text-xl">
+                      <span className="inline-block w-4 h-4 rounded-full border border-gray-200" style={{ backgroundColor: store.color || '#000' }}></span>
                       <StoreIcon className="h-5 w-5 text-primary" />
                       {store.name}
                     </CardTitle>

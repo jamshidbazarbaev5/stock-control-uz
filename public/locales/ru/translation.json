@@ -260,6 +260,7 @@
 
   "forms": {
     "type":"Тип",
+    "type_product_name":"Пишите название товара",
     "length":"Толщина",
     "static_weight":"Метр",
     "is_list":"Это Лист?",

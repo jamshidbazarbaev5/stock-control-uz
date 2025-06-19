@@ -180,8 +180,21 @@ export function ResourceTable<T extends { id?: number }>({
                       }
                     }}
                   >
-                    <TableCell className="w-[60px] font-medium text-gray-500">
+                    <TableCell className="w-[60px] font-medium text-gray-500 flex items-center gap-2">
                       {getRowNumber(rowIndex)}
+                      {(row as any)?.store_read?.color && (
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            width: 16,
+                            height: 16,
+                            borderRadius: '50%',
+                            backgroundColor: (row as any).store_read.color,
+                            border: '1px solid #e5e7eb', // Tailwind gray-200
+                          }}
+                          title={(row as any)?.store_read?.name}
+                        />
+                      )}
                     </TableCell>
                     {columns.map((column, colIndex) => (
                       <TableCell key={colIndex}>

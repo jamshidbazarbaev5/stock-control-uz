@@ -245,6 +245,7 @@
   },
   "forms": {
     "type": "Túr",
+    "type_product_name":"Пишите название товарач  ",
     "length":"Uzinliq",
     "static_weight":"",
     "is_list":"List pa?",

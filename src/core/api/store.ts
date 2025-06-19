@@ -10,6 +10,7 @@ export interface Store {
   is_main: boolean;
   parent_store?: number;
   owner: number;
+  color: string; // hex color, e.g. #FF0000
 }
 
 // API endpoints
