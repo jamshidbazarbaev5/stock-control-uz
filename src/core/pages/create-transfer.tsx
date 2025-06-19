@@ -12,7 +12,7 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useGetStocks, type Stock } from '../api/stock';
+import { useGetStocks, useGetStock, type Stock } from '../api/stock';
 import { useGetStores, type Store } from '../api/store';
 import { useCreateTransfer, type Transfer } from '../api/transfer';
 import { useCurrentUser } from '../hooks/useCurrentUser';
@@ -48,12 +48,21 @@ export default function CreateTransfer() {
   
   const { data: stocksData, isLoading: stocksLoading } = useGetStocks();
   const { data: storesData, isLoading: storesLoading } = useGetStores();
+  const { data: stockById } = useGetStock(fromStockId ? Number(fromStockId) : 0);
 
   const stocks = Array.isArray(stocksData) ? stocksData : stocksData?.results;
   const stores = Array.isArray(storesData) ? storesData : storesData?.results;
   
+  // Merge stockById into stocks if not present
+  const mergedStocks = (() => {
+    if (stockById && !stocks?.some((s: Stock) => s.id === stockById.id)) {
+      return [...(stocks || []), stockById];
+    }
+    return stocks;
+  })();
+  
   // Filter stocks based on selected source store and positive quantity
-  const sourceStocks = stocks?.filter(
+  const sourceStocks = mergedStocks?.filter(
     (stock) => stock.store_read?.id === sourceStore && stock.quantity > 0
   );
 
@@ -66,25 +75,34 @@ export default function CreateTransfer() {
     
   // If we have a fromStockId from the URL, set the sourceStore and handle product selection
   useEffect(() => {
+    console.log('DEBUG useEffect 1:', {
+      stocksLoading,
+      storesLoading,
+      stocks,
+      stores,
+      currentUser,
+      fromStockId,
+      fromProductId,
+      stockById
+    });
+    
     // Only proceed if data is loaded and we have stocks data
-    if (!stocksLoading && !storesLoading && stocks?.length) {
-      // If we have a stockId, find that stock and set its store as the source store
+    if (!stocksLoading && !storesLoading) {
+      let selectedStock: Stock | undefined = undefined;
       if (fromStockId) {
-        const selectedStock = stocks.find((stock: Stock) => stock.id === Number(fromStockId));
+        selectedStock = (stocks?.find((stock: Stock) => stock.id === Number(fromStockId))) || (stockById && stockById.id === Number(fromStockId) ? stockById : undefined);
         if (selectedStock?.store_read?.id) {
-          // Set the source store only if user is not an administrator
-          if (currentUser?.role !== 'Администратор') {
-            const storeId = selectedStock.store_read.id;
-            setSourceStore(storeId);
+          if (currentUser?.role !== 'Администратор' && sourceStore !== selectedStock.store_read.id) {
+            setSourceStore(selectedStock.store_read.id);
           }
-          
-          // Make sure the from_stock is set in the form
-          form.setValue('from_stock', Number(fromStockId));
+          if (form.getValues('from_stock') !== Number(fromStockId)) {
+            form.setValue('from_stock', Number(fromStockId));
+          }
         }
       }
       // If we have a product ID but no specific stock, try to find a stock with that product
       else if (fromProductId) {
-        const stockWithProduct = stocks.find(
+        const stockWithProduct = mergedStocks?.find(
           (stock: Stock) => stock.product_read?.id === Number(fromProductId) && stock.quantity > 0 &&
           (currentUser?.role === 'Администратор' ? stock.store_read?.id === currentUser?.store_read?.id : true)
         );
@@ -99,22 +117,29 @@ export default function CreateTransfer() {
         }
       }
     }
-  }, [fromStockId, fromProductId, stocks, form, stocksLoading, storesLoading, currentUser]);
+  }, [fromStockId, fromProductId, stocks, form, stocksLoading, storesLoading, currentUser, stockById, sourceStore]);
   
   // Update source store when from_stock changes - only for non-administrators
   useEffect(() => {
-    if (!stocksLoading && fromStock && stocks?.length && currentUser?.role !== 'Администратор') {
-      const selectedStock = stocks.find((stock: Stock) => stock.id === fromStock);
+    console.log('DEBUG useEffect 2:', {
+      stocksLoading,
+      fromStock,
+      stocks,
+      currentUser
+    });
+    
+    if (!stocksLoading && fromStock && mergedStocks?.length && currentUser?.role !== 'Администратор') {
+      const selectedStock = mergedStocks.find((stock: Stock) => stock.id === fromStock);
       if (selectedStock?.store_read?.id) {
         setSourceStore(selectedStock.store_read.id);
       }
     }
-  }, [fromStock, stocks, stocksLoading, currentUser]);
+  }, [fromStock, mergedStocks, stocksLoading, currentUser]);
 
   const onSubmit = async (data: Transfer) => {
     try {
-      const sourceStock = stocks?.find((stock: Stock) => stock.id === Number(data.from_stock));
-      const destStock = stocks?.find((stock: Stock) => stock.id === Number(data.to_stock));
+      const sourceStock = mergedStocks?.find((stock: Stock) => stock.id === Number(data.from_stock));
+      const destStock = mergedStocks?.find((stock: Stock) => stock.id === Number(data.to_stock));
       
       const sourceStoreId = sourceStock?.product_read?.store_read?.id;
       const destStoreId = destStock?.product_read?.store_read?.id;
@@ -134,7 +159,7 @@ export default function CreateTransfer() {
     }
   };
 
-  const selectedFromStock = stocks?.find((stock: Stock) => stock.id === fromStock);
+  const selectedFromStock = mergedStocks?.find((stock: Stock) => stock.id === fromStock);
   const selectedToStore = stores?.find((store: Store) => store.id === toStock);
 
   return (
@@ -155,17 +180,17 @@ export default function CreateTransfer() {
                   setSourceStore(storeId);
                   
                   // Check if we have URL parameters and if there's a matching stock in the selected store
-                  if ((fromProductId || fromStockId) && stocks?.length) {
+                  if ((fromProductId || fromStockId) && mergedStocks?.length) {
                     let matchingStock;
                     
                     if (fromStockId) {
                       // Find the stock and check if it's in the selected store
-                      matchingStock = stocks.find((stock: Stock) => 
+                      matchingStock = mergedStocks.find((stock: Stock) => 
                         stock.id === Number(fromStockId) && stock.store_read?.id === storeId
                       );
                     } else if (fromProductId) {
                       // Find a stock with the product in the selected store
-                      matchingStock = stocks.find((stock: Stock) => 
+                      matchingStock = mergedStocks.find((stock: Stock) => 
                         stock.product_read?.id === Number(fromProductId) && 
                         stock.store_read?.id === storeId && 
                         stock.quantity > 0
