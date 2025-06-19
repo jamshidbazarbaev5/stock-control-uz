@@ -121,7 +121,7 @@ export default function EditStock() {
         quantity: stock.quantity || 0,
         supplier_write: stock.supplier_read?.id ? Number(stock.supplier_read.id) : undefined,
         date_of_arrived: new Date(stock.date_of_arrived || '').toISOString().slice(0, 16),
-        income_weight: stock.income_weight?.toString() || ''
+        income_weight: stock.income_weight?.toString()
       };
 
       console.log('Setting form values:', formValues);
@@ -312,8 +312,8 @@ export default function EditStock() {
         quantity: typeof data.quantity === 'string' ? parseFloat(data.quantity) : data.quantity!,
         supplier_write: typeof data.supplier_write === 'string' ? parseInt(data.supplier_write, 10) : data.supplier_write!,
         date_of_arrived: data.date_of_arrived,
-        income_weight: data.income_weight,
-        measurement_write: []
+        measurement_write: [],
+        ...(data.income_weight ? { income_weight: data.income_weight } : {})
       };
       await updateStock.mutateAsync(formattedData);
       toast.success(t('messages.success.updated', { item: t('navigation.stock') }));
