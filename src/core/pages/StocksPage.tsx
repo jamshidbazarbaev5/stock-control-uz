@@ -30,7 +30,6 @@ export default function StocksPage() {
   const { data: currentUser } = useCurrentUser();
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedProduct, setSelectedProduct] = useState<string>('all');
   const [productName, setProductName] = useState<string>(''); // New state for product name
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');

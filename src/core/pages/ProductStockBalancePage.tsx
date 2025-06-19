@@ -16,6 +16,7 @@ interface ProductStockBalance {
 
 interface StockBalanceResponse {
   count: number;
+  total_volume:number;
   total_pages: number;
   current_page: number;
   page_range: number[];
@@ -29,6 +30,7 @@ interface StockBalanceResponse {
   results: {
     total_product: number;
     info_products: ProductStockBalance[];
+    total_volume :number;
   };
 }
 
@@ -98,9 +100,20 @@ export default function ProductStockBalancePage() {
                 </SelectItem>
               ))}
             </SelectContent>
+
           </Select>)}
+       
          
         </div>
+           <div>
+            <h1 className='text-lg font-bold'>
+              {t('table.total_volume')}
+              {/* Show as 135,37 if value exists */}
+              {typeof data?.results.total_volume === 'number' && (
+                <span> {data.results.total_volume.toFixed(2).replace('.', ',')}</span>
+              )}
+            </h1>
+          </div>
       </div>
       
       <Card className="mt-4">

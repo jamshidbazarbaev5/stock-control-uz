@@ -478,8 +478,9 @@
   },
   "table": {
     "profit":"Прибыль",
+    "total_volume":"Общий объем куба",
     "sold_date":"Дата продажи",
-    "total_kub_volume": "Общий объем куба",
+    "total_kub_volume": " объем куба",
     "source": "Источник",
     "seller": "Продавец",
     "deposit": "Аванс",
