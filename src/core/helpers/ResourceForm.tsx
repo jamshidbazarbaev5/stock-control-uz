@@ -295,6 +295,17 @@ export function ResourceForm<T extends Record<string, any>>({
                             {...formField}
                             readOnly={field.readOnly}
                             className={field.readOnly ? 'bg-gray-100' : ''}
+                            onChange={field.onChange
+                              ? (e) => {
+                                  const formatted = field.onChange!(e.target.value);
+                                  formField.onChange({
+                                    target: { value: formatted }
+                                  } as any);
+                                }
+                              : formField.onChange}
+                            maxLength={field.maxLength}
+                            inputMode={field.inputMode}
+                            autoComplete={field.autoComplete}
                           />
                         )}
                       </FormControl>

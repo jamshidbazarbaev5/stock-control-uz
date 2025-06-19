@@ -11,6 +11,14 @@ export default function CreateClient() {
   const { t } = useTranslation();
   const [clientType, setClientType] = useState<'Физ.лицо' | 'Юр.лицо'>('Физ.лицо');
 
+  // Custom mask for +998 phone numbers, no spaces
+  const formatUzPhone = (value: string) => {
+    let digits = value.replace(/\D/g, '');
+    if (digits.startsWith('998')) digits = digits.slice(3);
+    digits = digits.slice(0, 9);
+    return '+998' + digits;
+  };
+
   const commonFields = [
     {
       name: 'type',
@@ -35,8 +43,12 @@ export default function CreateClient() {
       name: 'phone_number',
       label: t('forms.phone'),
       type: 'text' as const,
-      placeholder: t('placeholders.enter_phone'),
+      placeholder: '+998970953905',
       required: true,
+      onChange: (value: string) => formatUzPhone(value),
+      maxLength: 13,
+      inputMode: 'numeric',
+      autoComplete: 'tel',
     },
     {
       name: 'address',

@@ -40,6 +40,14 @@ export function LoginPage() {
     }
   };
 
+  // Custom mask for +998 phone numbers, no spaces
+  const formatUzPhone = (value: string) => {
+    let digits = value.replace(/\D/g, '');
+    if (digits.startsWith('998')) digits = digits.slice(3);
+    digits = digits.slice(0, 9);
+    return '+998' + digits;
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow">
@@ -65,9 +73,12 @@ export function LoginPage() {
                 type="text"
                 required
                 className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
-                placeholder="Имя пользователя"
+                placeholder="+998970953905"
                 value={phone_number}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={(e) => setPhoneNumber(formatUzPhone(e.target.value))}
+                maxLength={13}
+                inputMode="numeric"
+                autoComplete="tel"
               />
             </div>
             <div>

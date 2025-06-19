@@ -21,6 +21,15 @@ export default function CreateUser() {
   const { data: storesData } = useGetStores({});
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
 
+  // Custom mask for +998 phone numbers, no spaces
+  const formatUzPhone = (value: string) => {
+    let digits = value.replace(/\D/g, '');
+    if (digits.startsWith('998')) digits = digits.slice(3);
+    digits = digits.slice(0, 9);
+    return '+998' + digits;
+  };
+
+  // Patch the phone_number field to use the mask
   const userFields = [
     {
       name: 'name',
@@ -33,8 +42,12 @@ export default function CreateUser() {
       name: 'phone_number',
       label: t('forms.phone'),
       type: 'text',
-      placeholder: t('placeholders.enter_phone'),
+      placeholder: '+998970953905',
       required: true,
+      onChange: (value: string) => formatUzPhone(value),
+      maxLength: 13,
+      inputMode: 'numeric',
+      autoComplete: 'tel',
     },
     {
       name: 'role',
