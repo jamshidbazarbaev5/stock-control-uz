@@ -132,7 +132,7 @@ export default function StocksPage() {
                   </DropdownMenuItem>
                   {row.product_read?.has_recycling && (
                     <DropdownMenuItem 
-                      onClick={() => navigate(`/create-recycling?fromProductId=${row.product_read?.id}&fromStockId=${row.id}`)}
+                      onClick={() => navigate(`/create-recycling?fromProductId=${row.product_read?.id}&fromStockId=${row.id}&storeId=${row.store_read?.id}`)}
                     >
                       {t('common.create')} {t('navigation.recycling')}
                     </DropdownMenuItem>

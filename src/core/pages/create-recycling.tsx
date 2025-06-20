@@ -119,25 +119,28 @@ export default function CreateRecycling() {
   const searchParams = new URLSearchParams(location.search);
   const fromProductId = searchParams.get('fromProductId');
   const fromStockId = searchParams.get('fromStockId');
+  const storeIdFromUrl = searchParams.get('storeId'); // NEW: get storeId from URL
   
   // Initialize form with default values
   const form = useForm<FormValues>({
     defaultValues: {
       from_to: fromStockId ? Number(fromStockId) : undefined,
       date_of_recycle: new Date().toISOString().split('T')[0], // Today's date
-      store: currentUser?.role === 'Администратор' ? currentUser.store_read?.id : undefined,
+      store: storeIdFromUrl ? Number(storeIdFromUrl) : (currentUser?.role === 'Администратор' ? currentUser.store_read?.id : undefined),
     }
   });
 
   const { data: storesData } = useGetStores();
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
 
-  // Effect to ensure store is set and locked for admin
+  // Effect to ensure store is set and locked for admin or if storeIdFromUrl is present
   useEffect(() => {
-    if (currentUser?.role === 'Администратор' && currentUser?.store_read?.id) {
+    if (storeIdFromUrl) {
+      form.setValue('store', Number(storeIdFromUrl));
+    } else if (currentUser?.role === 'Администратор' && currentUser?.store_read?.id) {
       form.setValue('store', currentUser.store_read.id);
     }
-  }, [currentUser, form]);
+  }, [currentUser, form, storeIdFromUrl]);
 
   // Function to fetch all pages of products
   const fetchAllProducts = async (searchTerm: string) => {
@@ -266,13 +269,14 @@ export default function CreateRecycling() {
     }
     if (field.name === 'store') {
       const isAdmin = currentUser?.role === 'Администратор';
+      const isStoreIdLocked = Boolean(storeIdFromUrl);
       return {
         ...field,
         options: stores.map((store: any) => ({
           value: store.id,
           label: store.name
-        })).filter((opt: any) => isAdmin ? opt.value === currentUser?.store_read?.id : opt.value),
-        disabled: isAdmin
+        })).filter((opt: any) => isStoreIdLocked ? opt.value === Number(storeIdFromUrl) : (isAdmin ? opt.value === currentUser?.store_read?.id : opt.value)),
+        disabled: isAdmin || isStoreIdLocked
       };
     }
     return field;
