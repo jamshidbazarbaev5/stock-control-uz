@@ -236,8 +236,8 @@ export default function StocksPage() {
       supplier: selectedSupplier === 'all' ? undefined : selectedSupplier,
       date_of_arrived_gte: dateFrom || undefined,
       date_of_arrived_lte: dateTo || undefined,
-      ...(typeof productZero === 'boolean' ? { product_zero: productZero } : {}),
-      ...(!productZero && !('product_zero' in (typeof productZero === 'boolean' ? { product_zero: productZero } : {})) ? { page: currentPage } : {}),
+      page: currentPage,
+      product_zero: productZero, // Add product_zero param
     }
   });
 
