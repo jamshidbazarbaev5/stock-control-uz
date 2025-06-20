@@ -5,7 +5,7 @@ import { ResourceForm } from '../helpers/ResourceForm';
 import type { Recycling } from '../api/recycling';
 import type { Product } from '../api/product';
 import { useCreateRecycling } from '../api/recycling';
-import { useGetStocks } from '../api/stock';
+import { fetchAllStocks } from '../api/fetchAllStocks';
 import { useGetStores } from '../api/store';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { toast } from 'sonner';
@@ -112,6 +112,8 @@ export default function CreateRecycling() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [perUnitPrice, setPerUnitPrice] = useState<number | null>(null);
+  const [stocks, setStocks] = useState<any[]>([]);
+  const [loadingStocks, setLoadingStocks] = useState(false);
   
   // Get URL parameters
   const searchParams = new URLSearchParams(location.search);
@@ -127,9 +129,8 @@ export default function CreateRecycling() {
     }
   });
 
-  // Fetch data for dropdowns
-  const { data: stocksData } = useGetStocks();
   const { data: storesData } = useGetStores();
+  const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
 
   // Effect to ensure store is set and locked for admin
   useEffect(() => {
@@ -181,10 +182,18 @@ export default function CreateRecycling() {
     return () => clearTimeout(debouncedFetch);
   }, [productSearchTerm]);
 
-  // Get arrays from response data 
-  const stocks = Array.isArray(stocksData) ? stocksData : stocksData?.results || [];
-  const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
-  
+  // Fetch all stocks on mount
+  useEffect(() => {
+    setLoadingStocks(true);
+    fetchAllStocks()
+      .then(setStocks)
+      .catch((err) => {
+        console.error('Error fetching all stocks:', err);
+        toast.error(t('messages.error.load', { item: t('navigation.stocks') }));
+      })
+      .finally(() => setLoadingStocks(false));
+  }, [t]);
+
   // Watch for changes in the from_to field to update allowed categories
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
@@ -231,10 +240,11 @@ export default function CreateRecycling() {
     if (field.name === 'from_to') {
       return {
         ...field,
-        options: stocks.map(stock => ({
+        options: stocks.map((stock: any) => ({
           value: stock.id,
           label: `${stock.product_read?.product_name} (${stock.quantity || 0})`
-        })).filter(opt => opt.value)
+        })).filter((opt: any) => opt.value),
+        isLoading: loadingStocks
       };
     }
     if (field.name === 'to_product') {
@@ -245,11 +255,11 @@ export default function CreateRecycling() {
             if (!allowedCategories || !product.category_read) return true;
             return allowedCategories.includes(product.category_read.id);
           })
-          .map(product => ({
+          .map((product: any) => ({
             value: product.id,
             label: product.product_name
           }))
-          .filter(opt => opt.value),
+          .filter((opt: any) => opt.value),
         onSearch: setProductSearchTerm,
         isLoading: isLoadingProducts
       };
@@ -258,10 +268,10 @@ export default function CreateRecycling() {
       const isAdmin = currentUser?.role === 'Администратор';
       return {
         ...field,
-        options: stores.map(store => ({
+        options: stores.map((store: any) => ({
           value: store.id,
           label: store.name
-        })).filter(opt => isAdmin ? opt.value === currentUser?.store_read?.id : opt.value),
+        })).filter((opt: any) => isAdmin ? opt.value === currentUser?.store_read?.id : opt.value),
         disabled: isAdmin
       };
     }

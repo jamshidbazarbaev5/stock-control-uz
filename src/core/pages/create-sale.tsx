@@ -11,6 +11,7 @@ import {
   FormItem,
   FormLabel,
 } from '@/components/ui/form';
+import { fetchAllStocks } from '../api/fetchAllStocks';
 
 interface ExtendedUser extends User {
   store_read?: {
@@ -34,7 +35,6 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { useGetStores } from '../api/store';
-import { useGetStocks } from '../api/stock';
 import { useGetClients } from '../api/client';
 import { useGetUsers } from '../api/user';
 import { useCreateSale, type Sale } from '@/core/api/sale';
@@ -157,22 +157,29 @@ export default function CreateSale() {
   }, [isAdmin, currentUser?.store_read?.id, currentUser?.id]);
   
   // Fetch data with search term for stocks
-  const { data: stocksData, isLoading: stocksLoading } = useGetStocks({
-    params: {
-      product_name: productSearchTerm.length > 0 ? productSearchTerm : undefined
-    }
-  });
   const { data: storesData, isLoading: storesLoading } = useGetStores({});
   const { data: clientsData } = useGetClients({ 
     params: form.watch('on_credit') ? { name: searchTerm } : undefined 
   });
   const createSale = useCreateSale();
+  // Remove the filter to show all clients
+  const clients = Array.isArray(clientsData) ? clientsData : clientsData?.results || [];
+
 
   // Prepare data arrays
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
-  const stocks = Array.isArray(stocksData) ? stocksData : stocksData?.results || [];
-  // Remove the filter to show all clients
-  const clients = Array.isArray(clientsData) ? clientsData : clientsData?.results || [];
+  const [allStocks, setAllStocks] = useState<any[]>([]);
+  const [loadingAllStocks, setLoadingAllStocks] = useState(false);
+
+  useEffect(() => {
+    setLoadingAllStocks(true);
+    fetchAllStocks({ product_name: productSearchTerm.length > 0 ? productSearchTerm : undefined })
+      .then((data) => setAllStocks(data))
+      .finally(() => setLoadingAllStocks(false));
+  }, [productSearchTerm]);
+
+  // Replace stocks with allStocks
+  const stocks = allStocks;
 
   // Filter stocks by selected store
   const filteredStocks = useMemo(() => {
@@ -218,7 +225,7 @@ export default function CreateSale() {
   // Set initial store and stock if we have parameters from URL
   useEffect(() => {
     // Only proceed if data is loaded and we have stocks data
-    if (!stocksLoading && !storesLoading && stocks.length > 0) {
+    if (!storesLoading && stocks.length > 0) {
       console.log('Setting initial values from URL params:', { stockId, productId });
 
       const currentSaleItems = form.getValues('sale_items');
@@ -297,7 +304,7 @@ export default function CreateSale() {
         }
       }, 200);
     }
-  }, [stockId, productId, stocks, form, stocksLoading, storesLoading]);
+  }, [stockId, productId, stocks, form, storesLoading]);
 
   const updateTotalAmount = () => {
     const items = form.getValues('sale_items');
@@ -430,7 +437,13 @@ export default function CreateSale() {
       if (!isAdmin && currentUser?.store_read?.id) {
         data.store_write = currentUser.store_read.id;
       }
-      
+
+      // Prevent submission if store_write is 0 or invalid
+      if (!data.store_write || data.store_write === 0) {
+        toast.error(t('validation.required', { field: t('table.store') }));
+        return;
+      }
+
       // Validate all items meet minimum price requirements
       const hasInvalidPrices = data.sale_items.some((item, index) => {
         if (selectedPrices[index]) {

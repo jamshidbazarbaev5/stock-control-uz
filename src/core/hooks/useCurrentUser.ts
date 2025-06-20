@@ -27,7 +27,6 @@ export interface CurrentUser {
 export function useCurrentUser() {
   const { currentUser, isLoading } = useAuth();
   
-  console.log('[useCurrentUser] Using auth context, user:', currentUser?.name, 'loading:', isLoading);
   
   // Return in the same format as the original useQuery hook
   return {
