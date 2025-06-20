@@ -433,9 +433,13 @@ export default function CreateSale() {
 
   const handleSubmit = async (data: SaleFormData) => {
     try {
-      // Ensure store is set correctly for sellers
-      if (!isAdmin && currentUser?.store_read?.id) {
+      // Set store_write based on user role
+      if (!isAdmin && !isSuperUser && currentUser?.store_read?.id) {
+        // Seller: use their own store
         data.store_write = currentUser.store_read.id;
+      } else if ((isAdmin || isSuperUser) && selectedStore) {
+        // Admin/Superuser: use selected store (from selected user)
+        data.store_write = selectedStore;
       }
 
       // Prevent submission if store_write is 0 or invalid
