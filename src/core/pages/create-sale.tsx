@@ -169,7 +169,7 @@ export default function CreateSale() {
   // Prepare data arrays
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
   const [allStocks, setAllStocks] = useState<any[]>([]);
-  const [loadingAllStocks, setLoadingAllStocks] = useState(false);
+  const [_loadingAllStocks, setLoadingAllStocks] = useState(false);
 
   useEffect(() => {
     setLoadingAllStocks(true);

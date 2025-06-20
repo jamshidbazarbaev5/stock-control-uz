@@ -1,4 +1,3 @@
-import axios from 'axios';
 import type { Stock } from '@/core/api/stock';
 import api from './api';
 
