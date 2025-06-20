@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { ResourceForm } from '../helpers/ResourceForm';
 import type { Stock, CreateStockDTO } from '../api/stock';
 import { useCreateStock } from '../api/stock';
-import { useGetProducts, useCreateProduct } from '../api/product';
+import {  useCreateProduct } from '../api/product';
 import { useGetStores } from '../api/store';
 
 import { useGetSuppliers, useCreateSupplier } from '../api/supplier';
@@ -16,6 +16,8 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import axios from 'axios';
+import { getAccessToken } from '../api/auth';
 
 
 interface FormValues extends Partial<Stock> {
@@ -45,6 +47,7 @@ export default function CreateStock() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [perUnitPrice, setPerUnitPrice] = useState<number | null>(null);
   const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [allProducts, setAllProducts] = useState<any[]>([]);
   
   // Define stock fields with translations
   const stockFields = [
@@ -159,25 +162,50 @@ export default function CreateStock() {
   const exchangeRate = form.watch('exchange_rate');
   
   // Fetch products, stores, measurements, suppliers and categories for the select dropdowns
-  const { data: productsData } = useGetProducts({
-    params: {
-      product_name: productSearchTerm || undefined,
-    }
-  });
+  // const { data: productsData } = useGetProducts({
+  //   params: {
+  //     product_name: productSearchTerm || undefined,
+  //   }
+  // });
   const { data: storesData, isLoading: storesLoading } = useGetStores({});
 
   const { data: suppliersData, isLoading: suppliersLoading } = useGetSuppliers({});
   const { data: categoriesData, isLoading: categoriesLoading } = useGetCategories({});
 
   // Get the products, stores, measurements, suppliers and categories arrays
-  const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
+  // const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
 
   const suppliers = Array.isArray(suppliersData) ? suppliersData : suppliersData?.results || [];
   const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData?.results || [];
   
- 
-  
+  // Fetch all products from all API pages using axios
+  useEffect(() => {
+    const fetchAllProducts = async () => {
+      let page = 1;
+      let products: any[] = [];
+      let totalPages = 1;
+      const token = getAccessToken();
+      try {
+        do {
+          const url = `https://stock-control.uz/api/v1/items/product/?page=${page}` + (productSearchTerm ? `&product_name=${encodeURIComponent(productSearchTerm)}` : '');
+          const res = await axios.get(url, {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : '',
+            },
+          });
+          products = products.concat(res.data.results);
+          totalPages = res.data.total_pages;
+          page++;
+        } while (page <= totalPages);
+        setAllProducts(products);
+      } catch (error) {
+        // Optionally handle error
+      }
+    };
+    fetchAllProducts();
+  }, [productSearchTerm]);
+
   const handleCreateSupplier = () => {
     setCreateSupplierOpen(true);
   };
@@ -216,12 +244,12 @@ export default function CreateStock() {
     if (field.name === 'product_write') {
       return {
         ...field,
-        options: products.map(product => ({
+        options: allProducts.map(product => ({
           value: product.id,
           label: product.product_name
         })),
         onChange: (value: string) => {
-          const product = products.find(p => p.id === parseInt(value));
+          const product = allProducts.find(p => p.id === parseInt(value));
           setSelectedProduct(product);
         }
       };
@@ -308,6 +336,7 @@ export default function CreateStock() {
 
   const handleSubmit = async (data: FormValues) => {
     try {
+      console.log('Form values before formatting:', data); // Debug log
       // Always parse numbers for numeric fields
       const quantity = typeof data.quantity === 'string' ? parseFloat(data.quantity) : data.quantity!;
       const purchasePriceUSD = data.purchase_price_in_us !== undefined && data.purchase_price_in_us !== null ? String(data.purchase_price_in_us) : '';
@@ -330,8 +359,7 @@ export default function CreateStock() {
         income_weight:data.income_weight,
         measurement_write: [] // Empty array since we removed measurement selection
       };
-
-      console.log('Submitting data:', formattedData);
+      console.log('Submitting data:', formattedData); // Debug log
       await createStock.mutateAsync(formattedData);
       toast.success('Stock created successfully');
       navigate('/stock');

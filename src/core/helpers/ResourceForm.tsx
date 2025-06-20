@@ -288,6 +288,14 @@ export function ResourceForm<T extends Record<string, any>>({
                               accept="image/*"
                             />
                           </div>
+                        ) : field.type === 'number' ? (
+                          <Input
+                            type="number"
+                            placeholder={field.placeholder}
+                            {...formField}
+                            readOnly={field.readOnly}
+                            className={field.readOnly ? 'bg-gray-100' : ''}
+                          />
                         ) : (
                           <Input
                             type={field.type}

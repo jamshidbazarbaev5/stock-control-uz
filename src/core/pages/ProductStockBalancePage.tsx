@@ -38,21 +38,21 @@ export default function ProductStockBalancePage() {
   const { t } = useTranslation();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedStore, setSelectedStore] = useState<string>('all');
+  const [showZeroStock, setShowZeroStock] = useState<'true' | 'false'>('false');
   
   const { data: storesData } = useGetStores({});
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
   const {data:currentUser} = useCurrentUser();
   const { data, isLoading } = useQuery<StockBalanceResponse>({
-    queryKey: ['stockBalance', currentPage, selectedStore],
+    queryKey: ['stockBalance', currentPage, selectedStore, showZeroStock],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: currentPage.toString(),
       });
-      
       if (selectedStore !== 'all') {
         params.append('store', selectedStore);
       }
-      
+      params.append('product_zero', showZeroStock);
       const response = await api.get(`/dashboard/item_dashboard/?${params.toString()}`);
       return response.data;
     }
@@ -79,43 +79,54 @@ export default function ProductStockBalancePage() {
     },
   ];
 
+  // Change handler to ensure correct type
+  const handleShowZeroStockChange = (value: string) => {
+    setShowZeroStock(value === 'true' ? 'true' : 'false');
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col space-y-4">
         <h1 className="text-2xl font-bold">{t('navigation.stock_balance')}</h1>
-        
-        <div className="w-full sm:w-[250px]">
-          {currentUser?.is_superuser && ( <Select
-            value={selectedStore}
-            onValueChange={setSelectedStore}
-          >
+        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+          {currentUser?.is_superuser && (
+            <Select
+              value={selectedStore}
+              onValueChange={setSelectedStore}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={t('forms.select_store')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('forms.all_stores')}</SelectItem>
+                {stores.map((store) => (
+                  <SelectItem key={store.id} value={store.id?.toString() || ''}>
+                    {store.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Select value={showZeroStock} onValueChange={handleShowZeroStockChange}>
             <SelectTrigger>
-              <SelectValue placeholder={t('forms.select_store')} />
+              <SelectValue placeholder="Показать нулевые остатки" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t('forms.all_stores')}</SelectItem>
-              {stores.map((store) => (
-                <SelectItem key={store.id} value={store.id?.toString() || ''}>
-                  {store.name}
-                </SelectItem>
-              ))}
+              <SelectItem value="true">Показать нулевые остатки</SelectItem>
+              <SelectItem value="false">Не показывать нулевые остатки</SelectItem>
             </SelectContent>
-
-          </Select>)}
-       
-         
+          </Select>
         </div>
-           <div>
-            <h1 className='text-lg font-bold'>
-              {t('table.total_volume')}
-              {/* Show as 135,37 if value exists */}
-              {typeof data?.results.total_volume === 'number' && (
-                <span> {data.results.total_volume.toFixed(2).replace('.', ',')}</span>
-              )}
-            </h1>
-          </div>
+        <div>
+          <h1 className='text-lg font-bold'>
+            {t('table.total_volume')}
+            {/* Show as 135,37 if value exists */}
+            {typeof data?.results.total_volume === 'number' && (
+              <span> {data.results.total_volume.toFixed(2).replace('.', ',')}</span>
+            )}
+          </h1>
+        </div>
       </div>
-      
       <Card className="mt-4">
         <ResourceTable
           data={data?.results.info_products || []}

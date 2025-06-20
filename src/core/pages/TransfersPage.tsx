@@ -14,12 +14,12 @@ export default function TransfersPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTransfer, setEditingTransfer] = useState<Transfer | null>(null);
   const [selectedFromStock, setSelectedFromStock] = useState<number | null>(null);
+  // Add product name filter state
+  const [productNameFilter, setProductNameFilter] = useState('');
 
   const { data: transfersData, isLoading } = useGetTransfers({
     params: {
       page: page,
-      page_size: 30,
-      ordering: '-created_at',
     },
   });
   const { data: stocksData } = useGetStocks();
@@ -35,6 +35,13 @@ export default function TransfersPage() {
     ...transfer,
     displayId: (page - 1) * 10 + index + 1,
   }));
+
+  // Filter transfers by product name
+  const filteredTransfers = productNameFilter
+    ? transfers.filter((transfer) =>
+        transfer.from_stock_read?.product_read?.product_name?.toLowerCase().includes(productNameFilter.toLowerCase())
+      )
+    : transfers;
 
   const { mutate: updateTransfer, isPending: isUpdating } = useUpdateTransfer();
   const { mutate: deleteTransfer } = useDeleteTransfer();
@@ -147,16 +154,22 @@ export default function TransfersPage() {
     <div className="container mx-auto py-4 sm:py-6 px-2 sm:px-4">
       <div className="flex justify-between items-center mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">{t('navigation.transfers')}</h1>
-        {/* <Button onClick={() => navigate('/create-recycling')}>
-          {t('common.create')} {t('navigation.recyclings')}
-        </Button> */}
       </div>
-      
+      {/* Product name filter input */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder={t('forms.type_product_name') || 'Filter by product name'}
+          value={productNameFilter}
+          onChange={e => setProductNameFilter(e.target.value)}
+          className="border rounded px-2 py-1 w-full max-w-xs"
+        />
+      </div>
       <div className="overflow-hidden rounded-lg">
         <div className="overflow-x-auto">
           <div className="min-w-[800px]">
             <ResourceTable
-              data={transfers}
+              data={filteredTransfers}
               columns={columns}
               isLoading={isLoading}
               onEdit={handleEdit}
