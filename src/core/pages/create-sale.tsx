@@ -42,7 +42,6 @@ import { useCurrentUser } from '../hooks/useCurrentUser';
 import { addDays } from 'date-fns';
 import React from 'react';
 import { type User } from '../api/user';
-import { isMobile } from 'react-device-detect';
 
 interface ExtendedUser extends User {
   store_read?: {
@@ -608,17 +607,6 @@ export default function CreateSale() {
 
             {form.watch('sale_items').map((_, index: number) => (
               <div key={index} className="flex flex-col sm:flex-row flex-wrap items-start gap-2 sm:gap-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm">
-                {/* Product Search Input for Mobile */}
-                {isMobile && (
-                  <div className="w-full mb-2">
-                    <Input
-                      type="text"
-                      placeholder={t('placeholders.search_products')}
-                      value={productSearchTerm}
-                      onChange={(e) => setProductSearchTerm(e.target.value)}
-                    />
-                  </div>
-                )}
                 <div className="w-full sm:w-[250px]">
                   <FormField
                     control={form.control}
@@ -635,25 +623,22 @@ export default function CreateSale() {
                             <SelectValue placeholder={t('placeholders.select_product')} />
                           </SelectTrigger>
                           <SelectContent>
-                            {/* Only show search input inside dropdown for non-mobile */}
-                            {!isMobile && (
-                              <div className="p-2 sticky top-0 bg-white z-10 border-b select-content-wrapper">
-                                <Input
-                                  type="text"
-                                  placeholder={t('placeholders.search_products')}
-                                  value={productSearchTerm}
-                                  onChange={(e) => {
-                                    e.stopPropagation();
-                                    setProductSearchTerm(e.target.value);
-                                  }}
-                                  onPointerDown={(e) => e.stopPropagation()}
-                                  onClick={(e) => e.stopPropagation()}
-                                  onKeyDown={(e) => e.stopPropagation()}
-                                  className="flex-1"
-                                  autoFocus
-                                />
-                              </div>
-                            )}
+                            <div className="p-2 sticky top-0 bg-white z-10 border-b select-content-wrapper">
+                              <Input
+                                type="text"
+                                placeholder={t('placeholders.search_products')}
+                                value={productSearchTerm}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  setProductSearchTerm(e.target.value);
+                                }}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => e.stopPropagation()}
+                                className="flex-1"
+                                autoFocus
+                              />
+                            </div>
                             {filteredStocks
                               .filter(stock => stock.quantity > 0)
                               .map((stock) => (
@@ -958,25 +943,22 @@ export default function CreateSale() {
                         e.preventDefault();
                       }
                     }}>
-                      {/* Only show search input inside dropdown for non-mobile */}
-                      {!isMobile && (
-                        <div className="p-2 sticky top-0 bg-white z-10 border-b select-content-wrapper">
-                          <Input
-                            type="text"
-                            placeholder={`Search clients...`}
-                            value={searchTerm}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              setSearchTerm(e.target.value);
-                            }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onClick={(e) => e.stopPropagation()}
-                            onKeyDown={(e) => e.stopPropagation()}
-                            className="flex-1"
-                            autoFocus
-                          />
-                        </div>
-                      )}
+                      <div className="p-2 sticky top-0 bg-white z-10 border-b select-content-wrapper">
+                        <Input
+                          type="text"
+                          placeholder={`Search clients...`}
+                          value={searchTerm}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            setSearchTerm(e.target.value);
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          className="flex-1"
+                          autoFocus
+                        />
+                      </div>
                       <div className="max-h-[200px] overflow-y-auto">
                         {clients && clients.length > 0 ? (
                           clients

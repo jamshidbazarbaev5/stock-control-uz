@@ -208,7 +208,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           {/* Mobile Profile Dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setDropdownOpen(!dropdownOpen);
+              }}
               className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
@@ -217,65 +220,90 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border py-3 z-50">
-                {currentUser && (
-                  <>
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
-                          <User size={24} className="text-emerald-600" />
+              <>
+                {/* Backdrop */}
+                <div 
+                  className="fixed inset-0 z-[998]"
+                  onClick={() => setDropdownOpen(false)}
+                />
+                {/* Dropdown Content */}
+                <div 
+                  className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border py-3 z-[999]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {currentUser && (
+                    <>
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                            <User size={24} className="text-emerald-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-gray-800 text-lg">
+                              {currentUser.name}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {currentUser.phone_number}
+                            </div>
+                            <div className="inline-block px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full mt-1">
+                              {currentUser.role}
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <div className="font-semibold text-gray-800 text-lg">
-                            {currentUser.name}
+                        {currentUser.store_read && (
+                          <div className="mt-3 p-2 bg-gray-50 rounded-lg">
+                            <div className="text-xs font-medium text-gray-600 mb-1">
+                              Store Information
+                            </div>
+                            <div className="text-sm font-medium text-gray-800">
+                              {currentUser.store_read.name}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {currentUser.store_read.address}
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {currentUser.phone_number}
-                          </div>
-                          <div className="inline-block px-2 py-1 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full mt-1">
-                            {currentUser.role}
-                          </div>
-                        </div>
+                        )}
                       </div>
-                      {currentUser.store_read && (
-                        <div className="mt-3 p-2 bg-gray-50 rounded-lg">
-                          <div className="text-xs font-medium text-gray-600 mb-1">
-                            Store Information
-                          </div>
-                          <div className="text-sm font-medium text-gray-800">
-                            {currentUser.store_read.name}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {currentUser.store_read.address}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="py-1">
-                      <button
-                        onClick={() => {
-                          setDropdownOpen(false);
-                          navigate("/profile");
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
-                      >
-                        <User size={16} className="text-gray-500" />
-                        {t("common.profile")}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setDropdownOpen(false);
-                          handleLogout();
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
-                      >
-                        <LogOut size={16} className="text-red-500" />
-                        {t("common.logout")}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+                      <div className="py-1">
+                        <button
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDropdownOpen(false);
+                            navigate("/profile");
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors cursor-pointer"
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          <User size={16} className="text-gray-500" />
+                          {t("common.profile")}
+                        </button>
+                        <button
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDropdownOpen(false);
+                            handleLogout();
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors cursor-pointer"
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          <LogOut size={16} className="text-red-500" />
+                          {t("common.logout")}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
             )}
           </div>
 
@@ -458,7 +486,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* Main Content */}
         <main className="flex-1 min-w-0 transition-all duration-300 overflow-x-auto">
           <div className="h-full flex flex-col min-w-[320px]">
-            <div className="bg-white px-4 md:px-6 py-4 flex items-center justify-end gap-4 sticky top-0 z-10 border-b border-gray-100">
+            <div className="bg-white px-4 md:px-6 py-4 flex items-center justify-end gap-4 sticky top-0 z-30 border-b border-gray-100">
               <div className="hidden md:block">
                 <LanguageSwitcher />
               </div>
@@ -466,7 +494,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               {/* Desktop Profile Dropdown */}
               <div className="relative hidden md:block" ref={dropdownRef}>
                 <button
-                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDropdownOpen(!dropdownOpen);
+                  }}
                   className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 transition-colors group"
                 >
                   <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
@@ -481,7 +512,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </button>
 
                 {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border py-3 z-50">
+                  <div 
+                    className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border py-3 z-[9999]"
+                    style={{ zIndex: 9999 }}
+                  >
                     {currentUser && (
                       <>
                         <div className="px-4 py-3 border-b border-gray-100">
@@ -504,7 +538,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         </div>
                         <div className="py-1">
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setDropdownOpen(false);
                               navigate("/profile");
                             }}
@@ -516,7 +551,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             </span>
                           </button>
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               setDropdownOpen(false);
                               handleLogout();
                             }}
