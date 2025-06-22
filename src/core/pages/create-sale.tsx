@@ -797,6 +797,7 @@ export default function CreateSale() {
                           <SelectItem value="Наличные">{t('payment.cash')}</SelectItem>
                           <SelectItem value="Click">{t('payment.click')}</SelectItem>
                           <SelectItem value="Карта">{t('payment.card')}</SelectItem>
+                           <SelectItem value="Перечисление">{t('payment.per')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormItem>

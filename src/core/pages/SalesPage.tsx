@@ -188,14 +188,32 @@ export default function SalesPage() {
         if (!row.sale_items?.length) return '-';
         const itemsText = row.sale_items.map(item => {
           const product = item.stock_read?.product_read?.product_name || '-';
-          const quantity = item.quantity;
-          const method = item.selling_method;
-          return `${quantity} ${method} ${product}`;
+          return `${product}`;
         }).join(' • ');
         return (
           <div className="max-w-[300px]">
             <p className="text-sm truncate" title={itemsText}>
               {itemsText}
+            </p>
+          </div>
+        );
+      },
+    },
+    {
+      header: t('table.quantity'),
+      accessorKey: 'quantity',
+      cell: (row: Sale) => {
+        if (!row.sale_items?.length) return '-';
+        const quantities = row.sale_items.map(item => {
+          let measurement = item.selling_method === 'Штук'
+            ? t('table.pieces')
+            : item.stock_read?.product_read?.measurement?.find((m: { for_sale: boolean; measurement_read?: { measurement_name: string } }) => m.for_sale)?.measurement_read?.measurement_name || '';
+          return `${item.quantity} ${measurement}`;
+        }).join(' • ');
+        return (
+          <div className="max-w-[200px]">
+            <p className="text-sm truncate" title={quantities}>
+              {quantities}
             </p>
           </div>
         );

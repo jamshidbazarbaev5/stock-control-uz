@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
@@ -19,10 +19,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { fetchAllStocks } from '../api/fetchAllStocks';
 import { useGetStores } from '../api/store';
-import { useGetStocks } from '../api/stock';
 import { useGetClients } from '../api/client';
 import { useGetSale, useUpdateSale, type Sale } from '@/core/api/sale';
+// import { useGetUsers } from '../api/user';
+import { useCurrentUser } from '../hooks/useCurrentUser';
+import { addDays } from 'date-fns';
 
 interface FormSaleItem {
   stock_write: number;
@@ -47,47 +50,140 @@ interface SaleFormData {
     due_date: string;
     deposit?: number;
   };
+  sold_by?: number; // Added to fix type error
 }
+
+// type SelectedPrice = { min: number; selling: number; purchasePrice: number; profit: number };
 
 export default function EditSale() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { data: currentUser } = useCurrentUser();
+  // const { data: usersData } = useGetUsers({});
 
-  // Initialize form with default values  
+  // Admin/superuser logic
+  const isAdmin = currentUser?.role === 'Администратор';
+  const isSuperUser = currentUser?.is_superuser === true;
+  // const users = Array.isArray(usersData) ? usersData : usersData?.results || [];
+
+  // State for store, stocks, prices, search
+  const [selectedStore, setSelectedStore] = useState<number | null>(currentUser?.store_read?.id || null);
+  const [selectedStocks, setSelectedStocks] = useState<Record<number, number>>({});
+  const [selectedPrices, setSelectedPrices] = useState<Record<number, { min: number; selling: number; purchasePrice: number; profit: number }>>({});
+  const [searchTerm, _setSearchTerm] = useState('');
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [, forceRender] = useState({});
+
+  // Form setup (move above useGetClients)
   const form = useForm<SaleFormData>({
     defaultValues: {
       sale_items: [{ stock_write: 0, selling_method: 'Штук', quantity: 1, subtotal: '0' }],
       sale_payments: [{ payment_method: 'Наличные', amount: 0 }],
       on_credit: false,
       total_amount: '0',
-      store_write: 0
+      store_write: currentUser?.store_read?.id || 0,
+      sale_debt: { client: 0, due_date: addDays(new Date(), 30).toISOString().split('T')[0] }
     },
     mode: 'onChange'
   });
 
-  const [selectedStore, setSelectedStore] = useState<number | null>(null);
-  const [selectedStocks, setSelectedStocks] = useState<Record<number, number>>({});
-  const [selectedPrices, setSelectedPrices] = useState<Record<number, { min: number; selling: number }>>({});
-  
   // Fetch data
   const { data: storesData } = useGetStores({});
-  const { data: stocksData } = useGetStocks({});
-  const { data: clientsData } = useGetClients({});
+  const { data: clientsData } = useGetClients({ params: form.watch('on_credit') ? { name: searchTerm } : undefined });
   const { data: saleData, isLoading: isLoadingSale } = useGetSale(Number(id));
   const updateSale = useUpdateSale();
 
   // Prepare data arrays
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
-  const stocks = Array.isArray(stocksData) ? stocksData : stocksData?.results || [];
   const clients = Array.isArray(clientsData) ? clientsData : clientsData?.results || [];
+  const [allStocks, setAllStocks] = useState<any[]>([]);
+  const [_loadingAllStocks, setLoadingAllStocks] = useState(false);
+
+  // Set sold_by for non-admin/non-superuser as in create-sale
+  useEffect(() => {
+    if (!isSuperUser && !isAdmin && currentUser?.id) {
+      form.setValue('sold_by', currentUser.id as any); // as any to avoid TS error, not in SaleFormData
+    }
+  }, [isAdmin, isSuperUser, currentUser?.id]);
+
+  // Fetch all stocks with search
+  useEffect(() => {
+    setLoadingAllStocks(true);
+    fetchAllStocks({ product_name: productSearchTerm.length > 0 ? productSearchTerm : undefined })
+      .then((data) => setAllStocks(data))
+      .finally(() => setLoadingAllStocks(false));
+  }, [productSearchTerm]);
+  const stocks = allStocks;
 
   // Filter stocks by selected store
-  const filteredStocks = stocks.filter(stock => stock.store_read?.id === selectedStore);
-  
-  const calculateSubtotal = (quantity: number, price: number) => {
-    return (quantity * price).toString();
-  };
+  const filteredStocks = useMemo(() => {
+    return stocks.filter(stock => stock.store_read?.id === selectedStore);
+  }, [stocks, selectedStore]);
+
+  // Load sale data for editing
+  useEffect(() => {
+    if (!saleData || stocks.length === 0 || stores.length === 0) return;
+    const storeId = saleData.store_read?.id ? Number(saleData.store_read.id) : null;
+    if (storeId) {
+      setSelectedStore(storeId);
+      form.setValue('store_write', storeId);
+    }
+    if (saleData.sale_items) {
+      const validItems = saleData.sale_items.filter(item => stocks.some(stock => stock.id === item.stock_read?.id));
+      const newSelectedStocks: Record<number, number> = {};
+      const newSelectedPrices: Record<number, { min: number; selling: number; purchasePrice: number; profit: number }> = {};
+      validItems.forEach((item, index) => {
+        const stockId = item.stock_read?.id ? Number(item.stock_read.id) : undefined;
+        const stock = stocks.find(s => s.id === stockId);
+        if (stock) {
+          newSelectedStocks[index] = stock.quantity || 0;
+          const totalPurchasePrice = parseFloat(stock.purchase_price_in_uz || '0');
+          const stockQuantity = stock.quantity_for_history || stock.quantity || 1;
+          const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
+          const sellingPrice = parseFloat(stock.selling_price || '0');
+          const minPrice = parseFloat(stock.min_price || '0');
+          const quantity = parseFloat(item.quantity);
+          const profit = (sellingPrice - purchasePricePerUnit) * quantity;
+          newSelectedPrices[index] = { min: minPrice, selling: sellingPrice, purchasePrice: purchasePricePerUnit, profit };
+        }
+      });
+      setSelectedStocks(newSelectedStocks);
+      setSelectedPrices(newSelectedPrices);
+      form.setValue('sale_items', validItems.map(item => ({
+        stock_write: item.stock_read?.id ? Number(item.stock_read.id) : 0,
+        selling_method: item.selling_method,
+        quantity: parseFloat(item.quantity),
+        subtotal: item.subtotal
+      })));
+    }
+    form.setValue('on_credit', saleData.on_credit);
+    form.setValue('total_amount', saleData.total_amount);
+    if (saleData.sale_payments) {
+      form.setValue('sale_payments', saleData.sale_payments.map(payment => ({
+        payment_method: payment.payment_method,
+        amount: parseFloat(payment.amount)
+      })));
+    }
+    if (saleData.sale_debt) {
+      const clientId = saleData.sale_debt.client ? Number(saleData.sale_debt.client) : 0;
+      form.setValue('sale_debt', {
+        client: clientId,
+        due_date: saleData.sale_debt.due_date,
+        deposit: saleData.sale_debt.deposit ? parseFloat(saleData.sale_debt.deposit) : undefined
+      });
+    } else if (saleData.client) {
+      const clientId = Number(saleData.client);
+      form.setValue('sale_debt', {
+        client: clientId,
+        due_date: '',
+      });
+    }
+  }, [saleData, stocks, stores, form]);
+
+  // const calculateSubtotal = (quantity: number, price: number) => {
+  //   return (quantity * price).toString();
+  // };
 
   const updateTotalAmount = () => {
     const items = form.getValues('sale_items');
@@ -99,62 +195,43 @@ export default function EditSale() {
   };
 
   const handleStockSelection = (value: string, index: number) => {
-    console.log('Handling stock selection:', { value, index });
     const stockId = parseInt(value, 10);
     const selectedStock = filteredStocks.find(stock => stock.id === stockId);
-    
     if (!selectedStock) {
       console.warn('Selected stock not found:', stockId);
       return;
     }
-
-    console.log('Found selected stock:', selectedStock);
-    
+    if (selectedStock.store_read?.id && selectedStock.store_read.id !== selectedStore) {
+      setSelectedStore(selectedStock.store_read.id);
+      form.setValue('store_write', selectedStock.store_read.id);
+      forceRender({});
+    }
     setSelectedStocks(prev => ({
       ...prev,
       [index]: selectedStock.quantity || 0
     }));
-    
+    const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
+    const stockQuantity = selectedStock.quantity_for_history || selectedStock.quantity || 1;
+    const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
     const sellingPrice = parseFloat(selectedStock.selling_price || '0');
     const minPrice = parseFloat(selectedStock.min_price || '0');
-    
+    const quantity = form.getValues(`sale_items.${index}.quantity`) || 1;
+    // Use sellingPrice as initial subtotal, but profit should be recalculated on every change
     setSelectedPrices(prev => ({
       ...prev,
       [index]: {
         min: minPrice,
-        selling: sellingPrice
+        selling: sellingPrice,
+        purchasePrice: purchasePricePerUnit,
+        profit: (sellingPrice - purchasePricePerUnit) * quantity // will be recalculated on change
       }
     }));
-    
-    // Set stock and defaults
     form.setValue(`sale_items.${index}.stock_write`, stockId);
-    
+    form.setValue(`sale_items.${index}.subtotal`, sellingPrice.toString());
+    form.setValue(`sale_items.${index}.selling_method`, 'Штук' as 'Штук');
     // Set default quantity if not already set
-    const currentQuantity = form.getValues(`sale_items.${index}.quantity`) || 1;
     if (!form.getValues(`sale_items.${index}.quantity`)) {
       form.setValue(`sale_items.${index}.quantity`, 1);
-    }
-    
-    // Calculate and set subtotal
-    const subtotal = sellingPrice * currentQuantity;
-    form.setValue(`sale_items.${index}.subtotal`, subtotal.toString());
-    
-    updateTotalAmount();
-  };
-
-  const handleSubtotalChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-    const value = parseFloat(e.target.value) || 0;
-    const quantity = form.getValues(`sale_items.${index}.quantity`);
-    
-    if (selectedPrices[index]) {
-      const minTotal = selectedPrices[index].min * quantity;
-      if (value < minTotal) {
-        toast.error(t('messages.error.price_below_minimum'));
-        const correctedValue = selectedPrices[index].selling * quantity;
-        form.setValue(`sale_items.${index}.subtotal`, correctedValue.toString());
-      } else {
-        form.setValue(`sale_items.${index}.subtotal`, value.toString());
-      }
     }
     updateTotalAmount();
   };
@@ -162,22 +239,28 @@ export default function EditSale() {
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const value = parseInt(e.target.value, 10);
     const maxQuantity = selectedStocks[index] || 0;
-    
+    const subtotal = parseFloat(form.getValues(`sale_items.${index}.subtotal`)) || 0;
+    const stockId = form.getValues(`sale_items.${index}.stock_write`);
+    const selectedStock = stocks.find(stock => stock.id === stockId);
     if (value > maxQuantity) {
       toast.error(t('messages.error.insufficient_quantity'));
       form.setValue(`sale_items.${index}.quantity`, maxQuantity);
-      // Update subtotal with max quantity
-      if (selectedPrices[index]) {
-        const subtotal = calculateSubtotal(maxQuantity, selectedPrices[index].selling);
-        form.setValue(`sale_items.${index}.subtotal`, subtotal);
-      }
     } else {
       form.setValue(`sale_items.${index}.quantity`, value);
-      // Update subtotal with new quantity
-      if (selectedPrices[index]) {
-        const subtotal = calculateSubtotal(value, selectedPrices[index].selling);
-        form.setValue(`sale_items.${index}.subtotal`, subtotal);
-      }
+    }
+    // Recalculate profit with new quantity and current subtotal
+    if (selectedPrices[index] && selectedStock) {
+      const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
+      const stockQuantity = selectedStock.quantity_for_history || selectedStock.quantity || 1;
+      const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
+      const profit = (subtotal - purchasePricePerUnit) * value;
+      setSelectedPrices(prev => ({
+        ...prev,
+        [index]: {
+          ...prev[index],
+          profit: profit
+        }
+      }));
     }
     updateTotalAmount();
   };
@@ -246,103 +329,14 @@ export default function EditSale() {
     updateTotalAmount();
   };
 
-  const removeSaleItem = (index: number) => {
-    const items = form.getValues('sale_items');
-    form.setValue('sale_items', items.filter((_, i) => i !== index));
-    updateTotalAmount();
-  };
-
-  // Load existing sale data
+  // Delay setting values again to ensure UI updates correctly
   useEffect(() => {
     if (!saleData || stocks.length === 0 || stores.length === 0) return;
 
-    console.log('Loading sale data:', {
-      saleId: id,
-      saleItems: saleData.sale_items,
-      storeId: saleData.store_read?.id,
-      saleData
-    });
-
-    // Convert values to number type for proper comparison
     const storeId = saleData.store_read?.id ? Number(saleData.store_read.id) : null;
     
-    if (storeId) {
-      console.log('Setting store:', storeId);
-      setSelectedStore(storeId);
-      form.setValue('store_write', storeId);
-    }
-
-    // Set sale items after store state has been set
-    if (saleData.sale_items) {
-      console.log('Setting sale items:', saleData.sale_items);
-      
-      const validItems = saleData.sale_items.filter(item => 
-        stocks.some(stock => stock.id === item.stock_read?.id)
-      );
-
-      // Initialize selected stocks and prices
-      const newSelectedStocks: Record<number, number> = {};
-      const newSelectedPrices: Record<number, { min: number; selling: number }> = {};
-
-      // Update selected stocks and prices
-      validItems.forEach((item, index) => {
-        const stockId = item.stock_read?.id ? Number(item.stock_read.id) : undefined;
-        const stock = stocks.find(s => s.id === stockId);
-        console.log('Processing stock:', { stockId, found: !!stock, stockData: stock });
-        
-        if (stock) {
-          newSelectedStocks[index] = stock.quantity || 0;
-          newSelectedPrices[index] = {
-            min: parseFloat(stock.min_price || '0'),
-            selling: parseFloat(stock.selling_price || '0')
-          };
-        }
-      });
-
-      // Set all states together
-      setSelectedStocks(newSelectedStocks);
-      setSelectedPrices(newSelectedPrices);
-
-      // Set form values
-      form.setValue('sale_items', validItems.map(item => ({
-        stock_write: item.stock_read?.id ? Number(item.stock_read.id) : 0,
-        selling_method: item.selling_method,
-        quantity: parseInt(item.quantity),
-        subtotal: item.subtotal
-      })));
-    }
-
-    // Set payment and credit info
-    form.setValue('on_credit', saleData.on_credit);
-    form.setValue('total_amount', saleData.total_amount);
-
-    if (saleData.sale_payments) {
-      form.setValue('sale_payments', saleData.sale_payments.map(payment => ({
-        payment_method: payment.payment_method,
-        amount: parseFloat(payment.amount)
-      })));
-    }
-
-    if (saleData.sale_debt) {
-      // Ensure client ID is a number with fallback to 0 if undefined to satisfy TypeScript
-      const clientId = saleData.sale_debt.client ? Number(saleData.sale_debt.client) : 0;
-      form.setValue('sale_debt', {
-        client: clientId,
-        due_date: saleData.sale_debt.due_date,
-        deposit: saleData.sale_debt.deposit ? parseFloat(saleData.sale_debt.deposit) : undefined
-      });
-    } else if (saleData.client) {
-      const clientId = Number(saleData.client);
-      form.setValue('sale_debt', {
-        client: clientId,
-        due_date: '', // Set an appropriate default
-      });
-    }
-    
-    // Delay setting values again to ensure UI updates correctly
     setTimeout(() => {
       if (storeId) {
-        console.log('Re-setting store:', storeId);
         form.setValue('store_write', storeId);
       }
       
@@ -439,6 +433,24 @@ export default function EditSale() {
                             </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
+                            {/* Product search input */}
+                            <div className="p-2 sticky top-0 bg-white z-10 border-b select-content-wrapper">
+                              <Input
+                                type="text"
+                                placeholder={t('placeholders.search_products')}
+                                value={productSearchTerm}
+                                onChange={(e) => {
+                                  e.stopPropagation();
+                                  setProductSearchTerm(e.target.value);
+                                }}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => e.stopPropagation()}
+                                className="flex-1"
+                                autoFocus
+                              />
+                            </div>
+
                             {filteredStocks
                               .filter(stock => stock.quantity > 0)
                               .map((stock) => (
@@ -451,9 +463,21 @@ export default function EditSale() {
                         {selectedPrices[index] && (
                           <div className="mt-2 space-y-1 text-xs">
                             <div className="flex items-center justify-between px-2 py-1 bg-gray-50 rounded">
-                              <span className="text-gray-600">{t('table.min_price')}:</span>
-                              <span className="font-medium text-red-600">{selectedPrices[index].min}</span>
+                              {(isAdmin || isSuperUser) && (
+                                <>
+                                  <span className="text-gray-600">{t('table.min_price')}:</span>
+                                  <span className="font-medium text-red-600">{selectedPrices[index].min}</span>
+                                </>
+                              )}
                             </div>
+                            {(isAdmin || isSuperUser) && (
+                              <div className="flex items-center justify-between px-2 py-1 bg-green-50 rounded">
+                                <span className="text-gray-600">{t('table.profit')}:</span>
+                                <span className="font-medium text-green-600">
+                                  {selectedPrices[index].profit.toFixed(1)}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         )}
                       </FormItem>
@@ -520,7 +544,24 @@ export default function EditSale() {
                             type="text"
                             className="text-right font-medium"
                             {...field}
-                            onChange={(e) => handleSubtotalChange(e, index)}
+                            onChange={(e) => {
+                              const newValue = e.target.value.replace(/[^0-9]/g, '');
+                              const quantity = form.getValues(`sale_items.${index}.quantity`) || 1;
+                              const subtotal = parseFloat(newValue) || 0;
+                              if (selectedPrices[index]) {
+                                const { purchasePrice } = selectedPrices[index];
+                                const profit = (subtotal - purchasePrice) * quantity;
+                                setSelectedPrices(prev => ({
+                                  ...prev,
+                                  [index]: {
+                                    ...prev[index],
+                                    profit: profit
+                                  }
+                                }));
+                              }
+                              form.setValue(`sale_items.${index}.subtotal`, newValue);
+                              updateTotalAmount();
+                            }}
                           />
                         </FormControl>
                       </FormItem>
@@ -533,7 +574,11 @@ export default function EditSale() {
                     type="button"
                     variant="destructive"
                     size="icon"
-                    onClick={() => removeSaleItem(index)}
+                    onClick={() => {
+                      const items = form.getValues('sale_items');
+                      form.setValue('sale_items', items.filter((_, i) => i !== index));
+                      updateTotalAmount();
+                    }}
                     className="mt-2 sm:mt-8"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -678,37 +723,39 @@ export default function EditSale() {
           </div>
 
           {/* Client Selection */}
-          <div className="w-full sm:w-2/3 lg:w-1/2">
-            <FormField
-              control={form.control}
-              name="sale_debt.client"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('table.client')}</FormLabel>
-                  <Select
-                    value={field.value?.toString()}
-                    onValueChange={(value) => {
-                      field.onChange(parseInt(value, 10));
-                      // Don't modify on_credit value here to preserve the value from API
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('placeholders.select_client')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients
-                        .filter(client => form.watch('on_credit') ? true : client.type === 'Юр.лицо')
-                        .map((client) => (
-                          <SelectItem key={client.id} value={client.id?.toString() || ''}>
-                            {client.name} {client.type !== 'Юр.лицо' && `(${client.type})`}
-                          </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-          </div>
+          {form.watch('sale_debt.client') && (
+            <div className="w-full sm:w-2/3 lg:w-1/2">
+              <FormField
+                control={form.control}
+                name="sale_debt.client"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('table.client')}</FormLabel>
+                    <Select
+                      value={field.value?.toString()}
+                      onValueChange={(value) => {
+                        field.onChange(parseInt(value, 10));
+                        // Don't modify on_credit value here to preserve the value from API
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t('placeholders.select_client')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clients
+                          .filter(client => form.watch('on_credit') ? true : client.type === 'Юр.лицо')
+                          .map((client) => (
+                            <SelectItem key={client.id} value={client.id?.toString() || ''}>
+                              {client.name} {client.type !== 'Юр.лицо' && `(${client.type})`}
+                            </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            </div>
+          )}
 
           {/* Credit Details */}
           {form.watch('on_credit') && (
@@ -762,15 +809,25 @@ export default function EditSale() {
                 {parseFloat(form.watch('total_amount') || '0').toLocaleString()}
               </p>
             </div>
+            {(isAdmin || isSuperUser) && (
+              <div className="flex items-center justify-between">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-700">
+                  {t('table.profit')}
+                </h3>
+                <p className="text-xl sm:text-3xl font-bold text-green-600">
+                  {Object.values(selectedPrices).reduce((total, item) => total + (item.profit || 0), 0).toFixed(1).toLocaleString()}
+                </p>
+              </div>
+            )}
           </div>
 
-          <Button 
+          {/* <Button 
             type="submit" 
             className="w-full mt-4 sm:mt-6 h-10 sm:h-12 text-base sm:text-lg font-medium" 
             disabled={updateSale.isPending}
           >
             {updateSale.isPending ? t('common.updating') : t('common.update')}
-          </Button>
+          </Button> */}
         </form>
       </Form>
     </div>

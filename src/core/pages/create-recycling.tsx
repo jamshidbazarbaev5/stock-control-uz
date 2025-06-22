@@ -16,6 +16,7 @@ import api from '../api/api';
 interface FormValues extends Partial<Recycling> {}
 
 const recyclingFields = (t:any, productSearchTerm: string, perUnitPrice: number | null)=> [
+  // --- Product Selection ---
   {
     name: 'from_to',
     label: t('table.from_product'),
@@ -34,6 +35,7 @@ const recyclingFields = (t:any, productSearchTerm: string, perUnitPrice: number 
     searchTerm: productSearchTerm,
     onSearch: productSearchTerm
   },
+  // --- Store Selection ---
   {
     name: 'store',
     label: t('table.store'),
@@ -42,13 +44,8 @@ const recyclingFields = (t:any, productSearchTerm: string, perUnitPrice: number 
     required: true,
     options: [], // Will be populated with stores
   },
-  {
-    name: 'spent_amount',
-    label: t('table.spent_amount'),
-    type: 'string',
-    placeholder: t('placeholders.enter_quantity'),
-    required: true,
-  },
+  // --- Amounts ---
+
   {
     name: 'get_amount',
     label: t('table.get_amount'),
@@ -56,6 +53,14 @@ const recyclingFields = (t:any, productSearchTerm: string, perUnitPrice: number 
     placeholder: t('placeholders.enter_quantity'),
     required: true,
   },
+    {
+    name: 'spent_amount',
+    label: t('table.spent_amount'),
+    type: 'string',
+    placeholder: t('placeholders.enter_quantity'),
+    required: true,
+  },
+  // --- Prices ---
   {
     name: 'selling_price',
     label: t('forms.selling_price'),
@@ -92,6 +97,7 @@ const recyclingFields = (t:any, productSearchTerm: string, perUnitPrice: number 
     readOnly: true,
     helperText: perUnitPrice ? `${t('common.per_unit_cost')}: ${perUnitPrice.toFixed(2)} UZS` : '',
   },
+  // --- Date ---
   {
     name: 'date_of_recycle',
     label: t('table.date'),

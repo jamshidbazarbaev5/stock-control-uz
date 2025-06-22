@@ -162,6 +162,17 @@ export default function CreateTransfer() {
   const selectedFromStock = mergedStocks?.find((stock: Stock) => stock.id === fromStock);
   const selectedToStore = stores?.find((store: Store) => store.id === toStock);
 
+  // Set amount to selectedFromStock.quantity when selectedFromStock changes
+  useEffect(() => {
+    if (selectedFromStock && selectedFromStock.quantity !== undefined) {
+      form.setValue('amount', selectedFromStock.quantity);
+    }
+    // Optionally, clear if no stock selected
+    if (!selectedFromStock) {
+      form.setValue('amount', '');
+    }
+  }, [selectedFromStock, form]);
+
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-2xl font-bold mb-6">{t('common.create')} {t('navigation.transfers')}</h1>
@@ -308,6 +319,7 @@ export default function CreateTransfer() {
                   step="0.01"
                   {...form.register('amount')}
                   className="w-full"
+                  defaultValue={selectedFromStock?.quantity}
                 />
               </div>
 
