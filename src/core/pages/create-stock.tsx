@@ -26,6 +26,8 @@ interface FormValues extends Partial<Stock> {
   purchase_price_in_uz: string;
   income_weight:string;
   date_of_arrived: string;
+  selling_price_us?: string; // new: user enters selling price in USD
+  calculated_selling_price?: string; // new: calculated selling price in UZS
 }
 
 interface CreateProductForm {
@@ -50,6 +52,7 @@ export default function CreateStock() {
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [currency, setCurrency] = useState<{ id: number; currency_rate: string } | null>(null);
   const [currencyLoading, setCurrencyLoading] = useState(true);
+  const [calculatedSellingPrice, setCalculatedSellingPrice] = useState<string>('');
   
   // Define stock fields with translations
   const stockFields = [
@@ -85,6 +88,14 @@ export default function CreateStock() {
       placeholder: t('common.enter_purchase_price_usd'),
       required: true,
     },
+     {
+      name: 'selling_price_us',
+      label: t('common.enter_selling_price_usd') || 'Selling Price (USD)',
+      type: 'text',
+      placeholder: t('common.enter_selling_price_usd') || 'Enter selling price in USD',
+      required: selectedProduct?.has_kub || false,
+      hidden: !selectedProduct?.has_kub,
+    },
     {
       name: 'exchange_rate',
       label: t('common.enter_exchange_rate'),
@@ -105,7 +116,7 @@ export default function CreateStock() {
       type: 'text',
       placeholder: t('common.enter_selling_price'),
       required: true,
-      helperText: perUnitPrice ? `${t('common.per_unit_cost')}: ${perUnitPrice.toFixed(2)} UZS` : '',
+      // helperText: perUnitPrice ? `${t('common.per_unit_cost')}: ${perUnitPrice.toFixed(2)} UZS` : '',
     },
     {
       name: 'min_price',
@@ -130,7 +141,16 @@ export default function CreateStock() {
       required: true,
       options: [], // Will be populated with suppliers
     },
-
+   
+    {
+      name: 'calculated_selling_price',
+      label: t('common.calculated_selling_price') || 'Calculated Selling Price (UZS)',
+      type: 'text',
+      placeholder: t('common.calculated_selling_price') || 'Calculated selling price',
+      readOnly: true,
+      hidden: !selectedProduct?.has_kub,
+      helperText: calculatedSellingPrice ? `${t('common.calculated_selling_price')}: ${calculatedSellingPrice} UZS` : '',
+    },
   ];
   const createStock = useCreateStock();
   
@@ -263,6 +283,31 @@ export default function CreateStock() {
       }
     }
   }, [usdPrice, exchangeRateValue, form, form.watch('quantity')]);
+
+  // Effect to update calculated selling price for has_kub products
+  useEffect(() => {
+    if (selectedProduct?.has_kub) {
+      const quantity = parseFloat(form.watch('quantity')?.toString() || '0');
+      const kub = parseFloat(selectedProduct.kub?.toString() || '0');
+      const purchasePriceInUs = parseFloat(form.watch('purchase_price_in_us')?.toString() || '0');
+      const exchangeRate = parseFloat(form.watch('exchange_rate')?.toString() || currency?.currency_rate || '0');
+      const sellingPriceUs = parseFloat(form.watch('selling_price_us')?.toString() || '0');
+      if (!isNaN(quantity) && !isNaN(kub) && !isNaN(purchasePriceInUs) && !isNaN(exchangeRate) && !isNaN(sellingPriceUs) && quantity > 0 && kub > 0) {
+        const KUB = quantity * kub;
+        // const totalPurchase = KUB * purchasePriceUz; // not used in UI
+        const totalSelling = KUB * sellingPriceUs * exchangeRate;
+        const calculated = totalSelling / quantity;
+        setCalculatedSellingPrice(calculated.toFixed(2));
+        form.setValue('calculated_selling_price', calculated.toFixed(2), { shouldValidate: false, shouldDirty: true });
+      } else {
+        setCalculatedSellingPrice('');
+        form.setValue('calculated_selling_price', '', { shouldValidate: false, shouldDirty: true });
+      }
+    } else {
+      setCalculatedSellingPrice('');
+      form.setValue('calculated_selling_price', '', { shouldValidate: false, shouldDirty: true });
+    }
+  }, [selectedProduct, form.watch('quantity'), form.watch('purchase_price_in_us'), form.watch('exchange_rate'), form.watch('selling_price_us')]);
 
   // Update fields with product, store, measurement and supplier options
   const fields = stockFields.map(field => {

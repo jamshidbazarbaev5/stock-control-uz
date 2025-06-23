@@ -117,10 +117,12 @@
     "create_expense": "Создать расход"
   },
   "common": {
+    "enter_selling_price_usd":"Введите цену продажи в USD",
     "price_per_unit": "Цена за единицу",
     "calculated_quantity":"Рассчитанное количество",
     "enter_income_weight":"Введите тонну",
     "income_weight":"Тонна",
+    "calculated_selling_price":"Рассчитанная цена продажи",
     "per_unit_cost": "Цена за единицу",
     "increment_balance": "Увеличить баланс",
     "update": "Изменить",
@@ -556,5 +558,16 @@
       "delete": "Вы уверены, что хотите удалить это?"
     },
     "edit": "Изменить"
+  },
+  "currency_modal": {
+    "title": "Выбор валюты",
+    "select_currency": "Выберите валюту",
+    "currency": "Валюта",
+    "save": "Сохранить",
+    "cancel": "Отменить"
+  },
+  "currency":{
+    "set":"Установить валюту"
   }
+
 }

@@ -98,6 +98,8 @@
     "complex": "Quramalı tólem"
   },
   "common": {
+    "enter_seeling_price_usd": "Satıw bahasın USD da kiritiń",
+    
     "income_weight":"Tonna",
     "enter_income_weight":"Tonnani kiriting",
     "price_per_unit":" Ólshem bahası",
@@ -495,5 +497,17 @@
     "debt_details": "Qarız maǵlıwmatı",
     "create_expense_name": "Rasxod atın jaratıw",
     "create_expense": "Rasxod jaratıw"
+  },
+  "currency_modal": {
+    "title": "Valyutani tańlaw",
+    "select_currency": "Valyutani tańlań",
+    "currency": "Valyuta",
+    "save": "Saqlaw",
+    "cancel": "Biykar etiw"
+  },
+  "currency":{
+
+    "set":"Valyutani saqlaw"
+
   }
 }

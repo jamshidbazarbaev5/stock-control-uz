@@ -118,16 +118,24 @@ export default function EditStock() {
   // Watch income_weight and update quantity for is_list products
   useEffect(() => {
     if (selectedProduct?.is_list) {
-      const weight = parseFloat(incomeWeight || '');
-      const staticWeight = selectedProduct.static_weight || 0;
-      if (!isNaN(weight) && staticWeight) {
-        form.setValue('quantity', (weight * staticWeight).toString() as any);
+      if (stock?.income_weight === null || stock?.income_weight === undefined) {
+        // If income_weight is null, set quantity to stock.quantity
+        if (stock?.quantity !== undefined && stock?.quantity !== null) {
+          form.setValue('quantity', stock.quantity);
+        }
       } else {
-        form.setValue('quantity', '' as any);
+        // If income_weight is present, calculate as before
+        const weight = parseFloat(incomeWeight || '');
+        const staticWeight = selectedProduct.static_weight || 0;
+        if (!isNaN(weight) && staticWeight) {
+          form.setValue('quantity', (weight * staticWeight).toString() as any);
+        } else {
+          form.setValue('quantity', '' as any);
+        }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [incomeWeight, selectedProduct]);
+  }, [incomeWeight, selectedProduct, stock]);
 
   // Load stock data when it's available and related data is loaded
   useEffect(() => {
@@ -258,21 +266,28 @@ export default function EditStock() {
 
   // Add dynamic fields for is_list products
   if (selectedProduct?.is_list) {
-    const quantityIndex = stockFields.findIndex(f => f.name === 'quantity');
-    if (quantityIndex !== -1) {
-      stockFields.splice(quantityIndex, 0, {
-        name: 'income_weight',
-        label: t('common.income_weight') || 'Income Weight',
-        type: 'number',
-        placeholder: t('common.enter_income_weight') || 'Enter income weight',
-        required: true,
-        // Only add onChange if your ResourceForm supports it
-      });
-      // Make quantity readOnly if supported
+    // Only add income_weight field if income_weight is NOT null
+    if (stock?.income_weight !== null && stock?.income_weight !== undefined) {
+      const quantityIndex = stockFields.findIndex(f => f.name === 'quantity');
+      if (quantityIndex !== -1) {
+        stockFields.splice(quantityIndex, 0, {
+          name: 'income_weight',
+          label: t('common.income_weight') || 'Income Weight',
+          type: 'number',
+          placeholder: t('common.enter_income_weight') || 'Enter income weight',
+          required: true,
+        });
+        // Make quantity readOnly if supported
+        const quantityField = stockFields.find(f => f.name === 'quantity');
+        if (quantityField) {
+          (quantityField as any).readOnly = true;
+        }
+      }
+    } else {
+      // If income_weight is null, ensure quantity is editable
       const quantityField = stockFields.find(f => f.name === 'quantity');
       if (quantityField) {
-        (quantityField as any).readOnly = true;
-        // Only add helperText if your ResourceForm supports it
+        (quantityField as any).readOnly = false;
       }
     }
   }

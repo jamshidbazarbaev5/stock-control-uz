@@ -546,12 +546,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition mr-2"
                       onClick={() => setCurrencyModalOpen(true)}
                     >
-                      {t("Set Currency Rate")}
+                      {t("currency.set")}
                     </button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>{t("Set Currency Rate")}</DialogTitle>
+                      <DialogTitle>{t('currency.set')}</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleCurrencySubmit} className="space-y-4">
                       <Input
@@ -569,11 +569,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
                           disabled={loading}
                         >
-                          {loading ? t("Saving...") : t("Save")}
+                          {loading ? t("common.saving") : t("common.save")}
                         </button>
                         <DialogClose asChild>
                           <button type="button" className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
-                            {t("Cancel")}
+                            {t("common.cancel")}
                           </button>
                         </DialogClose>
                       </DialogFooter>
