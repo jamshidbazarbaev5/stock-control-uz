@@ -47,7 +47,7 @@ export default function CreateStock() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [perUnitPrice, setPerUnitPrice] = useState<number | null>(null);
+  const [_perUnitPrice, setPerUnitPrice] = useState<number | null>(null);
   const [productSearchTerm, setProductSearchTerm] = useState('');
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [currency, setCurrency] = useState<{ id: number; currency_rate: string } | null>(null);
