@@ -48,6 +48,8 @@ export default function CreateStock() {
   const [perUnitPrice, setPerUnitPrice] = useState<number | null>(null);
   const [productSearchTerm, setProductSearchTerm] = useState('');
   const [allProducts, setAllProducts] = useState<any[]>([]);
+  const [currency, setCurrency] = useState<{ id: number; currency_rate: string } | null>(null);
+  const [currencyLoading, setCurrencyLoading] = useState(true);
   
   // Define stock fields with translations
   const stockFields = [
@@ -159,7 +161,8 @@ export default function CreateStock() {
 
   // Watch specific fields for changes
   const usdPrice = form.watch('purchase_price_in_us');
-  const exchangeRate = form.watch('exchange_rate');
+  // const exchangeRate = form.watch('exchange_rate');
+  const exchangeRateValue = currency?.currency_rate || '';
   
   // Fetch products, stores, measurements, suppliers and categories for the select dropdowns
   // const { data: productsData } = useGetProducts({
@@ -212,12 +215,34 @@ export default function CreateStock() {
   
 
 
+  // Fetch currency rate on mount
+  useEffect(() => {
+    const fetchCurrency = async () => {
+      setCurrencyLoading(true);
+      try {
+        const token = getAccessToken();
+        const res = await axios.get('https://stock-control.uz/api/v1/items/currency/', {
+          headers: { Authorization: token ? `Bearer ${token}` : '' },
+        });
+        if (res.data.results && res.data.results.length > 0) {
+          setCurrency(res.data.results[0]);
+          form.setValue('exchange_rate', res.data.results[0].currency_rate);
+        }
+      } catch (e) {
+        setCurrency(null);
+      } finally {
+        setCurrencyLoading(false);
+      }
+    };
+    fetchCurrency();
+    // eslint-disable-next-line
+  }, []);
 
   // Effect to update purchase_price_in_uz and per unit price when dependencies change
   useEffect(() => {
-    if (usdPrice && exchangeRate) {
+    if (usdPrice && exchangeRateValue) {
       const priceInUSD = parseFloat(usdPrice);
-      const rate = parseFloat(exchangeRate);
+      const rate = parseFloat(exchangeRateValue);
       const quantityString = form.watch('quantity')?.toString() || '0';
       const quantity = parseFloat(quantityString);
       
@@ -237,7 +262,7 @@ export default function CreateStock() {
         }
       }
     }
-  }, [usdPrice, exchangeRate, form, form.watch('quantity')]);
+  }, [usdPrice, exchangeRateValue, form, form.watch('quantity')]);
 
   // Update fields with product, store, measurement and supplier options
   const fields = stockFields.map(field => {
@@ -277,6 +302,15 @@ export default function CreateStock() {
         createNewLabel: t('common.create_new_supplier'),
         onCreateNew: handleCreateSupplier,
         isLoading: suppliersLoading
+      };
+    }
+    if (field.name === 'exchange_rate') {
+      return {
+        ...field,
+        value: currency?.currency_rate || '',
+        readOnly: true,
+        disabled: true,
+        loading: currencyLoading,
       };
     }
     if (field.name === 'color') {
@@ -340,7 +374,7 @@ export default function CreateStock() {
       // Always parse numbers for numeric fields
       const quantity = typeof data.quantity === 'string' ? parseFloat(data.quantity) : data.quantity!;
       const purchasePriceUSD = data.purchase_price_in_us !== undefined && data.purchase_price_in_us !== null ? String(data.purchase_price_in_us) : '';
-      const exchangeRate = data.exchange_rate !== undefined && data.exchange_rate !== null ? String(data.exchange_rate) : '';
+      // const exchangeRate = data.exchange_rate !== undefined && data.exchange_rate !== null ? String(data.exchange_rate) : '';
       const purchasePriceUZS = data.purchase_price_in_uz !== undefined && data.purchase_price_in_uz !== null ? String(data.purchase_price_in_uz) : '';
       const sellingPrice = data.selling_price !== undefined && data.selling_price !== null ? String(data.selling_price) : '';
       const minPrice = data.min_price !== undefined && data.min_price !== null ? String(data.min_price) : '';
@@ -349,7 +383,7 @@ export default function CreateStock() {
         product_write: typeof data.product_write === 'string' ? parseInt(data.product_write, 10) : data.product_write!,
         purchase_price: purchasePriceUZS, // Send the UZS price as purchase_price
         purchase_price_in_us: purchasePriceUSD,
-        exchange_rate: exchangeRate,
+        exchange_rate: currency ? currency.id.toString() : '', // send currency id
         purchase_price_in_uz: purchasePriceUZS,
         selling_price: sellingPrice,
         min_price: minPrice,
@@ -391,8 +425,6 @@ export default function CreateStock() {
       toast.error(t('common.error_creating_supplier'));
     }
   };
-
-
 
   return (
     <div className="container mx-auto py-8 px-4">

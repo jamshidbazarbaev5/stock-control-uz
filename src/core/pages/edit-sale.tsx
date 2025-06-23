@@ -268,12 +268,27 @@ export default function EditSale() {
   const handleSubmit = async (data: SaleFormData) => {
     try {
       // Validate all items meet minimum price requirements
+      // const hasInvalidPrices = data.sale_items.some((item, index) => {
+      //   if (selectedPrices[index]) {
+      //     const quantity = parseInt(item.quantity.toString(), 10);
+      //     const subtotal = parseFloat(item.subtotal);
+      //     const minTotal = selectedPrices[index].min * quantity;
+      //     return subtotal < minTotal;
+      //   }
+      //   return false;
+      // });
+      //
+      // if (hasInvalidPrices) {
+      //   toast.error(t('messages.error.invalid_price'));
+      //   return;
+      // }
+      //
+
       const hasInvalidPrices = data.sale_items.some((item, index) => {
         if (selectedPrices[index]) {
-          const quantity = parseInt(item.quantity.toString(), 10);
           const subtotal = parseFloat(item.subtotal);
-          const minTotal = selectedPrices[index].min * quantity;
-          return subtotal < minTotal;
+          const minPrice = selectedPrices[index].min;
+          return subtotal < minPrice; // Compare price per unit with minimum price per unit
         }
         return false;
       });
@@ -282,6 +297,7 @@ export default function EditSale() {
         toast.error(t('messages.error.invalid_price'));
         return;
       }
+
       
       // Get primary payment method from sale_payments
       const primaryPayment = data.sale_payments[0];
@@ -821,13 +837,13 @@ export default function EditSale() {
             )}
           </div>
 
-          {/* <Button 
-            type="submit" 
-            className="w-full mt-4 sm:mt-6 h-10 sm:h-12 text-base sm:text-lg font-medium" 
+          { <Button
+            type="submit"
+            className="w-full mt-4 sm:mt-6 h-10 sm:h-12 text-base sm:text-lg font-medium"
             disabled={updateSale.isPending}
           >
             {updateSale.isPending ? t('common.updating') : t('common.update')}
-          </Button> */}
+          </Button> }
         </form>
       </Form>
     </div>

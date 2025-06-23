@@ -10,6 +10,8 @@ import { useGetProducts } from '../api/product';
 import { useGetStores } from '../api/store';
 import { useGetSuppliers } from '../api/supplier';
 import api from '../api/api';
+import axios from 'axios';
+import { getAccessToken } from '../api/auth';
 
 interface FormValues extends Partial<Stock> {
   purchase_price_in_us: string;
@@ -26,6 +28,8 @@ export default function EditStock() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [isLoadingAllProducts, setIsLoadingAllProducts] = useState(false);
+  const [currency, setCurrency] = useState<{ id: number; currency_rate: string } | null>(null);
+  const [currencyLoading, setCurrencyLoading] = useState(true);
   
   // Fetch the stock and related data
   const { data: stock, isLoading: stockLoading } = useGetStock(Number(id));
@@ -44,9 +48,33 @@ export default function EditStock() {
     }
   });
 
+  // Fetch currency rate on mount
+  useEffect(() => {
+    const fetchCurrency = async () => {
+      setCurrencyLoading(true);
+      try {
+        const token = getAccessToken();
+        const res = await axios.get('https://stock-control.uz/api/v1/items/currency/', {
+          headers: { Authorization: token ? `Bearer ${token}` : '' },
+        });
+        if (res.data.results && res.data.results.length > 0) {
+          setCurrency(res.data.results[0]);
+          form.setValue('exchange_rate', res.data.results[0].currency_rate);
+        }
+      } catch (e) {
+        setCurrency(null);
+      } finally {
+        setCurrencyLoading(false);
+      }
+    };
+    fetchCurrency();
+    // eslint-disable-next-line
+  }, []);
+
   // Watch specific fields for changes
   const usdPrice = form.watch('purchase_price_in_us');
-  const exchangeRate = form.watch('exchange_rate');
+  // const exchangeRate = form.watch('exchange_rate');
+  const exchangeRateValue = currency?.currency_rate || '';
   const incomeWeight = form.watch('income_weight' as any) as string | undefined;
 
   // Get the arrays from response data
@@ -65,9 +93,9 @@ export default function EditStock() {
 
   // Effect to update purchase_price_in_uz when its dependencies change
   useEffect(() => {
-    if (usdPrice && exchangeRate) {
+    if (usdPrice && exchangeRateValue) {
       const priceInUSD = parseFloat(usdPrice);
-      const rate = parseFloat(exchangeRate);
+      const rate = parseFloat(exchangeRateValue);
       // const quantityString = form.watch('quantity')?.toString() || '0';
       // const quantity = parseFloat(quantityString);
       if (!isNaN(priceInUSD) && !isNaN(rate)) {
@@ -85,7 +113,7 @@ export default function EditStock() {
         // }
       }
     }
-  }, [usdPrice, exchangeRate, form, form.watch('quantity')]);
+  }, [usdPrice, exchangeRateValue, form, form.watch('quantity')]);
 
   // Watch income_weight and update quantity for is_list products
   useEffect(() => {
@@ -114,7 +142,8 @@ export default function EditStock() {
         store_write: stock.store_read?.id ? Number(stock.store_read.id) : undefined,
         product_write: stock.product_read?.id ? Number(stock.product_read.id) : undefined,
         purchase_price_in_us: stock.purchase_price_in_us?.toString() || '',
-        exchange_rate: stock.exchange_rate?.toString() || '',
+        // Use exchange_rate_read.currency_rate if available (type assertion)
+        exchange_rate: (stock as any).exchange_rate_read?.currency_rate?.toString() || '',
         purchase_price_in_uz: stock.purchase_price_in_uz?.toString() || '',
         selling_price: stock.selling_price?.toString() || '',
         min_price: stock.min_price?.toString() || '',
@@ -265,14 +294,34 @@ export default function EditStock() {
       };
     }
     if (field.name === 'store_write') {
+      // Always include the store from the API (stock.store_read), even if not main
+      let storeOptions = stores.filter(store => store.is_main);
+      if (stock?.store_read && stock.store_read.id && !storeOptions.some(s => s.id === stock?.store_read?.id)) {
+        // Ensure all required fields are present, fallback to empty or 0 if missing
+        const apiStore = {
+          id: stock.store_read.id,
+          name: stock.store_read.name,
+          address: stock.store_read.address || '',
+          phone_number: stock.store_read.phone_number || '',
+          created_at: stock.store_read.created_at || '',
+          is_main: stock.store_read.is_main || false,
+          parent_store: stock.store_read.parent_store ?? undefined,
+          budget: (stock.store_read as any).budget || '',
+          color: (stock.store_read as any).color || '',
+          owner: (stock.store_read as any).owner || 0,
+        };
+        storeOptions = [apiStore, ...storeOptions];
+      }
+      // Remove duplicates by id
+      const uniqueStoreOptions = storeOptions.filter((store, idx, arr) =>
+        arr.findIndex(s => s.id === store.id) === idx
+      );
       return {
         ...field,
-        options: stores
-          .filter(store => store.is_main) // Only show main stores
-          .map(store => ({
-            value: store.id,
-            label: store.name
-          })),
+        options: uniqueStoreOptions.map(store => ({
+          value: store.id,
+          label: store.name
+        })),
         isLoading: storesLoading
       };
     }
@@ -284,6 +333,15 @@ export default function EditStock() {
           label: supplier.name
         })),
         isLoading: suppliersLoading
+      };
+    }
+    if (field.name === 'exchange_rate') {
+      return {
+        ...field,
+        value: currency?.currency_rate || '',
+        readOnly: true,
+        disabled: true,
+        loading: currencyLoading,
       };
     }
     if (field.name === 'color') {
@@ -305,7 +363,7 @@ export default function EditStock() {
         product_write: typeof data.product_write === 'string' ? parseInt(data.product_write, 10) : data.product_write!,
         purchase_price: data.purchase_price_in_uz, // Send the UZS price as purchase_price
         purchase_price_in_us: data.purchase_price_in_us,
-        exchange_rate: data.exchange_rate,
+        exchange_rate: currency ? currency.id.toString() : '', // send currency id
         purchase_price_in_uz: data.purchase_price_in_uz,
         selling_price: data.selling_price!,
         min_price: data.min_price!,

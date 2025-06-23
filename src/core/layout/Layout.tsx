@@ -22,6 +22,9 @@ import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLogout } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import api from "../api/api";
 
 type NavItem = {
   icon: LucideIcon;
@@ -36,6 +39,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
+  const [currencyModalOpen, setCurrencyModalOpen] = useState(false);
+  const [currencyRate, setCurrencyRate] = useState("");
+  const [currencyId, setCurrencyId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -46,6 +55,50 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const handleLogout = () => {
     logout();
     navigate("/login");
+  };
+
+  // Fetch current currency rate when modal opens
+  useEffect(() => {
+    if (currencyModalOpen) {
+      setLoading(true);
+      setError("");
+      setSuccess(false);
+      api.get("items/currency/")
+        .then(res => {
+          const results = res.data.results || [];
+          if (Array.isArray(results) && results.length > 0) {
+            setCurrencyRate(results[0].currency_rate);
+            setCurrencyId(results[0].id?.toString() || null);
+          } else {
+            setCurrencyRate("");
+            setCurrencyId(null);
+          }
+        })
+        .catch(() => {
+          setError("Failed to fetch currency rate");
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [currencyModalOpen]);
+
+  const handleCurrencySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess(false);
+    try {
+      if (currencyId) {
+        await api.patch(`items/currency/${currencyId}/`, { currency_rate: Number(currencyRate) });
+      } else {
+        await api.post("items/currency/", { currency_rate: Number(currencyRate) });
+      }
+      setSuccess(true);
+      setTimeout(() => setCurrencyModalOpen(false), 1000);
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Error");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Close dropdown when clicking outside
@@ -487,7 +540,49 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 min-w-0 transition-all duration-300 overflow-x-auto">
           <div className="h-full flex flex-col min-w-[320px]">
             <div className="bg-white px-4 md:px-6 py-4 flex items-center justify-end gap-4 sticky top-0 z-30 border-b border-gray-100">
+              <Dialog open={currencyModalOpen} onOpenChange={setCurrencyModalOpen}>
+                  <DialogTrigger asChild>
+                    <button
+                      className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition mr-2"
+                      onClick={() => setCurrencyModalOpen(true)}
+                    >
+                      {t("Set Currency Rate")}
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{t("Set Currency Rate")}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleCurrencySubmit} className="space-y-4">
+                      <Input
+                        type="number"
+                        placeholder="12500"
+                        value={currencyRate}
+                        onChange={e => setCurrencyRate(e.target.value)}
+                        required
+                      />
+                      {error && <div className="text-red-500 text-sm">{error}</div>}
+                      {success && <div className="text-green-600 text-sm">{t("Success!")}</div>}
+                      <DialogFooter>
+                        <button
+                          type="submit"
+                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                          disabled={loading}
+                        >
+                          {loading ? t("Saving...") : t("Save")}
+                        </button>
+                        <DialogClose asChild>
+                          <button type="button" className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+                            {t("Cancel")}
+                          </button>
+                        </DialogClose>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               <div className="hidden md:block">
+                {/* Currency Rate Button & Modal */}
+                
                 <LanguageSwitcher />
               </div>
 
