@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ResourceForm } from '../helpers/ResourceForm';
@@ -117,9 +117,10 @@ export default function CreateRecycling() {
   const [allowedCategories, setAllowedCategories] = useState<number[] | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
-  const [perUnitPrice, setPerUnitPrice] = useState<number | null>(null);
   const [stocks, setStocks] = useState<any[]>([]);
   const [loadingStocks, setLoadingStocks] = useState(false);
+  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  const sellingPriceRef = useRef(false); // To prevent infinite loop
   
   // Get URL parameters
   const searchParams = new URLSearchParams(location.search);
@@ -244,8 +245,24 @@ export default function CreateRecycling() {
     }
   }, [fromStockId, fromProductId, stocks, allProducts, form]);
 
+  // Fetch exchange rate on mount
+  useEffect(() => {
+    async function fetchExchangeRate() {
+      try {
+        const res = await api.get('/items/currency/');
+        const rate = res.data?.results?.[0]?.currency_rate;
+        if (rate) setExchangeRate(Number(rate));
+        // Set form value
+        form.setValue('exchange_rate', rate, { shouldValidate: false, shouldDirty: true });
+      } catch (e) {
+        toast.error('Failed to fetch exchange rate');
+      }
+    }
+    fetchExchangeRate();
+  }, []);
+
   // Update fields with dynamic options
-  const fields = recyclingFields(t, productSearchTerm, perUnitPrice).map(field => {
+  const fields = recyclingFields(t, productSearchTerm, null).map(field => {
     if (field.name === 'from_to') {
       return {
         ...field,
@@ -285,38 +302,67 @@ export default function CreateRecycling() {
         disabled: isAdmin || isStoreIdLocked
       };
     }
+    if (field.name === 'exchange_rate') {
+      return {
+        ...field,
+        disabled: true,
+        value: exchangeRate !== null ? exchangeRate : '',
+      };
+    }
     return field;
   });
 
   // Watch specific fields for changes
-  const usdPrice = form.watch('purchase_price_in_us') as number | undefined;
-  const exchangeRate = form.watch('exchange_rate') as number | undefined;
-  const quantity = form.watch('spent_amount') as number | undefined;  // Changed from 'quantity' to 'spent_amount' to match form field
+  const fromTo = form.watch('from_to');
+  const toProduct = form.watch('to_product');
+  const getAmount = form.watch('get_amount');
+  const purchasePriceInUs = form.watch('purchase_price_in_us');
+  const exchangeRateField = form.watch('exchange_rate');
 
-  // Effect to update purchase_price_in_uz and per unit price when dependencies change
+  // Auto-calculate selling price when measurements, exchange rate, selling_price_in_us, or get_amount change
   useEffect(() => {
-    if (usdPrice && exchangeRate) {
-      const priceInUSD = Number(usdPrice);
-      const rate = Number(exchangeRate);
-      const quantityValue = Number(quantity || 0);
-      
-      if (!isNaN(priceInUSD) && !isNaN(rate)) {
-        const calculatedPrice = priceInUSD * rate;
-        form.setValue('purchase_price_in_uz', calculatedPrice, {
-          shouldValidate: false,
-          shouldDirty: true
-        });
-
-        // Calculate per unit price
-        if (!isNaN(quantityValue) && quantityValue > 0) {
-          const perUnit = calculatedPrice / quantityValue;
-          setPerUnitPrice(perUnit);
-        } else {
-          setPerUnitPrice(null);
-        }
+    if (!fromTo || !toProduct) return;
+    const selectedStock = stocks.find(stock => stock.id === Number(fromTo));
+    if (!selectedStock) return;
+    const sellingPriceInUs = selectedStock.selling_price_in_us ? Number(selectedStock.selling_price_in_us) : 0;
+    const rate = exchangeRate ? Number(exchangeRate) : 1;
+    const getAmt = getAmount ? Number(getAmount) : 1;
+    // Find the selected to_product from allProducts
+    const selectedToProduct = allProducts.find(product => product.id === Number(toProduct));
+    if (!selectedToProduct?.measurement) return;
+    // Multiply all measurement numbers from to_product
+    const measurementProduct = selectedToProduct.measurement.reduce((acc: number, m: { number: number | string }) => acc * Number(m.number), 1);
+    if (measurementProduct && sellingPriceInUs && rate && getAmt) {
+      const calculated = (measurementProduct * rate * sellingPriceInUs) / getAmt;
+      // Prevent infinite loop
+      if (!sellingPriceRef.current) {
+        form.setValue('selling_price', calculated, { shouldValidate: false, shouldDirty: true });
+        sellingPriceRef.current = true;
+        setTimeout(() => { sellingPriceRef.current = false; }, 100);
       }
     }
-  }, [usdPrice, exchangeRate, quantity, form]);
+  }, [fromTo, toProduct, exchangeRate, getAmount, stocks, allProducts, form]);
+
+  // Watch for changes to from_to and set purchase_price_in_us from stock's selling_price_in_us
+  useEffect(() => {
+    if (!fromTo) return;
+    const selectedStock = stocks.find(stock => stock.id === Number(fromTo));
+    if (selectedStock && selectedStock.selling_price_in_us) {
+      form.setValue('purchase_price_in_us', selectedStock.selling_price_in_us, { shouldValidate: false, shouldDirty: true });
+    }
+  }, [fromTo, stocks, form]);
+
+  // Auto-calculate purchase_price_in_uz when purchase_price_in_us or exchange_rate changes
+  useEffect(() => {
+    const us = Number(purchasePriceInUs);
+    const rate = Number(exchangeRateField);
+    if (!isNaN(us) && !isNaN(rate) && us > 0 && rate > 0) {
+      const uz = us * rate;
+      form.setValue('purchase_price_in_uz', uz, { shouldValidate: false, shouldDirty: true });
+    } else {
+      form.setValue('purchase_price_in_uz', 0, { shouldValidate: false, shouldDirty: true });
+    }
+  }, [purchasePriceInUs, exchangeRateField, form]);
 
   const handleSubmit = async (data: FormValues) => {
     try {

@@ -30,7 +30,7 @@ interface MeasurementItem {
     id: number;
     measurement_name: string;
   };
-  number: number;
+  number: string; // store as string for input
   for_sale: boolean;
 }
 
@@ -60,7 +60,7 @@ export default function EditProduct() {
       setMeasurements(product.measurement.map((m: any) => ({
         id: m.id,
         measurement_write: m.measurement_read?.id || m.measurement_write,
-        number: typeof m.number === 'string' ? Number(m.number) : m.number,
+        number: m.number?.toString() ?? '',
         for_sale: m.for_sale || false
       })));
     }
@@ -81,7 +81,7 @@ export default function EditProduct() {
   }, [product]);
 
   const handleAddMeasurement = () => {
-    setMeasurements([...measurements, { measurement_write: 0, number: 0, for_sale: false }]);
+    setMeasurements([...measurements, { measurement_write: 0, number: '0', for_sale: false }]);
   };
 
   const handleRemoveMeasurement = (index: number) => {
@@ -90,10 +90,22 @@ export default function EditProduct() {
 
   const handleMeasurementChange = (index: number, field: keyof MeasurementItem, value: string | boolean) => {
     const newMeasurements = [...measurements];
-    newMeasurements[index] = {
-      ...newMeasurements[index],
-      [field]: field === 'for_sale' ? value : (parseInt(value as string, 10) || 0)
-    };
+    if (field === 'for_sale') {
+      newMeasurements[index] = {
+        ...newMeasurements[index],
+        [field]: Boolean(value)
+      };
+    } else if (field === 'number') {
+      newMeasurements[index] = {
+        ...newMeasurements[index],
+        [field]: value as string
+      };
+    } else {
+      newMeasurements[index] = {
+        ...newMeasurements[index],
+        [field]: value
+      };
+    }
     setMeasurements(newMeasurements);
   };
 
@@ -114,7 +126,7 @@ export default function EditProduct() {
           id: m.id,
           measurement_write: m.measurement_write,
           measurement_read: m.measurement_read,
-          number: m.number.toString(),
+          number: m.number.toString().replace(',', '.'), // convert comma to dot
           for_sale: m.for_sale
         }))
       };
@@ -340,7 +352,7 @@ export default function EditProduct() {
               </div>
               <div className="flex-1">
                 <input
-                  type="number"
+                  type="text"
                   className="w-full px-3 py-2 border rounded-md"
                   placeholder={t('placeholders.enter_quantity')}
                   value={measurement.number || ''}

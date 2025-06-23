@@ -167,7 +167,7 @@ export default function CreateProduct() {
             // No need for onChange since visibility is handled by nestedField,
             nestedField: (
               <input
-                type="number"
+                type="text"
                 className="w-full px-3 py-2 border rounded-md"
                 placeholder={t('placeholders.enter_kub')}
                 value={kub}

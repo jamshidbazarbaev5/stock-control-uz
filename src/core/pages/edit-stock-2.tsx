@@ -19,6 +19,7 @@ interface FormValues extends Partial<Stock> {
   purchase_price_in_uz: string;
   date_of_arrived: string;
   income_weight?: string;
+  selling_price_us?: string; // Added for has_kub calculation
 }
 
 export default function EditStock() {
@@ -158,7 +159,8 @@ export default function EditStock() {
         quantity: stock.quantity || 0,
         supplier_write: stock.supplier_read?.id ? Number(stock.supplier_read.id) : undefined,
         date_of_arrived: new Date(stock.date_of_arrived || '').toISOString().slice(0, 16),
-        income_weight: stock.income_weight?.toString()
+        income_weight: stock.income_weight?.toString(),
+        selling_price_us: stock.selling_price_in_us?.toString() || '', // Set from backend
       };
 
       console.log('Setting form values:', formValues);
@@ -212,6 +214,14 @@ export default function EditStock() {
       placeholder: t('common.enter_purchase_price_usd'),
       required: true,
     },
+      {
+      name: 'selling_price_us',
+      label: t('common.enter_selling_price_usd') || 'Selling Price (USD)',
+      type: 'text',
+      placeholder: t('common.enter_selling_price_usd') || 'Enter selling price in USD',
+      required: selectedProduct?.has_kub || false,
+      hidden: !selectedProduct?.has_kub,
+    },
     {
       name: 'exchange_rate',
       label: t('common.enter_exchange_rate'),
@@ -262,6 +272,7 @@ export default function EditStock() {
       required: true,
       options: [], // Will be populated with suppliers
     },
+  
   ];
 
   // Add dynamic fields for is_list products
@@ -386,7 +397,8 @@ export default function EditStock() {
         supplier_write: typeof data.supplier_write === 'string' ? parseInt(data.supplier_write, 10) : data.supplier_write!,
         date_of_arrived: data.date_of_arrived,
         measurement_write: [],
-        ...(data.income_weight ? { income_weight: data.income_weight } : {})
+        ...(data.income_weight ? { income_weight: data.income_weight } : {}),
+        selling_price_in_us: data.selling_price_us || '', // Include selling_price_in_us if has_kub
       };
       await updateStock.mutateAsync(formattedData);
       toast.success(t('messages.success.updated', { item: t('navigation.stock') }));
@@ -424,6 +436,29 @@ export default function EditStock() {
     }
     fetchAllProducts();
   }, []);
+
+  // Effect to update selling_price and min_price for has_kub products
+  useEffect(() => {
+    if (selectedProduct?.has_kub) {
+      const measurements = selectedProduct.measurement || [];
+      const baseValue = measurements.reduce((acc: number, m: any) => {
+        const num = parseFloat(m.number);
+        return !isNaN(num) ? acc * num : acc;
+      }, 1);
+      const exchangeRate = parseFloat(form.watch('exchange_rate')?.toString() || currency?.currency_rate || '0');
+      const sellingPriceUs = parseFloat(form.watch('selling_price_us')?.toString() || '0');
+      const purchasePriceUs = parseFloat(form.watch('purchase_price_in_us')?.toString() || '0');
+      if (!isNaN(baseValue) && !isNaN(exchangeRate) && !isNaN(sellingPriceUs) && !isNaN(purchasePriceUs)) {
+        const calculatedSelling = baseValue * exchangeRate * sellingPriceUs;
+        const calculatedMin = baseValue * exchangeRate * purchasePriceUs;
+        form.setValue('selling_price', calculatedSelling.toFixed(2), { shouldValidate: false, shouldDirty: true });
+        form.setValue('min_price', calculatedMin.toFixed(2), { shouldValidate: false, shouldDirty: true });
+      } else {
+        form.setValue('selling_price', '', { shouldValidate: false, shouldDirty: true });
+        form.setValue('min_price', '', { shouldValidate: false, shouldDirty: true });
+      }
+    }
+  }, [selectedProduct, form.watch('exchange_rate'), form.watch('selling_price_us'), form.watch('purchase_price_in_us')]);
 
   if (stockLoading || productsLoading || storesLoading || suppliersLoading || isLoadingAllProducts) {
     return <div className="container mx-auto py-8 px-4">{t('common.loading')}</div>;

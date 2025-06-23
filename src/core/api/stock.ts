@@ -11,6 +11,7 @@ export interface CreateStockDTO {
   product_write: number;
   purchase_price: string;
   selling_price: string;
+  selling_price_in_us?: string;
   min_price: string;
   quantity: number;
   supplier_write: number;

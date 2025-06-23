@@ -52,7 +52,7 @@ export default function CreateStock() {
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [currency, setCurrency] = useState<{ id: number; currency_rate: string } | null>(null);
   const [currencyLoading, setCurrencyLoading] = useState(true);
-  const [calculatedSellingPrice, setCalculatedSellingPrice] = useState<string>('');
+  const [_calculatedSellingPrice, setCalculatedSellingPrice] = useState<string>('');
   
   // Define stock fields with translations
   const stockFields = [
@@ -142,15 +142,7 @@ export default function CreateStock() {
       options: [], // Will be populated with suppliers
     },
    
-    {
-      name: 'calculated_selling_price',
-      label: t('common.calculated_selling_price') || 'Calculated Selling Price (UZS)',
-      type: 'text',
-      placeholder: t('common.calculated_selling_price') || 'Calculated selling price',
-      readOnly: true,
-      hidden: !selectedProduct?.has_kub,
-      helperText: calculatedSellingPrice ? `${t('common.calculated_selling_price')}: ${calculatedSellingPrice} UZS` : '',
-    },
+  
   ];
   const createStock = useCreateStock();
   
@@ -284,30 +276,39 @@ export default function CreateStock() {
     }
   }, [usdPrice, exchangeRateValue, form, form.watch('quantity')]);
 
-  // Effect to update calculated selling price for has_kub products
+  // Effect to update calculated selling price and min price for has_kub products
   useEffect(() => {
     if (selectedProduct?.has_kub) {
-      const quantity = parseFloat(form.watch('quantity')?.toString() || '0');
-      const kub = parseFloat(selectedProduct.kub?.toString() || '0');
-      const purchasePriceInUs = parseFloat(form.watch('purchase_price_in_us')?.toString() || '0');
+      // Get all measurement numbers and multiply them
+      const measurements = selectedProduct.measurement || [];
+      const baseValue = measurements.reduce((acc: number, m: any) => {
+        const num = parseFloat(m.number);
+        return !isNaN(num) ? acc * num : acc;
+      }, 1);
       const exchangeRate = parseFloat(form.watch('exchange_rate')?.toString() || currency?.currency_rate || '0');
       const sellingPriceUs = parseFloat(form.watch('selling_price_us')?.toString() || '0');
-      if (!isNaN(quantity) && !isNaN(kub) && !isNaN(purchasePriceInUs) && !isNaN(exchangeRate) && !isNaN(sellingPriceUs) && quantity > 0 && kub > 0) {
-        const KUB = quantity * kub;
-        // const totalPurchase = KUB * purchasePriceUz; // not used in UI
-        const totalSelling = KUB * sellingPriceUs * exchangeRate;
-        const calculated = totalSelling / quantity;
-        setCalculatedSellingPrice(calculated.toFixed(2));
-        form.setValue('calculated_selling_price', calculated.toFixed(2), { shouldValidate: false, shouldDirty: true });
+      const purchasePriceUs = parseFloat(form.watch('purchase_price_in_us')?.toString() || '0');
+      if (!isNaN(baseValue) && !isNaN(exchangeRate) && !isNaN(sellingPriceUs) && !isNaN(purchasePriceUs)) {
+        // Calculate selling price and min price
+        const calculatedSelling = baseValue * exchangeRate * sellingPriceUs;
+        const calculatedMin = baseValue * exchangeRate * purchasePriceUs;
+        setCalculatedSellingPrice(calculatedSelling.toFixed(2));
+        form.setValue('calculated_selling_price', calculatedSelling.toFixed(2), { shouldValidate: false, shouldDirty: true });
+        form.setValue('selling_price', calculatedSelling.toFixed(2), { shouldValidate: false, shouldDirty: true });
+        form.setValue('min_price', calculatedMin.toFixed(2), { shouldValidate: false, shouldDirty: true });
       } else {
         setCalculatedSellingPrice('');
         form.setValue('calculated_selling_price', '', { shouldValidate: false, shouldDirty: true });
+        form.setValue('selling_price', '', { shouldValidate: false, shouldDirty: true });
+        form.setValue('min_price', '', { shouldValidate: false, shouldDirty: true });
       }
     } else {
       setCalculatedSellingPrice('');
       form.setValue('calculated_selling_price', '', { shouldValidate: false, shouldDirty: true });
+      form.setValue('selling_price', '', { shouldValidate: false, shouldDirty: true });
+      form.setValue('min_price', '', { shouldValidate: false, shouldDirty: true });
     }
-  }, [selectedProduct, form.watch('quantity'), form.watch('purchase_price_in_us'), form.watch('exchange_rate'), form.watch('selling_price_us')]);
+  }, [selectedProduct, form.watch('exchange_rate'), form.watch('selling_price_us'), form.watch('purchase_price_in_us')]);
 
   // Update fields with product, store, measurement and supplier options
   const fields = stockFields.map(field => {
@@ -392,7 +393,8 @@ export default function CreateStock() {
       const quantityField = fields.find(f => f.name === 'quantity');
       if (quantityField) {
         quantityField.readOnly = true;
-        quantityField.helperText = t('common.calculated_quantity') || 'Calculated automatically';
+        // Remove helperText property to fix TS error
+        // quantityField.helperText = t('common.calculated_quantity') || 'Calculated automatically';
       }
     }
   }
@@ -436,6 +438,7 @@ export default function CreateStock() {
         supplier_write: typeof data.supplier_write === 'string' ? parseInt(data.supplier_write, 10) : data.supplier_write!,
         date_of_arrived: data.date_of_arrived,
         income_weight:data.income_weight,
+        selling_price_in_us: data.selling_price_us ? String(data.selling_price_us) : '', // Send selling price in USD if available
         measurement_write: [] // Empty array since we removed measurement selection
       };
       console.log('Submitting data:', formattedData); // Debug log
