@@ -333,7 +333,6 @@ export default function CreateSale() {
 
     if (!selectedStock) return;
     
-    // First update the store if needed
     if (selectedStock.store_read?.id && selectedStock.store_read.id !== selectedStore) {
       console.log('Updating store from stock selection:', selectedStock.store_read.id);
       setSelectedStore(selectedStock.store_read.id);
@@ -341,7 +340,6 @@ export default function CreateSale() {
       forceRender({});
     }
 
-    // Then update the stock selection state
     setSelectedStocks(prev => ({
       ...prev,
       [index]: selectedStock.quantity || 0
@@ -352,11 +350,43 @@ export default function CreateSale() {
     const stockQuantity = selectedStock.quantity_for_history || selectedStock.quantity || 1;
     const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
 
-    // Set price information including purchase price per unit
-    const sellingPrice = parseFloat(selectedStock.selling_price || '0');
-    const minPrice = parseFloat(selectedStock.min_price || '0');
-    const quantity = form.getValues(`sale_items.${index}.quantity`) || 1;
-    const initialProfit = (sellingPrice - purchasePricePerUnit) * quantity;
+    // Debug log for has_kub: false
+    if (!selectedStock.product_read?.has_kub) {
+      console.log('DEBUG has_kub:false', {
+        purchase_price_in_uz: selectedStock.purchase_price_in_uz,
+        quantity_for_history: selectedStock.quantity_for_history,
+        totalPurchasePrice,
+        stockQuantity,
+        purchasePricePerUnit,
+        sellingPrice: selectedStock.selling_price
+      });
+    }
+
+    // --- PROFIT_FAKE logic for has_kub ---
+    let profit = 0;
+    let minPrice = parseFloat(selectedStock.min_price || '0');
+    let sellingPrice = parseFloat(selectedStock.selling_price || '0');
+    let debugInfo = {};
+    if (selectedStock.product_read?.has_kub) {
+      // Find measurements
+      const measurements = selectedStock.product_read.measurement || [];
+      const getNumber = (name: string) => {
+        const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
+        return m ? parseFloat(m.number) : 1;
+      };
+      const length = getNumber('длина');
+      const thickness = getNumber('Толщина');
+      const meter = getNumber('Метр');
+      const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
+      const purchasePriceInUs = parseFloat(selectedStock.purchase_price_in_us || '0');
+      const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
+      profit = sellingPrice - PROFIT_FAKE;
+      debugInfo = { length, meter, thickness, exchangeRate, purchasePriceInUs, PROFIT_FAKE, sellingPrice, profit };
+      console.log('DEBUG PROFIT_FAKE:', debugInfo);
+    } else {
+      profit = sellingPrice - purchasePricePerUnit;
+    }
+    // --- END PROFIT_FAKE logic ---
 
     setSelectedPrices(prev => ({
       ...prev,
@@ -364,11 +394,9 @@ export default function CreateSale() {
         min: minPrice,
         selling: sellingPrice,
         purchasePrice: purchasePricePerUnit,
-        profit: initialProfit
+        profit: profit
       }
     }));
-
-    // Set form values
     form.setValue(`sale_items.${index}.stock_write`, stockId);
     form.setValue(`sale_items.${index}.subtotal`, sellingPrice.toString());
     form.setValue(`sale_items.${index}.selling_method`, 'Штук' as 'Штук');
