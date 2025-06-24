@@ -46,13 +46,7 @@ const recyclingFields = (t:any, productSearchTerm: string, perUnitPrice: number 
   },
   // --- Amounts ---
 
-  {
-    name: 'get_amount',
-    label: t('table.get_amount'),
-    type: 'string',
-    placeholder: t('placeholders.enter_quantity'),
-    required: true,
-  },
+  
     {
     name: 'spent_amount',
     label: t('table.spent_amount'),
@@ -60,14 +54,15 @@ const recyclingFields = (t:any, productSearchTerm: string, perUnitPrice: number 
     placeholder: t('placeholders.enter_quantity'),
     required: true,
   },
-  // --- Prices ---
   {
-    name: 'selling_price',
-    label: t('forms.selling_price'),
-    type: 'number',
-    placeholder: t('placeholders.enter_price'),
+    name: 'get_amount',
+    label: t('table.get_amount'),
+    type: 'string',
+    placeholder: t('placeholders.enter_quantity'),
     required: true,
   },
+  // --- Prices ---
+  
   {
     name: 'min_price',
     label: t('forms.min_price'),
@@ -103,6 +98,13 @@ const recyclingFields = (t:any, productSearchTerm: string, perUnitPrice: number 
     label: t('table.date'),
     type: 'date',
     placeholder: t('placeholders.select_date'),
+    required: true,
+  },
+  {
+    name: 'selling_price',
+    label: t('forms.selling_price'),
+    type: 'number',
+    placeholder: t('placeholders.enter_price'),
     required: true,
   },
 ];
@@ -262,55 +264,58 @@ export default function CreateRecycling() {
   }, []);
 
   // Update fields with dynamic options
-  const fields = recyclingFields(t, productSearchTerm, null).map(field => {
-    if (field.name === 'from_to') {
-      return {
-        ...field,
-        options: stocks.map((stock: any) => ({
-          value: stock.id,
-          label: `${stock.product_read?.product_name} (${stock.quantity || 0})`
-        })).filter((opt: any) => opt.value),
-        isLoading: loadingStocks
-      };
-    }
-    if (field.name === 'to_product') {
-      return {
-        ...field,
-        options: allProducts
-          .filter(product => {
-            if (!allowedCategories || !product.category_read) return true;
-            return allowedCategories.includes(product.category_read.id);
-          })
-          .map((product: any) => ({
-            value: product.id,
-            label: product.product_name
-          }))
-          .filter((opt: any) => opt.value),
-        onSearch: setProductSearchTerm,
-        isLoading: isLoadingProducts
-      };
-    }
-    if (field.name === 'store') {
-      const isAdmin = currentUser?.role === 'Администратор';
-      const isStoreIdLocked = Boolean(storeIdFromUrl);
-      return {
-        ...field,
-        options: stores.map((store: any) => ({
-          value: store.id,
-          label: store.name
-        })).filter((opt: any) => isStoreIdLocked ? opt.value === Number(storeIdFromUrl) : (isAdmin ? opt.value === currentUser?.store_read?.id : opt.value)),
-        disabled: isAdmin || isStoreIdLocked
-      };
-    }
-    if (field.name === 'exchange_rate') {
-      return {
-        ...field,
-        disabled: true,
-        value: exchangeRate !== null ? exchangeRate : '',
-      };
-    }
-    return field;
-  });
+  const fields = recyclingFields(t, productSearchTerm, null)
+    .map(field => {
+      if (field.name === 'from_to') {
+        return {
+          ...field,
+          options: stocks.map((stock: any) => ({
+            value: stock.id,
+            label: `${stock.product_read?.product_name} (${stock.quantity || 0})`
+          })).filter((opt: any) => opt.value),
+          isLoading: loadingStocks
+        };
+      }
+      if (field.name === 'to_product') {
+        return {
+          ...field,
+          options: allProducts
+            .filter(product => {
+              if (!allowedCategories || !product.category_read) return true;
+              return allowedCategories.includes(product.category_read.id);
+            })
+            .map((product: any) => ({
+              value: product.id,
+              label: product.product_name
+            }))
+            .filter((opt: any) => opt.value),
+          onSearch: setProductSearchTerm,
+          isLoading: isLoadingProducts
+        };
+      }
+      if (field.name === 'store') {
+        const isAdmin = currentUser?.role === 'Администратор';
+        const isStoreIdLocked = Boolean(storeIdFromUrl);
+        return {
+          ...field,
+          options: stores.map((store: any) => ({
+            value: store.id,
+            label: store.name
+          })).filter((opt: any) => isStoreIdLocked ? opt.value === Number(storeIdFromUrl) : (isAdmin ? opt.value === currentUser?.store_read?.id : opt.value)),
+          disabled: isAdmin || isStoreIdLocked
+        };
+      }
+      if (field.name === 'exchange_rate') {
+        return {
+          ...field,
+          disabled: true,
+          value: exchangeRate !== null ? exchangeRate : '',
+        };
+      }
+      return field;
+    })
+    // Hide specified fields
+    .filter(field => !['store', 'exchange_rate', 'purchase_price_in_uz', 'purchase_price_in_us'].includes(field.name));
 
   // Watch specific fields for changes
   const fromTo = form.watch('from_to');
@@ -319,27 +324,39 @@ export default function CreateRecycling() {
   const purchasePriceInUs = form.watch('purchase_price_in_us');
   const exchangeRateField = form.watch('exchange_rate');
 
+  // Helper to validate get_amount
+  function getValidAmount(val: any) {
+    const num = Number(val);
+    if (isNaN(num) || num <= 0) return null;
+    return num;
+  }
+
   // Auto-calculate selling price when measurements, exchange rate, selling_price_in_us, or get_amount change
   useEffect(() => {
     if (!fromTo || !toProduct) return;
     const selectedStock = stocks.find(stock => stock.id === Number(fromTo));
     if (!selectedStock) return;
     const sellingPriceInUs = selectedStock.selling_price_in_us ? Number(selectedStock.selling_price_in_us) : 0;
-    const rate = exchangeRate ? Number(exchangeRate) : 1;
-    const getAmt = getAmount ? Number(getAmount) : 1;
+    const ratee = exchangeRate ? Number(exchangeRate) : 1;
+    const rate = ratee /10
+    const getAmt = getValidAmount(getAmount);
     // Find the selected to_product from allProducts
     const selectedToProduct = allProducts.find(product => product.id === Number(toProduct));
     if (!selectedToProduct?.measurement) return;
     // Multiply all measurement numbers from to_product
     const measurementProduct = selectedToProduct.measurement.reduce((acc: number, m: { number: number | string }) => acc * Number(m.number), 1);
     if (measurementProduct && sellingPriceInUs && rate && getAmt) {
-      const calculated = (measurementProduct * rate * sellingPriceInUs) / getAmt;
+      let calculated = (measurementProduct * rate * sellingPriceInUs) / getAmt;
+      calculated = Math.round((calculated + Number.EPSILON) * 100) / 100; // round to 2 decimal places
       // Prevent infinite loop
       if (!sellingPriceRef.current) {
         form.setValue('selling_price', calculated, { shouldValidate: false, shouldDirty: true });
         sellingPriceRef.current = true;
         setTimeout(() => { sellingPriceRef.current = false; }, 100);
       }
+    } else if (!getAmt) {
+      // If get_amount is invalid, clear the selling_price
+      form.setValue('selling_price', 0, { shouldValidate: false, shouldDirty: true });
     }
   }, [fromTo, toProduct, exchangeRate, getAmount, stocks, allProducts, form]);
 
@@ -375,6 +392,9 @@ export default function CreateRecycling() {
         spent_amount: String(data.spent_amount || ''),
         get_amount: String(data.get_amount || ''),
         date_of_recycle: data.date_of_recycle || '',
+        purchase_price_in_us: Number(data.purchase_price_in_us),
+        exchange_rate: Number(data.exchange_rate),
+        purchase_price_in_uz: Number(data.purchase_price_in_uz),
       };
 
       await createRecycling.mutateAsync(formattedData);

@@ -285,17 +285,18 @@ export default function CreateStock() {
         const num = parseFloat(m.number);
         return !isNaN(num) ? acc * num : acc;
       }, 1);
-      const exchangeRate = parseFloat(form.watch('exchange_rate')?.toString() || currency?.currency_rate || '0');
+      const exchangeRatee= parseFloat(form.watch('exchange_rate')?.toString() || currency?.currency_rate || '0');
+      const exchangeRate = exchangeRatee / 10
       const sellingPriceUs = parseFloat(form.watch('selling_price_us')?.toString() || '0');
       const purchasePriceUs = parseFloat(form.watch('purchase_price_in_us')?.toString() || '0');
       if (!isNaN(baseValue) && !isNaN(exchangeRate) && !isNaN(sellingPriceUs) && !isNaN(purchasePriceUs)) {
-        // Calculate selling price and min price
-        const calculatedSelling = baseValue * exchangeRate * sellingPriceUs;
-        const calculatedMin = baseValue * exchangeRate * purchasePriceUs;
-        setCalculatedSellingPrice(calculatedSelling.toFixed(2));
-        form.setValue('calculated_selling_price', calculatedSelling.toFixed(2), { shouldValidate: false, shouldDirty: true });
-        form.setValue('selling_price', calculatedSelling.toFixed(2), { shouldValidate: false, shouldDirty: true });
-        form.setValue('min_price', calculatedMin.toFixed(2), { shouldValidate: false, shouldDirty: true });
+        // Calculate selling price and min price, round to nearest integer
+        const calculatedSelling = Math.round(baseValue * exchangeRate * sellingPriceUs);
+        const calculatedMin = Math.round(baseValue * exchangeRate * purchasePriceUs);
+        setCalculatedSellingPrice(calculatedSelling.toString());
+        form.setValue('calculated_selling_price', calculatedSelling.toString(), { shouldValidate: false, shouldDirty: true });
+        form.setValue('selling_price', calculatedSelling.toString(), { shouldValidate: false, shouldDirty: true });
+        form.setValue('min_price', calculatedMin.toString(), { shouldValidate: false, shouldDirty: true });
       } else {
         setCalculatedSellingPrice('');
         form.setValue('calculated_selling_price', '', { shouldValidate: false, shouldDirty: true });
@@ -353,7 +354,7 @@ export default function CreateStock() {
     if (field.name === 'exchange_rate') {
       return {
         ...field,
-        value: currency?.currency_rate || '',
+        value: currency?.currency_rate ? String(Math.trunc(Number(currency.currency_rate))) : '',
         readOnly: true,
         disabled: true,
         loading: currencyLoading,

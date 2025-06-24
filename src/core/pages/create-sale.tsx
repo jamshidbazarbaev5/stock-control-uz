@@ -325,7 +325,7 @@ export default function CreateSale() {
   };
 
   
-  const handleStockSelection = (value: string, index: number) => {
+  const handleStockSelection = (value: string, index: any) => {
     const stockId = parseInt(value, 10);
     const selectedStock = stocks.find(stock => stock.id === stockId);
     
@@ -363,6 +363,7 @@ export default function CreateSale() {
     }
 
     // --- PROFIT_FAKE logic for has_kub ---
+    // const subtotal = parseFloat(form.getValues(`sale_items.${index}.subtotal`)) || 0;
     let profit = 0;
     let minPrice = parseFloat(selectedStock.min_price || '0');
     let sellingPrice = parseFloat(selectedStock.selling_price || '0');
@@ -378,7 +379,9 @@ export default function CreateSale() {
       const thickness = getNumber('Толщина');
       const meter = getNumber('Метр');
       const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
-      const purchasePriceInUs = parseFloat(selectedStock.purchase_price_in_us || '0');
+      const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
+      const purchasePriceInUs  = purchasePriceInUss /10
+      console.log('purchasePriceInUs',purchasePriceInUs)
       const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
       profit = sellingPrice - PROFIT_FAKE;
       debugInfo = { length, meter, thickness, exchangeRate, purchasePriceInUs, PROFIT_FAKE, sellingPrice, profit };

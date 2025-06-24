@@ -67,7 +67,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         .then(res => {
           const results = res.data.results || [];
           if (Array.isArray(results) && results.length > 0) {
-            setCurrencyRate(results[0].currency_rate);
+            // Only keep the integer part of the currency rate
+            const rate = results[0].currency_rate;
+            setCurrencyRate(rate ? String(Math.trunc(Number(rate))) : "");
             setCurrencyId(results[0].id?.toString() || null);
           } else {
             setCurrencyRate("");
@@ -540,7 +542,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 min-w-0 transition-all duration-300 overflow-x-auto">
           <div className="h-full flex flex-col min-w-[320px]">
             <div className="bg-white px-4 md:px-6 py-4 flex items-center justify-end gap-4 sticky top-0 z-30 border-b border-gray-100">
-              <Dialog open={currencyModalOpen} onOpenChange={setCurrencyModalOpen}>
+              {currentUser?.is_superuser && ( <Dialog open={currencyModalOpen} onOpenChange={setCurrencyModalOpen}>
                   <DialogTrigger asChild>
                     <button
                       className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition mr-2"
@@ -579,7 +581,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       </DialogFooter>
                     </form>
                   </DialogContent>
-                </Dialog>
+                </Dialog>)}
+             
               <div className="hidden md:block">
                 {/* Currency Rate Button & Modal */}
                 
