@@ -585,6 +585,16 @@ export default function CreateSale() {
   const removeSaleItem = (index: number) => {
     const items = form.getValues('sale_items');
     form.setValue('sale_items', items.filter((_, i) => i !== index));
+    setSelectedPrices(prev => {
+      const newPrices = { ...prev };
+      delete newPrices[index];
+      // Re-index the keys to match the new sale_items array
+      const filtered = Object.entries(newPrices)
+        .filter(([k, _]) => Number(k) !== index)
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+        .map(([, v], i) => [i, v]);
+      return Object.fromEntries(filtered);
+    });
     updateTotalAmount();
   };
 
@@ -886,35 +896,18 @@ export default function CreateSale() {
                               .filter((_, i) => i !== index)
                               .reduce((sum, p) => sum + (p.amount || 0), 0);
                             
+                            // Debug logs
+                            console.log('--- Payment Change Debug ---');
+                            console.log('newAmount:', newAmount);
+                            console.log('otherPaymentsTotal:', otherPaymentsTotal);
+                            console.log('totalAmount:', totalAmount);
+                            
                             // Update payment amount
                             if (newAmount + otherPaymentsTotal > totalAmount) {
                               onChange(totalAmount - otherPaymentsTotal);
                             } else {
                               onChange(newAmount);
                             }
-
-                            // Update sale item profits based on the new payment distribution
-                            const saleItems = form.getValues('sale_items');
-                            const totalPayments = newAmount + otherPaymentsTotal;
-                            const paymentRatio = totalPayments / totalAmount;
-
-                            saleItems.forEach((item, itemIndex) => {
-                              if (selectedPrices[itemIndex]) {
-                                const quantity = item.quantity || 1;
-                                const subtotal = parseFloat(item.subtotal) || 0;
-                                const { purchasePrice } = selectedPrices[itemIndex];
-                                // Adjust profit based on payment ratio
-                                const adjustedProfit = ((subtotal * paymentRatio) - purchasePrice) * quantity;
-                                
-                                setSelectedPrices(prev => ({
-                                  ...prev,
-                                  [itemIndex]: {
-                                    ...prev[itemIndex],
-                                    profit: adjustedProfit
-                                  }
-                                }));
-                              }
-                            });
                           }}
                         />
                       </FormControl>
@@ -1126,7 +1119,49 @@ export default function CreateSale() {
                     {t('table.profit')}
                   </h3>
                   <p className="text-xl sm:text-3xl font-bold text-green-600">
-                    {Object.values(selectedPrices).reduce((total, item) => total + item.profit, 0).toFixed(1).toLocaleString()}
+                    {(() => {
+                      const saleItems = form.watch('sale_items');
+                      const totalPayments = form.watch('sale_payments').reduce((sum, payment) => sum + (payment.amount || 0), 0);
+                      const totalAmount = parseFloat(form.watch('total_amount')) || 0;
+                      let totalProfit = 0;
+                      // Calculate each item's share of payment and profit
+                      saleItems.forEach((item, index) => {
+                        if (selectedPrices[index]) {
+                          const quantity = item.quantity || 1;
+                          const subtotal = parseFloat(item.subtotal) || 0;
+                          const itemTotal = subtotal * quantity;
+                          const stockId = item.stock_write;
+                          const selectedStock = stocks.find(stock => stock.id === stockId);
+                          let profitPerUnit = 0;
+                          if (selectedStock?.product_read?.has_kub) {
+                            const measurements = selectedStock.product_read.measurement || [];
+                            const getNumber = (name: string) => {
+                              const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
+                              return m ? parseFloat(m.number) : 1;
+                            };
+                            const length = getNumber('длина');
+                            const thickness = getNumber('Толщина');
+                            const meter = getNumber('Метр');
+                            const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
+                            const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
+                            const purchasePriceInUs = purchasePriceInUss / 10;
+                            const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
+                            profitPerUnit = subtotal - PROFIT_FAKE;
+                          } else {
+                            const totalPurchasePrice = parseFloat(selectedStock?.purchase_price_in_uz || '0');
+                            const stockQuantity = selectedStock?.quantity_for_history || selectedStock?.quantity || 1;
+                            const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
+                            profitPerUnit = subtotal - purchasePricePerUnit;
+                          }
+                          // Proportional payment for this item
+                          const paidShare = totalAmount > 0 ? (itemTotal / totalAmount) * totalPayments : itemTotal;
+                          // Proportional profit: paidShare - cost
+                          const itemCost = (itemTotal - (profitPerUnit * quantity));
+                          totalProfit += paidShare - itemCost;
+                        }
+                      });
+                      return totalProfit.toFixed(1).toLocaleString();
+                    })()}
                   </p>
                 </div>
               )}
