@@ -144,7 +144,25 @@ export default function EditSale() {
           const sellingPrice = parseFloat(stock.selling_price || '0');
           const minPrice = parseFloat(stock.min_price || '0');
           const quantity = parseFloat(item.quantity);
-          const profit = (sellingPrice - purchasePricePerUnit) * quantity;
+          let profit = 0;
+          if (stock.product_read?.has_kub) {
+            const measurements = stock.product_read.measurement || [];
+            const getNumber = (name: string) => {
+              const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
+              return m ? parseFloat(m.number) : 1;
+            };
+            const length = getNumber('длина');
+            const thickness = getNumber('Толщина');
+            const meter = getNumber('Метр');
+            const exchangeRate = parseFloat(stock.exchange_rate_read?.currency_rate || '1');
+            const purchasePriceInUss = parseFloat(stock.purchase_price_in_us || '0');
+            const purchasePriceInUs = purchasePriceInUss / 10;
+            const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
+            const subtotal = parseFloat(item.subtotal) || 0;
+            profit = (subtotal - PROFIT_FAKE) * quantity;
+          } else {
+            profit = (sellingPrice - purchasePricePerUnit) * quantity;
+          }
           newSelectedPrices[index] = { min: minPrice, selling: sellingPrice, purchasePrice: purchasePricePerUnit, profit };
         }
       });
@@ -185,15 +203,24 @@ export default function EditSale() {
   //   return (quantity * price).toString();
   // };
 
+  // Update total_amount to match create-sale logic
   const updateTotalAmount = () => {
     const items = form.getValues('sale_items');
     const total = items.reduce((sum, item) => {
-      const subtotalValue = item.subtotal ? parseFloat(item.subtotal.replace(/[^0-9]/g, '')) : 0;
-      return sum + (isNaN(subtotalValue) ? 0 : subtotalValue);
+      const quantity = item.quantity || 0;
+      const subtotal = parseFloat(item.subtotal) || 0;
+      const actualTotal = quantity * subtotal;
+      return sum + actualTotal;
     }, 0);
     form.setValue('total_amount', total.toString());
+    // Update payment amount with total
+    const payments = form.getValues('sale_payments');
+    if (payments.length > 0) {
+      form.setValue('sale_payments.0.amount', total);
+    }
   };
 
+  // --- PROFIT LOGIC FROM CREATE-SALE ---
   const handleStockSelection = (value: string, index: number) => {
     const stockId = parseInt(value, 10);
     const selectedStock = filteredStocks.find(stock => stock.id === stockId);
@@ -210,20 +237,37 @@ export default function EditSale() {
       ...prev,
       [index]: selectedStock.quantity || 0
     }));
+    // PROFIT LOGIC
     const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
     const stockQuantity = selectedStock.quantity_for_history || selectedStock.quantity || 1;
     const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
-    const sellingPrice = parseFloat(selectedStock.selling_price || '0');
-    const minPrice = parseFloat(selectedStock.min_price || '0');
-    const quantity = form.getValues(`sale_items.${index}.quantity`) || 1;
-    // Use sellingPrice as initial subtotal, but profit should be recalculated on every change
+    let minPrice = parseFloat(selectedStock.min_price || '0');
+    let sellingPrice = parseFloat(selectedStock.selling_price || '0');
+    let profit = 0;
+    if (selectedStock.product_read?.has_kub) {
+      const measurements = selectedStock.product_read.measurement || [];
+      const getNumber = (name: string) => {
+        const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
+        return m ? parseFloat(m.number) : 1;
+      };
+      const length = getNumber('длина');
+      const thickness = getNumber('Толщина');
+      const meter = getNumber('Метр');
+      const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
+      const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
+      const purchasePriceInUs = purchasePriceInUss / 10;
+      const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
+      profit = sellingPrice - PROFIT_FAKE;
+    } else {
+      profit = sellingPrice - purchasePricePerUnit;
+    }
     setSelectedPrices(prev => ({
       ...prev,
       [index]: {
         min: minPrice,
         selling: sellingPrice,
         purchasePrice: purchasePricePerUnit,
-        profit: (sellingPrice - purchasePricePerUnit) * quantity // will be recalculated on change
+        profit: profit
       }
     }));
     form.setValue(`sale_items.${index}.stock_write`, stockId);
@@ -247,13 +291,70 @@ export default function EditSale() {
       form.setValue(`sale_items.${index}.quantity`, maxQuantity);
     } else {
       form.setValue(`sale_items.${index}.quantity`, value);
+      // Recalculate profit with new quantity using quantity_for_history if available
+      if (selectedPrices[index] && selectedStock) {
+        let profit = 0;
+        if (selectedStock.product_read?.has_kub) {
+          const measurements = selectedStock.product_read.measurement || [];
+          const getNumber = (name: string) => {
+            const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
+            return m ? parseFloat(m.number) : 1;
+          };
+          const length = getNumber('длина');
+          const thickness = getNumber('Толщина');
+          const meter = getNumber('Метр');
+          const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
+          const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
+          const purchasePriceInUs  = purchasePriceInUss / 10;
+          const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
+          const sellingPrice = parseFloat(selectedStock.selling_price || '0');
+          profit = (sellingPrice - PROFIT_FAKE) * value;
+        } else {
+          const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
+          const stockQuantity = selectedStock.quantity_for_history || selectedStock.quantity || 1;
+          const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
+          profit = (subtotal - purchasePricePerUnit) * value;
+        }
+        setSelectedPrices(prev => ({
+          ...prev,
+          [index]: {
+            ...prev[index],
+            profit: profit
+          }
+        }));
+      }
     }
-    // Recalculate profit with new quantity and current subtotal
+    updateTotalAmount();
+  };
+
+  const handleSubtotalChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const newValue = e.target.value.replace(/[^0-9]/g, '');
+    const quantity = form.getValues(`sale_items.${index}.quantity`) || 1;
+    const subtotal = parseFloat(newValue) || 0;
+    const stockId = form.getValues(`sale_items.${index}.stock_write`);
+    const selectedStock = stocks.find(stock => stock.id === stockId);
+    // Calculate profit if we have price information
     if (selectedPrices[index] && selectedStock) {
-      const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
-      const stockQuantity = selectedStock.quantity_for_history || selectedStock.quantity || 1;
-      const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
-      const profit = (subtotal - purchasePricePerUnit) * value;
+      let profit = 0;
+      if (selectedStock.product_read?.has_kub) {
+        const measurements = selectedStock.product_read.measurement || [];
+        const getNumber = (name: string) => {
+          const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
+          return m ? parseFloat(m.number) : 1;
+        };
+        const length = getNumber('длина');
+        const thickness = getNumber('Толщина');
+        const meter = getNumber('Метр');
+        const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
+        const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
+        const purchasePriceInUs  = purchasePriceInUss / 10;
+        const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
+        const sellingPrice = subtotal; // Use new subtotal as selling price
+        profit = (sellingPrice - PROFIT_FAKE) * quantity;
+      } else {
+        const { purchasePrice } = selectedPrices[index];
+        profit = (subtotal - purchasePrice) * quantity;
+      }
       setSelectedPrices(prev => ({
         ...prev,
         [index]: {
@@ -262,6 +363,7 @@ export default function EditSale() {
         }
       }));
     }
+    form.setValue(`sale_items.${index}.subtotal`, newValue);
     updateTotalAmount();
   };
 
@@ -560,24 +662,7 @@ export default function EditSale() {
                             type="text"
                             className="text-right font-medium"
                             {...field}
-                            onChange={(e) => {
-                              const newValue = e.target.value.replace(/[^0-9]/g, '');
-                              const quantity = form.getValues(`sale_items.${index}.quantity`) || 1;
-                              const subtotal = parseFloat(newValue) || 0;
-                              if (selectedPrices[index]) {
-                                const { purchasePrice } = selectedPrices[index];
-                                const profit = (subtotal - purchasePrice) * quantity;
-                                setSelectedPrices(prev => ({
-                                  ...prev,
-                                  [index]: {
-                                    ...prev[index],
-                                    profit: profit
-                                  }
-                                }));
-                              }
-                              form.setValue(`sale_items.${index}.subtotal`, newValue);
-                              updateTotalAmount();
-                            }}
+                            onChange={(e) => handleSubtotalChange(e, index)}
                           />
                         </FormControl>
                       </FormItem>
@@ -819,22 +904,65 @@ export default function EditSale() {
 
           {/* Total Amount Display */}
           <div className="mt-6 sm:mt-8 p-4 sm:p-6 border rounded-lg bg-gray-50">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-700">{t('table.total_amount')}</h3>
-              <p className="text-xl sm:text-3xl font-bold text-green-600">
-                {parseFloat(form.watch('total_amount') || '0').toLocaleString()}
-              </p>
-            </div>
-            {(isAdmin || isSuperUser) && (
-              <div className="flex items-center justify-between">
+            <div className="flex flex-col space-y-4">
+              <div className="flex items-center justify-between border-b pb-4">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-700">
-                  {t('table.profit')}
+                  {t('table.total_amount')}
                 </h3>
                 <p className="text-xl sm:text-3xl font-bold text-green-600">
-                  {Object.values(selectedPrices).reduce((total, item) => total + (item.profit || 0), 0).toFixed(1).toLocaleString()}
+                  {form.watch('sale_payments').reduce((sum, payment) => sum + (payment.amount || 0), 0).toLocaleString()}
                 </p>
               </div>
-            )}
+              {(isAdmin || isSuperUser) && (
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-700">
+                    {t('table.profit')}
+                  </h3>
+                  <p className="text-xl sm:text-3xl font-bold text-green-600">
+                    {(() => {
+                      const saleItems = form.watch('sale_items');
+                      const totalPayments = form.watch('sale_payments').reduce((sum, payment) => sum + (payment.amount || 0), 0);
+                      const totalAmount = parseFloat(form.watch('total_amount')) || 0;
+                      let totalProfit = 0;
+                      saleItems.forEach((item, index) => {
+                        if (selectedPrices[index]) {
+                          const quantity = item.quantity || 1;
+                          const subtotal = parseFloat(item.subtotal) || 0;
+                          const itemTotal = subtotal * quantity;
+                          const stockId = item.stock_write;
+                          const selectedStock = stocks.find(stock => stock.id === stockId);
+                          let profitPerUnit = 0;
+                          if (selectedStock?.product_read?.has_kub) {
+                            const measurements = selectedStock.product_read.measurement || [];
+                            const getNumber = (name: string) => {
+                              const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
+                              return m ? parseFloat(m.number) : 1;
+                            };
+                            const length = getNumber('длина');
+                            const thickness = getNumber('Толщина');
+                            const meter = getNumber('Метр');
+                            const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
+                            const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
+                            const purchasePriceInUs = purchasePriceInUss / 10;
+                            const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
+                            profitPerUnit = subtotal - PROFIT_FAKE;
+                          } else {
+                            const totalPurchasePrice = parseFloat(selectedStock?.purchase_price_in_uz || '0');
+                            const stockQuantity = selectedStock?.quantity_for_history || selectedStock?.quantity || 1;
+                            const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
+                            profitPerUnit = subtotal - purchasePricePerUnit;
+                          }
+                          const paidShare = totalAmount > 0 ? (itemTotal / totalAmount) * totalPayments : itemTotal;
+                          const itemCost = (itemTotal - (profitPerUnit * quantity));
+                          totalProfit += paidShare - itemCost;
+                        }
+                      });
+                      return totalProfit.toFixed(1).toLocaleString();
+                    })()}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           { <Button
