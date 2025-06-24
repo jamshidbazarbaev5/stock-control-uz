@@ -387,7 +387,7 @@ export default function CreateSale() {
       debugInfo = { length, meter, thickness, exchangeRate, purchasePriceInUs, PROFIT_FAKE, sellingPrice, profit };
       console.log('DEBUG PROFIT_FAKE:', debugInfo);
     } else {
-      profit = sellingPrice - purchasePricePerUnit;
+      profit = (sellingPrice - purchasePricePerUnit) ;
     }
     // --- END PROFIT_FAKE logic ---
 
@@ -418,14 +418,31 @@ export default function CreateSale() {
       form.setValue(`sale_items.${index}.quantity`, maxQuantity);
     } else {
       form.setValue(`sale_items.${index}.quantity`, value);
-      
       // Recalculate profit with new quantity using quantity_for_history if available
       if (selectedPrices[index] && selectedStock) {
-        const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
-        const stockQuantity = selectedStock.quantity_for_history || selectedStock.quantity || 1;
-        const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
-        const profit = (subtotal - purchasePricePerUnit) * value;
-        
+        let profit = 0;
+        // --- PROFIT_FAKE logic for has_kub ---
+        if (selectedStock.product_read?.has_kub) {
+          const measurements = selectedStock.product_read.measurement || [];
+          const getNumber = (name: string) => {
+            const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
+            return m ? parseFloat(m.number) : 1;
+          };
+          const length = getNumber('длина');
+          const thickness = getNumber('Толщина');
+          const meter = getNumber('Метр');
+          const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
+          const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
+          const purchasePriceInUs  = purchasePriceInUss / 10;
+          const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
+          const sellingPrice = parseFloat(selectedStock.selling_price || '0');
+          profit = (sellingPrice - PROFIT_FAKE) * value;
+        } else {
+          const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
+          const stockQuantity = selectedStock.quantity_for_history || selectedStock.quantity || 1;
+          const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
+          profit = (subtotal - purchasePricePerUnit) * value;
+        }
         setSelectedPrices(prev => ({
           ...prev,
           [index]: {
@@ -435,7 +452,6 @@ export default function CreateSale() {
         }));
       }
     }
-
     updateTotalAmount();
   };
 
@@ -443,12 +459,31 @@ export default function CreateSale() {
     const newValue = e.target.value.replace(/[^0-9]/g, '');
     const quantity = form.getValues(`sale_items.${index}.quantity`) || 1;
     const subtotal = parseFloat(newValue) || 0;
-    
+    const stockId = form.getValues(`sale_items.${index}.stock_write`);
+    const selectedStock = stocks.find(stock => stock.id === stockId);
+
     // Calculate profit if we have price information
-    if (selectedPrices[index]) {
-      const { purchasePrice } = selectedPrices[index];
-      const profit = (subtotal - purchasePrice) * quantity;
-      
+    if (selectedPrices[index] && selectedStock) {
+      let profit = 0;
+      if (selectedStock.product_read?.has_kub) {
+        const measurements = selectedStock.product_read.measurement || [];
+        const getNumber = (name: string) => {
+          const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
+          return m ? parseFloat(m.number) : 1;
+        };
+        const length = getNumber('длина');
+        const thickness = getNumber('Толщина');
+        const meter = getNumber('Метр');
+        const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
+        const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
+        const purchasePriceInUs  = purchasePriceInUss / 10;
+        const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
+        const sellingPrice = subtotal; // Use new subtotal as selling price
+        profit = (sellingPrice - PROFIT_FAKE) * quantity;
+      } else {
+        const { purchasePrice } = selectedPrices[index];
+        profit = (subtotal - purchasePrice) * quantity;
+      }
       setSelectedPrices(prev => ({
         ...prev,
         [index]: {
