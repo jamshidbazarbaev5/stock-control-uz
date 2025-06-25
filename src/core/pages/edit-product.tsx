@@ -46,6 +46,8 @@ export default function EditProduct() {
   const [length, setLength] = useState('');
   const [staticWeight, setStaticWeight] = useState('');
   const [categoriesForRecycling, setCategoriesForRecycling] = useState<number[]>([]);
+  const [hasMetr, setHasMetr] = useState(false);
+  const [hasShtuk, setHasShtuk] = useState(false);
 
   // Fetch categories and measurements for the select dropdowns
   const { data: categoriesData } = useGetCategories({});
@@ -78,6 +80,8 @@ export default function EditProduct() {
       setLength(product.length?.toString() || '');
       setStaticWeight(product.static_weight?.toString() || '');
     }
+    setHasMetr(!!product?.has_metr);
+    setHasShtuk(!!product?.has_shtuk);
   }, [product]);
 
   const handleAddMeasurement = () => {
@@ -111,14 +115,12 @@ export default function EditProduct() {
 
   const handleSubmit = async (data: any) => {
     if (!id) return;
-
     try {
       const formattedData: any = {
         id: Number(id),
         product_name: data.product_name,
         category_write: typeof data.category_write === 'string' ? parseInt(data.category_write, 10) : data.category_write,
         has_color: (data.has_color === 'true') as boolean,
-        // If kub has a value, has_kub should be true
         has_kub: (data.has_kub === 'true' || (kub !== '' && parseFloat(kub) > 0)) as boolean,
         has_recycling: (data.has_recycling === 'true') as boolean,
         is_list: (data.is_list === 'true') as boolean,
@@ -126,9 +128,11 @@ export default function EditProduct() {
           id: m.id,
           measurement_write: m.measurement_write,
           measurement_read: m.measurement_read,
-          number: m.number.toString().replace(',', '.'), // convert comma to dot
+          number: m.number.toString().replace(',', '.'),
           for_sale: m.for_sale
-        }))
+        })),
+        has_metr: hasMetr,
+        has_shtuk: hasShtuk,
       };
 
       // Only add color if has_color is true
@@ -391,6 +395,32 @@ export default function EditProduct() {
           >
             {t('common.add')} {t('table.measurement')}
           </Button>
+        </div>
+        <div className="flex gap-4 mb-4">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={hasMetr}
+              onChange={e => {
+                setHasMetr(e.target.checked);
+                if (e.target.checked) setHasShtuk(false);
+              }}
+              disabled={hasShtuk}
+            />
+            {t('forms.has_metr')}
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={hasShtuk}
+              onChange={e => {
+                setHasShtuk(e.target.checked);
+                if (e.target.checked) setHasMetr(false);
+              }}
+              disabled={hasMetr}
+            />
+            {t('forms.has_shtuk')}
+          </label>
         </div>
       </ResourceForm>
     </div>

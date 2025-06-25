@@ -32,6 +32,8 @@ export interface Product {
   is_list?: boolean;
   length?: number;
   static_weight?: number;
+  has_metr?: boolean;
+  has_shtuk?: boolean;
 }
 
 // API endpoints

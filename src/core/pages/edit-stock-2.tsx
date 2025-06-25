@@ -30,7 +30,7 @@ export default function EditStock() {
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [isLoadingAllProducts, setIsLoadingAllProducts] = useState(false);
   const [currency, setCurrency] = useState<{ id: number; currency_rate: string } | null>(null);
-  const [currencyLoading, setCurrencyLoading] = useState(true);
+  const [_currencyLoading, setCurrencyLoading] = useState(true);
   
   // Fetch the stock and related data
   const { data: stock, isLoading: stockLoading } = useGetStock(Number(id));
@@ -303,27 +303,34 @@ export default function EditStock() {
     }
   }
 
-  // Update fields with product, store, and supplier options
+  // Hide USD and exchange rate fields if has_metr or has_shtuk
+  let hideUsdFields = selectedProduct?.has_metr || selectedProduct?.has_shtuk;
   const fields = stockFields.map(field => {
     if (field.name === 'product_write') {
+      let productOptions = allProducts;
+      if (stock?.product_read && stock.product_read.id && !allProducts.some(p => p.id === stock?.product_read?.id)) {
+        productOptions = [stock.product_read, ...allProducts];
+      }
+      // Remove duplicates by id
+      const uniqueProductOptions = productOptions.filter((product, idx, arr) =>
+        arr.findIndex(p => p.id === product.id) === idx
+      );
       return {
         ...field,
-        options: allProducts.map(product => ({
+        options: uniqueProductOptions.map(product => ({
           value: product.id,
           label: product.product_name
         })),
         isLoading: isLoadingAllProducts,
         onChange: (value: number) => {
-          const product = allProducts.find(p => p.id === value);
+          const product = uniqueProductOptions.find(p => p.id === value);
           setSelectedProduct(product);
         }
       };
     }
     if (field.name === 'store_write') {
-      // Always include the store from the API (stock.store_read), even if not main
       let storeOptions = stores.filter(store => store.is_main);
       if (stock?.store_read && stock.store_read.id && !storeOptions.some(s => s.id === stock?.store_read?.id)) {
-        // Ensure all required fields are present, fallback to empty or 0 if missing
         const apiStore = {
           id: stock.store_read.id,
           name: stock.store_read.name,
@@ -352,28 +359,51 @@ export default function EditStock() {
       };
     }
     if (field.name === 'supplier_write') {
+      let supplierOptions = suppliers;
+      if (stock?.supplier_read && stock.supplier_read.id && !suppliers.some(s => s.id === stock?.supplier_read?.id)) {
+        supplierOptions = [stock.supplier_read, ...suppliers];
+      }
+      // Remove duplicates by id
+      const uniqueSupplierOptions = supplierOptions.filter((supplier, idx, arr) =>
+        arr.findIndex(s => s.id === supplier.id) === idx
+      );
       return {
         ...field,
-        options: suppliers.map(supplier => ({
+        options: uniqueSupplierOptions.map(supplier => ({
           value: supplier.id,
           label: supplier.name
         })),
         isLoading: suppliersLoading
       };
     }
-    if (field.name === 'exchange_rate') {
+    // ...existing code for hiding fields and placeholders...
+    if (hideUsdFields && [
+      'exchange_rate',
+      'purchase_price_in_us',
+      'selling_price_us',
+    ].includes(field.name)) {
+      return { ...field, hidden: true };
+    }
+    if (field.name === 'purchase_price_in_uz') {
       return {
         ...field,
-        value: currency?.currency_rate || '',
-        readOnly: true,
-        disabled: true,
-        loading: currencyLoading,
+        readOnly: !(hideUsdFields),
+        required: true,
+        placeholder: t('common.enter_purchase_price_uzs') || 'Введите цену покупки в UZS',
       };
     }
-    if (field.name === 'color') {
+    if (field.name === 'quantity') {
+      let placeholder = field.placeholder;
+      let label = field.label;
+      if (selectedProduct?.has_shtuk) {
+        label = t('common.shtuk')
+        label = t('common.enter_quantity') || 'Введите штук';
+      } else if (selectedProduct?.has_metr) {
+        label = 'введите метр';
+      }
       return {
         ...field,
-        hidden: !selectedProduct?.has_color
+        placeholder,
       };
     }
     return field;
@@ -382,24 +412,32 @@ export default function EditStock() {
   const handleSubmit = async (data: FormValues) => {
     if (!id) return;
     try {
-      // Format data for API
-      const formattedData: Stock = {
+      // Build payload only with typed fields
+      const formattedData: any = {
         id: Number(id),
         store_write: typeof data.store_write === 'string' ? parseInt(data.store_write, 10) : data.store_write!,
         product_write: typeof data.product_write === 'string' ? parseInt(data.product_write, 10) : data.product_write!,
-        purchase_price: data.purchase_price_in_uz, // Send the UZS price as purchase_price
-        purchase_price_in_us: data.purchase_price_in_us,
-        exchange_rate: currency ? currency.id.toString() : '', // send currency id
-        purchase_price_in_uz: data.purchase_price_in_uz,
-        selling_price: data.selling_price!,
-        min_price: data.min_price!,
+        purchase_price: data.purchase_price_in_uz !== '' ? String(data.purchase_price_in_uz) : undefined,
+        purchase_price_in_uz: data.purchase_price_in_uz !== '' ? String(data.purchase_price_in_uz) : undefined,
+        selling_price: data.selling_price !== '' ? String(data.selling_price) : undefined,
+        min_price: data.min_price !== '' ? String(data.min_price) : undefined,
         quantity: typeof data.quantity === 'string' ? parseFloat(data.quantity) : data.quantity!,
         supplier_write: typeof data.supplier_write === 'string' ? parseInt(data.supplier_write, 10) : data.supplier_write!,
         date_of_arrived: data.date_of_arrived,
         measurement_write: [],
-        ...(data.income_weight ? { income_weight: data.income_weight } : {}),
-        selling_price_in_us: data.selling_price_us || '', // Include selling_price_in_us if has_kub
+        ...(data.income_weight ? { income_weight: data.income_weight } : {})
       };
+      if (data.purchase_price_in_us && data.purchase_price_in_us !== '') {
+        formattedData.purchase_price_in_us = String(data.purchase_price_in_us);
+      }
+      if (data.exchange_rate && data.exchange_rate !== '') {
+        formattedData.exchange_rate = currency ? currency.id.toString() : '';
+      }
+      if (data.selling_price_us && data.selling_price_us !== '') {
+        formattedData.selling_price_in_us = String(data.selling_price_us);
+      }
+      // Remove undefined fields
+      Object.keys(formattedData).forEach(key => formattedData[key] === undefined && delete formattedData[key]);
       await updateStock.mutateAsync(formattedData);
       toast.success(t('messages.success.updated', { item: t('navigation.stock') }));
       navigate('/stock');

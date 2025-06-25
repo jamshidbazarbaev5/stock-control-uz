@@ -368,7 +368,7 @@ export default function CreateSale() {
     let minPrice = parseFloat(selectedStock.min_price || '0');
     let sellingPrice = parseFloat(selectedStock.selling_price || '0');
     let debugInfo = {};
-    if (selectedStock.product_read?.has_kub) {
+    if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
       // Find measurements
       const measurements = selectedStock.product_read.measurement || [];
       const getNumber = (name: string) => {
@@ -380,7 +380,7 @@ export default function CreateSale() {
       const meter = getNumber('Метр');
       const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
       const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
-      const purchasePriceInUs  = purchasePriceInUss /10
+      const purchasePriceInUs  = purchasePriceInUss / 10;
       console.log('purchasePriceInUs',purchasePriceInUs)
       const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
       profit = sellingPrice - PROFIT_FAKE;
@@ -422,7 +422,7 @@ export default function CreateSale() {
       if (selectedPrices[index] && selectedStock) {
         let profit = 0;
         // --- PROFIT_FAKE logic for has_kub ---
-        if (selectedStock.product_read?.has_kub) {
+        if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
           const measurements = selectedStock.product_read.measurement || [];
           const getNumber = (name: string) => {
             const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
@@ -465,7 +465,7 @@ export default function CreateSale() {
     // Calculate profit if we have price information
     if (selectedPrices[index] && selectedStock) {
       let profit = 0;
-      if (selectedStock.product_read?.has_kub) {
+      if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
         const measurements = selectedStock.product_read.measurement || [];
         const getNumber = (name: string) => {
           const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
@@ -542,7 +542,7 @@ export default function CreateSale() {
           const stockId = item.stock_write;
           const selectedStock = stocks.find(stock => stock.id === stockId);
           let profitPerUnit = 0;
-          if (selectedStock?.product_read?.has_kub) {
+          if (selectedStock?.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
             const measurements = selectedStock.product_read.measurement || [];
             const getNumber = (name: string) => {
               const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
@@ -1173,7 +1173,7 @@ export default function CreateSale() {
                           const stockId = item.stock_write;
                           const selectedStock = stocks.find(stock => stock.id === stockId);
                           let profitPerUnit = 0;
-                          if (selectedStock?.product_read?.has_kub) {
+                          if (selectedStock?.product_read?.has_kub && selectedStock?.product_read?.category_read?.id === 2 || selectedStock?.product_read?.category_read?.id ===8) {
                             const measurements = selectedStock.product_read.measurement || [];
                             const getNumber = (name: string) => {
                               const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);

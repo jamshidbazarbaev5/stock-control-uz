@@ -45,6 +45,8 @@ export default function CreateProduct() {
   const [isList, setIsList] = useState<'true' | 'false'>('false');
   const [length, setLength] = useState('');
   const [staticWeight, setStaticWeight] = useState('');
+  const [hasMetr, setHasMetr] = useState(false);
+  const [hasShtuk, setHasShtuk] = useState(false);
 
   // Fetch categories, stores and measurements for the select dropdowns
   const { data: categoriesData } = useGetCategories({});
@@ -109,7 +111,9 @@ export default function CreateProduct() {
         ...(isList === 'true' && { 
           length: data.length ? parseFloat(data.length) : (parseFloat(length) || 0),
           static_weight: data.static_weight ? parseFloat(data.static_weight) : (parseFloat(staticWeight) || 0)
-        })
+        }),
+        has_metr: hasMetr,
+        has_shtuk: hasShtuk,
       };
 
       console.log('Formatted data:', formattedData);
@@ -271,6 +275,32 @@ export default function CreateProduct() {
         isSubmitting={createProduct.isPending}
         title={t('common.create') + ' ' + t('table.product')}
       >
+        <div className="flex gap-4 mb-4">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={hasMetr}
+              onChange={e => {
+                setHasMetr(e.target.checked);
+                if (e.target.checked) setHasShtuk(false);
+              }}
+              disabled={hasShtuk}
+            />
+            {t('forms.has_metr')}
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={hasShtuk}
+              onChange={e => {
+                setHasShtuk(e.target.checked);
+                if (e.target.checked) setHasMetr(false);
+              }}
+              disabled={hasMetr}
+            />
+            {t('forms.has_shtuk')}
+          </label>
+        </div>
         <div className="space-y-4">
           <h3 className="text-lg font-medium">{t('table.measurements')}</h3>
           {measurements.map((measurement: MeasurementItem, index: number) => (

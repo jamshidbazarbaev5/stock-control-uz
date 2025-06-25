@@ -278,7 +278,10 @@ export default function CreateStock() {
 
   // Effect to update calculated selling price and min price for has_kub products
   useEffect(() => {
-    if (selectedProduct?.has_kub) {
+    // Only calculate for category 2 or 8
+    const allowedCategories = [2, 8];
+    const categoryId = selectedProduct?.category_read?.id;
+    if (selectedProduct?.has_kub && allowedCategories.includes(categoryId)) {
       // Get all measurement numbers and multiply them
       const measurements = selectedProduct.measurement || [];
       const baseValue = measurements.reduce((acc: number, m: any) => {
@@ -312,7 +315,25 @@ export default function CreateStock() {
   }, [selectedProduct, form.watch('exchange_rate'), form.watch('selling_price_us'), form.watch('purchase_price_in_us')]);
 
   // Update fields with product, store, measurement and supplier options
+  let hideUsdFields = selectedProduct?.has_metr || selectedProduct?.has_shtuk;
   const fields = stockFields.map(field => {
+    // Hide USD and exchange rate fields if has_metr or has_shtuk
+    if (hideUsdFields && [
+      'exchange_rate',
+      'purchase_price_in_us',
+      'selling_price_us',
+    ].includes(field.name)) {
+      return { ...field, hidden: true };
+    }
+    // Make purchase_price_in_uz editable if has_metr or has_shtuk
+    if (field.name === 'purchase_price_in_uz') {
+      return {
+        ...field,
+        readOnly: !(hideUsdFields),
+        required: true,
+        placeholder: t('common.enter_purchase_price_uzs') || 'Enter purchase price in UZS',
+      };
+    }
     if (field.name === 'product_write') {
       return {
         ...field,
@@ -364,6 +385,22 @@ export default function CreateStock() {
       return {
         ...field,
         hidden: !selectedProduct?.has_color
+      };
+    }
+    // Update quantity placeholder based on has_shtuk or has_metr
+    if (field.name === 'quantity') {
+      let placeholder = field.placeholder;
+      let label = field.label
+      if (selectedProduct?.has_shtuk) {
+        label =  t('common.enter_quantity') || 'Введите штук';
+        placeholder = t('common.enter_quantity') || 'Введите штук';
+      } else if (selectedProduct?.has_metr) {
+        label =  t('common.enter_quantity') || 'Введите метр';
+        placeholder = 'Введите метр';
+      }
+      return {
+        ...field,
+        placeholder,
       };
     }
     return field;
@@ -418,31 +455,33 @@ export default function CreateStock() {
 
   const handleSubmit = async (data: FormValues) => {
     try {
-      console.log('Form values before formatting:', data); // Debug log
       // Always parse numbers for numeric fields
       const quantity = typeof data.quantity === 'string' ? parseFloat(data.quantity) : data.quantity!;
-      const purchasePriceUSD = data.purchase_price_in_us !== undefined && data.purchase_price_in_us !== null ? String(data.purchase_price_in_us) : '';
-      // const exchangeRate = data.exchange_rate !== undefined && data.exchange_rate !== null ? String(data.exchange_rate) : '';
-      const purchasePriceUZS = data.purchase_price_in_uz !== undefined && data.purchase_price_in_uz !== null ? String(data.purchase_price_in_uz) : '';
-      const sellingPrice = data.selling_price !== undefined && data.selling_price !== null ? String(data.selling_price) : '';
-      const minPrice = data.min_price !== undefined && data.min_price !== null ? String(data.min_price) : '';
-      const formattedData: CreateStockDTO = {
+      // Build payload only with typed fields
+      const formattedData: any = {
         store_write: typeof data.store_write === 'string' ? parseInt(data.store_write, 10) : data.store_write!,
         product_write: typeof data.product_write === 'string' ? parseInt(data.product_write, 10) : data.product_write!,
-        purchase_price: purchasePriceUZS, // Send the UZS price as purchase_price
-        purchase_price_in_us: purchasePriceUSD,
-        exchange_rate: currency ? currency.id.toString() : '', // send currency id
-        purchase_price_in_uz: purchasePriceUZS,
-        selling_price: sellingPrice,
-        min_price: minPrice,
+        purchase_price: data.purchase_price_in_uz !== '' ? String(data.purchase_price_in_uz) : undefined,
+        purchase_price_in_uz: data.purchase_price_in_uz !== '' ? String(data.purchase_price_in_uz) : undefined,
+        selling_price: data.selling_price !== '' ? String(data.selling_price) : undefined,
+        min_price: data.min_price !== '' ? String(data.min_price) : undefined,
         quantity: quantity,
         supplier_write: typeof data.supplier_write === 'string' ? parseInt(data.supplier_write, 10) : data.supplier_write!,
         date_of_arrived: data.date_of_arrived,
-        income_weight:data.income_weight,
-        selling_price_in_us: data.selling_price_us ? String(data.selling_price_us) : '', // Send selling price in USD if available
-        measurement_write: [] // Empty array since we removed measurement selection
+        income_weight: data.income_weight,
+        measurement_write: []
       };
-      console.log('Submitting data:', formattedData); // Debug log
+      if (data.purchase_price_in_us && data.purchase_price_in_us !== '') {
+        formattedData.purchase_price_in_us = String(data.purchase_price_in_us);
+      }
+      if (data.exchange_rate && data.exchange_rate !== '') {
+        formattedData.exchange_rate = currency ? currency.id.toString() : '';
+      }
+      if (data.selling_price_us && data.selling_price_us !== '') {
+        formattedData.selling_price_in_us = String(data.selling_price_us);
+      }
+      // Remove undefined fields
+      Object.keys(formattedData).forEach(key => formattedData[key] === undefined && delete formattedData[key]);
       await createStock.mutateAsync(formattedData);
       toast.success('Stock created successfully');
       navigate('/stock');

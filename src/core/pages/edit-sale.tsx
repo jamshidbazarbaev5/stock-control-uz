@@ -329,7 +329,7 @@ export default function EditSale() {
     let minPrice = parseFloat(selectedStock.min_price || "0");
     let sellingPrice = parseFloat(selectedStock.selling_price || "0");
     let profit = 0;
-    if (selectedStock.product_read?.has_kub) {
+    if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
       const measurements = selectedStock.product_read.measurement || [];
       const getNumber = (name: string) => {
         const m = measurements.find(
@@ -390,7 +390,7 @@ export default function EditSale() {
       // Recalculate profit with new quantity using quantity_for_history if available
       if (selectedPrices[index] && selectedStock) {
         let profit = 0;
-        if (selectedStock.product_read?.has_kub) {
+        if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
           const measurements = selectedStock.product_read.measurement || [];
           const getNumber = (name: string) => {
             const m = measurements.find(
@@ -445,7 +445,7 @@ export default function EditSale() {
     // Calculate profit if we have price information
     if (selectedPrices[index] && selectedStock) {
       let profit = 0;
-      if (selectedStock.product_read?.has_kub) {
+      if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
         const measurements = selectedStock.product_read.measurement || [];
         const getNumber = (name: string) => {
           const m = measurements.find(
@@ -514,7 +514,7 @@ export default function EditSale() {
           const stockId = item.stock_write;
           const selectedStock = stocks.find(stock => stock.id === stockId);
           let profitPerUnit = 0;
-          if (selectedStock?.product_read?.has_kub) {
+          if (selectedStock?.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
             const measurements = selectedStock.product_read.measurement || [];
             const getNumber = (name: string) => {
               const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
@@ -1251,7 +1251,7 @@ export default function EditSale() {
                             (stock) => stock.id === stockId
                           );
                           let profitPerUnit = 0;
-                          if (selectedStock?.product_read?.has_kub) {
+                          if (selectedStock?.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
                             const measurements =
                               selectedStock.product_read.measurement || [];
                             const getNumber = (name: string) => {

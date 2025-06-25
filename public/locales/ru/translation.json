@@ -117,6 +117,8 @@
     "create_expense": "Создать расход"
   },
   "common": {
+    "shtuk":"Штук",
+    "enter_purchase_price_uzs":"Введите цену покупки в UZS",
     "enter_selling_price_usd":"Введите цену продажи в USD",
     "price_per_unit": "Цена за единицу",
     "calculated_quantity":"Рассчитанное количество",
@@ -262,6 +264,8 @@
 
   "forms": {
     "type":"Тип",
+    "has_shtuk":"Продается в Штуках?",
+    "has_metr":"Продается в Метрах?",
     "type_product_name":"Пишите название товара",
     "length":"Толщина",
     "static_weight":"Метр",

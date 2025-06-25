@@ -247,6 +247,8 @@
   },
   "forms": {
     "type": "Túr",
+    "has_metr":"Metrda satiladima",
+    "has_shtuk":"Shtukda satiladima",
     "type_product_name":"Пишите название товарач  ",
     "length":"Uzinliq",
     "static_weight":"",
