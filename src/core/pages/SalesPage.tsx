@@ -228,15 +228,18 @@ export default function SalesPage() {
         </span>
       ),
     },
-    {
-      header: t('table.total_pure_revenue'),
-      accessorKey: 'total_pure_revenue',
-      cell: (row: Sale) => (
-        <span className="font-medium text-emerald-600">
-          {formatCurrency(row.total_pure_revenue || '0')} 
-        </span>
-      ),
-    },
+    // Show for all superusers OR if role is Администратор
+    ...((currentUser?.is_superuser || currentUser?.role === "Администратор")
+      ? [{
+          header: t('table.total_pure_revenue'),
+          accessorKey: 'total_pure_revenue',
+          cell: (row: Sale) => (
+            <span className="font-medium text-emerald-600">
+              {formatCurrency(row.total_pure_revenue || '0')} 
+            </span>
+          ),
+        }]
+      : []),
     {
       header: t('table.status'),
       accessorKey: 'on_credit',
@@ -398,8 +401,8 @@ export default function SalesPage() {
               columns={columns}
               isLoading={isLoading}
               onDelete={currentUser?.role === "Продавец" ? undefined : handleDelete}
-              onEdit={(row: Sale) => navigate(`/edit-sale/${row.id}`)}
               totalCount={totalCount}
+              onEdit={currentUser?.is_superuser ? (sale: Sale) => navigate(`/edit-sale/${sale.id}`) : undefined}
               pageSize={30}
               currentPage={page}
               onPageChange={(newPage) => setPage(newPage)}
