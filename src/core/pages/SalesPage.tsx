@@ -229,6 +229,15 @@ export default function SalesPage() {
       ),
     },
     {
+      header: t('table.total_pure_revenue'),
+      accessorKey: 'total_pure_revenue',
+      cell: (row: Sale) => (
+        <span className="font-medium text-emerald-600">
+          {formatCurrency(row.total_pure_revenue || '0')} 
+        </span>
+      ),
+    },
+    {
       header: t('table.status'),
       accessorKey: 'on_credit',
       cell: (row: Sale) => (

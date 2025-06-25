@@ -480,6 +480,7 @@
   },
   "table": {
     "profit":"Прибыль",
+    "total_pure_revenue":"чистый доход",
     "total_volume":"Общий объем куба",
     "sold_date":"Дата продажи",
     "total_kub_volume": " объем куба",

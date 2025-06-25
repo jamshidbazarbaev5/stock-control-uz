@@ -62,6 +62,7 @@ export interface Sale {
   is_paid?: boolean;
   sale_debt?: SaleDebt;
   total_amount: string;
+  total_pure_revenue?: string;
   sale_payments?: {
     payment_method: string;
     amount: string;
@@ -69,6 +70,7 @@ export interface Sale {
   client?: number;
   created_at?: string;
   sold_date?: string;
+  worker_read?:any
 }
 
 // API endpoints

@@ -529,6 +529,45 @@ export default function CreateSale() {
         return;
       }
 
+      // Calculate totalProfit (pure revenue)
+      const saleItems = data.sale_items;
+      const totalPayments = data.sale_payments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+      const totalAmount = parseFloat(data.total_amount) || 0;
+      let totalProfit = 0;
+      saleItems.forEach((item, index) => {
+        if (selectedPrices[index]) {
+          const quantity = item.quantity || 1;
+          const subtotal = parseFloat(item.subtotal) || 0;
+          const itemTotal = subtotal * quantity;
+          const stockId = item.stock_write;
+          const selectedStock = stocks.find(stock => stock.id === stockId);
+          let profitPerUnit = 0;
+          if (selectedStock?.product_read?.has_kub) {
+            const measurements = selectedStock.product_read.measurement || [];
+            const getNumber = (name: string) => {
+              const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
+              return m ? parseFloat(m.number) : 1;
+            };
+            const length = getNumber('длина');
+            const thickness = getNumber('Толщина');
+            const meter = getNumber('Метр');
+            const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
+            const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
+            const purchasePriceInUs = purchasePriceInUss / 10;
+            const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
+            profitPerUnit = subtotal - PROFIT_FAKE;
+          } else {
+            const totalPurchasePrice = parseFloat(selectedStock?.purchase_price_in_uz || '0');
+            const stockQuantity = selectedStock?.quantity_for_history || selectedStock?.quantity || 1;
+            const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
+            profitPerUnit = subtotal - purchasePricePerUnit;
+          }
+          const paidShare = totalAmount > 0 ? (itemTotal / totalAmount) * totalPayments : itemTotal;
+          const itemCost = (itemTotal - (profitPerUnit * quantity));
+          totalProfit += paidShare - itemCost;
+        }
+      });
+
       // Get primary payment method from sale_payments
       const primaryPayment = data.sale_payments[0];
 
@@ -548,6 +587,7 @@ export default function CreateSale() {
         })),
         on_credit: data.on_credit,
         total_amount: data.total_amount.toString(),
+        total_pure_revenue: totalProfit.toFixed(1),
         // If client is selected but on credit, send client directly
         ...(data.sale_debt?.client && !data.on_credit ? { client: data.sale_debt.client } : {}),
         // If on credit and client selected, include in sale_debt
