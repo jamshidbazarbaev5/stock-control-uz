@@ -121,7 +121,7 @@ export function ResourceTable<T extends { id?: number }>({
       <div className="rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="border-b border-gray-200 bg-gray-50/50">
+            <TableRow className="border-gray-200 ">
               <TableHead className="text-xs uppercase text-gray-500 font-medium w-[60px]">
                 №
               </TableHead>
@@ -140,7 +140,7 @@ export function ResourceTable<T extends { id?: number }>({
           <TableBody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, index) => (
-                <TableRow key={`skeleton-${index}`} className="border-b border-gray-100 last:border-0">
+                <TableRow key={`skeleton-${index}`} className=" border-gray-100 last:border-0">
                   <TableCell className="w-[60px]">
                     <Skeleton className="h-4 w-8" />
                   </TableCell>
@@ -169,7 +169,7 @@ export function ResourceTable<T extends { id?: number }>({
               tableData.map((row, rowIndex) => (
                 <React.Fragment key={rowIndex}>
                   <TableRow 
-                    className={`border-b border-gray-100 ${(expandedRowRenderer || onRowClick) ? 'cursor-pointer hover:bg-gray-50/50 transition-colors' : ''}`}
+                    className={` border-gray-100 ${(expandedRowRenderer || onRowClick) ? '' : ''}`}
                     onClick={(e) => {
                       if (expandedRowRenderer) {
                         e.stopPropagation();
@@ -260,7 +260,7 @@ export function ResourceTable<T extends { id?: number }>({
                     <TableRow>
                       <TableCell
                         colSpan={columns.length + 1 + (onEdit || onDelete ? 1 : 0)}
-                        className="bg-gray-50/50 border-b border-gray-100"
+                        className=" border-gray-100"
                       >
                         {expandedRowRenderer(row)}
                       </TableCell>

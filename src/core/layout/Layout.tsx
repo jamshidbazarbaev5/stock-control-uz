@@ -25,6 +25,7 @@ import { useAuth } from "../context/AuthContext";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import api from "../api/api";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 type NavItem = {
   icon: LucideIcon;
@@ -251,15 +252,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   })();
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col overflow-x-hidden">
+    <div className="h-screen bg-background flex flex-col overflow-x-hidden">
       {/* Mobile Header */}
-      <header className="md:hidden bg-white shadow-sm px-4 py-2 flex items-center justify-between fixed top-0 left-0 right-0 z-50">
+      <header className="md:hidden bg-card shadow-sm px-4 py-2 flex items-center justify-between fixed top-0 left-0 right-0 z-50">
         <div className="flex items-center gap-2">
-          <div className="font-semibold text-gray-800">Stock-control</div>
+          <div className="font-semibold text-foreground">Stock-control</div>
         </div>
         <div className="flex items-center gap-3">
           <LanguageSwitcher />
-
+          <ThemeToggle />
           {/* Mobile Profile Dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
@@ -383,13 +384,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             onClick={() => setMobileMenuOpen(false)}
           />
         )}
-
         {/* Sidebar - Desktop and Mobile */}
         <aside
           className={`
           ${mobileMenuOpen ? "block" : "hidden"}
           md:block
-          w-full bg-white shadow-lg
+          w-full bg-sidebar shadow-lg
           fixed md:sticky
           top-[3.5rem] md:top-0
           h-[calc(100vh-3.5rem)] md:h-screen
@@ -401,26 +401,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         `}
         >
           {/* Desktop Logo and Language Switcher */}
-          <div className="hidden md:block px-6 py-6 border-b">
+          <div className="hidden md:block px-6 py-6 border-b border-sidebar-border bg-sidebar">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {!isCollapsed && (
-                  <div className="font-semibold text-gray-800">
+                  <div className="font-semibold text-sidebar-foreground">
                     Stock-control
                   </div>
                 )}
               </div>
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="p-2 rounded-lg hover:bg-sidebar-accent transition-colors"
               >
-                <Menu size={20} className="text-gray-600" />
+                <Menu size={20} className="text-sidebar-accent-foreground" />
               </button>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="px-3 py-4 flex flex-col bg-white relative z-50 h-[calc(100vh-6rem)] overflow-y-auto">
+          <nav className="px-3 py-4 flex flex-col bg-sidebar relative z-50 h-[calc(100vh-6rem)] overflow-y-auto">
             {navItems.map((item, index) => (
               <div key={index}>
                 {item.submenu ? (
@@ -436,8 +436,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left mb-1 transition-colors
                         ${
                           activeSubmenu === item.id
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "text-gray-700 hover:bg-gray-100"
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                            : "text-sidebar-foreground"
                         }`}
                     >
                       <item.icon
@@ -471,7 +471,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       <div
                         className={`ml-2 ${
                           isCollapsed
-                            ? "absolute left-full top-0 ml-2 bg-white shadow-lg rounded-lg p-2 min-w-[200px] max-h-[80vh] overflow-y-auto"
+                            ? "absolute left-full top-0 ml-2 bg-sidebar shadow-lg rounded-lg p-2 min-w-[200px] max-h-[80vh] overflow-y-auto"
                             : ""
                         }`}
                       >
@@ -487,8 +487,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             className={`flex items-center gap-3 px-3 py-2 rounded-lg text-left mb-1 transition-colors
                               ${
                                 location.pathname === subItem.href
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : "text-gray-700 hover:bg-gray-100"
+                                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                                  : "text-sidebar-foreground"
                               }`}
                           >
                             <subItem.icon
@@ -516,8 +516,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-left mb-1 transition-colors
                       ${
                         location.pathname === item.href
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "text-gray-700 hover:bg-gray-100"
+                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                          : "text-sidebar-foreground"
                       }`}
                   >
                     <item.icon
@@ -539,9 +539,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 transition-all duration-300 overflow-x-auto">
+        <main className="flex-1 min-w-0 transition-all duration-300 overflow-x-auto bg-card">
           <div className="h-full flex flex-col min-w-[320px]">
-            <div className="bg-white px-4 md:px-6 py-4 flex items-center justify-end gap-4 sticky top-0 z-30 border-b border-gray-100">
+            <div className="bg-card px-4 md:px-6 py-4 flex items-center justify-end gap-4 sticky top-0 z-30 border-b border-border">
               {currentUser?.is_superuser && ( <Dialog open={currencyModalOpen} onOpenChange={setCurrencyModalOpen}>
                   <DialogTrigger asChild>
                     <button
@@ -583,9 +583,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   </DialogContent>
                 </Dialog>)}
              
-              <div className="hidden md:block">
-                {/* Currency Rate Button & Modal */}
-                
+              <div className="hidden md:flex items-center gap-2">
+                <ThemeToggle />
                 <LanguageSwitcher />
               </div>
 
@@ -670,7 +669,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="flex-1 p-4 md:p-6 overflow-y-auto">
-              <div className="max-w-[1920px] mx-auto">{children}</div>
+              <div className="max-w-[1920px] mx-auto " style={{background:'l'}} >{children}</div>
             </div>
           </div>
         </main>

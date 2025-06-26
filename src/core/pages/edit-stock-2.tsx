@@ -394,7 +394,7 @@ export default function EditStock() {
     }
     if (field.name === 'quantity') {
       let placeholder = field.placeholder;
-      let label = field.label;
+      let label = field.label; 
       if (selectedProduct?.has_shtuk) {
         label = t('common.shtuk')
         label = t('common.enter_quantity') || 'Введите штук';
@@ -477,7 +477,7 @@ export default function EditStock() {
 
   // Effect to update selling_price and min_price for has_kub products
   useEffect(() => {
-    if (selectedProduct?.has_kub) {
+    if (selectedProduct?.has_kub && !selectedProduct?.has_metr && !selectedProduct.has_shtuk) {
       const measurements = selectedProduct.measurement || [];
       const baseValue = measurements.reduce((acc: number, m: any) => {
         const num = parseFloat(m.number);

@@ -18,6 +18,8 @@ import {
 } from '@/components/ui/select';
 import { CheckCircle2, AlertCircle,  CreditCard, Wallet, SmartphoneNfc,XCircle } from 'lucide-react';
 import {type Store, useGetStores} from "@/core/api/store.ts";
+import '../../expanded-row-dark.css';
+
 type PaginatedData<T> = { results: T[]; count: number } | T[];
 export default function SalesPage() {
   const navigate = useNavigate();
@@ -117,7 +119,7 @@ export default function SalesPage() {
         </h3>
         <div className="space-y-3">
           {row.sale_items.map((item, index) => (
-            <div key={index} className="bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition-all duration-200">
+            <div key={index} className=" dark:bg-expanded-row-dark p-4 rounded-lg hover:bg-gray-100 dark:hover:bg-[oklch(0.205_0_0)] transition-all duration-200">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <span className="text-sm text-gray-500 block mb-1">{t('table.product')}</span>
