@@ -390,12 +390,9 @@ export default function CreateStock() {
     // Update quantity placeholder based on has_shtuk or has_metr
     if (field.name === 'quantity') {
       let placeholder = field.placeholder;
-      let label = field.label
       if (selectedProduct?.has_shtuk) {
-        label =  t('common.enter_quantity') || 'Введите штук';
         placeholder = t('common.enter_quantity') || 'Введите штук';
       } else if (selectedProduct?.has_metr) {
-        label =  t('common.enter_quantity') || 'Введите метр';
         placeholder = 'Введите метр';
       }
       return {
