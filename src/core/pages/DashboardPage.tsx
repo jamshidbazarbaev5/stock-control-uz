@@ -178,8 +178,8 @@ const DashboardPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center min-h-[60vh] bg-white dark:bg-[rgb(17,24,39)]">
+        <span className="text-lg text-gray-500 dark:text-gray-200">{t('loading')}</span>
       </div>
     );
   }

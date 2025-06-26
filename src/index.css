@@ -1,4 +1,4 @@
-  @import "tailwindcss";
+@import "tailwindcss";
   @import "flag-icons/css/flag-icons.min.css";
 
   /* Custom flag for Karakalpak */
@@ -58,7 +58,7 @@
   }
 
   .dark {
-    --background: oklch(0.145 0 0);
+    --background: rgb(17 24 39 / var(--tw-bg-opacity, 1));
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
     --card-foreground: oklch(0.985 0 0);
@@ -136,4 +136,9 @@
     body {
       @apply bg-background text-foreground;
     }
+  }
+
+  .dark body {
+    --tw-bg-opacity: 1;
+    background-color: rgb(17 24 39 / var(--tw-bg-opacity, 1));
   }

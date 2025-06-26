@@ -254,7 +254,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-screen bg-background flex flex-col overflow-x-hidden">
       {/* Mobile Header */}
-      <header className="md:hidden bg-card shadow-sm px-4 py-2 flex items-center justify-between fixed top-0 left-0 right-0 z-50">
+      <header className="md:hidden shadow-sm px-4 py-2 flex items-center justify-between fixed top-0 left-0 right-0 z-50">
         <div className="flex items-center gap-2">
           <div className="font-semibold text-foreground">Stock-control</div>
         </div>
@@ -389,7 +389,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           className={`
           ${mobileMenuOpen ? "block" : "hidden"}
           md:block
-          w-full bg-sidebar shadow-lg
+          w-full shadow-lg
           fixed md:sticky
           top-[3.5rem] md:top-0
           h-[calc(100vh-3.5rem)] md:h-screen
@@ -401,7 +401,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         `}
         >
           {/* Desktop Logo and Language Switcher */}
-          <div className="hidden md:block px-6 py-6 border-b border-sidebar-border bg-sidebar">
+          <div className="hidden md:block px-6 py-6 border-b border-sidebar-border ">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {!isCollapsed && (
@@ -420,7 +420,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Navigation */}
-          <nav className="px-3 py-4 flex flex-col bg-sidebar relative z-50 h-[calc(100vh-6rem)] overflow-y-auto">
+          <nav className="px-3 py-4 flex flex-col  relative z-50 h-[calc(100vh-6rem)] overflow-y-auto">
             {navItems.map((item, index) => (
               <div key={index}>
                 {item.submenu ? (
@@ -436,7 +436,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left mb-1 transition-colors
                         ${
                           activeSubmenu === item.id
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                            ? "-accent text-sidebar-accent-foreground"
                             : "text-sidebar-foreground"
                         }`}
                     >
@@ -539,9 +539,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 transition-all duration-300 overflow-x-auto bg-card">
+        <main className="flex-1 min-w-0 transition-all duration-300 overflow-x-auto ">
           <div className="h-full flex flex-col min-w-[320px]">
-            <div className="bg-card px-4 md:px-6 py-4 flex items-center justify-end gap-4 sticky top-0 z-30 border-b border-border">
+            <div className=" px-4 md:px-6 py-4 flex items-center justify-end gap-4 sticky top-0 z-30 border-b border-border">
               {currentUser?.is_superuser && ( <Dialog open={currencyModalOpen} onOpenChange={setCurrencyModalOpen}>
                   <DialogTrigger asChild>
                     <button

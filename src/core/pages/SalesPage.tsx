@@ -119,7 +119,7 @@ export default function SalesPage() {
         </h3>
         <div className="space-y-3">
           {row.sale_items.map((item, index) => (
-            <div key={index} className=" dark:bg-expanded-row-dark p-4 rounded-lg hover:bg-gray-100 dark:hover:bg-[oklch(0.205_0_0)] transition-all duration-200">
+            <div key={index} className=" dark:bg-expanded-row-dark p-4 rounded-lg transition-all duration-200">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <span className="text-sm text-gray-500 block mb-1">{t('table.product')}</span>
@@ -135,9 +135,11 @@ export default function SalesPage() {
                 <div>
                   <span className="text-sm text-gray-500 block mb-1">{t('table.quantity')}</span>
                   <span className="font-medium">
-                    {item.quantity} {item.selling_method === 'Штук' ? 
-                      t('table.pieces') : 
-                      item.stock_read?.product_read?.measurement?.find((m: { for_sale: boolean; measurement_read?: { measurement_name: string } }) => m.for_sale)?.measurement_read?.measurement_name
+                    {(item.stock_read?.product_read as any)?.has_metr
+                      ? `${item.quantity} метр`
+                      : (item.stock_read?.product_read as any)?.has_shtuk
+                        ? `${item.quantity} штук`
+                        : `${item.quantity} ${item.selling_method === 'Штук' ? t('table.pieces') : item.stock_read?.product_read?.measurement?.find((m: { for_sale: boolean; measurement_read?: { measurement_name: string } }) => m.for_sale)?.measurement_read?.measurement_name || ''}`
                     }
                   </span>
                 </div>
@@ -207,10 +209,17 @@ export default function SalesPage() {
       cell: (row: Sale) => {
         if (!row.sale_items?.length) return '-';
         const quantities = row.sale_items.map(item => {
-          let measurement = item.selling_method === 'Штук'
-            ? t('table.pieces')
-            : item.stock_read?.product_read?.measurement?.find((m: { for_sale: boolean; measurement_read?: { measurement_name: string } }) => m.for_sale)?.measurement_read?.measurement_name || '';
-          return `${item.quantity} ${measurement}`;
+          const product = item.stock_read?.product_read as any;
+          if (product?.has_metr) {
+            return `${item.quantity} метр`;
+          } else if (product?.has_shtuk) {
+            return `${item.quantity} штук`;
+          } else {
+            let measurement = item.selling_method === 'Штук'
+              ? t('table.pieces')
+              : product?.measurement?.find((m: { for_sale: boolean; measurement_read?: { measurement_name: string } }) => m.for_sale)?.measurement_read?.measurement_name || '';
+            return `${item.quantity} ${measurement}`;
+          }
         }).join(' • ');
         return (
           <div className="max-w-[200px]">
