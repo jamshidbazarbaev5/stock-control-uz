@@ -396,8 +396,7 @@ export default function EditStock() {
       let placeholder = field.placeholder;
       let label = field.label; 
       if (selectedProduct?.has_shtuk) {
-        label = t('common.shtuk')
-        label = t('common.enter_quantity') || 'Введите штук';
+        placeholder = t('common.enter_quantity') || 'Введите штук';
       } else if (selectedProduct?.has_metr) {
         label = 'введите метр';
       }

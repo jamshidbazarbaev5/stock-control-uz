@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ResourceForm } from '../helpers/ResourceForm';
-import type { Stock, CreateStockDTO } from '../api/stock';
+import type { Stock } from '../api/stock';
 import { useCreateStock } from '../api/stock';
 import {  useCreateProduct } from '../api/product';
 import { useGetStores } from '../api/store';
