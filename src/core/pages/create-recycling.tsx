@@ -376,18 +376,24 @@ export default function CreateRecycling() {
 
   const handleSubmit = async (data: FormValues) => {
     try {
+      // Calculate purchase_price_uzs as selling_price * get_amount
+      const sellingPrice = Number(data.selling_price);
+      const getAmount = Number(data.get_amount);
+      const purchase_price_in_uz = sellingPrice * getAmount;
+
       const formattedData:any = {
         from_to: Number(data.from_to),
         to_product: Number(data.to_product),
         store: Number(data.store),
-        selling_price: Number(data.selling_price),
+        selling_price: sellingPrice,
         min_price: Number(data.min_price),
         spent_amount: String(data.spent_amount || ''),
         get_amount: String(data.get_amount || ''),
         date_of_recycle: data.date_of_recycle || '',
         // purchase_price_in_us: Number(data.purchase_price_in_us),
         exchange_rate: Number(data.exchange_rate),
-        purchase_price_in_uz: Number(data.purchase_price_in_uz),
+        // purchase_price_in_uz: Number(data.purchase_price_in_uz),
+        purchase_price_in_uz, // <-- add calculated value to API payload
       };
 
       await createRecycling.mutateAsync(formattedData);
