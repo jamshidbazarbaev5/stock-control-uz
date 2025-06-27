@@ -816,7 +816,7 @@ export default function CreateSale() {
                                 }}
                               
                                 className="flex-1"
-                                autoFocus
+                                // autoFocus
                               />
                             </div>
                             {filteredStocks
@@ -1120,7 +1120,7 @@ export default function CreateSale() {
                           // onClick={(e) => e.stopPropagation()}
                           // onKeyDown={(e) => e.stopPropagation()}
                           className="flex-1"
-                          autoFocus
+                          // autoFocus
                         />
                       </div>
                       <div className="max-h-[200px] overflow-y-auto">
