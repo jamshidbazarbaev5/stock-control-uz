@@ -45,20 +45,6 @@ import { addDays } from 'date-fns';
 import React from 'react';
 import { type User } from '../api/user';
 
-interface ExtendedUser extends User {
-  store_read?: {
-    id: number;
-    name: string;
-    address: string;
-    phone_number: string;
-    budget: string;
-    created_at: string;
-    is_main: boolean;
-    parent_store: number | null;
-    owner: number;
-  };
-}
-
 interface FormSaleItem {
   stock_write: number;
   selling_method: 'Штук' | 'Ед.измерения';
@@ -108,8 +94,8 @@ export default function CreateSale() {
     currentUser?.store_read?.id || null
   );
   const [selectedStocks, setSelectedStocks] = useState<Record<number, number>>({});
-  const [selectedPrices, setSelectedPrices] = useState<Record<number, { 
-    min: number; 
+  const [selectedPrices, setSelectedPrices] = useState<Record<number, {
+    min: number;
     selling: number;
     purchasePrice: number; // Add purchase price
     profit: number;        // Add profit tracking
@@ -157,11 +143,11 @@ export default function CreateSale() {
       form.setValue('sold_by', currentUser.id);
     }
   }, [isAdmin, currentUser?.store_read?.id, currentUser?.id]);
-  
+
   // Fetch data with search term for stocks
   const { data: storesData, isLoading: storesLoading } = useGetStores({});
-  const { data: clientsData } = useGetClients({ 
-    params: form.watch('on_credit') ? { name: searchTerm } : undefined 
+  const { data: clientsData } = useGetClients({
+    params: form.watch('on_credit') ? { name: searchTerm } : undefined
   });
   const createSale = useCreateSale();
   // Remove the filter to show all clients
@@ -232,11 +218,11 @@ export default function CreateSale() {
 
       const currentSaleItems = form.getValues('sale_items');
       if (!currentSaleItems || currentSaleItems.length === 0) {
-        form.setValue('sale_items', [{ 
-          stock_write: 0, 
-          quantity: 1, 
-          selling_method: 'Штук' as 'Штук', 
-          subtotal: '0' 
+        form.setValue('sale_items', [{
+          stock_write: 0,
+          quantity: 1,
+          selling_method: 'Штук' as 'Штук',
+          subtotal: '0'
         }]);
       }
 
@@ -251,7 +237,7 @@ export default function CreateSale() {
 
           // Force a re-render to ensure the filtered stocks are updated
           forceRender({});
-          
+
           // Need to directly manipulate the DOM select element to force selection
           setTimeout(() => {
             // Set the stock in the form
@@ -295,7 +281,7 @@ export default function CreateSale() {
           }
         } else if (productId) {
           // Find stocks with this product that have quantity > 0
-          const stocksWithProduct = stocks.filter(stock => 
+          const stocksWithProduct = stocks.filter(stock =>
             stock.product_read?.id === Number(productId) && stock.quantity > 0
           );
 
@@ -326,15 +312,15 @@ export default function CreateSale() {
     }
   };
 
-  
+
   const handleStockSelection = (value: string, index: any) => {
     const stockId = parseInt(value, 10);
     const selectedStock = stocks.find(stock => stock.id === stockId);
-    
+
     console.log('Stock selected:', stockId, selectedStock?.product_read?.product_name);
 
     if (!selectedStock) return;
-    
+
     if (selectedStock.store_read?.id && selectedStock.store_read.id !== selectedStore) {
       console.log('Updating store from stock selection:', selectedStock.store_read.id);
       setSelectedStore(selectedStock.store_read.id);
@@ -384,16 +370,16 @@ export default function CreateSale() {
       const thickness = getNumber('Толщина');
       const meter = getNumber('Метр');
       const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
-      const purchasePriceInUs= parseFloat(selectedStock.purchase_price_in_us || '0');
+      const purchasePriceInUs = parseFloat(selectedStock.purchase_price_in_us || '0');
       // const purchasePriceInUs  = purchasePriceInUss / 10;
       const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
       profit = sellingPrice - PROFIT_FAKE;
     } else {
       // Standard profit calculation
-      const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
-      const stockQuantity = selectedStock.quantity_for_history || selectedStock.quantity || 1;
-      const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
-      profit = (sellingPrice - purchasePricePerUnit);
+      const totalPurchasePriceStandard = parseFloat(selectedStock.purchase_price_in_uz || '0');
+      const stockQuantityStandard = selectedStock.quantity_for_history || selectedStock.quantity || 1;
+      const purchasePricePerUnitStandard = totalPurchasePriceStandard / stockQuantityStandard;
+      profit = (sellingPrice - purchasePricePerUnitStandard);
     }
     // --- END PROFIT_FAKE logic ---
 
@@ -402,7 +388,7 @@ export default function CreateSale() {
       [index]: {
         min: minPrice,
         selling: sellingPrice,
-        purchasePrice: 0, // not used for recycling
+        purchasePrice: purchasePricePerUnit, // Store purchase price per unit
         profit: profit
       }
     }));
@@ -429,7 +415,14 @@ export default function CreateSale() {
         let profit = 0;
         const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
         if (recyclingRecord) {
-          profit = calculateRecyclingProfit(recyclingRecord, value);
+            // The profit logic for recycling items on subtotal change is handled in `handleSubtotalChange`.
+            // Here, we can recalculate based on the already computed profit-per-unit.
+            const originalSubtotal = selectedPrices[index].selling;
+            const currentSubtotal = parseFloat(form.getValues(`sale_items.${index}.subtotal`)) || originalSubtotal;
+            const baseProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1);
+            const priceDifference = currentSubtotal - originalSubtotal;
+            const newProfitPerUnit = baseProfitPerUnit + priceDifference;
+            profit = newProfitPerUnit * value;
         } else if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
           // PROFIT_FAKE logic
           const measurements = selectedStock.product_read.measurement || [];
@@ -442,7 +435,7 @@ export default function CreateSale() {
           const meter = getNumber('Метр');
           const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
           const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
-          const purchasePriceInUs  = purchasePriceInUss ;
+          const purchasePriceInUs = purchasePriceInUss;
           const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
           const sellingPrice = parseFloat(selectedStock.selling_price || '0');
           profit = (sellingPrice - PROFIT_FAKE) * value;
@@ -469,49 +462,67 @@ export default function CreateSale() {
   const handleSubtotalChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const newValue = e.target.value.replace(/[^0-9]/g, '');
     const quantity = form.getValues(`sale_items.${index}.quantity`) || 1;
-    const subtotal = parseFloat(newValue) || 0;
+    const newSubtotal = parseFloat(newValue) || 0;
     const stockId = form.getValues(`sale_items.${index}.stock_write`);
     const selectedStock = stocks.find(stock => stock.id === stockId);
 
     // Calculate profit if we have price information
     if (selectedPrices[index] && selectedStock) {
-      let profit = 0;
-      const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
-      if (recyclingRecord) {
-        profit = calculateRecyclingProfit(recyclingRecord, quantity);
-      } else if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
-        // PROFIT_FAKE logic
-        const measurements = selectedStock.product_read.measurement || [];
-        const getNumber = (name: string) => {
-          const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
-          return m ? parseFloat(m.number) : 1;
-        };
-        const length = getNumber('длина');
-        const thickness = getNumber('Толщина');
-        const meter = getNumber('Метр');
-        const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
-        const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
-        const purchasePriceInUs  = purchasePriceInUss;
-        const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
-        const sellingPrice = subtotal; // Use new subtotal as selling price
-        profit = (sellingPrice - PROFIT_FAKE) * quantity;
-      } else {
-        // Standard profit calculation
-        const { purchasePrice } = selectedPrices[index];
-        profit = (subtotal - purchasePrice) * quantity;
-      }
-      setSelectedPrices(prev => ({
-        ...prev,
-        [index]: {
-          ...prev[index],
-          profit: profit
+        let profit = 0;
+        const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
+
+        if (recyclingRecord) {
+            // New logic for recycling profit calculation based on subtotal change
+            // 1. Calculate the base profit per unit from the recycling record.
+            const baseProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1);
+            
+            // 2. Get the original selling price of the stock item when it was selected.
+            const originalSubtotal = selectedPrices[index].selling;
+            
+            // 3. Calculate the difference caused by the manual subtotal change.
+            const priceDifference = newSubtotal - originalSubtotal;
+            
+            // 4. Adjust the profit and multiply by quantity.
+            const newProfitPerUnit = baseProfitPerUnit + priceDifference;
+            profit = newProfitPerUnit * quantity;
+
+        } else if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
+            // PROFIT_FAKE logic
+            const measurements = selectedStock.product_read.measurement || [];
+            const getNumber = (name: string) => {
+                const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
+                return m ? parseFloat(m.number) : 1;
+            };
+            const length = getNumber('длина');
+            const thickness = getNumber('Толщина');
+            const meter = getNumber('Метр');
+            const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
+            const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
+            const purchasePriceInUs  = purchasePriceInUss;
+            const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
+            // Use the new subtotal from the input as the current selling price
+            profit = (newSubtotal - PROFIT_FAKE) * quantity;
+        } else {
+            // Standard profit calculation (FIXED)
+            // Recalculate purchase price per unit to ensure accuracy
+            const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
+            const stockQuantityForHistory = selectedStock.quantity_for_history || selectedStock.quantity || 1;
+            const purchasePricePerUnit = totalPurchasePrice / stockQuantityForHistory;
+            profit = (newSubtotal - purchasePricePerUnit) * quantity;
         }
-      }));
+        
+        setSelectedPrices(prev => ({
+            ...prev,
+            [index]: {
+                ...prev[index],
+                profit: profit
+            }
+        }));
     }
 
     form.setValue(`sale_items.${index}.subtotal`, newValue);
     updateTotalAmount();
-  };
+};
 
   const handleSubmit = async (data: SaleFormData) => {
     try {
@@ -564,12 +575,15 @@ export default function CreateSale() {
             const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
             if (recyclingRecord) {
               // Use recycling profit calculation
-              profitPerUnit = calculateRecyclingProfit(recyclingRecord, quantity) / quantity;
+              const baseProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1);
+              const originalSubtotal = selectedPrices[index].selling;
+              const priceDifference = subtotal - originalSubtotal;
+              profitPerUnit = baseProfitPerUnit + priceDifference;
               recyclingProfitUsed = true;
             }
           }
-          if (!recyclingProfitUsed) {
-            if (selectedStock?.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
+          if (!recyclingProfitUsed && selectedStock) {
+            if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
               const measurements = selectedStock.product_read.measurement || [];
               const getNumber = (name: string) => {
                 const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
@@ -584,8 +598,8 @@ export default function CreateSale() {
               const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
               profitPerUnit = subtotal - PROFIT_FAKE;
             } else {
-              const totalPurchasePrice = parseFloat(selectedStock?.purchase_price_in_uz || '0');
-              const stockQuantity = selectedStock?.quantity_for_history || selectedStock?.quantity || 1;
+              const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
+              const stockQuantity = selectedStock.quantity_for_history || selectedStock.quantity || 1;
               const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
               profitPerUnit = subtotal - purchasePricePerUnit;
             }
@@ -680,7 +694,7 @@ export default function CreateSale() {
       <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
         {t('common.create')} {t('navigation.sale')}
       </h1>
-      
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
           {/* Store Selection - Only shown for superuser */}
@@ -748,7 +762,7 @@ export default function CreateSale() {
                             const selectedStore = form.watch('store_write');
                             // Cast user to ExtendedUser to access store_read
                             const extendedUser = user as ExtendedUser;
-                            return user.role === 'Продавец' && 
+                            return user.role === 'Продавец' &&
                               (!selectedStore || extendedUser.store_read?.id === selectedStore);
                           })
                           .map((user) => (
@@ -763,7 +777,7 @@ export default function CreateSale() {
               />
             </div>
           )}
-          
+
           {/* Sale Items */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
@@ -813,7 +827,7 @@ export default function CreateSale() {
                                 <SelectItem key={stock.id} value={stock.id?.toString() || ''}>
                                   {stock.product_read?.product_name} ({stock.quantity} {stock.product_read?.measurement_read?.name})
                                 </SelectItem>
-                            ))}
+                              ))}
                           </SelectContent>
                         </Select>
                         {selectedPrices[index] && (
@@ -821,11 +835,11 @@ export default function CreateSale() {
                             <div className="flex items-center justify-between px-2 py-1 bg-gray-50 rounded">
                               {(isAdmin || currentUser?.is_superuser) && (
                                 <>
-                                 <span className="text-gray-600">{t('table.min_price')}:</span>
-                              <span className="font-medium text-red-600">{selectedPrices[index].min}</span>
+                                  <span className="text-gray-600">{t('table.min_price')}:</span>
+                                  <span className="font-medium text-red-600">{selectedPrices[index].min}</span>
                                 </>
                               )}
-                             
+
                             </div>
                             {(isAdmin || currentUser?.is_superuser) && (
                               <div className="flex items-center justify-between px-2 py-1 bg-green-50 rounded">
@@ -918,7 +932,7 @@ export default function CreateSale() {
                     className="mt-2 sm:mt-8"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 6L6 18M6 6l12 12"/>
+                      <path d="M18 6L6 18M6 6l12 12" />
                     </svg>
                   </Button>
                 )}
@@ -948,7 +962,7 @@ export default function CreateSale() {
                           <SelectItem value="Наличные">{t('payment.cash')}</SelectItem>
                           <SelectItem value="Click">{t('payment.click')}</SelectItem>
                           <SelectItem value="Карта">{t('payment.card')}</SelectItem>
-                           <SelectItem value="Перечисление">{t('payment.per')}</SelectItem>
+                          <SelectItem value="Перечисление">{t('payment.per')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormItem>
@@ -970,13 +984,13 @@ export default function CreateSale() {
                             const otherPaymentsTotal = form.watch('sale_payments')
                               .filter((_, i) => i !== index)
                               .reduce((sum, p) => sum + (p.amount || 0), 0);
-                            
+
                             // Debug logs
                             console.log('--- Payment Change Debug ---');
                             console.log('newAmount:', newAmount);
                             console.log('otherPaymentsTotal:', otherPaymentsTotal);
                             console.log('totalAmount:', totalAmount);
-                            
+
                             // Update payment amount
                             if (newAmount + otherPaymentsTotal > totalAmount) {
                               onChange(totalAmount - otherPaymentsTotal);
@@ -1009,7 +1023,7 @@ export default function CreateSale() {
                     className="mt-0 sm:mt-1"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 6L6 18M6 6l12 12"/>
+                      <path d="M18 6L6 18M6 6l12 12" />
                     </svg>
                   </Button>
                 )}
@@ -1023,7 +1037,7 @@ export default function CreateSale() {
                 const totalAmount = parseFloat(form.watch('total_amount'));
                 const currentTotal = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
                 const remaining = totalAmount - currentTotal;
-                
+
                 if (remaining > 0) {
                   payments.push({ payment_method: 'Наличные', amount: remaining });
                   form.setValue('sale_payments', payments);
@@ -1163,8 +1177,8 @@ export default function CreateSale() {
                     <FormItem>
                       <FormLabel>{t('table.deposit')}</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           placeholder="0"
                           {...field}
                           onChange={(e) => field.onChange(e.target.valueAsNumber)}
@@ -1212,12 +1226,15 @@ export default function CreateSale() {
                           if (selectedStock && recyclingData) {
                             const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
                             if (recyclingRecord) {
-                              // Use recycling profit calculation
-                              profitPerUnit = calculateRecyclingProfit(recyclingRecord, quantity) / quantity;
+                              // Use recycling profit calculation consistent with handleSubmit
+                              const baseProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1);
+                              const originalSubtotal = selectedPrices[index].selling;
+                              const priceDifference = subtotal - originalSubtotal;
+                              profitPerUnit = baseProfitPerUnit + priceDifference;
                               recyclingProfitUsed = true;
                             }
                           }
-                          if (!recyclingProfitUsed) {
+                          if (!recyclingProfitUsed && selectedStock) {
                             if (selectedStock?.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
                               const measurements = selectedStock.product_read.measurement || [];
                               const getNumber = (name: string) => {
@@ -1252,9 +1269,9 @@ export default function CreateSale() {
             </div>
           </div>
 
-          <Button 
-            type="submit" 
-            className="w-full mt-4 sm:mt-6 h-10 sm:h-12 text-base sm:text-lg font-medium" 
+          <Button
+            type="submit"
+            className="w-full mt-4 sm:mt-6 h-10 sm:h-12 text-base sm:text-lg font-medium"
             disabled={createSale.isPending}
           >
             {createSale.isPending ? t('common.creating') : t('common.create')}
