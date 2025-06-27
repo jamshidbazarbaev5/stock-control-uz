@@ -263,16 +263,24 @@ export default function CreateRecycling() {
     fetchExchangeRate();
   }, []);
 
+  const selectedStore = form.watch('store');
   // Update fields with dynamic options
   const fields = recyclingFields(t, productSearchTerm, null)
     .map(field => {
       if (field.name === 'from_to') {
         return {
           ...field,
-          options: stocks.map((stock: any) => ({
-            value: stock.id,
-            label: `${stock.product_read?.product_name} (${stock.quantity || 0})`
-          })).filter((opt: any) => opt.value),
+          options: stocks
+            .filter((stock: any) => {
+              // Allow stocks from selected store or from main store
+              if (!selectedStore) return true;
+              return stock.store_read?.id === Number(selectedStore) || stock.store_read?.is_main;
+            })
+            .map((stock: any) => ({
+              value: stock.id,
+              label: `${stock.product_read?.product_name} (${stock.quantity || 0}) [${stock.store_read?.name}]`
+            }))
+            .filter((opt: any) => opt.value),
           isLoading: loadingStocks
         };
       }
@@ -319,46 +327,31 @@ export default function CreateRecycling() {
 
   // Watch specific fields for changes
   const fromTo = form.watch('from_to');
-  const toProduct = form.watch('to_product');
+  // const toProduct = form.watch('to_product');
   const getAmount = form.watch('get_amount');
   const purchasePriceInUs = form.watch('purchase_price_in_us');
   const exchangeRateField = form.watch('exchange_rate');
 
-  // Helper to validate get_amount
-  function getValidAmount(val: any) {
-    const num = Number(val);
-    if (isNaN(num) || num <= 0) return null;
-    return num;
-  }
-
-  // Auto-calculate selling price when measurements, exchange rate, selling_price_in_us, or get_amount change
+  // Auto-calculate selling price when spent_amount, get_amount, or from_to changes
   useEffect(() => {
-    if (!fromTo || !toProduct) return;
+    if (!fromTo) return;
     const selectedStock = stocks.find(stock => stock.id === Number(fromTo));
-    if (!selectedStock) return;
-    const sellingPriceInUs = selectedStock.selling_price_in_us ? Number(selectedStock.selling_price_in_us) : 0;
-    const ratee = exchangeRate ? Number(exchangeRate) : 1;
-    const rate = ratee /10
-    const getAmt = getValidAmount(getAmount);
-    // Find the selected to_product from allProducts
-    const selectedToProduct = allProducts.find(product => product.id === Number(toProduct));
-    if (!selectedToProduct?.measurement) return;
-    // Multiply all measurement numbers from to_product
-    const measurementProduct = selectedToProduct.measurement.reduce((acc: number, m: { number: number | string }) => acc * Number(m.number), 1);
-    if (measurementProduct && sellingPriceInUs && rate && getAmt) {
-      let calculated = (measurementProduct * rate * sellingPriceInUs) / getAmt;
-      calculated = Math.round((calculated + Number.EPSILON) * 100) / 100; // round to 2 decimal places
-      // Prevent infinite loop
+    // Use selling_price (not selling_price_in_us) for calculation
+    const baseSellingPrice = selectedStock?.selling_price ? Number(selectedStock.selling_price) : 0;
+    const spentAmt = Number(form.watch('spent_amount'));
+    const getAmt = Number(getAmount);
+    if (baseSellingPrice && spentAmt && getAmt) {
+      let calculated = (baseSellingPrice * spentAmt) / getAmt;
+      calculated = Math.round((calculated + Number.EPSILON) * 100) / 100;
       if (!sellingPriceRef.current) {
         form.setValue('selling_price', calculated, { shouldValidate: false, shouldDirty: true });
         sellingPriceRef.current = true;
         setTimeout(() => { sellingPriceRef.current = false; }, 100);
       }
     } else if (!getAmt) {
-      // If get_amount is invalid, clear the selling_price
       form.setValue('selling_price', 0, { shouldValidate: false, shouldDirty: true });
     }
-  }, [fromTo, toProduct, exchangeRate, getAmount, stocks, allProducts, form]);
+  }, [fromTo, getAmount, stocks, form]);
 
   // Watch for changes to from_to and set purchase_price_in_us from stock's selling_price_in_us
   useEffect(() => {
@@ -392,7 +385,7 @@ export default function CreateRecycling() {
         spent_amount: String(data.spent_amount || ''),
         get_amount: String(data.get_amount || ''),
         date_of_recycle: data.date_of_recycle || '',
-        purchase_price_in_us: Number(data.purchase_price_in_us),
+        // purchase_price_in_us: Number(data.purchase_price_in_us),
         exchange_rate: Number(data.exchange_rate),
         purchase_price_in_uz: Number(data.purchase_price_in_uz),
       };
