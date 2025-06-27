@@ -82,7 +82,7 @@ export default function StockPriceHistoryPage() {
         {renderValueCard(
           t('table.quantity'),
           stock.quantity.toString(),
-          stock.history_of_prices.quantity.toString()
+          stock.history_of_prices?.quantity?.toString()
         )}
        
 
