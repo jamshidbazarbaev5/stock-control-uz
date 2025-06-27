@@ -814,9 +814,7 @@ export default function CreateSale() {
                                   e.stopPropagation();
                                   setProductSearchTerm(e.target.value);
                                 }}
-                                onPointerDown={(e) => e.stopPropagation()}
-                                onClick={(e) => e.stopPropagation()}
-                                onKeyDown={(e) => e.stopPropagation()}
+                              
                                 className="flex-1"
                                 autoFocus
                               />
