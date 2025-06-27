@@ -27,6 +27,8 @@ import { useGetUsers, type User } from "../api/user";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { addDays } from "date-fns";
 import { syncSaleEditApis } from "../helpers/diffSaleForApi";
+import { useGetRecyclings } from '@/core/api/recycling';
+import { findRecyclingForStock, calculateRecyclingProfit } from '@/core/helpers/recyclingProfitUtils';
 
 interface FormSaleItem {
   stock_write: number;
@@ -125,6 +127,13 @@ export default function EditSale() {
   });
   const { data: saleData, isLoading: isLoadingSale } = useGetSale(Number(id));
   const updateSale = useUpdateSale();
+  const { data: recyclingData } = useGetRecyclings({});
+
+  // Helper to get recycling record for a stock
+  function getRecyclingRecord(productId: number) {
+    if (!recyclingData) return undefined;
+    return findRecyclingForStock(recyclingData.results, productId);
+  }
 
   // Prepare data arrays
   const stores = Array.isArray(storesData)
@@ -156,10 +165,21 @@ export default function EditSale() {
   }, [productSearchTerm]);
   const stocks = allStocks;
 
-  // Filter stocks by selected store
+  // Filter stocks by selected store, but always include stocks referenced in sale items
   const filteredStocks = useMemo(() => {
-    return stocks.filter((stock) => stock.store_read?.id === selectedStore);
-  }, [stocks, selectedStore]);
+    // Get all stock IDs referenced in the current sale items
+    const selectedStockIds = (form.getValues('sale_items') || []).map(item => item.stock_write).filter(Boolean);
+    // Stocks for the selected store
+    let stocksForStore = stocks.filter((stock) => stock.store_read?.id === selectedStore);
+    // Add any missing stocks referenced in sale items
+    selectedStockIds.forEach(stockId => {
+      if (stockId && !stocksForStore.some(s => s.id === stockId)) {
+        const found = stocks.find(s => s.id === stockId);
+        if (found) stocksForStore = [...stocksForStore, found];
+      }
+    });
+    return stocksForStore;
+  }, [stocks, selectedStore, form]);
 
   // Load sale data for editing
   useEffect(() => {
@@ -202,7 +222,10 @@ export default function EditSale() {
           const minPrice = parseFloat(stock.min_price || "0");
           const quantity = parseFloat(item.quantity);
           let profit = 0;
-          if (stock.product_read?.has_kub) {
+          const recyclingRecord = getRecyclingRecord(stock.product_read.id);
+          if (recyclingRecord) {
+            profit = calculateRecyclingProfit(recyclingRecord, quantity);
+          } else if (stock.product_read?.has_kub) {
             const measurements = stock.product_read.measurement || [];
             const getNumber = (name: string) => {
               const m = measurements.find(
@@ -299,12 +322,12 @@ export default function EditSale() {
     }
   };
 
-  // --- PROFIT LOGIC FROM CREATE-SALE ---
+  // --- PROFIT LOGIC FROM CREATE-SALE (with recycling) ---
   const handleStockSelection = (value: string, index: number) => {
     const stockId = parseInt(value, 10);
     const selectedStock = filteredStocks.find((stock) => stock.id === stockId);
     if (!selectedStock) {
-      console.warn("Selected stock not found:", stockId);
+      console.warn('Selected stock not found:', stockId);
       return;
     }
     if (
@@ -312,7 +335,7 @@ export default function EditSale() {
       selectedStock.store_read.id !== selectedStore
     ) {
       setSelectedStore(selectedStock.store_read.id);
-      form.setValue("store_write", selectedStock.store_read.id);
+      form.setValue('store_write', selectedStock.store_read.id);
       forceRender({});
     }
     setSelectedStocks((prev) => ({
@@ -320,35 +343,27 @@ export default function EditSale() {
       [index]: selectedStock.quantity || 0,
     }));
     // PROFIT LOGIC
-    const totalPurchasePrice = parseFloat(
-      selectedStock.purchase_price_in_uz || "0"
-    );
-    const stockQuantity =
-      selectedStock.quantity_for_history || selectedStock.quantity || 1;
+    const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
+    const stockQuantity = selectedStock.quantity_for_history || selectedStock.quantity || 1;
     const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
-    let minPrice = parseFloat(selectedStock.min_price || "0");
-    let sellingPrice = parseFloat(selectedStock.selling_price || "0");
+    let minPrice = parseFloat(selectedStock.min_price || '0');
+    let sellingPrice = parseFloat(selectedStock.selling_price || '0');
     let profit = 0;
-    if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
+    const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
+    if (recyclingRecord) {
+      profit = calculateRecyclingProfit(recyclingRecord, 1); // default 1 unit
+    } else if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
       const measurements = selectedStock.product_read.measurement || [];
       const getNumber = (name: string) => {
-        const m = measurements.find(
-          (m: any) => m.measurement_read.measurement_name === name
-        );
+        const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
         return m ? parseFloat(m.number) : 1;
       };
-      const length = getNumber("длина");
-      const thickness = getNumber("Толщина");
-      const meter = getNumber("Метр");
-      const exchangeRate = parseFloat(
-        selectedStock.exchange_rate_read?.currency_rate || "1"
-      );
-      const purchasePriceInUss = parseFloat(
-        selectedStock.purchase_price_in_us || "0"
-      );
-      const purchasePriceInUs = purchasePriceInUss ;
-      const PROFIT_FAKE =
-        length * meter * thickness * exchangeRate * purchasePriceInUs;
+      const length = getNumber('длина');
+      const thickness = getNumber('Толщина');
+      const meter = getNumber('Метр');
+      const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
+      const purchasePriceInUs = parseFloat(selectedStock.purchase_price_in_us || '0');
+      const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
       profit = sellingPrice - PROFIT_FAKE;
     } else {
       profit = sellingPrice - purchasePricePerUnit;
@@ -364,7 +379,7 @@ export default function EditSale() {
     }));
     form.setValue(`sale_items.${index}.stock_write`, stockId);
     form.setValue(`sale_items.${index}.subtotal`, sellingPrice.toString());
-    form.setValue(`sale_items.${index}.selling_method`, "Штук" as "Штук");
+    form.setValue(`sale_items.${index}.selling_method`, 'Штук' as 'Штук');
     // Set default quantity if not already set
     if (!form.getValues(`sale_items.${index}.quantity`)) {
       form.setValue(`sale_items.${index}.quantity`, 1);
@@ -378,46 +393,41 @@ export default function EditSale() {
   ) => {
     const value = parseInt(e.target.value, 10);
     const maxQuantity = selectedStocks[index] || 0;
-    const subtotal =
-      parseFloat(form.getValues(`sale_items.${index}.subtotal`)) || 0;
+    const subtotal = parseFloat(form.getValues(`sale_items.${index}.subtotal`)) || 0;
     const stockId = form.getValues(`sale_items.${index}.stock_write`);
     const selectedStock = stocks.find((stock) => stock.id === stockId);
     if (value > maxQuantity) {
-      toast.error(t("messages.error.insufficient_quantity"));
+      toast.error(t('messages.error.insufficient_quantity'));
       form.setValue(`sale_items.${index}.quantity`, maxQuantity);
     } else {
       form.setValue(`sale_items.${index}.quantity`, value);
-      // Recalculate profit with new quantity using quantity_for_history if available
       if (selectedPrices[index] && selectedStock) {
         let profit = 0;
-        if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
+        const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
+        if (recyclingRecord) {
+          const originalSubtotal = selectedPrices[index].selling;
+          const currentSubtotal = parseFloat(form.getValues(`sale_items.${index}.subtotal`)) || originalSubtotal;
+          const baseProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1);
+          const priceDifference = currentSubtotal - originalSubtotal;
+          const newProfitPerUnit = baseProfitPerUnit + priceDifference;
+          profit = newProfitPerUnit * value;
+        } else if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
           const measurements = selectedStock.product_read.measurement || [];
           const getNumber = (name: string) => {
-            const m = measurements.find(
-              (m: any) => m.measurement_read.measurement_name === name
-            );
+            const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
             return m ? parseFloat(m.number) : 1;
           };
-          const length = getNumber("длина");
-          const thickness = getNumber("Толщина");
-          const meter = getNumber("Метр");
-          const exchangeRate = parseFloat(
-            selectedStock.exchange_rate_read?.currency_rate || "1"
-          );
-          const purchasePriceInUss = parseFloat(
-            selectedStock.purchase_price_in_us || "0"
-          );
-          const purchasePriceInUs = purchasePriceInUss ;
-          const PROFIT_FAKE =
-            length * meter * thickness * exchangeRate * purchasePriceInUs;
-          const sellingPrice = parseFloat(selectedStock.selling_price || "0");
+          const length = getNumber('длина');
+          const thickness = getNumber('Толщина');
+          const meter = getNumber('Метр');
+          const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
+          const purchasePriceInUs = parseFloat(selectedStock.purchase_price_in_us || '0');
+          const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
+          const sellingPrice = parseFloat(selectedStock.selling_price || '0');
           profit = (sellingPrice - PROFIT_FAKE) * value;
         } else {
-          const totalPurchasePrice = parseFloat(
-            selectedStock.purchase_price_in_uz || "0"
-          );
-          const stockQuantity =
-            selectedStock.quantity_for_history || selectedStock.quantity || 1;
+          const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
+          const stockQuantity = selectedStock.quantity_for_history || selectedStock.quantity || 1;
           const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
           profit = (subtotal - purchasePricePerUnit) * value;
         }
@@ -437,39 +447,37 @@ export default function EditSale() {
     e: React.ChangeEvent<HTMLInputElement>,
     index: number
   ) => {
-    const newValue = e.target.value.replace(/[^0-9]/g, "");
+    const newValue = e.target.value.replace(/[^0-9]/g, '');
     const quantity = form.getValues(`sale_items.${index}.quantity`) || 1;
-    const subtotal = parseFloat(newValue) || 0;
+    const newSubtotal = parseFloat(newValue) || 0;
     const stockId = form.getValues(`sale_items.${index}.stock_write`);
     const selectedStock = stocks.find((stock) => stock.id === stockId);
     // Calculate profit if we have price information
     if (selectedPrices[index] && selectedStock) {
       let profit = 0;
-      if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
+      const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
+      if (recyclingRecord) {
+        const baseProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1);
+        const originalSubtotal = selectedPrices[index].selling;
+        const priceDifference = newSubtotal - originalSubtotal;
+        const newProfitPerUnit = baseProfitPerUnit + priceDifference;
+        profit = newProfitPerUnit * quantity;
+      } else if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
         const measurements = selectedStock.product_read.measurement || [];
         const getNumber = (name: string) => {
-          const m = measurements.find(
-            (m: any) => m.measurement_read.measurement_name === name
-          );
+          const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
           return m ? parseFloat(m.number) : 1;
         };
-        const length = getNumber("длина");
-        const thickness = getNumber("Толщина");
-        const meter = getNumber("Метр");
-        const exchangeRate = parseFloat(
-          selectedStock.exchange_rate_read?.currency_rate || "1"
-        );
-        const purchasePriceInUss = parseFloat(
-          selectedStock.purchase_price_in_us || "0"
-        );
-        const purchasePriceInUs = purchasePriceInUss ;
-        const PROFIT_FAKE =
-          length * meter * thickness * exchangeRate * purchasePriceInUs;
-        const sellingPrice = subtotal; // Use new subtotal as selling price
-        profit = (sellingPrice - PROFIT_FAKE) * quantity;
+        const length = getNumber('длина');
+        const thickness = getNumber('Толщина');
+        const meter = getNumber('Метр');
+        const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
+        const purchasePriceInUs = parseFloat(selectedStock.purchase_price_in_us || '0');
+        const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
+        profit = (newSubtotal - PROFIT_FAKE) * quantity;
       } else {
         const { purchasePrice } = selectedPrices[index];
-        profit = (subtotal - purchasePrice) * quantity;
+        profit = (newSubtotal - purchasePrice) * quantity;
       }
       setSelectedPrices((prev) => ({
         ...prev,
@@ -497,10 +505,10 @@ export default function EditSale() {
       });
 
       if (hasInvalidPrices) {
-        toast.error(t("messages.error.invalid_price"));
+        toast.error(t('messages.error.invalid_price'));
         return;
       }
-      if (!originalSale) throw new Error("Original sale not loaded");
+      if (!originalSale) throw new Error('Original sale not loaded');
       // Calculate totalProfit (pure revenue)
       const saleItems = data.sale_items;
       const totalPayments = data.sale_payments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
@@ -514,25 +522,37 @@ export default function EditSale() {
           const stockId = item.stock_write;
           const selectedStock = stocks.find(stock => stock.id === stockId);
           let profitPerUnit = 0;
-          if (selectedStock?.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
-            const measurements = selectedStock.product_read.measurement || [];
-            const getNumber = (name: string) => {
-              const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
-              return m ? parseFloat(m.number) : 1;
-            };
-            const length = getNumber('длина');
-            const thickness = getNumber('Толщина');
-            const meter = getNumber('Метр');
-            const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
-            const purchasePriceInUs = parseFloat(selectedStock.purchase_price_in_us || '0');
-            // const purchasePriceInUs = purchasePriceInUss / 10;
-            const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
-            profitPerUnit = subtotal - PROFIT_FAKE;
-          } else {
-            const totalPurchasePrice = parseFloat(selectedStock?.purchase_price_in_uz || '0');
-            const stockQuantity = selectedStock?.quantity_for_history || selectedStock?.quantity || 1;
-            const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
-            profitPerUnit = subtotal - purchasePricePerUnit;
+          let recyclingProfitUsed = false;
+          if (selectedStock && recyclingData) {
+            const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
+            if (recyclingRecord) {
+              const baseProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1);
+              const originalSubtotal = selectedPrices[index].selling;
+              const priceDifference = subtotal - originalSubtotal;
+              profitPerUnit = baseProfitPerUnit + priceDifference;
+              recyclingProfitUsed = true;
+            }
+          }
+          if (!recyclingProfitUsed && selectedStock) {
+            if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
+              const measurements = selectedStock.product_read.measurement || [];
+              const getNumber = (name: string) => {
+                const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
+                return m ? parseFloat(m.number) : 1;
+              };
+              const length = getNumber('длина');
+              const thickness = getNumber('Толщина');
+              const meter = getNumber('Метр');
+              const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
+              const purchasePriceInUs = parseFloat(selectedStock.purchase_price_in_us || '0');
+              const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
+              profitPerUnit = subtotal - PROFIT_FAKE;
+            } else {
+              const totalPurchasePrice = parseFloat(selectedStock?.purchase_price_in_uz || '0');
+              const stockQuantity = selectedStock?.quantity_for_history || selectedStock?.quantity || 1;
+              const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
+              profitPerUnit = subtotal - purchasePricePerUnit;
+            }
           }
           const paidShare = totalAmount > 0 ? (itemTotal / totalAmount) * totalPayments : itemTotal;
           const itemCost = (itemTotal - (profitPerUnit * quantity));
@@ -562,12 +582,12 @@ export default function EditSale() {
         editedSale,
       });
       toast.success(
-        t("messages.success.updated", { item: t("navigation.sale") })
+        t('messages.success.updated', { item: t('navigation.sale') })
       );
-      navigate("/sales");
+      navigate('/sales');
     } catch (error) {
-      console.error("Error updating sale:", error);
-      toast.error(t("messages.error_updating"));
+      console.error('Error updating sale:', error);
+      toast.error(t('messages.error_updating'));
     }
   };
 
@@ -899,7 +919,7 @@ export default function EditSale() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm font-medium">
-                          {t("table.total_amount")}
+                          {t("table.subtotal")}
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -1251,50 +1271,54 @@ export default function EditSale() {
                             (stock) => stock.id === stockId
                           );
                           let profitPerUnit = 0;
-                          if (selectedStock?.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
-                            const measurements =
-                              selectedStock.product_read.measurement || [];
-                            const getNumber = (name: string) => {
-                              const m = measurements.find(
-                                (m: any) =>
-                                  m.measurement_read.measurement_name === name
-                              );
-                              return m ? parseFloat(m.number) : 1;
-                            };
-                            const length = getNumber("длина");
-                            const thickness = getNumber("Толщина");
-                            const meter = getNumber("Метр");
-                            const exchangeRate = parseFloat(
-                              selectedStock.exchange_rate_read?.currency_rate || "1"
-                            );
-                            const purchasePriceInUss = parseFloat(
-                              selectedStock.purchase_price_in_us || "0"
-                            );
-                            const purchasePriceInUs = purchasePriceInUss;
-                            const PROFIT_FAKE =
-                              length *
-                              meter *
-                              thickness *
-                              exchangeRate *
-                              purchasePriceInUs;
-                            profitPerUnit = subtotal - PROFIT_FAKE;
-                          } else {
-                            const totalPurchasePrice = parseFloat(
-                              selectedStock?.purchase_price_in_uz || "0"
-                            );
-                            const stockQuantity =
-                              selectedStock?.quantity_for_history ||
-                              selectedStock?.quantity ||
-                              1;
-                            const purchasePricePerUnit =
-                              totalPurchasePrice / stockQuantity;
-                            profitPerUnit = subtotal - purchasePricePerUnit;
+                          let recyclingProfitUsed = false;
+                          if (selectedStock && recyclingData) {
+                            const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
+                            if (recyclingRecord) {
+                              const baseProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1);
+                              const originalSubtotal = selectedPrices[index].selling;
+                              const priceDifference = subtotal - originalSubtotal;
+                              profitPerUnit = baseProfitPerUnit + priceDifference;
+                              recyclingProfitUsed = true;
+                            }
                           }
-                          const paidShare =
-                            totalAmount > 0
-                              ? (itemTotal / totalAmount) * totalPayments
-                              : itemTotal;
-                          const itemCost = itemTotal - profitPerUnit * quantity;
+                          if (!recyclingProfitUsed && selectedStock) {
+                            if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
+                              const measurements =
+                                selectedStock.product_read.measurement || [];
+                              const getNumber = (name: string) => {
+                                const m = measurements.find(
+                                  (m: any) =>
+                                    m.measurement_read.measurement_name === name
+                                );
+                                return m ? parseFloat(m.number) : 1;
+                              };
+                              const length = getNumber("длина");
+                              const thickness = getNumber("Толщина");
+                              const meter = getNumber("Метр");
+                              const exchangeRate = parseFloat(
+                                selectedStock.exchange_rate_read?.currency_rate || "1"
+                              );
+                              const purchasePriceInUss = parseFloat(
+                                selectedStock.purchase_price_in_us || "0"
+                              );
+                              const purchasePriceInUs = purchasePriceInUss;
+                              const PROFIT_FAKE =
+                                length *
+                                meter *
+                                thickness *
+                                exchangeRate *
+                                purchasePriceInUs;
+                              profitPerUnit = subtotal - PROFIT_FAKE;
+                            } else {
+                              const totalPurchasePrice = parseFloat(selectedStock?.purchase_price_in_uz || '0');
+                              const stockQuantity = selectedStock?.quantity_for_history || selectedStock?.quantity || 1;
+                              const purchasePricePerUnit = totalPurchasePrice / stockQuantity;
+                              profitPerUnit = subtotal - purchasePricePerUnit;
+                            }
+                          }
+                          const paidShare = totalAmount > 0 ? (itemTotal / totalAmount) * totalPayments : itemTotal;
+                          const itemCost = (itemTotal - (profitPerUnit * quantity));
                           totalProfit += paidShare - itemCost;
                         }
                       });

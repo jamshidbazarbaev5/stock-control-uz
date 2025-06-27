@@ -483,6 +483,7 @@
     "complex": "Сложная оплата"
   },
   "table": {
+    "subtotal": "Сумма за единицу",
     "profit":"Прибыль",
     "total_pure_revenue":"чистый доход",
     "total_volume":"Общий объем куба",
