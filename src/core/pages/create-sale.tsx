@@ -384,8 +384,8 @@ export default function CreateSale() {
       const thickness = getNumber('Толщина');
       const meter = getNumber('Метр');
       const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
-      const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
-      const purchasePriceInUs  = purchasePriceInUss / 10;
+      const purchasePriceInUs= parseFloat(selectedStock.purchase_price_in_us || '0');
+      // const purchasePriceInUs  = purchasePriceInUss / 10;
       const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
       profit = sellingPrice - PROFIT_FAKE;
     } else {
@@ -442,7 +442,7 @@ export default function CreateSale() {
           const meter = getNumber('Метр');
           const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
           const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
-          const purchasePriceInUs  = purchasePriceInUss / 10;
+          const purchasePriceInUs  = purchasePriceInUss ;
           const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
           const sellingPrice = parseFloat(selectedStock.selling_price || '0');
           profit = (sellingPrice - PROFIT_FAKE) * value;
@@ -491,7 +491,7 @@ export default function CreateSale() {
         const meter = getNumber('Метр');
         const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
         const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
-        const purchasePriceInUs  = purchasePriceInUss / 10;
+        const purchasePriceInUs  = purchasePriceInUss;
         const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
         const sellingPrice = subtotal; // Use new subtotal as selling price
         profit = (sellingPrice - PROFIT_FAKE) * quantity;
@@ -580,7 +580,7 @@ export default function CreateSale() {
               const meter = getNumber('Метр');
               const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
               const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
-              const purchasePriceInUs = purchasePriceInUss / 10;
+              const purchasePriceInUs = purchasePriceInUss;
               const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
               profitPerUnit = subtotal - PROFIT_FAKE;
             } else {
@@ -1229,7 +1229,7 @@ export default function CreateSale() {
                               const meter = getNumber('Метр');
                               const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
                               const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
-                              const purchasePriceInUs = purchasePriceInUss / 10;
+                              const purchasePriceInUs = purchasePriceInUss;
                               const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
                               profitPerUnit = subtotal - PROFIT_FAKE;
                             } else {

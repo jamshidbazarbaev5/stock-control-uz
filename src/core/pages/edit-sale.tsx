@@ -219,7 +219,7 @@ export default function EditSale() {
             const purchasePriceInUss = parseFloat(
               stock.purchase_price_in_us || "0"
             );
-            const purchasePriceInUs = purchasePriceInUss / 10;
+            const purchasePriceInUs = purchasePriceInUss ;
             const PROFIT_FAKE =
               length * meter * thickness * exchangeRate * purchasePriceInUs;
             const subtotal = parseFloat(item.subtotal) || 0;
@@ -346,7 +346,7 @@ export default function EditSale() {
       const purchasePriceInUss = parseFloat(
         selectedStock.purchase_price_in_us || "0"
       );
-      const purchasePriceInUs = purchasePriceInUss / 10;
+      const purchasePriceInUs = purchasePriceInUss ;
       const PROFIT_FAKE =
         length * meter * thickness * exchangeRate * purchasePriceInUs;
       profit = sellingPrice - PROFIT_FAKE;
@@ -407,7 +407,7 @@ export default function EditSale() {
           const purchasePriceInUss = parseFloat(
             selectedStock.purchase_price_in_us || "0"
           );
-          const purchasePriceInUs = purchasePriceInUss / 10;
+          const purchasePriceInUs = purchasePriceInUss ;
           const PROFIT_FAKE =
             length * meter * thickness * exchangeRate * purchasePriceInUs;
           const sellingPrice = parseFloat(selectedStock.selling_price || "0");
@@ -462,7 +462,7 @@ export default function EditSale() {
         const purchasePriceInUss = parseFloat(
           selectedStock.purchase_price_in_us || "0"
         );
-        const purchasePriceInUs = purchasePriceInUss / 10;
+        const purchasePriceInUs = purchasePriceInUss ;
         const PROFIT_FAKE =
           length * meter * thickness * exchangeRate * purchasePriceInUs;
         const sellingPrice = subtotal; // Use new subtotal as selling price
@@ -524,8 +524,8 @@ export default function EditSale() {
             const thickness = getNumber('Толщина');
             const meter = getNumber('Метр');
             const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
-            const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
-            const purchasePriceInUs = purchasePriceInUss / 10;
+            const purchasePriceInUs = parseFloat(selectedStock.purchase_price_in_us || '0');
+            // const purchasePriceInUs = purchasePriceInUss / 10;
             const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
             profitPerUnit = subtotal - PROFIT_FAKE;
           } else {
@@ -1270,7 +1270,7 @@ export default function EditSale() {
                             const purchasePriceInUss = parseFloat(
                               selectedStock.purchase_price_in_us || "0"
                             );
-                            const purchasePriceInUs = purchasePriceInUss / 10;
+                            const purchasePriceInUs = purchasePriceInUss;
                             const PROFIT_FAKE =
                               length *
                               meter *
