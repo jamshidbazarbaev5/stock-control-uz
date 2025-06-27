@@ -288,8 +288,8 @@ export default function CreateStock() {
         const num = parseFloat(m.number);
         return !isNaN(num) ? acc * num : acc;
       }, 1);
-      const exchangeRatee= parseFloat(form.watch('exchange_rate')?.toString() || currency?.currency_rate || '0');
-      const exchangeRate = exchangeRatee / 10
+      const exchangeRate= parseFloat(form.watch('exchange_rate')?.toString() || currency?.currency_rate || '0');
+      // const exchangeRate = exchangeRatee / 10
       const sellingPriceUs = parseFloat(form.watch('selling_price_us')?.toString() || '0');
       const purchasePriceUs = parseFloat(form.watch('purchase_price_in_us')?.toString() || '0');
       if (!isNaN(baseValue) && !isNaN(exchangeRate) && !isNaN(sellingPriceUs) && !isNaN(purchasePriceUs)) {

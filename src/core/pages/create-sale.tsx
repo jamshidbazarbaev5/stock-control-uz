@@ -465,6 +465,7 @@ export default function CreateSale() {
     updateTotalAmount();
   };
 
+
   const handleSubtotalChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const newValue = e.target.value.replace(/[^0-9]/g, '');
     const quantity = form.getValues(`sale_items.${index}.quantity`) || 1;
