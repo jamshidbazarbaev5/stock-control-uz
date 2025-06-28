@@ -815,6 +815,14 @@ export default function CreateSale() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm font-medium">{t('table.product')}</FormLabel>
+                        <input
+                          type="text"
+                          placeholder={t('placeholders.search_products')}
+                          value={productSearchTerm}
+                          onChange={(e) => handleMobileSearch(e.target.value, setProductSearchTerm)}
+                          className="flex-1 mb-2 w-full border rounded px-2 py-1"
+                          autoComplete="off"
+                        />
                         <Select
                           value={field.value?.toString()}
                           onValueChange={(value) => handleStockSelection(value, index)}
@@ -832,16 +840,7 @@ export default function CreateSale() {
                             }}
                           >
                             <div className="mobile-select-wrapper">
-                              <div className="p-2 sticky top-0 bg-white z-10 border-b select-content-wrapper">
-                                <input
-                                  type="text"
-                                  placeholder={t('placeholders.search_products')}
-                                  value={productSearchTerm}
-                                  onChange={(e) => handleMobileSearch(e.target.value, setProductSearchTerm)}
-                                  className="flex-1"
-                                  autoComplete="off"
-                                />
-                              </div>
+                              {/* No search input here anymore */}
                               {filteredStocks
                                 .filter(stock => stock.quantity > 0)
                                 .map((stock) => (
