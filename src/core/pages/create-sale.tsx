@@ -833,7 +833,7 @@ export default function CreateSale() {
                           >
                             <div className="mobile-select-wrapper">
                               <div className="p-2 sticky top-0 bg-white z-10 border-b select-content-wrapper">
-                                <Input
+                                <input
                                   type="text"
                                   placeholder={t('placeholders.search_products')}
                                   value={productSearchTerm}
