@@ -539,6 +539,12 @@ export default function CreateSale() {
         return;
       }
 
+      // Validate sold_by for superuser/admin
+      if ((isSuperUser || isAdmin) && !data.sold_by) {
+        toast.error(t('validation.required', { field: t('table.seller') }));
+        return;
+      }
+
       // Validate all items meet minimum price requirements
       const hasInvalidPrices = data.sale_items.some((item, index) => {
         if (selectedPrices[index]) {
@@ -613,7 +619,7 @@ export default function CreateSale() {
 
       const formattedData: Sale = {
         store: data.store_write,
-        ...(isAdmin ? { sold_by: data.sold_by } : {}),
+        ...(isAdmin || isSuperUser ? { sold_by: data.sold_by } : {}),
         payment_method: primaryPayment?.payment_method || 'Наличные',
         sale_items: data.sale_items.map(item => ({
           stock_write: item.stock_write,
