@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
@@ -42,7 +42,6 @@ import { useGetUsers } from '../api/user';
 import { useCreateSale, type Sale } from '@/core/api/sale';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { addDays } from 'date-fns';
-import React from 'react';
 import { type User } from '../api/user';
 
 interface FormSaleItem {
@@ -689,6 +688,26 @@ export default function CreateSale() {
     return findRecyclingForStock(recyclingData.results, productId);
   };
 
+  // Add isMobile state and handleMobileSearch
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  const handleMobileSearch = (value: string, setter: (value: string) => void) => {
+    if (isMobile) {
+      setTimeout(() => {
+        setter(value);
+      }, 50);
+    } else {
+      setter(value);
+    }
+  };
+
   return (
     <div className="container mx-auto py-4 sm:py-8 px-2 sm:px-4">
       <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
@@ -804,28 +823,43 @@ export default function CreateSale() {
                           <SelectTrigger className={form.formState.errors.sale_items?.[index]?.stock_write ? "border-red-500" : ""}>
                             <SelectValue placeholder={t('placeholders.select_product')} />
                           </SelectTrigger>
-                          <SelectContent>
-                            <div className="p-2 sticky top-0 bg-white z-10 border-b select-content-wrapper">
-                              <Input
-                                type="text"
-                                placeholder={t('placeholders.search_products')}
-                                value={productSearchTerm}
-                                onChange={(e) => {
-                                  e.stopPropagation();
-                                  setProductSearchTerm(e.target.value);
-                                }}
-                              
-                                className="flex-1"
-                                // autoFocus
-                              />
+                          <SelectContent
+                            onPointerDownOutside={(e) => {
+                              const target = e.target as Node;
+                              const selectContent = document.querySelector('.select-content-wrapper');
+                              if (selectContent && selectContent.contains(target)) {
+                                e.preventDefault();
+                              }
+                            }}
+                          >
+                            <div className="mobile-select-wrapper">
+                              <div className="p-2 sticky top-0 bg-white z-10 border-b select-content-wrapper">
+                                <Input
+                                  type="text"
+                                  placeholder={t('placeholders.search_products')}
+                                  value={productSearchTerm}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    handleMobileSearch(e.target.value, setProductSearchTerm);
+                                  }}
+                                  onPointerDown={(e) => e.stopPropagation()}
+                                  onTouchStart={(e) => e.stopPropagation()}
+                                  onTouchEnd={(e) => e.stopPropagation()}
+                                  onTouchMove={(e) => e.stopPropagation()}
+                                  onFocus={(e) => e.stopPropagation()}
+                                  onBlur={(e) => e.stopPropagation()}
+                                  className="flex-1"
+                                  autoComplete="off"
+                                />
+                              </div>
+                              {filteredStocks
+                                .filter(stock => stock.quantity > 0)
+                                .map((stock) => (
+                                  <SelectItem key={stock.id} value={stock.id?.toString() || ''}>
+                                    {stock.product_read?.product_name} ({stock.quantity} {stock.product_read?.measurement_read?.name})
+                                  </SelectItem>
+                                ))}
                             </div>
-                            {filteredStocks
-                              .filter(stock => stock.quantity > 0)
-                              .map((stock) => (
-                                <SelectItem key={stock.id} value={stock.id?.toString() || ''}>
-                                  {stock.product_read?.product_name} ({stock.quantity} {stock.product_read?.measurement_read?.name})
-                                </SelectItem>
-                              ))}
                           </SelectContent>
                         </Select>
                         {selectedPrices[index] && (
@@ -1099,44 +1133,51 @@ export default function CreateSale() {
                     <SelectTrigger>
                       <SelectValue placeholder={t('placeholders.select_client')} />
                     </SelectTrigger>
-                    <SelectContent onPointerDownOutside={(e) => {
-                      // Prevent dropdown from closing when clicking inside it
-                      const target = e.target as Node;
-                      const selectContent = document.querySelector('.select-content-wrapper');
-                      if (selectContent && selectContent.contains(target)) {
-                        e.preventDefault();
-                      }
-                    }}>
-                      <div className="p-2 sticky top-0 bg-white z-10 border-b select-content-wrapper">
-                        <Input
-                          type="text"
-                          placeholder={`Search clients...`}
-                          value={searchTerm}
-                          onChange={(e) => {
-                            e.stopPropagation();
-                            setSearchTerm(e.target.value);
-                          }}
-                          // onPointerDown={(e) => e.stopPropagation()}
-                          // onClick={(e) => e.stopPropagation()}
-                          // onKeyDown={(e) => e.stopPropagation()}
-                          className="flex-1"
-                          // autoFocus
-                        />
-                      </div>
-                      <div className="max-h-[200px] overflow-y-auto">
-                        {clients && clients.length > 0 ? (
-                          clients
-                            .filter(client => form.watch('on_credit') ? true : client.type === 'Юр.лицо')
-                            .map((client) => (
-                              <SelectItem key={client.id} value={client.id?.toString() || ''}>
-                                {client.name} {client.type !== 'Юр.лицо' && `(${client.type})`}
-                              </SelectItem>
-                            ))
-                        ) : (
-                          <div className="p-2 text-center text-gray-500 text-sm">
-                            No clients found
-                          </div>
-                        )}
+                    <SelectContent
+                      onPointerDownOutside={(e) => {
+                        // Prevent dropdown from closing when clicking inside it
+                        const target = e.target as Node;
+                        const selectContent = document.querySelector('.select-content-wrapper');
+                        if (selectContent && selectContent.contains(target)) {
+                          e.preventDefault();
+                        }
+                      }}
+                    >
+                      <div className="mobile-select-wrapper">
+                        <div className="p-2 sticky top-0 bg-white z-10 border-b select-content-wrapper">
+                          <Input
+                            type="text"
+                            placeholder={`Search clients...`}
+                            value={searchTerm}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleMobileSearch(e.target.value, setSearchTerm);
+                            }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
+                            onTouchEnd={(e) => e.stopPropagation()}
+                            onTouchMove={(e) => e.stopPropagation()}
+                            onFocus={(e) => e.stopPropagation()}
+                            onBlur={(e) => e.stopPropagation()}
+                            className="flex-1"
+                            autoComplete="off"
+                          />
+                        </div>
+                        <div className="max-h-[200px] overflow-y-auto">
+                          {clients && clients.length > 0 ? (
+                            clients
+                              .filter(client => form.watch('on_credit') ? true : client.type === 'Юр.лицо')
+                              .map((client) => (
+                                <SelectItem key={client.id} value={client.id?.toString() || ''}>
+                                  {client.name} {client.type !== 'Юр.лицо' && `(${client.type})`}
+                                </SelectItem>
+                              ))
+                          ) : (
+                            <div className="p-2 text-center text-gray-500 text-sm">
+                              No clients found
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </SelectContent>
                   </Select>

@@ -32,6 +32,7 @@ export default function StocksPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [productName, setProductName] = useState<string>(''); // New state for product name
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
+  const [selectedStore, setSelectedStore] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [productZero, setProductZero] = useState(false); // Show zero arrivals filter
@@ -238,6 +239,7 @@ export default function StocksPage() {
       date_of_arrived_lte: dateTo || undefined,
       page: currentPage,
       product_zero: productZero, // Add product_zero param
+      store: selectedStore === 'all' ? undefined : selectedStore, // Add store filter
     }
   });
 
@@ -372,13 +374,14 @@ export default function StocksPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-5" >
       
         {/* Removed store selection dropdown */}
+
         <Input
           type="text"
           value={productName}
           onChange={e => setProductName(e.target.value)}
           placeholder={t('forms.type_product_name')}
         />
-        <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
+         <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
           <SelectTrigger>
             <SelectValue placeholder={t('forms.select_supplier')} />
           </SelectTrigger>
@@ -387,6 +390,19 @@ export default function StocksPage() {
             {suppliers?.map((supplier: Supplier) => supplier.id ? (
               <SelectItem key={supplier.id} value={supplier.id.toString()}>
                 {supplier.name}
+              </SelectItem>
+            ) : null) || null}
+          </SelectContent>
+        </Select>
+        <Select value={selectedStore} onValueChange={setSelectedStore}>
+          <SelectTrigger>
+            <SelectValue placeholder={t('forms.select_store')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t('forms.all_stores')}</SelectItem>
+            {stores?.map((store: Store) => store.id ? (
+              <SelectItem key={store.id} value={store.id.toString()}>
+                {store.name}
               </SelectItem>
             ) : null) || null}
           </SelectContent>

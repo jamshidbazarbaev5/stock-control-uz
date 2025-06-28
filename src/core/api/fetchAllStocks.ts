@@ -9,7 +9,7 @@ export async function fetchAllStocks(params: Record<string, any> = {}) {
 
   while (hasNext) {
     const response = await api.get('/items/stock/', {
-      params: { ...params, page },
+      params: { ...params, page,product_zero: false }, // Ensure product_zero is always true
     });
     const data = response.data;
     allResults = allResults.concat(data.results);
