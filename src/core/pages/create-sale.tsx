@@ -481,9 +481,8 @@ export default function CreateSale() {
             // 3. Calculate the difference caused by the manual subtotal change.
             const priceDifference = newSubtotal - originalSubtotal;
             
-            // 4. Adjust the profit and multiply by quantity.
-            const newProfitPerUnit = baseProfitPerUnit + priceDifference;
-            profit = newProfitPerUnit * quantity;
+            // 4. Adjust the profit and multiply to get total profit.
+            profit = (baseProfitPerUnit + priceDifference) * quantity;
 
         } else if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
             // PROFIT_FAKE logic
@@ -838,16 +837,7 @@ export default function CreateSale() {
                                   type="text"
                                   placeholder={t('placeholders.search_products')}
                                   value={productSearchTerm}
-                                  onChange={(e) => {
-                                    e.stopPropagation();
-                                    handleMobileSearch(e.target.value, setProductSearchTerm);
-                                  }}
-                                  onPointerDown={(e) => e.stopPropagation()}
-                                  onTouchStart={(e) => e.stopPropagation()}
-                                  onTouchEnd={(e) => e.stopPropagation()}
-                                  onTouchMove={(e) => e.stopPropagation()}
-                                  onFocus={(e) => e.stopPropagation()}
-                                  onBlur={(e) => e.stopPropagation()}
+                                  onChange={(e) => handleMobileSearch(e.target.value, setProductSearchTerm)}
                                   className="flex-1"
                                   autoComplete="off"
                                 />
@@ -1149,16 +1139,7 @@ export default function CreateSale() {
                             type="text"
                             placeholder={`Search clients...`}
                             value={searchTerm}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              handleMobileSearch(e.target.value, setSearchTerm);
-                            }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onTouchStart={(e) => e.stopPropagation()}
-                            onTouchEnd={(e) => e.stopPropagation()}
-                            onTouchMove={(e) => e.stopPropagation()}
-                            onFocus={(e) => e.stopPropagation()}
-                            onBlur={(e) => e.stopPropagation()}
+                            onChange={(e) => handleMobileSearch(e.target.value, setSearchTerm)}
                             className="flex-1"
                             autoComplete="off"
                           />
