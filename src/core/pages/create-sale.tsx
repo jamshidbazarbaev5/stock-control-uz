@@ -930,7 +930,7 @@ export default function CreateSale() {
                     name={`sale_items.${index}.subtotal`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">{t('table.total_amount')}</FormLabel>
+                        <FormLabel className="text-sm font-medium">{t('table.subtotal')}</FormLabel>
                         <FormControl>
                           <Input
                             type="text"
@@ -1109,11 +1109,19 @@ export default function CreateSale() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t('table.client')}</FormLabel>
+                  {/* Search input outside of Select */}
+                  <Input
+                    type="text"
+                    placeholder={`Search clients...`}
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="mb-2"
+                    autoComplete="off"
+                  />
                   <Select
                     value={field.value?.toString()}
-                    onValueChange={(value) => {
+                    onValueChange={value => {
                       field.onChange(parseInt(value, 10));
-                      // If client is selected but on_credit is not enabled, set on_credit to false
                       if (value && !form.getValues('on_credit')) {
                         form.setValue('on_credit', false);
                       }
@@ -1122,42 +1130,24 @@ export default function CreateSale() {
                     <SelectTrigger>
                       <SelectValue placeholder={t('placeholders.select_client')} />
                     </SelectTrigger>
-                    <SelectContent
-                      onPointerDownOutside={(e) => {
-                        // Prevent dropdown from closing when clicking inside it
-                        const target = e.target as Node;
-                        const selectContent = document.querySelector('.select-content-wrapper');
-                        if (selectContent && selectContent.contains(target)) {
-                          e.preventDefault();
-                        }
-                      }}
-                    >
-                      <div className="mobile-select-wrapper">
-                        <div className="p-2 sticky top-0 bg-white z-10 border-b select-content-wrapper">
-                          <Input
-                            type="text"
-                            placeholder={`Search clients...`}
-                            value={searchTerm}
-                            onChange={(e) => handleMobileSearch(e.target.value, setSearchTerm)}
-                            className="flex-1"
-                            autoComplete="off"
-                          />
-                        </div>
-                        <div className="max-h-[200px] overflow-y-auto">
-                          {clients && clients.length > 0 ? (
-                            clients
-                              .filter(client => form.watch('on_credit') ? true : client.type === 'Юр.лицо')
-                              .map((client) => (
-                                <SelectItem key={client.id} value={client.id?.toString() || ''}>
-                                  {client.name} {client.type !== 'Юр.лицо' && `(${client.type})`}
-                                </SelectItem>
-                              ))
-                          ) : (
-                            <div className="p-2 text-center text-gray-500 text-sm">
-                              No clients found
-                            </div>
-                          )}
-                        </div>
+                    <SelectContent>
+                      <div className="max-h-[200px] overflow-y-auto">
+                        {clients && clients.length > 0 ? (
+                          clients
+                            .filter(client =>
+                              (form.watch('on_credit') ? true : client.type === 'Юр.лицо') &&
+                              client.name.toLowerCase().includes(searchTerm.toLowerCase())
+                            )
+                            .map(client => (
+                              <SelectItem key={client.id} value={client.id?.toString() || ''}>
+                                {client.name} {client.type !== 'Юр.лицо' && `(${client.type})`}
+                              </SelectItem>
+                            ))
+                        ) : (
+                          <div className="p-2 text-center text-gray-500 text-sm">
+                            No clients found
+                          </div>
+                        )}
                       </div>
                     </SelectContent>
                   </Select>
