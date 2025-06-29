@@ -16,7 +16,7 @@ import {
 import { useGetStores } from "../api/store";
 import { useGetExpenseNames } from "../api/expense-name";
 import { Input } from "@/components/ui/input";
-import { formatDate } from "../helpers/formatDate";
+
 import { useCurrentUser } from "../hooks/useCurrentUser";
 
 export default function ExpensesPage() {
