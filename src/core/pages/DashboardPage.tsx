@@ -539,8 +539,8 @@ const DashboardPage = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 ">
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {t("dashboard.total_sales")}
@@ -555,7 +555,7 @@ const DashboardPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {t("dashboard.total_revenue")}
@@ -580,7 +580,7 @@ const DashboardPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {t("dashboard.average_sale")}
@@ -607,7 +607,7 @@ const DashboardPage = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {t("dashboard.pure_revenue")}
@@ -636,7 +636,7 @@ const DashboardPage = () => {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow">
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
               {t("dashboard.total_expenses")}
@@ -668,7 +668,7 @@ const DashboardPage = () => {
       </div>
 
       {/* Top Products */}
-      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow border-t-4 border-t-blue-500 mb-8">
+      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow border-t-4 border-t-blue-500 mb-8 dark:bg-card">
         <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
           <div>
             <CardTitle className="text-xl font-bold text-blue-700">
@@ -686,7 +686,7 @@ const DashboardPage = () => {
               value={topProductsLimit.toString()}
               onValueChange={(value) => setTopProductsLimit(parseInt(value))}
             >
-              <SelectTrigger className="w-20 sm:w-24 border-blue-200 bg-white">
+              <SelectTrigger className="w-20 sm:w-24 border-blue-200 bg-white dark:bg-card">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -701,11 +701,11 @@ const DashboardPage = () => {
         <CardContent className="pt-6">
           <div>
             {topProducts.length > 0 ? (
-              <div className="overflow-x-auto rounded-lg border border-gray-200">
-                <table className="w-full border-collapse bg-white text-sm">
-                  <thead className="bg-gray-50">
+              <div className="overflow-x-auto rounded-lg border border-gray-200 dark:bg-card">
+                <table className="w-full border-collapse bg-white text-sm dark:bg-card">
+                  <thead className="bg-gray-50 ">
                     <tr className="text-left">
-                      <th className="px-4 py-3 font-medium text-gray-900">
+                      <th className="px-4 py-3 font-medium text-gray-900 dark:text-white-900">
                         {t("dashboard.product")}
                       </th>
                       <th className="px-4 py-3 font-medium text-gray-900 text-center">
@@ -722,7 +722,7 @@ const DashboardPage = () => {
                         key={index}
                         className="hover:bg-blue-50/30 transition-colors"
                       >
-                        <td className="px-4 py-3 flex items-center gap-3">
+                        <td className="px-4 py-3 flex items-center gap-3 ">
                           <div
                             className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${
                               index < 3
@@ -770,7 +770,7 @@ const DashboardPage = () => {
       </Card>
 
       {/* Detailed Expense Breakdown */}
-      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8">
+      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8 dark:bg-card">
         <CardHeader>
           <CardTitle>
             {t("dashboard.expense_breakdown") || "Expense Breakdown"}
@@ -939,7 +939,7 @@ const DashboardPage = () => {
       </Card>
 
       {/* Line Chart */}
-      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8">
+      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8 dark:bg-card">
         <CardHeader>
           <CardTitle>
             {t("dashboard.revenue_analysis") || "Анализ доходов"}
@@ -1003,7 +1003,7 @@ const DashboardPage = () => {
       {/* Top Products and Stock by Category */}
       <div className="w-full mb-8 space-y-8">
         {/* Stock by Category - Full Width */}
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow border-t-4 border-t-purple-500">
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow border-t-4 border-t-purple-500 dark:bg-card" >
           <CardHeader className="border-b pb-4">
             <CardTitle className="text-xl font-bold text-purple-700">
               {t("dashboard.stock_by_category")}
@@ -1016,8 +1016,8 @@ const DashboardPage = () => {
             <div>
               {stockByCategory.length > 0 ? (
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div className="overflow-x-auto rounded-lg border border-gray-200">
-                    <table className="w-full border-collapse bg-white text-sm">
+                  <div className="overflow-x-auto rounded-lg border border-gray-200 ">
+                    <table className="w-full border-collapse bg-white text-sm dark:bg-card">
                       <thead className="bg-gray-50">
                         <tr className="text-left">
                           <th className="px-4 py-3 font-medium text-gray-900">
@@ -1054,7 +1054,7 @@ const DashboardPage = () => {
                   </div>
 
                   {/* Add visual chart representation */}
-                  <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <div className="bg-white p-4 rounded-lg border border-gray-200 dark:bg-card">
                     <h3 className="text-sm font-medium text-gray-500 mb-4">
                       {t("dashboard.category_distribution")}
                     </h3>
@@ -1102,7 +1102,7 @@ const DashboardPage = () => {
         </Card>
 
         {/* Product Intake Chart */}
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow md:col-span-2 lg:col-span-2">
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow md:col-span-2 lg:col-span-2 dark:bg-card">
           <CardHeader>
             <CardTitle>{t("dashboard.product_intake")}</CardTitle>
             <CardDescription>
@@ -1201,7 +1201,7 @@ const DashboardPage = () => {
         </Card>
 
         {/* Client Debts - Full Width */}
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow md:col-span-2 lg:col-span-2 mb-8">
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow md:col-span-2 lg:col-span-2 mb-8 dark:bg-card">
           <CardHeader className="border-b">
             <div className="flex justify-between items-center">
               <div>
@@ -1224,7 +1224,7 @@ const DashboardPage = () => {
               <div>
                 {/* Summary metrics */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col">
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col dark:bg-card">
                     <span className="text-sm text-gray-500 mb-1">
                       {t("dashboard.total_debt") || "Total Debt"}
                     </span>
@@ -1245,7 +1245,7 @@ const DashboardPage = () => {
                         .trim()}
                     </span>
                   </div>
-                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col">
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col dark:bg-card">
                     <span className="text-sm text-gray-500 mb-1">
                       {t("dashboard.total_paid") || "Total Paid"}
                     </span>
@@ -1266,7 +1266,7 @@ const DashboardPage = () => {
                         .trim()}
                     </span>
                   </div>
-                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col">
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col dark:bg-card">
                     <span className="text-sm text-gray-500 mb-1">
                       {t("dashboard.remaining_debt") || "Remaining Debt"}
                     </span>
@@ -1288,7 +1288,7 @@ const DashboardPage = () => {
                         .trim()}
                     </span>
                   </div>
-                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col">
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col dark:bg-card">
                     <span className="text-sm text-gray-500 mb-1">
                       {t("dashboard.deposit") || "Deposit"}
                     </span>
@@ -1313,7 +1313,7 @@ const DashboardPage = () => {
 
                 {/* Enhanced Table */}
                 <div className="overflow-x-auto rounded-lg border border-gray-200">
-                  <table className="w-full border-collapse bg-white text-sm">
+                  <table className="w-full border-collapse bg-white text-sm dark:bg-card">
                     <thead className="bg-gray-50">
                       <tr className="text-left">
                         <th className="px-4 py-3 font-medium text-gray-900">
@@ -1342,13 +1342,13 @@ const DashboardPage = () => {
                         // const paymentPercentage = totalDebt > 0 ? (totalPaid / totalDebt) * 100 : 0;
 
                         return (
-                          <tr key={index} className="hover:bg-gray-50">
+                          <tr key={index} className="">
                             <td className="px-4 py-3 flex items-center gap-2">
                               <div className="flex items-center gap-3">
                                 <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-500">
                                   <Users className="h-4 w-4" />
                                 </div>
-                                <div className="font-medium text-gray-900">
+                                <div className="font-medium dark:text-white-900" >
                                   {client.client_name}
                                 </div>
                               </div>
@@ -1411,7 +1411,7 @@ const DashboardPage = () => {
         {/* Unsold Products */}
 
         {currentUser?.is_superuser && (
-          <Card className="bg-white shadow-md hover:shadow-lg transition-shadow md:col-span-2 lg:col-span-2">
+          <Card className="bg-white shadow-md hover:shadow-lg transition-shadow md:col-span-2 lg:col-span-2 dark:bg-card">
             <CardHeader className="border-b">
               <div className="flex justify-between items-center">
                 <div>
@@ -1424,7 +1424,7 @@ const DashboardPage = () => {
                   </CardDescription>
                 </div>
                 {unsoldProducts.length > 0 && (
-                  <div className="bg-red-100 px-3 py-1 rounded-full text-red-800 text-sm font-medium">
+                  <div className="bg-red-100 px-3 py-1 rounded-full text-red-800 text-sm font-medium dark:bg-card" >
                     {unsoldProducts.length} {t("dashboard.items") || "items"}
                   </div>
                 )}
@@ -1440,14 +1440,14 @@ const DashboardPage = () => {
                       .map((product, index) => (
                         <div
                           key={index}
-                          className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                          className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow dark:bg-card"
                         >
                           <div className="flex items-start space-x-3">
                             <div className="bg-red-50 p-2 rounded-full">
                               <Package className="h-5 w-5 text-red-500" />
                             </div>
                             <div className="flex-1">
-                              <h4 className="font-medium text-gray-900 mb-1 truncate">
+                              <h4 className="font-medium  mb-1 truncate">
                                 {product.product_name}
                               </h4>
                             </div>
@@ -1461,7 +1461,7 @@ const DashboardPage = () => {
                     <div className="mt-4">
                       <button
                         onClick={handleShowMoreUnsoldProducts}
-                        className="w-full inline-flex items-center justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 transition-colors"
+                        className="w-full inline-flex items-center justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium  shadow-sm hover:bg-primary/90 transition-colors dark:bg-card"
                       >
                         {t("dashboard.show_more") || "Show More"}
                       </button>
@@ -1501,7 +1501,7 @@ const DashboardPage = () => {
       </div>
 
       {/* Top Sellers */}
-      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8 border-t-4 border-t-emerald-500">
+      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8 border-t-4 border-t-emerald-500 dark:bg-card">
         <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
           <div>
             <CardTitle className="text-xl font-bold text-emerald-700">
@@ -1517,7 +1517,7 @@ const DashboardPage = () => {
           <div>
             {topSellers.length > 0 ? (
               <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                <table className="w-full border-collapse bg-white text-sm">
+                <table className="w-full border-collapse bg-white text-sm dark:bg-card">
                   <thead className="bg-gray-50">
                     <tr className="text-left">
                       <th className="px-4 py-3 font-medium text-gray-900">
@@ -1547,7 +1547,7 @@ const DashboardPage = () => {
                       ];
 
                       return (
-                        <tr key={index} className="hover:bg-emerald-50/30">
+                        <tr key={index} className="">
                           <td className="px-4 py-3">
                             <span
                               className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${
@@ -1560,12 +1560,12 @@ const DashboardPage = () => {
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            <span className="font-medium text-gray-900">
+                            <span className="font-medium ">
                               {seller.store_name}
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            <span className="font-medium text-gray-900">
+                            <span className="font-medium ">
                               {seller.seller_name || "-"}
                             </span>
                           </td>
