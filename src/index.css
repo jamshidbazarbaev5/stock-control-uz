@@ -60,7 +60,7 @@
   .dark {
     --background: rgb(17 24 39 / var(--tw-bg-opacity, 1));
     --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
+    --card: rgb(17 24 39 / var(--tw-bg-opacity, 1));
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.205 0 0);
     --popover-foreground: oklch(0.985 0 0);

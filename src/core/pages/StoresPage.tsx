@@ -170,7 +170,7 @@ export default function StoresPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <div className="container mx-auto py-8 px-4">
+      <div className="container mx-auto py-8 px-4 bg-white dark:bg-card">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('navigation.stores')}</h1>
@@ -203,10 +203,10 @@ export default function StoresPage() {
               {stores.map((store) => (
                 <Card 
                   key={store.id} 
-                  className="border border-gray-200 hover:border-primary/20 transition-all duration-200 hover:shadow-[0_0_15px_rgba(0,0,0,0.1)]"
+                  className="bg-white dark:bg-card shadow-md hover:shadow-lg transition-shadow"
                 >
-                  <CardHeader className="relative">
-                    <CardTitle className="flex items-center gap-2 text-xl">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium text-[var(--muted-foreground)] dark:text-[var(--muted-foreground)]">
                       <span className="inline-block w-4 h-4 rounded-full border border-gray-200" style={{ backgroundColor: store.color || '#000' }}></span>
                       <StoreIcon className="h-5 w-5 text-primary" />
                       {store.name}

@@ -760,7 +760,7 @@ export default function EditSale() {
             {form.watch("sale_items").map((_, index: number) => (
               <div
                 key={index}
-                className="flex flex-col sm:flex-row flex-wrap items-start gap-2 sm:gap-4 p-3 sm:p-4 border rounded-lg bg-white shadow-sm"
+                className="flex flex-col sm:flex-row flex-wrap items-start gap-2 sm:gap-4 p-3 sm:p-4 border rounded-lg bg-white dark:bg-card dark:border-border shadow-sm"
               >
                 <div className="w-full sm:w-[250px]">
                   <FormField
@@ -1231,7 +1231,7 @@ export default function EditSale() {
           )}
 
           {/* Total Amount Display */}
-          <div className="mt-6 sm:mt-8 p-4 sm:p-6 border rounded-lg bg-gray-50">
+          <div className="mt-6 sm:mt-8 p-4 sm:p-6 border rounded-lg bg-gray-50 dark:bg-card dark:border-border">
             <div className="flex flex-col space-y-4">
               <div className="flex items-center justify-between border-b pb-4">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-700">
