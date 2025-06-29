@@ -224,7 +224,7 @@ export default function UsersPage() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="px-6 py-4 bg-gray-50 flex justify-end gap-2">
+                <CardFooter className="px-6 py-4 bg-gray-50 flex justify-end gap-2 dark:bg-card" >
                   <Button
                     variant="ghost"
                     size="sm"
