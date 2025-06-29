@@ -77,23 +77,23 @@ export default function TransfersPage() {
     },
   ];
 
-  const handleEdit = (transfer: Transfer) => {
-    // Create a new object with only the required fields for the form
-    const formattedTransfer: Transfer = {
-      id: transfer.id,
-      from_stock: transfer.from_stock_read?.id || 0,
-      to_stock: transfer.to_stock_read?.id || 0,
-      amount: transfer.amount,
-      comment: transfer.comment || '',
-      date_of_transfer: transfer.date_of_transfer,
-      stock: transfer.stock,
-      from_stock_read: transfer.from_stock_read,
-      to_stock_read: transfer.to_stock_read
-    };
-    setEditingTransfer(formattedTransfer);
-    setSelectedFromStock(Number(transfer.from_stock_read?.id));
-    setIsFormOpen(true);
-  };
+  // const handleEdit = (transfer: Transfer) => {
+  //   // Create a new object with only the required fields for the form
+  //   const formattedTransfer: Transfer = {
+  //     id: transfer.id,
+  //     from_stock: transfer.from_stock_read?.id || 0,
+  //     to_stock: transfer.to_stock_read?.id || 0,
+  //     amount: transfer.amount,
+  //     comment: transfer.comment || '',
+  //     date_of_transfer: transfer.date_of_transfer,
+  //     stock: transfer.stock,
+  //     from_stock_read: transfer.from_stock_read,
+  //     to_stock_read: transfer.to_stock_read
+  //   };
+  //   setEditingTransfer(formattedTransfer);
+  //   setSelectedFromStock(Number(transfer.from_stock_read?.id));
+  //   setIsFormOpen(true);
+  // };
 
   const handleUpdateSubmit = (data: Transfer) => {
     if (!editingTransfer?.id) return;
@@ -172,7 +172,7 @@ export default function TransfersPage() {
               data={filteredTransfers}
               columns={columns}
               isLoading={isLoading}
-              onEdit={handleEdit}
+              // onEdit={handleEdit}
               onDelete={handleDelete}
               // onAdd={() => navigate('/create-transfer')}
               totalCount={totalCount}

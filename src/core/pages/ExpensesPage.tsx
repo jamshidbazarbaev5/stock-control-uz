@@ -84,7 +84,13 @@ export default function ExpensesPage() {
     {
       header: t("forms.date"),
       accessorKey: "expense.date",
-      cell: (row: any) => <p>{formatDate(row.date)}</p>,
+      cell: (row: any) => <p> {row.date ? new Date(row.date).toLocaleDateString('ru-RU', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          }) : '-'}</p>,
     },
     {
       header: t("forms.comment"),

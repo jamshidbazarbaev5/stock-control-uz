@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CheckCircle2, AlertCircle,  CreditCard, Wallet, SmartphoneNfc,XCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle,  CreditCard, Wallet, SmartphoneNfc } from 'lucide-react';
 import {type Store, useGetStores} from "@/core/api/store.ts";
 import '../../expanded-row-dark.css';
 
@@ -325,7 +325,7 @@ export default function SalesPage() {
             size="sm"
             onClick={handleClearFilters}
           >
-            <XCircle className="h-3 w-3" />
+            {t('common.reset') || 'Сбросить'}
           </Button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -347,23 +347,26 @@ export default function SalesPage() {
                 ))}
               </SelectContent>
             </Select>
-            {currentUser?.is_superuser && ( <Select value={selectedStore} onValueChange={setSelectedStore}>
-              <SelectTrigger>
-                <SelectValue placeholder={t('forms.select_store')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('forms.all_stores')}</SelectItem>
-                {stores?.map((store: Store) => store.id ? (
-                    <SelectItem key={store.id} value={store.id.toString()}>
-                      {store.name}
-                    </SelectItem>
-                ) : null) || null}
-              </SelectContent>
-            </Select>)}
-           
           </div>
-
-
+          {currentUser?.is_superuser && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('forms.select_store')}</label>
+              <Select value={selectedStore} onValueChange={setSelectedStore}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={t('forms.select_store')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('forms.all_stores')}</SelectItem>
+                  {stores?.map((store: Store) => store.id ? (
+                      <SelectItem key={store.id} value={store.id.toString()}>
+                        {store.name}
+                      </SelectItem>
+                  ) : null) || null}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+           
           <div className="space-y-2">
             <label className="text-sm font-medium">{t('forms.start_date')}</label>
             <Input

@@ -99,7 +99,7 @@
   },
   "common": {
     "enter_seeling_price_usd": "Satıw bahasın USD da kiritiń",
-    
+    "reset": "Biykar etiw",
     "income_weight":"Tonna",
     "enter_income_weight":"Tonnani kiriting",
     "price_per_unit":" Ólshem bahası",
@@ -247,6 +247,9 @@
   },
   "forms": {
     "type": "Túr",
+    "select_payment_method": "Tólew usılın tańlań",
+    "total_amount4":"Barliq summa",
+    "search_clients":"Klientlerdi izlen",
     "has_metr":"Metrda satiladima",
     "has_shtuk":"Shtukda satiladima",
     "type_product_name":"Пишите название товарач  ",

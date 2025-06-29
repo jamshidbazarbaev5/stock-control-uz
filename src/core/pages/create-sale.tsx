@@ -1118,7 +1118,7 @@ export default function CreateSale() {
                   {/* Search input outside of Select */}
                   <Input
                     type="text"
-                    placeholder={`Search clients...`}
+                    placeholder={t('forms.search_clients')}
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                     className="mb-2"

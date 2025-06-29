@@ -126,7 +126,7 @@ export default function DebtsPage() {
       },
       {
         accessorKey: 'total_amount',
-        header: t('forms.total_amount'),
+        header: t('forms.total_amount4'),
         cell: (client: DebtByClient) => client.total_amount?.toLocaleString(),
       },
       {
