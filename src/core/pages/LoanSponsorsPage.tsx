@@ -105,10 +105,10 @@ export default function LoanSponsorsPage() {
   const { mutate: updateLoanSponsor, isPending: isUpdating } = useUpdateLoanSponsor();
   const { mutate: deleteLoanSponsor } = useDeleteLoanSponsor();
 
-  const handleEdit = (item: LoanSponsor) => {
-    setEditingLoanSponsor(item);
-    setIsFormOpen(true);
-  };
+  // const handleEdit = (item: LoanSponsor) => {
+  //   setEditingLoanSponsor(item);
+  //   setIsFormOpen(true);
+  // };
 
   const handleUpdateSubmit = (data: Partial<LoanSponsor>) => {
     if (!editingLoanSponsor?.id) return;
