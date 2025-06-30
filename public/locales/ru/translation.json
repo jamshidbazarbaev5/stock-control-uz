@@ -117,6 +117,8 @@
     "create_expense": "Создать расход"
   },
   "common": {
+    "pay": "Оплатить",
+    "view_payments": "Просмотр платежей",
     "shtuk":"Штук",
     "reset": "Сбросить фильтры",
     "enter_purchase_price_uzs":"Введите цену покупки в UZS",
@@ -209,6 +211,9 @@
   },
   "navigation": {
     "dashobard": "Дашбоард",
+    "payments": "Платежи",
+    "loan":"Долги",
+    "sponsors":"Спонсор",
     "profile": "Профиль",
     "transfer": "Перемещение",
     "create_transfer": "Создать перемещение",
@@ -263,8 +268,14 @@
     "invalid_credentials": "Неверные учетные данные"
   },
 
-  "forms": {
+  "forms": {  
     "type":"Тип",
+    "paid_at":"Дата оплаты",
+    "notes":"Заметки",
+    "currency":"Валюта",
+    "created_at":"Дата создания",
+    "is_paid":"Оплачено",
+    "sponsor":"Спонсор",
     "select_payment_method": "Выберите способ оплаты",
     "total_amount4":"Общая сумма долгов",
     "search_clients":"Название клиента для поиска",
@@ -403,6 +414,8 @@
     "seller": "Продавец"
   },
   "messages": {
+    "create":"Создать",
+
     "created_successfully": " успешно создан",
     "success": {
       "created": " успешно создан",
@@ -431,6 +444,9 @@
     "edit": "Изменить"
   },
   "placeholders": {
+    "select_sponsor": "Выберите спонсора",
+    "search_loansponsor":"Пишите спонсора",
+    "select_currency":"Выберите валюту",
     "enter_length":"Введите толщину",
     "enter_static_weight":"Введите метр",
     "select_is_list":"Выберите это лист?",
@@ -542,6 +558,7 @@
     "price_history": "История цен"
   },
   "messages": {
+    "create":"Создать",
     "no_data_to_display": "Нет данных для отображения",
     "success": {
       "created": " успешно создан",

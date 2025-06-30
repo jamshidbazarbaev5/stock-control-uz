@@ -40,6 +40,7 @@ interface ResourceTableProps<T extends { id?: number }> {
   currentPage?: number;
   expandedRowRenderer?: (row: T) => React.ReactNode;
   onRowClick?: (row: T) => void;
+  actions?: (row: T) => React.ReactNode;
 }
 
 export function ResourceTable<T extends { id?: number }>({
@@ -55,6 +56,7 @@ export function ResourceTable<T extends { id?: number }>({
   currentPage = 1,
   expandedRowRenderer,
   onRowClick,
+  actions,
 }: ResourceTableProps<T>) {
   // Handle case when data is undefined
   const tableData = data || [];
@@ -130,7 +132,7 @@ export function ResourceTable<T extends { id?: number }>({
                   {column.header}
                 </TableHead>
               ))}
-              {(onEdit || onDelete) && (
+              {(onEdit || onDelete || actions) && (
                 <TableHead className="text-xs uppercase text-gray-500 font-medium text-right">
                   Действия
                 </TableHead>
@@ -149,7 +151,7 @@ export function ResourceTable<T extends { id?: number }>({
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
                   ))}
-                  {(onEdit || onDelete) && (
+                  {(onEdit || onDelete || actions) && (
                     <TableCell className="w-[100px]">
                       <div className="flex gap-1 justify-end">
                         <Skeleton className="h-8 w-8" />
@@ -209,7 +211,7 @@ export function ResourceTable<T extends { id?: number }>({
                               )}
                       </TableCell>
                     ))}
-                    {(onEdit || onDelete) && (
+                    {(onEdit || onDelete || actions) && (
                       <TableCell className="text-right w-[100px]" onClick={e => e.stopPropagation()}>
                         <div className="flex gap-1 justify-end">
                           {onEdit && (
@@ -235,6 +237,7 @@ export function ResourceTable<T extends { id?: number }>({
                               <TrashIcon className="h-4 w-4" />
                             </Button>
                           )}
+                          {actions && actions(row)}
                           {expandedRowRenderer && (
                             <Button
                               variant="ghost"

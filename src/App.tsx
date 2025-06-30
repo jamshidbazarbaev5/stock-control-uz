@@ -59,6 +59,12 @@ import DashboardPage from "./core/pages/DashboardPage";
 import EditTransfer from "./core/pages/edit-transfer";
 import ProductStockBalancePage from "./core/pages/ProductStockBalancePage";
 import DebtPaymentsPage from "./core/pages/DebtPaymentsPage";
+import SponsorsPage from "./core/pages/SponsorsPage";
+import CreateSponsorPage from "./core/pages/create-sponsor";
+import EditSponsorPage from "./core/pages/edit-sponsor";
+import LoanSponsorsPage from "./core/pages/LoanSponsorsPage";
+import CreateLoanSponsor from "./core/pages/CreateLoanSponsor";
+import LoanPaymentsPage from "./core/pages/LoanPaymentsPage";
 
 const queryClient = new QueryClient();
 
@@ -127,7 +133,14 @@ function App() {
             <Route path="/product-stock-balance" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><ProductStockBalancePage /></PrivateRoute>} />
              <Route path="/debts/:id/payments" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><DebtPaymentsPage/></PrivateRoute>} />
             
-            
+            <Route path="/sponsors" element={<PrivateRoute allowedRoles={["Администратор"]}><SponsorsPage /></PrivateRoute>} />
+            <Route path="/create-sponsor" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateSponsorPage /></PrivateRoute>} />
+            <Route path="/sponsors/edit/:id" element={<PrivateRoute allowedRoles={["Администратор"]}><EditSponsorPage /></PrivateRoute>} />
+            <Route path="/loans" element={<PrivateRoute allowedRoles={["Администратор"]}><LoanSponsorsPage /></PrivateRoute>} />
+            <Route path="/loans/create" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateLoanSponsor /></PrivateRoute>} />
+            <Route path="/loan-payments" element={<PrivateRoute allowedRoles={["Администратор"]}><LoanPaymentsPage /></PrivateRoute>} />
+            <Route path="/loans/:loanId/payments" element={<PrivateRoute allowedRoles={["Администратор"]}><LoanPaymentsPage /></PrivateRoute>} />
+            {/* Routes accessible by all authenticated users */}
             {/* Default route */}
             <Route path="/" element={<Navigate to="/dashboard" />} />
           </Route>
