@@ -69,6 +69,7 @@ const columns = (t: any) => [
   {
     header: t('forms.remainder'),
     accessorKey: 'remainder',
+    cell: (row: LoanSponsor) => row.remainder ?? '',
   },
 ];
 
