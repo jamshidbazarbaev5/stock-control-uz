@@ -41,7 +41,8 @@ export default function IncomePage() {
       ...(selectedSource !== 'all' && { source: selectedSource }),
       ...(selectedWorker !== 'all' && { worker: selectedWorker }),
       ...(startDate && { start_date: format(startDate, 'yyyy-MM-dd') }),
-      ...(endDate && { end_date: format(endDate, 'yyyy-MM-dd') })
+      ...(endDate && { end_date: format(endDate, 'yyyy-MM-dd') }),
+      page: page,
     }
   });
   
@@ -235,7 +236,7 @@ export default function IncomePage() {
           columns={columns}
           isLoading={isLoading}
           totalCount={totalCount}
-          pageSize={10}
+          pageSize={30}
           currentPage={page}
           onPageChange={(newPage) => setPage(newPage)}
           expandedRowRenderer={renderExpandedRow}
