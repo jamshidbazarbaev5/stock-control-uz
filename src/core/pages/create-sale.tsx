@@ -398,30 +398,36 @@ export default function CreateSale() {
   };
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-    const value = parseInt(e.target.value, 10);
+    const value = parseFloat(e.target.value); // Use parseFloat to allow decimals
+  
+    // If input is empty or not a number, set quantity to 0 and update totals
+    if (isNaN(value)) {
+      form.setValue(`sale_items.${index}.quantity`, 0);
+      updateTotalAmount();
+      return;
+    }
+  
     const maxQuantity = selectedStocks[index] || 0;
     const subtotal = parseFloat(form.getValues(`sale_items.${index}.subtotal`)) || 0;
     const stockId = form.getValues(`sale_items.${index}.stock_write`);
     const selectedStock = stocks.find(stock => stock.id === stockId);
-
+  
     if (value > maxQuantity) {
       toast.error(t('messages.error.insufficient_quantity'));
       form.setValue(`sale_items.${index}.quantity`, maxQuantity);
     } else {
       form.setValue(`sale_items.${index}.quantity`, value);
-      // Recalculate profit with new quantity using quantity_for_history if available
+      // Recalculate profit with new quantity
       if (selectedPrices[index] && selectedStock) {
         let profit = 0;
         const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
         if (recyclingRecord) {
-            // The profit logic for recycling items on subtotal change is handled in `handleSubtotalChange`.
-            // Here, we can recalculate based on the already computed profit-per-unit.
-            const originalSubtotal = selectedPrices[index].selling;
-            const currentSubtotal = parseFloat(form.getValues(`sale_items.${index}.subtotal`)) || originalSubtotal;
-            const baseProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1);
-            const priceDifference = currentSubtotal - originalSubtotal;
-            const newProfitPerUnit = baseProfitPerUnit + priceDifference;
-            profit = newProfitPerUnit * value;
+          const originalSubtotal = selectedPrices[index].selling;
+          const currentSubtotal = parseFloat(form.getValues(`sale_items.${index}.subtotal`)) || originalSubtotal;
+          const baseProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1);
+          const priceDifference = currentSubtotal - originalSubtotal;
+          const newProfitPerUnit = baseProfitPerUnit + priceDifference;
+          profit = newProfitPerUnit * value;
         } else if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
           // PROFIT_FAKE logic
           const measurements = selectedStock.product_read.measurement || [];
@@ -449,8 +455,8 @@ export default function CreateSale() {
           ...prev,
           [index]: {
             ...prev[index],
-            profit: profit
-          }
+            profit: profit,
+          },
         }));
       }
     }
@@ -917,7 +923,8 @@ export default function CreateSale() {
                         <FormControl>
                           <Input
                             type="number"
-                            min="1"
+                            min="0"
+                            step="any"
                             max={selectedStocks[index] || 1}
                             placeholder={t('placeholders.enter_quantity')}
                             className="text-right"
