@@ -98,6 +98,8 @@
     "complex": "Quramalı tólem"
   },
   "common": {
+    "price_per_tone": "Tonna bahası",
+    "enter_price_per_tone": "Tonna bahasın kiritiń",
     "enter_seeling_price_usd": "Satıw bahasın USD da kiritiń",
     "reset": "Biykar etiw",
     "income_weight":"Tonna",

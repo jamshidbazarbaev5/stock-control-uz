@@ -20,6 +20,7 @@ interface FormValues extends Partial<Stock> {
   date_of_arrived: string;
   income_weight?: string;
   selling_price_us?: string; // Added for has_kub calculation
+  price_per_tone?: string; // Added for is_list products
 }
 
 export default function EditStock() {
@@ -76,7 +77,7 @@ export default function EditStock() {
   const usdPrice = form.watch('purchase_price_in_us');
   // const exchangeRate = form.watch('exchange_rate');
   const exchangeRateValue = currency?.currency_rate || '';
-  const incomeWeight = form.watch('income_weight' as any) as string | undefined;
+  // const incomeWeight = form.watch('income_weight' as any) as string | undefined;
 
   // Get the arrays from response data
   const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
@@ -116,27 +117,27 @@ export default function EditStock() {
     }
   }, [usdPrice, exchangeRateValue, form, form.watch('quantity')]);
 
-  // Watch income_weight and update quantity for is_list products
+  // Watch income_weight and price_per_tone for is_list products
+  const pricePerTone = form.watch('price_per_tone' as any) as string | undefined;
   useEffect(() => {
     if (selectedProduct?.is_list) {
-      if (stock?.income_weight === null || stock?.income_weight === undefined) {
-        // If income_weight is null, set quantity to stock.quantity
-        if (stock?.quantity !== undefined && stock?.quantity !== null) {
-          form.setValue('quantity', stock.quantity);
-        }
+      const weight = typeof form.watch('income_weight' as any) === 'string' ? parseFloat(form.watch('income_weight' as any)) : Number(form.watch('income_weight' as any));
+      const staticWeight = selectedProduct.static_weight || 0;
+      if (!isNaN(weight) && staticWeight) {
+        form.setValue('quantity', (weight * staticWeight).toString() as any);
       } else {
-        // If income_weight is present, calculate as before
-        const weight = parseFloat(incomeWeight || '');
-        const staticWeight = selectedProduct.static_weight || 0;
-        if (!isNaN(weight) && staticWeight) {
-          form.setValue('quantity', (weight * staticWeight).toString() as any);
-        } else {
-          form.setValue('quantity', '' as any);
-        }
+        form.setValue('quantity', '' as any);
+      }
+      // Set purchase_price_in_us as price_per_tone * income_weight
+      const price = typeof pricePerTone === 'string' ? parseFloat(pricePerTone) : Number(pricePerTone);
+      if (!isNaN(price) && !isNaN(weight)) {
+        form.setValue('purchase_price_in_us', (price * weight).toString());
+      } else {
+        form.setValue('purchase_price_in_us', '');
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [incomeWeight, selectedProduct, stock]);
+  }, [form.watch('income_weight' as any), pricePerTone, selectedProduct]);
 
   // Load stock data when it's available and related data is loaded
   useEffect(() => {
@@ -161,6 +162,7 @@ export default function EditStock() {
         date_of_arrived: new Date(stock.date_of_arrived || '').toISOString().slice(0, 16),
         income_weight: stock.income_weight?.toString(),
         selling_price_us: stock.selling_price_in_us?.toString() || '', // Set from backend
+        price_per_tone: (stock as any).price_per_ton?.toString() || '', // Set from backend if present
       };
 
       console.log('Setting form values:', formValues);
@@ -281,7 +283,15 @@ export default function EditStock() {
     if (stock?.income_weight !== null && stock?.income_weight !== undefined) {
       const quantityIndex = stockFields.findIndex(f => f.name === 'quantity');
       if (quantityIndex !== -1) {
+        // Add price_per_tone before income_weight (no onChange)
         stockFields.splice(quantityIndex, 0, {
+          name: 'price_per_tone',
+          label: t('common.price_per_tone') || 'Price per Tone',
+          type: 'number',
+          placeholder: t('common.enter_price_per_tone') || 'Enter price per tone',
+          required: true,
+        });
+        stockFields.splice(quantityIndex + 1, 0, {
           name: 'income_weight',
           label: t('common.income_weight') || 'Income Weight',
           type: 'number',
@@ -428,6 +438,10 @@ export default function EditStock() {
       };
       if (data.purchase_price_in_us && data.purchase_price_in_us !== '') {
         formattedData.purchase_price_in_us = String(data.purchase_price_in_us);
+      }
+      // Add price_per_ton if present
+      if ((data as any).price_per_tone && (data as any).price_per_tone !== '') {
+        formattedData.price_per_ton = String((data as any).price_per_tone);
       }
       if (data.exchange_rate && data.exchange_rate !== '') {
         formattedData.exchange_rate = currency ? currency.id.toString() : '';
