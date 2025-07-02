@@ -727,7 +727,7 @@ export default function EditSale() {
                       <SelectContent>
                         {(() => {
                           // Filter only sellers for the current store
-                          const sellerUsers = users.filter(user => typeof user.id === 'number' && user.store_read?.id === selectedStore && user.role === 'Продавец');
+                          const sellerUsers = users.filter(user => typeof user.id === 'number' && user.store_read?.id === selectedStore && (user.role === 'Продавец' || user.role === 'Администратор'));
                           // If the current value is not in the sellerUsers, but is in users, add it to the list
                           const currentSeller = users.find(user => user.id === form.watch('sold_by'));
                           const showCurrent = currentSeller && (!sellerUsers.some(u => u.id === currentSeller.id));

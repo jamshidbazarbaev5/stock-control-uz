@@ -817,8 +817,11 @@ export default function CreateSale() {
                             const selectedStore = form.watch('store_write');
                             // Cast user to ExtendedUser to access store_read
                             const extendedUser = user as ExtendedUser;
-                            return user.role === 'Продавец' &&
-                              (!selectedStore || extendedUser.store_read?.id === selectedStore);
+                            return (
+                              (user.role === 'Продавец' || user.role === 'Администратор') &&
+                              extendedUser.store_read &&
+                              (!selectedStore || extendedUser.store_read.id === selectedStore)
+                            );
                           })
                           .map((user) => (
                             <SelectItem key={user.id} value={user.id?.toString() || ''}>
