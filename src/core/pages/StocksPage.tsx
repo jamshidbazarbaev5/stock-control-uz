@@ -84,6 +84,7 @@ export default function StocksPage() {
     {
       header: t('table.quantity'),
       accessorKey: 'quantity',
+      cell: (row: any) => (row.quantity !== undefined && row.quantity !== null ? Number(row.quantity).toFixed(2) : '-')
     },
     {
       header: t('table.actions'),

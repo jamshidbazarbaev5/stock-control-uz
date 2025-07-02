@@ -138,19 +138,23 @@ export default function CreateTransfer() {
 
   const onSubmit = async (data: Transfer) => {
     try {
+      // Remove spaces and replace comma with dot in amount (e.g., "1 344,24" -> "1344.24")
+      let cleanedAmount = typeof data.amount === 'string' ? data.amount.replace(/\s/g, '') : data.amount;
+      if (typeof cleanedAmount === 'string') {
+        cleanedAmount = cleanedAmount.replace(',', '.');
+      }
+      const submitData = { ...data, amount: cleanedAmount };
+
       const sourceStock = mergedStocks?.find((stock: Stock) => stock.id === Number(data.from_stock));
       const destStock = mergedStocks?.find((stock: Stock) => stock.id === Number(data.to_stock));
-      
       const sourceStoreId = sourceStock?.product_read?.store_read?.id;
       const destStoreId = destStock?.product_read?.store_read?.id;
-      
       if (sourceStoreId && destStoreId && sourceStoreId === destStoreId) {
         toast.error(t('messages.error.same_store_transfer'));
         form.setValue('to_stock', null as unknown as number);
         return;
       }
-
-      await createTransfer.mutateAsync(data);
+      await createTransfer.mutateAsync(submitData);
       toast.success(t('messages.success.created', { item: t('navigation.transfers') }));
       navigate('/transfers');
     } catch (error) {
@@ -165,7 +169,8 @@ export default function CreateTransfer() {
   // Set amount to selectedFromStock.quantity when selectedFromStock changes
   useEffect(() => {
     if (selectedFromStock && selectedFromStock.quantity !== undefined) {
-      form.setValue('amount', selectedFromStock.quantity);
+      // Always set as string with 2 decimals and comma
+      form.setValue('amount', Number(selectedFromStock.quantity).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
     }
     // Optionally, clear if no stock selected
     if (!selectedFromStock) {
@@ -301,7 +306,7 @@ export default function CreateTransfer() {
                 <SelectContent>
                   {sourceStocks?.map((stock: Stock) => stock.id && (
                     <SelectItem key={stock.id} value={stock.id.toString()}>
-                      {stock.product_read?.product_name} - {stock.quantity}
+                      {stock.product_read?.product_name} - {Number(stock.quantity).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -315,11 +320,11 @@ export default function CreateTransfer() {
               <div>
                 <label className="block text-sm font-medium mb-1">{t('forms.amount')}</label>
                 <Input
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   {...form.register('amount')}
                   className="w-full"
-                  defaultValue={selectedFromStock?.quantity}
+                  defaultValue={selectedFromStock ? Number(selectedFromStock.quantity).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
                 />
               </div>
 
