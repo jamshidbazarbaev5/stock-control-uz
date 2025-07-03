@@ -654,7 +654,7 @@ export default function CreateSale() {
         sale_items: data.sale_items.map(item => ({
           stock_write: item.stock_write,
           selling_method: item.selling_method,
-          quantity: Math.floor(Number(String(item.quantity).replace(/,/g, ''))).toString(),
+          quantity: item.quantity.toString(),
           subtotal: Math.floor(Number(String(item.subtotal).replace(/,/g, ''))).toString()
         })),
         sale_payments: data.sale_payments.map(payment => ({
