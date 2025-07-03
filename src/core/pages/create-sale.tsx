@@ -460,8 +460,7 @@ export default function CreateSale() {
   };
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-    const value = parseFloat(e.target.value); // Use parseFloat to allow decimals
-  
+    const value = parseFloat(e.target.value); // Use parseFloat to allow decimals  
     // If input is empty or not a number, set quantity to 0 and update totals
     if (isNaN(value)) {
       form.setValue(`sale_items.${index}.quantity`, 0);
@@ -655,16 +654,16 @@ export default function CreateSale() {
         sale_items: data.sale_items.map(item => ({
           stock_write: item.stock_write,
           selling_method: item.selling_method,
-          quantity: item.quantity.toString(),
-          subtotal: item.subtotal.toString()
+          quantity: Math.floor(Number(String(item.quantity).replace(/,/g, ''))).toString(),
+          subtotal: Math.floor(Number(String(item.subtotal).replace(/,/g, ''))).toString()
         })),
         sale_payments: data.sale_payments.map(payment => ({
           payment_method: payment.payment_method,
-          amount: payment.amount.toString()
+          amount: Math.floor(Number(String(payment.amount).replace(/,/g, ''))).toString()
         })),
         on_credit: data.on_credit,
-        total_amount: data.total_amount.toString(),
-        total_pure_revenue: totalProfit.toFixed(1).toLocaleString(),
+        total_amount: Math.floor(Number(String(data.total_amount).replace(/,/g, ''))).toString(),
+        total_pure_revenue: Math.floor(Number(String(totalProfit).replace(/,/g, ''))).toString(),
         // If client is selected but on credit, send client directly
         ...(data.sale_debt?.client && !data.on_credit ? { client: data.sale_debt.client } : {}),
         // If on credit and client selected, include in sale_debt
@@ -672,7 +671,7 @@ export default function CreateSale() {
           sale_debt: {
             client: data.sale_debt.client,
             due_date: data.sale_debt.due_date,
-            ...(data.sale_debt.deposit ? { deposit: data.sale_debt.deposit.toString() } : {})
+            ...(data.sale_debt.deposit ? { deposit: Math.floor(Number(String(data.sale_debt.deposit).replace(/,/g, ''))).toString() } : {})
           }
         } : {})
       };
@@ -1038,20 +1037,20 @@ export default function CreateSale() {
                       <FormLabel>{t('table.amount')}</FormLabel>
                       <FormControl>
                         <Input
-                          type="number"
-                          value={value?.toString() || ''}
+                          type="text"
+                          value={
+                            value !== undefined && value !== null
+                              ? Number(value).toLocaleString()
+                              : ''
+                          }
                           onChange={(e) => {
-                            const newAmount = parseFloat(e.target.value) || 0;
+                            // Remove all non-digit and non-decimal characters for parsing
+                            const rawValue = e.target.value.replace(/[^\d.,]/g, '').replace(/,/g, '');
+                            const newAmount = parseFloat(rawValue) || 0;
                             const totalAmount = parseFloat(form.watch('total_amount'));
                             const otherPaymentsTotal = form.watch('sale_payments')
                               .filter((_, i) => i !== index)
                               .reduce((sum, p) => sum + (p.amount || 0), 0);
-
-                            // Debug logs
-                            console.log('--- Payment Change Debug ---');
-                            console.log('newAmount:', newAmount);
-                            console.log('otherPaymentsTotal:', otherPaymentsTotal);
-                            console.log('totalAmount:', totalAmount);
 
                             // Update payment amount
                             if (newAmount + otherPaymentsTotal > totalAmount) {
