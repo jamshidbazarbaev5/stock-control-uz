@@ -16,6 +16,7 @@ interface ProductStockBalance {
 
 interface StockBalanceResponse {
   count: number;
+  total: number;
   total_volume:number;
   total_pages: number;
   current_page: number;
@@ -29,6 +30,7 @@ interface StockBalanceResponse {
   page_size: number;
   results: {
     total_product: number;
+    total: number;
     info_products: ProductStockBalance[];
     total_volume :number;
   };
@@ -75,7 +77,13 @@ export default function ProductStockBalancePage() {
      {
       header: t('table.total_kub_volume'),
       accessorKey: 'total_kub_volume',
-      cell: (row: any) => row?.total_kub_volume?.toLocaleString() || '0',
+      cell: (row: any) => {
+        const value = row?.total_kub_volume;
+        if (typeof value === 'number') {
+          return value.toFixed(2).replace('.', ',');
+        }
+        return '0,00';
+      },
     },
   ];
 
@@ -121,8 +129,8 @@ export default function ProductStockBalancePage() {
           <h1 className='text-lg font-bold'>
             {t('table.total_volume')}
             {/* Show as 135,37 if value exists */}
-            {typeof data?.results.total_volume === 'number' && (
-              <span> {data.results.total_volume.toFixed(2).replace('.', ',')}</span>
+            {typeof data?.results.total === 'number' && (
+              <span> {data.results.total.toFixed(2).replace('.', ',')}</span>
             )}
           </h1>
         </div>
