@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CheckCircle2, AlertCircle,  CreditCard, Wallet, SmartphoneNfc } from 'lucide-react';
+import { CheckCircle2, AlertCircle,  CreditCard, Wallet, SmartphoneNfc,Landmark } from 'lucide-react';
 import {type Store, useGetStores} from "@/core/api/store.ts";
 import '../../expanded-row-dark.css';
 
@@ -177,6 +177,7 @@ export default function SalesPage() {
               {payment.payment_method === 'Наличные' && <Wallet className="h-4 w-4 text-green-600" />}
               {payment.payment_method === 'Карта' && <CreditCard className="h-4 w-4 text-blue-600" />}
               {payment.payment_method === 'Click' && <SmartphoneNfc className="h-4 w-4 text-purple-600" />}
+              {payment.payment_method === 'Перечисление' && <Landmark className="h-4 w-4 text-orange-500" />} {/* New method */}
               <span className="whitespace-nowrap">
                 {formatCurrency(payment.amount)}
               </span>
