@@ -6,6 +6,10 @@
 
   "dashboard": {
     "clients": "Клиенты",
+    "net_profit":"Остаток дохода",
+    "payments_by_method":"Платежи по методу",
+    "payments_by_method_desc":"Описание платежей по методу",
+    
     "show_more": "Показать больше",
     "pure_revenue": "Прибыль",
     "sales_profit":"Прибыль от продаж",

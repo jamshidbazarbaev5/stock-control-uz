@@ -87,6 +87,12 @@ export interface SalesProfitResponse {
     sold_date: string;
     sold_by: string;
   }>;
+  payments_by_method?: {
+    [method: string]: {
+      total_amount: number;
+      count: number;
+    };
+  };
 }
 
 type PeriodType = 'day' | 'week' | 'month';
@@ -267,3 +273,17 @@ export const getSalesProfitReport = async (period?: PeriodType, dateParams?: str
 //   const response = await api.get<SalesProfitResponse>(url);
 //   return response.data;
 // };
+
+// Add this function to fetch net profit from the API
+export const getNetProfit = async (period?: 'day' | 'week' | 'month', dateParams?: string) => {
+  let url = 'reports/net-profit';
+  if (dateParams && period) {
+    url += `?${dateParams}&period=${period}`;
+  } else if (dateParams) {
+    url += `?${dateParams}`;
+  } else if (period) {
+    url += `?period=${period}`;
+  }
+  const response = await api.get(url);
+  return response.data;
+};

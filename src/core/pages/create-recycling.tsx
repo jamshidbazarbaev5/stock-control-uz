@@ -336,11 +336,24 @@ export default function CreateRecycling() {
   useEffect(() => {
     if (!fromTo) return;
     const selectedStock = stocks.find(stock => stock.id === Number(fromTo));
-    // Use selling_price (not selling_price_in_us) for calculation
     const baseSellingPrice = selectedStock?.selling_price ? Number(selectedStock.selling_price) : 0;
     const spentAmt = Number(form.watch('spent_amount'));
     const getAmt = Number(getAmount);
-    if (baseSellingPrice && spentAmt && getAmt) {
+    // Get selected to_product and its category
+    const toProductId = form.watch('to_product');
+    const selectedProduct = allProducts.find(product => product.id === Number(toProductId));
+    const categoryId = selectedProduct?.category_read?.id;
+    // Special calculation for коньёк (17) and снегозадержатель (18)
+    if ((categoryId === 17 || categoryId === 18) && baseSellingPrice && spentAmt && getAmt) {
+      let calculated = (baseSellingPrice * spentAmt) / getAmt;
+      calculated = Math.round((calculated + Number.EPSILON) * 100) / 100;
+      if (!sellingPriceRef.current) {
+        form.setValue('selling_price', calculated, { shouldValidate: false, shouldDirty: true });
+        sellingPriceRef.current = true;
+        setTimeout(() => { sellingPriceRef.current = false; }, 100);
+      }
+    } else if (baseSellingPrice && spentAmt && getAmt) {
+      // Default calculation (keep as is)
       let calculated = (baseSellingPrice * spentAmt) / getAmt;
       calculated = Math.round((calculated + Number.EPSILON) * 100) / 100;
       if (!sellingPriceRef.current) {
@@ -351,7 +364,7 @@ export default function CreateRecycling() {
     } else if (!getAmt) {
       form.setValue('selling_price', 0, { shouldValidate: false, shouldDirty: true });
     }
-  }, [fromTo, getAmount, stocks, form]);
+  }, [fromTo, getAmount, stocks, form, allProducts]);
 
   // Watch for changes to from_to and set purchase_price_in_us from stock's selling_price_in_us
   useEffect(() => {
@@ -373,6 +386,30 @@ export default function CreateRecycling() {
       form.setValue('purchase_price_in_uz', 0, { shouldValidate: false, shouldDirty: true });
     }
   }, [purchasePriceInUs, exchangeRateField, form]);
+
+  // Watch for changes to to_product and spent_amount to auto-calculate get_amount for specific categories
+  useEffect(() => {
+    const toProductId = form.watch('to_product');
+    if (!toProductId) return;
+    const selectedProduct = allProducts.find(product => product.id === Number(toProductId));
+    if (!selectedProduct || !selectedProduct.category_read) return;
+    const categoryId = selectedProduct.category_read.id;
+    const spentAmt = Number(form.watch('spent_amount'));
+    // Only auto-calculate if spent_amount is a valid number
+    if (!isNaN(spentAmt) && spentAmt > 0) {
+      if (categoryId === 17) { // коньёк
+        const newGetAmount = spentAmt * 6;
+        if (form.getValues('get_amount') !== String(newGetAmount)) {
+          form.setValue('get_amount', String(newGetAmount), { shouldValidate: false, shouldDirty: true });
+        }
+      } else if (categoryId === 18) { // снегозадержатель
+        const newGetAmount = spentAmt * 7;
+        if (form.getValues('get_amount') !== String(newGetAmount)) {
+          form.setValue('get_amount', String(newGetAmount), { shouldValidate: false, shouldDirty: true });
+        }
+      }
+    }
+  }, [form.watch('to_product'), form.watch('spent_amount'), allProducts, form]);
 
   const handleSubmit = async (data: FormValues) => {
     try {
