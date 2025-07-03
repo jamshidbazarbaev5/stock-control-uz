@@ -70,7 +70,7 @@ export default function ProductStockBalancePage() {
     {
       header: t('table.quantity'),
       accessorKey: 'total_quantity',
-      cell: (row: any) => row.total_quantity.toLocaleString(),
+      cell: (row: any) => row.total_quantity?.toLocaleString(),
     },
      {
       header: t('table.total_kub_volume'),
