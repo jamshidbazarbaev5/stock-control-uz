@@ -20,7 +20,7 @@ interface FormValues extends Partial<Stock> {
   date_of_arrived: string;
   income_weight?: string;
   selling_price_us?: string; // Added for has_kub calculation
-  price_per_tone?: string; // Added for is_list products
+  price_per_ton?: string; // Corrected for is_list products
 }
 
 export default function EditStock() {
@@ -117,27 +117,31 @@ export default function EditStock() {
     }
   }, [usdPrice, exchangeRateValue, form, form.watch('quantity')]);
 
-  // Watch income_weight and price_per_tone for is_list products
-  const pricePerTone = form.watch('price_per_tone' as any) as string | undefined;
+  // Watch income_weight and price_per_ton for is_list products
+  const pricePerTon = form.watch('price_per_ton' as any) as string | undefined;
   useEffect(() => {
     if (selectedProduct?.is_list) {
-      const weight = typeof form.watch('income_weight' as any) === 'string' ? parseFloat(form.watch('income_weight' as any)) : Number(form.watch('income_weight' as any));
+      const incomeWeightRaw = form.watch('income_weight' as any);
+      const weight = typeof incomeWeightRaw === 'string' ? parseFloat(incomeWeightRaw) : Number(incomeWeightRaw);
       const staticWeight = selectedProduct.static_weight || 0;
       if (!isNaN(weight) && staticWeight) {
         form.setValue('quantity', (weight * staticWeight).toString() as any);
       } else {
         form.setValue('quantity', '' as any);
       }
-      // Set purchase_price_in_us as price_per_tone * income_weight
-      const price = typeof pricePerTone === 'string' ? parseFloat(pricePerTone) : Number(pricePerTone);
-      if (!isNaN(price) && !isNaN(weight)) {
-        form.setValue('purchase_price_in_us', (price * weight).toString());
-      } else {
-        form.setValue('purchase_price_in_us', '');
+      // Only set purchase_price_in_us if income_weight is present (not null/undefined/empty)
+      if (incomeWeightRaw !== null && incomeWeightRaw !== undefined && incomeWeightRaw !== '') {
+        const price = typeof pricePerTon === 'string' ? parseFloat(pricePerTon) : Number(pricePerTon);
+        if (!isNaN(price) && !isNaN(weight)) {
+          form.setValue('purchase_price_in_us', (price * weight).toString());
+        } else {
+          form.setValue('purchase_price_in_us', '');
+        }
       }
+      // If income_weight is not present, do not overwrite purchase_price_in_us (keep backend value)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.watch('income_weight' as any), pricePerTone, selectedProduct]);
+  }, [form.watch('income_weight' as any), pricePerTon, selectedProduct]);
 
   // Load stock data when it's available and related data is loaded
   useEffect(() => {
@@ -162,7 +166,7 @@ export default function EditStock() {
         date_of_arrived: new Date(stock.date_of_arrived || '').toISOString().slice(0, 16),
         income_weight: stock.income_weight?.toString(),
         selling_price_us: stock.selling_price_in_us?.toString() || '', // Set from backend
-        price_per_tone: (stock as any).price_per_ton?.toString() || '', // Set from backend if present
+        price_per_ton: (stock as any).price_per_ton?.toString() || '', // Set from backend if present
       };
 
       console.log('Setting form values:', formValues);
@@ -279,18 +283,20 @@ export default function EditStock() {
 
   // Add dynamic fields for is_list products
   if (selectedProduct?.is_list) {
+    // Always add price_per_ton input for is_list products if backend value is not null
+    const quantityIndex = stockFields.findIndex(f => f.name === 'quantity');
+    if (quantityIndex !== -1 && (stock as any)?.price_per_ton !== null && (stock as any)?.price_per_ton !== undefined) {
+      stockFields.splice(quantityIndex, 0, {
+        name: 'price_per_ton',
+        label: t('common.price_per_ton') || 'Price per Tone',
+        type: 'number',
+        placeholder: t('common.enter_price_per_tone') || 'Enter price per ton',
+        required: true,
+      });
+    }
     // Only add income_weight field if income_weight is NOT null
     if (stock?.income_weight !== null && stock?.income_weight !== undefined) {
-      const quantityIndex = stockFields.findIndex(f => f.name === 'quantity');
       if (quantityIndex !== -1) {
-        // Add price_per_tone before income_weight (no onChange)
-        stockFields.splice(quantityIndex, 0, {
-          name: 'price_per_tone',
-          label: t('common.price_per_tone') || 'Price per Tone',
-          type: 'number',
-          placeholder: t('common.enter_price_per_tone') || 'Enter price per tone',
-          required: true,
-        });
         stockFields.splice(quantityIndex + 1, 0, {
           name: 'income_weight',
           label: t('common.income_weight') || 'Income Weight',
@@ -312,6 +318,26 @@ export default function EditStock() {
       }
     }
   }
+
+  // Ensure quantity is set from backend only when needed (avoid infinite re-render)
+  useEffect(() => {
+    if (
+      selectedProduct?.is_list &&
+      (stock?.income_weight === null || stock?.income_weight === undefined) &&
+      stock?.quantity !== undefined && stock?.quantity !== null
+    ) {
+      form.setValue('quantity', stock.quantity);
+    }
+    // Also set purchase_price_in_us if price_per_ton is null
+    if (
+      selectedProduct?.is_list &&
+      ((stock as any)?.price_per_ton === null || (stock as any)?.price_per_ton === undefined) &&
+      stock?.purchase_price_in_us !== undefined && stock?.purchase_price_in_us !== null
+    ) {
+      form.setValue('purchase_price_in_us', stock.purchase_price_in_us.toString());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProduct?.is_list, stock?.income_weight, stock?.quantity, (stock as any)?.price_per_ton, stock?.purchase_price_in_us]);
 
   // Hide USD and exchange rate fields if has_metr or has_shtuk
   let hideUsdFields = selectedProduct?.has_metr || selectedProduct?.has_shtuk;
@@ -440,8 +466,8 @@ export default function EditStock() {
         formattedData.purchase_price_in_us = String(data.purchase_price_in_us);
       }
       // Add price_per_ton if present
-      if ((data as any).price_per_tone && (data as any).price_per_tone !== '') {
-        formattedData.price_per_ton = String((data as any).price_per_tone);
+      if ((data as any).price_per_ton && (data as any).price_per_ton !== '') {
+        formattedData.price_per_ton = String((data as any).price_per_ton);
       }
       if (data.exchange_rate && data.exchange_rate !== '') {
         formattedData.exchange_rate = currency ? currency.id.toString() : '';
