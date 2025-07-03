@@ -78,10 +78,11 @@ export default function ProductStockBalancePage() {
       header: t('table.total_kub_volume'),
       accessorKey: 'total_kub_volume',
       cell: (row: any) => {
-        const value = row?.total_kub_volume;
-        if (typeof value === 'number') {
-          return value.toFixed(2).replace('.', ',');
-        }
+        const kub = typeof row?.total_kub === 'number' ? row.total_kub.toFixed(2).replace('.', ',') : null;
+        const kubVol = typeof row?.total_kub_volume === 'number' ? row.total_kub_volume.toFixed(2).replace('.', ',') : null;
+        if (kub && kubVol) return `${kub} / ${kubVol}`;
+        if (kub) return kub;
+        if (kubVol) return kubVol;
         return '0,00';
       },
     },
