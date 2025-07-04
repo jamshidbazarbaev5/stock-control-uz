@@ -106,7 +106,7 @@ const DashboardPage = () => {
   const [salesProfit, setSalesProfit] = useState<SalesProfitResponse | null>(
     null
   );
-  const [netProfitData, setNetProfitData] = useState<NetProfitResponse | null>(
+  const [_netProfitData, setNetProfitData] = useState<NetProfitResponse | null>(
     null
   );
   const [loading, setLoading] = useState(true);
