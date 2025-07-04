@@ -274,20 +274,48 @@ const DashboardPage = () => {
     let dateParams = "";
     let apiPeriod: "day" | "week" | "month" | undefined = undefined;
     if (startDate || endDate) {
-      const formattedStartDate = startDate ? startDate.toISOString().split("T")[0] : "";
-      const formattedEndDate = endDate ? endDate.toISOString().split("T")[0] : "";
+      const formattedStartDate = startDate
+        ? startDate.toISOString().split("T")[0]
+        : "";
+      const formattedEndDate = endDate
+        ? endDate.toISOString().split("T")[0]
+        : "";
       dateParams = `date_from=${formattedStartDate}&date_to=${formattedEndDate}`;
     } else if (period !== "custom") {
       apiPeriod = period;
     }
     if (selectedStore !== "all") {
-      dateParams = dateParams ? `${dateParams}&store=${selectedStore}` : `store=${selectedStore}`;
+      dateParams = dateParams
+        ? `${dateParams}&store=${selectedStore}`
+        : `store=${selectedStore}`;
     }
     getNetProfit(apiPeriod, dateParams || undefined)
       .then((data) => setNetProfitData(data))
       .catch((err) => setNetProfitError(err?.message || "Error"))
       .finally(() => setNetProfitLoading(false));
   }, [period, startDate, endDate, selectedStore]);
+  // Place this helper function near the top of your component file
+  const EXPENSE_OTHER_THRESHOLD = 0.01; // 5%
+  const getGroupedExpenses = (expenses: any) => {
+    if (!expenses || expenses.length === 0) return [];
+    const total = expenses.reduce(
+      (sum: number, e: any) => sum + e.total_amount,
+      0
+    );
+    const grouped = [];
+    let otherSum = 0;
+    expenses.forEach((e: any) => {
+      if (total > 0 && e.total_amount / total < EXPENSE_OTHER_THRESHOLD) {
+        otherSum += e.total_amount;
+      } else {
+        grouped.push({ name: e.expense_name__name, value: e.total_amount });
+      }
+    });
+    if (otherSum > 0) {
+      grouped.push({ name: t("dashboard.other") || "Other", value: otherSum });
+    }
+    return grouped;
+  };
 
   // Format the trend data for the charts
   const formattedData =
@@ -673,8 +701,7 @@ const DashboardPage = () => {
             </div>
           </CardContent>
         </Card>
-      
-      
+
         <Card className="bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-card">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -705,95 +732,111 @@ const DashboardPage = () => {
           </CardContent>
         </Card>
         {/* Store Balance Card */}
-      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-card">
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground">
-            {t("dashboard.net_profit") || "Store Balance"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {(() => {
-              if (selectedStore === "all") {
-                // Sum all store budgets
-                const total = stores.reduce((sum, store) => sum + Number(store.budget), 0);
-                return new Intl.NumberFormat("uz-UZ", {
-                  style: "currency",
-                  currency: "UZS",
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                })
-                  .format(total)
-                  .replace("UZS", "")
-                  .trim();
-              } else {
-                const store = stores.find((s) => s.id?.toString() === selectedStore);
-                const budget = store ? Number(store.budget) : 0;
-                return new Intl.NumberFormat("uz-UZ", {
-                  style: "currency",
-                  currency: "UZS",
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                })
-                  .format(budget)
-                  .replace("UZS", "")
-                  .trim();
-              }
-            })()}
-          </div>
-          <div className="text-xs text-muted-foreground mt-1">
-            {selectedStore === "all"
-              ? t("dashboard.all_stores_balance") || "All Stores Balance"
-              : t("dashboard.selected_store_balance") || "Selected Store Balance"}
-          </div>
-        </CardContent>
-      </Card>
-
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-card">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              {t("dashboard.net_profit") || "Store Balance"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {(() => {
+                if (selectedStore === "all") {
+                  // Sum all store budgets
+                  const total = stores.reduce(
+                    (sum, store) => sum + Number(store.budget),
+                    0
+                  );
+                  return new Intl.NumberFormat("uz-UZ", {
+                    style: "currency",
+                    currency: "UZS",
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  })
+                    .format(total)
+                    .replace("UZS", "")
+                    .trim();
+                } else {
+                  const store = stores.find(
+                    (s) => s.id?.toString() === selectedStore
+                  );
+                  const budget = store ? Number(store.budget) : 0;
+                  return new Intl.NumberFormat("uz-UZ", {
+                    style: "currency",
+                    currency: "UZS",
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  })
+                    .format(budget)
+                    .replace("UZS", "")
+                    .trim();
+                }
+              })()}
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {selectedStore === "all"
+                ? t("dashboard.all_stores_balance") || "All Stores Balance"
+                : t("dashboard.selected_store_balance") ||
+                  "Selected Store Balance"}
+            </div>
+          </CardContent>
+        </Card>
       </div>
-              
-    
+
       {/* Payments by Method Pie Chart */}
       <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8 dark:bg-card">
         <CardHeader>
-          <CardTitle>{t("dashboard.payments_by_method") || "Payments by Method"}</CardTitle>
+          <CardTitle>
+            {t("dashboard.payments_by_method") || "Payments by Method"}
+          </CardTitle>
           <CardDescription>
-            {t("dashboard.payments_by_method_desc") || "Distribution of sales by payment method"}
+            {t("dashboard.payments_by_method_desc") ||
+              "Distribution of sales by payment method"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {salesProfit?.payments_by_method && Object.keys(salesProfit.payments_by_method).length > 0 ? (
+          {salesProfit?.payments_by_method &&
+          Object.keys(salesProfit.payments_by_method).length > 0 ? (
             <div className="flex flex-col md:flex-row gap-8 items-center justify-between">
               <div className="w-full md:w-1/2 h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={Object.entries(salesProfit.payments_by_method).map(([method, data]) => ({
-                        name: method,
-                        value: data.total_amount,
-                      }))}
+                      data={Object.entries(salesProfit.payments_by_method).map(
+                        ([method, data]) => ({
+                          name: method,
+                          value: data.total_amount,
+                        })
+                      )}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      label={({ name, percent }) =>
+                        `${name} (${(percent * 100).toFixed(0)}%)`
+                      }
                       outerRadius={100}
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {Object.keys(salesProfit.payments_by_method).map((_, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={[
-                            "#FF6384",
-                            "#36A2EB",
-                            "#FFCE56",
-                            "#4BC0C0",
-                            "#9966FF",
-                            "#FF9F40",
-                            "#8BC34A",
-                            "#673AB7",
-                          ][index % 8]}
-                        />
-                      ))}
+                      {Object.keys(salesProfit.payments_by_method).map(
+                        (_, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={
+                              [
+                                "#FF6384",
+                                "#36A2EB",
+                                "#FFCE56",
+                                "#4BC0C0",
+                                "#9966FF",
+                                "#FF9F40",
+                                "#8BC34A",
+                                "#673AB7",
+                              ][index % 8]
+                            }
+                          />
+                        )
+                      )}
                     </Pie>
                     <Legend />
                     <Tooltip
@@ -814,52 +857,63 @@ const DashboardPage = () => {
               </div>
               <div className="w-full md:w-1/2">
                 <div className="space-y-2">
-                  {Object.entries(salesProfit.payments_by_method).map(([method, data], idx) => (
-                    <div key={method} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
-                      <div className="flex items-center">
-                        <span
-                          className="inline-block w-3 h-3 rounded-full mr-2"
-                          style={{ backgroundColor: [
-                            "#FF6384",
-                            "#36A2EB",
-                            "#FFCE56",
-                            "#4BC0C0",
-                            "#9966FF",
-                            "#FF9F40",
-                            "#8BC34A",
-                            "#673AB7",
-                          ][idx % 8] }}
-                        ></span>
-                        <span className="font-medium">{method}</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-bold">
-                          {new Intl.NumberFormat("uz-UZ", {
-                            style: "currency",
-                            currency: "UZS",
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })
-                            .format(data.total_amount)
-                            .replace("UZS", "")
-                            .trim()}
+                  {Object.entries(salesProfit.payments_by_method).map(
+                    ([method, data], idx) => (
+                      <div
+                        key={method}
+                        className="flex items-center justify-between p-2 rounded-md bg-muted/50"
+                      >
+                        <div className="flex items-center">
+                          <span
+                            className="inline-block w-3 h-3 rounded-full mr-2"
+                            style={{
+                              backgroundColor: [
+                                "#FF6384",
+                                "#36A2EB",
+                                "#FFCE56",
+                                "#4BC0C0",
+                                "#9966FF",
+                                "#FF9F40",
+                                "#8BC34A",
+                                "#673AB7",
+                              ][idx % 8],
+                            }}
+                          ></span>
+                          <span className="font-medium">{method}</span>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {t("dashboard.transactions") || "Transactions"}: {data.count}
+                        <div className="text-right">
+                          <div className="font-bold">
+                            {new Intl.NumberFormat("uz-UZ", {
+                              style: "currency",
+                              currency: "UZS",
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })
+                              .format(data.total_amount)
+                              .replace("UZS", "")
+                              .trim()}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {t("dashboard.transactions") || "Transactions"}:{" "}
+                            {data.count}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </div>
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground bg-gray-50 rounded-lg border border-dashed border-gray-300">
-              <p className="text-gray-500">{t("dashboard.no_payment_method_data") || "No payment method data available"}</p>
+              <p className="text-gray-500">
+                {t("dashboard.no_payment_method_data") ||
+                  "No payment method data available"}
+              </p>
             </div>
           )}
         </CardContent>
-      </Card> 
+      </Card>
       {/* Top Products */}
       <Card className="bg-white shadow-md hover:shadow-lg transition-shadow border-t-4 border-t-blue-500 mb-8 dark:bg-card">
         <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
@@ -977,18 +1031,13 @@ const DashboardPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             {/* Expense Pie Chart */}
             <div className="min-h-[400px] lg:min-h-[350px]">
-              <h3 className="font-medium mb-2 flex items-center">
-               
-              </h3>
+              <h3 className="font-medium mb-2 flex items-center"></h3>
               <div className="h-[300px] sm:h-[350px]">
                 {expensesSummary?.expenses?.length ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={expensesSummary.expenses.map((expense) => ({
-                          name: expense.expense_name__name,
-                          value: expense.total_amount,
-                        }))}
+                        data={getGroupedExpenses(expensesSummary.expenses)}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
@@ -1196,7 +1245,7 @@ const DashboardPage = () => {
       {/* Top Products and Stock by Category */}
       <div className="w-full mb-8 space-y-8">
         {/* Stock by Category - Full Width */}
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow border-t-4 border-t-purple-500 dark:bg-card" >
+        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow border-t-4 border-t-purple-500 dark:bg-card">
           <CardHeader className="border-b pb-4">
             <CardTitle className="text-xl font-bold text-purple-700">
               {t("dashboard.stock_by_category")}
@@ -1350,22 +1399,22 @@ const DashboardPage = () => {
                         formatter={(value, name) => {
                           if (name === "price") {
                             return [
-                              `${new Intl.NumberFormat("uz-UZ", {
-                                style: "currency",
-                                currency: "UZS",
-                              })
-                                .format(Number(value))
-                                .replace("UZS", "")
-                                .trim()}`,
+                              Number(value || 0).toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              }),
                               t("dashboard.total_price"),
                             ];
                           }
-                          return [
-                            value,
-                            name === "quantity"
-                              ? t("dashboard.quantity")
-                              : name,
-                          ];
+                          if (name === "quantity") {
+                            return [
+                              Number(value || 0).toLocaleString("en-US", {
+                                maximumFractionDigits: 2,
+                              }),
+                              t("dashboard.quantity"),
+                            ];
+                          }
+                          return [value, name];
                         }}
                       />
                       <Legend />
@@ -1541,7 +1590,7 @@ const DashboardPage = () => {
                                 <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-500">
                                   <Users className="h-4 w-4" />
                                 </div>
-                                <div className="font-medium dark:text-white-900" >
+                                <div className="font-medium dark:text-white-900">
                                   {client.client_name}
                                 </div>
                               </div>
@@ -1617,7 +1666,7 @@ const DashboardPage = () => {
                   </CardDescription>
                 </div>
                 {unsoldProducts.length > 0 && (
-                  <div className="bg-red-100 px-3 py-1 rounded-full text-red-800 text-sm font-medium dark:bg-card" >
+                  <div className="bg-red-100 px-3 py-1 rounded-full text-red-800 text-sm font-medium dark:bg-card">
                     {unsoldProducts.length} {t("dashboard.items") || "items"}
                   </div>
                 )}
@@ -1654,7 +1703,7 @@ const DashboardPage = () => {
                     <div className="mt-4">
                       <button
                         onClick={handleShowMoreUnsoldProducts}
-                        className="w-full inline-flex items-center justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium  shadow-sm hover:bg-primary/90 transition-colors dark:bg-card"
+                        className="w-full inline-flex items-center justify-center rounded-md border border-transparent  px-4 py-2 text-sm font-medium  shadow-sm transition-colors dark:bg-card"
                       >
                         {t("dashboard.show_more") || "Show More"}
                       </button>
@@ -1791,7 +1840,6 @@ const DashboardPage = () => {
           </div>
         </CardContent>
       </Card>
-
     </div>
   );
 };

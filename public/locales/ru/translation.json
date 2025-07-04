@@ -5,11 +5,12 @@
   },
 
   "dashboard": {
+    "other":"Другие",
     "clients": "Клиенты",
     "net_profit":"Остаток на счёте",
     "payments_by_method":"Платёжные поступления",
     "payments_by_method_desc":"Описание платежей по методу",
-    "all_stores_balance":"Остаток на счёта на всех магазинах ",
+    "all_stores_balance":"Остаток на счетах всех магазинов",
     "no_payment_method_data":"Нет данные",
     "selected_store_balance":"Остаток на счёте выбранного магазина",
     "show_more": "Показать больше",
@@ -365,7 +366,7 @@
     "remainder": "Остаток",
     "deposit": "Аванс",
 
-    "from_product": "Найменование товара",
+    "from_product": "Наименование товара",
     "from_store": "Откуда",
     "measurements": "Единицы измерения",
     "fio": "ФИО",
