@@ -704,38 +704,54 @@ const DashboardPage = () => {
             </div>
           </CardContent>
         </Card>
-        {/* Net Profit Card */}
-        <Card className="bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-card">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              {t("dashboard.net_profit") || "Net Profit"}
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              <div
-                className={`text-2xl font-bold ${
-                  (netProfitData?.net_profit || 0) >= 0
-                    ? "text-green-600"
-                    : "text-red-600"
-                }`}
-              >
-                {new Intl.NumberFormat("uz-UZ", {
+        {/* Store Balance Card */}
+      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-card">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium text-muted-foreground">
+            {t("dashboard.net_profit") || "Store Balance"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {(() => {
+              if (selectedStore === "all") {
+                // Sum all store budgets
+                const total = stores.reduce((sum, store) => sum + Number(store.budget), 0);
+                return new Intl.NumberFormat("uz-UZ", {
                   style: "currency",
                   currency: "UZS",
                   minimumFractionDigits: 0,
                   maximumFractionDigits: 0,
                 })
-                  .format(netProfitData?.net_profit || 0)
+                  .format(total)
                   .replace("UZS", "")
-                  .trim()}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                  .trim();
+              } else {
+                const store = stores.find((s) => s.id?.toString() === selectedStore);
+                const budget = store ? Number(store.budget) : 0;
+                return new Intl.NumberFormat("uz-UZ", {
+                  style: "currency",
+                  currency: "UZS",
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                })
+                  .format(budget)
+                  .replace("UZS", "")
+                  .trim();
+              }
+            })()}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {selectedStore === "all"
+              ? t("dashboard.all_stores_balance") || "All Stores Balance"
+              : t("dashboard.selected_store_balance") || "Selected Store Balance"}
+          </div>
+        </CardContent>
+      </Card>
+
       </div>
               
+    
       {/* Payments by Method Pie Chart */}
       <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8 dark:bg-card">
         <CardHeader>

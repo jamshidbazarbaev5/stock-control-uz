@@ -9,7 +9,9 @@
     "net_profit":"Остаток на счёте",
     "payments_by_method":"Платёжные поступления",
     "payments_by_method_desc":"Описание платежей по методу",
-
+    "all_stores_balance":"Остаток на счёта на всех магазинах ",
+    "no_payment_method_data":"Нет данные",
+    "selected_store_balance":"Остаток на счёте выбранного магазина",
     "show_more": "Показать больше",
     "pure_revenue": "Прибыль",
     "sales_profit":"Прибыль от продаж",
