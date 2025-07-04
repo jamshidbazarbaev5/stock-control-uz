@@ -6,10 +6,10 @@
 
   "dashboard": {
     "clients": "Клиенты",
-    "net_profit":"Остаток дохода",
-    "payments_by_method":"Платежи по методу",
+    "net_profit":"Остаток на счёте",
+    "payments_by_method":"Платёжные поступления",
     "payments_by_method_desc":"Описание платежей по методу",
-    
+
     "show_more": "Показать больше",
     "pure_revenue": "Прибыль",
     "sales_profit":"Прибыль от продаж",
@@ -22,7 +22,7 @@
     "expense_distribution_by_category": "Расходы по категориям",
     "amount":"Сумма",
     "expense_details":"Расходы",
-    "total_expenses":"Общий расход",
+    "total_expenses":"Общие расходы",
     "expense_name":"Название расхода",
     "top_sellers": "Лучшие продавцы",
     "top_performing_stores": "Лучшие магазины и продавцы",
@@ -55,7 +55,7 @@
     "week": "Неделя",
     "month": "Месяц",
     "total_sales": "Всего продаж",
-    "total_revenue": "Общий доход",
+    "total_revenue": "Общая выручка",
     "average_sale": "Средний чек",
 
     "current_day": "Текущий день",
