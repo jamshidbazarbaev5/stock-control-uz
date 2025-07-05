@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { fetchAllStocks } from "../api/fetchAllStocks";
 import { useGetStores } from "../api/store";
 import { useGetClients } from "../api/client";
-import { useGetSale, useUpdateSale } from "@/core/api/sale";
+import { useGetSale } from "@/core/api/sale";
 import { useGetUsers, type User } from "../api/user";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { addDays } from "date-fns";
@@ -126,7 +126,7 @@ export default function EditSale() {
     params: form.watch("on_credit") ? { name: searchTerm } : undefined,
   });
   const { data: saleData, isLoading: isLoadingSale } = useGetSale(Number(id));
-  const updateSale = useUpdateSale();
+  // const updateSale = useUpdateSale();
   const { data: recyclingData } = useGetRecyclings({});
 
   // Helper to get recycling record for a stock
@@ -1330,7 +1330,7 @@ export default function EditSale() {
             </div>
           </div>
 
-          {
+          {/* {
             <Button
               type="submit"
               className="w-full mt-4 sm:mt-6 h-10 sm:h-12 text-base sm:text-lg font-medium"
@@ -1338,7 +1338,7 @@ export default function EditSale() {
             >
               {updateSale.isPending ? t("common.updating") : t("common.update")}
             </Button>
-          }
+          } */}
         </form>
       </Form>
     </div>

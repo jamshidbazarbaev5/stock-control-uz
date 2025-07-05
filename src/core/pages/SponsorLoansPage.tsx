@@ -33,7 +33,18 @@ export default function SponsorLoansPage() {
       await createLoanPayment(Number(id), payModalLoan.id, { ...data, loan: payModalLoan.id });
       toast.success(t('Платеж успешно добавлен'));
       setPayModalLoan(null);
-      // Optionally, refresh loans or payments here
+      // Update the paid loan in local state
+      setLoans((prevLoans) =>
+        prevLoans.map((loan) =>
+          loan.id === payModalLoan.id
+            ? {
+                ...loan,
+                remainder: (Number(loan.remainder) - Number(data.amount)).toString(),
+                is_paid: Number(loan.remainder) - Number(data.amount) <= 0 ? true : loan.is_paid,
+              }
+            : loan
+        )
+      );
     } catch {
       toast.error(t('Ошибка при добавлении платежа'));
     } finally {
@@ -42,7 +53,7 @@ export default function SponsorLoansPage() {
   };
 
   const loanColumns = [
-    { header: t('forms.amount'), accessorKey: 'total_amount' },
+    { header: t('forms.remainder'), accessorKey: 'remainder' },
     { header: t('forms.currency'), accessorKey: 'currency' },
     { header: t('forms.due_date'), accessorKey: 'due_date' },
     { header: t('forms.status'), accessorKey: (row: Loan) => row.is_paid ? t('common.paid') : t('common.unpaid') },
