@@ -316,6 +316,29 @@ const DashboardPage = () => {
     }
     return grouped;
   };
+  function groupPaymentsByMethod(paymentsByMethod:any, thresholdPercent = 0.05) {
+  if (!paymentsByMethod) return [];
+  const entries = Object.entries(paymentsByMethod);
+  const total = entries.reduce((sum, [, data]:any) => sum + Number(data.total_amount), 0);
+  if (total === 0) return entries.map(([method, data]:any) => ({ name: method, value: data.total_amount, count: data.count }));
+  const grouped = [];
+  let othersAmount = 0;
+  let othersCount = 0;
+  entries.forEach(([method, data]:any) => {
+    const percent = data.total_amount / total;
+    if (percent < thresholdPercent) {
+      othersAmount += data.total_amount;
+      othersCount += data.count;
+    } else {
+      grouped.push({ name: method, value: data.total_amount, count: data.count });
+    }
+  });
+  if (othersAmount > 0) {
+    grouped.push({ name: 'другие', value: othersAmount, count: othersCount });
+  }
+  return grouped;
+}
+const groupedPayments = groupPaymentsByMethod(salesProfit?.payments_by_method, 0.05); // 5% threshold
 
   // Format the trend data for the charts
   const formattedData =
@@ -802,12 +825,10 @@ const DashboardPage = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={Object.entries(salesProfit.payments_by_method).map(
-                        ([method, data]) => ({
-                          name: method,
-                          value: data.total_amount,
-                        })
-                      )}
+                      data={groupedPayments.map(({ name, value }) => ({
+                        name,
+                        value,
+                      }))}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -914,107 +935,107 @@ const DashboardPage = () => {
           )}
         </CardContent>
       </Card>
-   {/* Top Products */}
-<Card className="bg-white shadow-md hover:shadow-lg transition-shadow border-t-4 border-t-blue-500 mb-8 dark:bg-card">
-  <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b pb-4 gap-4 sm:gap-0">
-    <div>
-      <CardTitle className="text-lg sm:text-xl font-bold text-blue-700">
-        {t("dashboard.top_products")}
-      </CardTitle>
-      <CardDescription>
-        {t("dashboard.best_performing_products")}
-      </CardDescription>
-    </div>
-    <div className="flex items-center gap-2 sm:gap-3 bg-blue-50 px-2 sm:px-4 py-2 sm:py-2.5 rounded-lg w-full sm:w-auto">
-      <span className="text-sm font-medium text-blue-700 whitespace-nowrap">
-        {t("dashboard.show")}:
-      </span>
-      <Select
-        value={topProductsLimit.toString()}
-        onValueChange={(value) => setTopProductsLimit(parseInt(value))}
-      >
-        <SelectTrigger className="w-full sm:w-24 border-blue-200 bg-white dark:bg-card">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="3">3</SelectItem>
-          <SelectItem value="5">5</SelectItem>
-          <SelectItem value="10">10</SelectItem>
-          <SelectItem value="15">15</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-  </CardHeader>
-  <CardContent className="pt-6">
-    <div className="w-full overflow-x-auto">
-      {topProducts.length > 0 ? (
-        <div className="min-w-[350px] sm:min-w-0 overflow-x-auto rounded-lg border border-gray-200 dark:bg-card">
-          <table className="w-full border-collapse bg-white text-xs sm:text-sm dark:bg-card">
-            <thead className="bg-gray-50 ">
-              <tr className="text-left">
-                <th className="px-2 sm:px-4 py-2 sm:py-3 font-medium text-gray-900 dark:text-white-900">
-                  {t("dashboard.product")}
-                </th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 font-medium text-gray-900 text-center">
-                  {t("dashboard.quantity")}
-                </th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 font-medium text-gray-900 text-right">
-                  {t("dashboard.revenue")}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {topProducts.map((product, index) => (
-                <tr
-                  key={index}
-                  className="hover:bg-blue-50/30 transition-colors"
-                >
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 flex items-center gap-2 sm:gap-3 ">
-                    <div
-                      className={`inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full ${
-                        index < 3
-                          ? "bg-blue-100 text-blue-600"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      <Package className="h-4 w-4" />
-                    </div>
-                    <span className="font-medium truncate max-w-[120px] sm:max-w-none">
-                      {product.product_name}
-                    </span>
-                  </td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-medium">
-                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                      {product.total_quantity}
-                    </span>
-                  </td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium">
-                    {new Intl.NumberFormat("uz-UZ", {
-                      style: "currency",
-                      currency: "UZS",
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })
-                      .format(Number(product.total_revenue))
-                      .replace("UZS", "")
-                      .trim()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="text-center py-8 text-muted-foreground bg-gray-50 rounded-lg border border-dashed border-gray-300">
-          <Package className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-          <p className="text-gray-500">
-            {t("dashboard.no_product_data_available")}
-          </p>
-        </div>
-      )}
-    </div>
-  </CardContent>
-</Card>
+      {/* Top Products */}
+      <Card className="bg-white shadow-md hover:shadow-lg transition-shadow border-t-4 border-t-blue-500 mb-8 dark:bg-card">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b pb-4 gap-4 sm:gap-0">
+          <div>
+            <CardTitle className="text-lg sm:text-xl font-bold text-blue-700">
+              {t("dashboard.top_products")}
+            </CardTitle>
+            <CardDescription>
+              {t("dashboard.best_performing_products")}
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3 bg-blue-50 px-2 sm:px-4 py-2 sm:py-2.5 rounded-lg w-full sm:w-auto">
+            <span className="text-sm font-medium text-blue-700 whitespace-nowrap">
+              {t("dashboard.show")}:
+            </span>
+            <Select
+              value={topProductsLimit.toString()}
+              onValueChange={(value) => setTopProductsLimit(parseInt(value))}
+            >
+              <SelectTrigger className="w-full sm:w-24 border-blue-200 bg-white dark:bg-card">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3">3</SelectItem>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="15">15</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="w-full overflow-x-auto">
+            {topProducts.length > 0 ? (
+              <div className="min-w-[350px] sm:min-w-0 overflow-x-auto rounded-lg border border-gray-200 dark:bg-card">
+                <table className="w-full border-collapse bg-white text-xs sm:text-sm dark:bg-card">
+                  <thead className="bg-gray-50 ">
+                    <tr className="text-left">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 font-medium text-gray-900 dark:text-white-900">
+                        {t("dashboard.product")}
+                      </th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 font-medium text-gray-900 text-center">
+                        {t("dashboard.quantity")}
+                      </th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 font-medium text-gray-900 text-right">
+                        {t("dashboard.revenue")}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {topProducts.map((product, index) => (
+                      <tr
+                        key={index}
+                        className="hover:bg-blue-50/30 transition-colors"
+                      >
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 flex items-center gap-2 sm:gap-3 ">
+                          <div
+                            className={`inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full ${
+                              index < 3
+                                ? "bg-blue-100 text-blue-600"
+                                : "bg-gray-100 text-gray-600"
+                            }`}
+                          >
+                            <Package className="h-4 w-4" />
+                          </div>
+                          <span className="font-medium truncate max-w-[120px] sm:max-w-none">
+                            {product.product_name}
+                          </span>
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-medium">
+                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                            {product.total_quantity}
+                          </span>
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium">
+                          {new Intl.NumberFormat("uz-UZ", {
+                            style: "currency",
+                            currency: "UZS",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })
+                            .format(Number(product.total_revenue))
+                            .replace("UZS", "")
+                            .trim()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                <Package className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                <p className="text-gray-500">
+                  {t("dashboard.no_product_data_available")}
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
       {/* Detailed Expense Breakdown */}
       <Card className="bg-white shadow-md hover:shadow-lg transition-shadow mb-8 dark:bg-card">
         <CardHeader>
