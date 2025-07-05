@@ -6,6 +6,7 @@ import { createLoanPayment } from '../api/loanpaymentCreate';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
+import { FaTimes, FaRegMoneyBillAlt, FaRegListAlt } from 'react-icons/fa';
 
 export default function SponsorLoansPage() {
   const { t } = useTranslation();
@@ -60,24 +61,32 @@ export default function SponsorLoansPage() {
         actions={(loan) => (
           <div className="flex gap-2">
             <button
-              className="btn btn-primary"
+              className="btn btn-primary flex items-center justify-center"
+              title={t('Оплатить')}
               onClick={() => setPayModalLoan(loan)}
+              disabled={loan.is_paid}
             >
+              <FaRegMoneyBillAlt className="w-5 h-5 mr-2" />
               {t('Оплатить')}
             </button>
             <button
-              className="btn btn-secondary"
+              className="btn btn-secondary flex items-center justify-center"
+              title={t('Платежи')}
               onClick={() => navigate(`/sponsors/${id}/loans/${loan.id}/payments`)}
             >
+              <FaRegListAlt className="w-5 h-5 mr-2" />
               {t('Платежи')}
             </button>
           </div>
         )}
       />
       {payModalLoan && (
-        <div className="fixed inset-0 flex items-center justify-center bg-muted bg-opacity-70 z-50">
+        <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow-lg min-w-[350px]">
-            <h4 className="font-bold mb-4">{t('Оплатить займ')}</h4>
+            <h4 className="font-bold mb-4 flex items-center gap-2">
+              <FaRegMoneyBillAlt className="w-5 h-5 text-gray-700" />
+              {t('Оплатить займ')}
+            </h4>
             <ResourceForm
               fields={[
                 { name: 'amount', label: t('forms.amount'), type: 'number', required: true },
@@ -93,7 +102,12 @@ export default function SponsorLoansPage() {
               isSubmitting={isSubmitting}
               hideSubmitButton={false}
             />
-            <button className="mt-4 btn btn-outline w-full" onClick={() => setPayModalLoan(null)}>
+            <button
+              className="mt-4 btn btn-outline w-full flex items-center justify-center"
+              onClick={() => setPayModalLoan(null)}
+              title={t('Закрыть')}
+            >
+              <FaTimes className="w-4 h-4 mr-2" />
               {t('Закрыть')}
             </button>
           </div>

@@ -12,7 +12,8 @@ interface SelectCurrencyModalProps {
 const CURRENCIES = [
   { value: 'Доллар', label: 'Доллар' },
   { value: 'Сум', label: 'Сум' },
-  { value: 'Евро', label: 'Евро' },
+  { value: 'Рубль', label: 'Рубль' },
+  { value: 'Тенге', label: 'Тенге' },
 ];
 
 export function SelectCurrencyModal({ open, onOpenChange, onSelect }: SelectCurrencyModalProps) {

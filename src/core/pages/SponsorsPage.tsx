@@ -79,8 +79,25 @@ export default function SponsorsPage() {
   };
 
   const sponsorColumns = [
-    { header: t('forms.name'), accessorKey: 'name' },
-    { header: t('forms.phone'), accessorKey: 'phone_number' },
+    {
+      accessorKey: 'name',
+      header: t('forms.client_name'),
+      cell: (sponsor: any) => (
+        <div>
+          <div>
+            <button
+              onClick={() => handleSelectCurrency(sponsor?.id)}
+              className="text-blue-600 hover:underline hover:text-blue-800"
+            >
+              {sponsor.name}
+            </button>
+          </div>
+          <div className="text-sm text-gray-500">
+            {sponsor.phone_number}
+          </div>
+        </div>
+      ),
+    },
   ];
 
   const sponsorActions = (sponsor: Sponsor) => (
