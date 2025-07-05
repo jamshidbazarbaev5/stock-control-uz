@@ -10,15 +10,15 @@ export interface LoanPayment {
   paid_at: string;
 }
 
-export function useGetLoanPaymentsByLoan(loanId?: string) {
+export function useGetLoanPaymentsByLoan(sponsorId?: string, loanId?: string) {
   return useQuery<LoanPayment[]>({
-    queryKey: ['loanPayments', loanId],
+    queryKey: ['loanPayments', sponsorId, loanId],
     queryFn: async () => {
-      if (!loanId) return [];
-      const res = await api.get(`/loans/${loanId}/payments`);
+      if (!sponsorId || !loanId) return [];
+      const res = await api.get(`/sponsors/${sponsorId}/loans/${loanId}/payments/`);
       if (res.status !== 200) throw new Error('Failed to fetch payments');
-      return await res.data
+      return res.data;
     },
-    enabled: !!loanId,
+    enabled: !!sponsorId && !!loanId,
   });
 }

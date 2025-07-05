@@ -249,11 +249,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             label: t("navigation.sponsors"),
             href: "/sponsors",
           },
-          {
-            icon: User2,
-            label: t("navigation.loan"),
-            href: "/loans",
-          },
+         
         ],
       });
     }

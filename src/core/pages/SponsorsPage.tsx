@@ -2,14 +2,21 @@ import { useTranslation } from 'react-i18next';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { fetchSponsors, deleteSponsor, type Sponsor } from '../api/sponsors';
 import { toast } from 'sonner';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { CreateLoanModal } from '../components/modals/CreateLoanModal';
+import { SelectCurrencyModal } from '../components/modals/SelectCurrencyModal';
+import { createLoan } from '../api/loan';
+import { Button } from '../../components/ui/button';
 
 export default function SponsorsPage() {
   const { t } = useTranslation();
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [isLoading, setIsLoading] = useState(false);
- const navigate = useNavigate();
+  const [createLoanOpen, setCreateLoanOpen] = useState(false);
+  const [selectedSponsorId, setSelectedSponsorId] = useState<number | null>(null);
+  const [currencyModalOpen, setCurrencyModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -28,7 +35,7 @@ export default function SponsorsPage() {
   }, []);
 
   const handleAdd = () => {
-   navigate('/create-sponsor');
+    navigate('/create-sponsor');
   };
 
   const handleEdit = (sponsor: Sponsor) => {
@@ -45,27 +52,67 @@ export default function SponsorsPage() {
     }
   };
 
- 
+  const handleCreateLoan = useCallback(async (data: { total_amount: number; currency: string; due_date: string; sponsor_write: number }) => {
+    if (!selectedSponsorId) return;
+    try {
+      await createLoan(selectedSponsorId, data);
+      toast.success(t('messages.success.created', { item: t('navigation.loan') }));
+      fetchData();
+    } catch (e) {
+      toast.error('Failed to create loan');
+    }
+  }, [selectedSponsorId]);
 
-  const columns = [
+  const handleOpenCreateLoan = (sponsorId: number) => {
+    setSelectedSponsorId(sponsorId);
+    setCreateLoanOpen(true);
+  };
+
+  const handleRowClick = (sponsor: Sponsor) => {
+    setSelectedSponsorId(sponsor.id!);
+    setCurrencyModalOpen(true);
+  };
+
+  const handleSelectCurrency = (currency: string) => {
+    if (!selectedSponsorId) return;
+    navigate(`/sponsors/${selectedSponsorId}/loans/${currency}`);
+  };
+
+  const sponsorColumns = [
     { header: t('forms.name'), accessorKey: 'name' },
     { header: t('forms.phone'), accessorKey: 'phone_number' },
   ];
 
+  const sponsorActions = (sponsor: Sponsor) => (
+    <Button size="sm" variant="outline" onClick={() => handleOpenCreateLoan(sponsor.id!)}>
+      {t('Создать займ')}
+    </Button>
+  );
 
   return (
     <div className="container py-8 px-4">
       <ResourceTable<Sponsor>
         data={sponsors}
-        columns={columns}
+        columns={sponsorColumns}
         isLoading={isLoading}
         onAdd={handleAdd}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        
         totalCount={sponsors.length}
+        actions={sponsorActions}
+        onRowClick={handleRowClick}
       />
-     
+      <CreateLoanModal
+        open={createLoanOpen}
+        onOpenChange={setCreateLoanOpen}
+        sponsorId={selectedSponsorId}
+        onCreate={handleCreateLoan}
+      />
+      <SelectCurrencyModal
+        open={currencyModalOpen}
+        onOpenChange={setCurrencyModalOpen}
+        onSelect={handleSelectCurrency}
+      />
     </div>
   );
 }

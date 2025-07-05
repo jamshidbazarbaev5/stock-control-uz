@@ -62,8 +62,7 @@ import DebtPaymentsPage from "./core/pages/DebtPaymentsPage";
 import SponsorsPage from "./core/pages/SponsorsPage";
 import CreateSponsorPage from "./core/pages/create-sponsor";
 import EditSponsorPage from "./core/pages/edit-sponsor";
-import LoanSponsorsPage from "./core/pages/LoanSponsorsPage";
-import CreateLoanSponsor from "./core/pages/CreateLoanSponsor";
+import SponsorLoansPage from "./core/pages/SponsorLoansPage";
 import LoanPaymentsPage from "./core/pages/LoanPaymentsPage";
 
 const queryClient = new QueryClient();
@@ -136,10 +135,12 @@ function App() {
             <Route path="/sponsors" element={<PrivateRoute allowedRoles={["Администратор"]}><SponsorsPage /></PrivateRoute>} />
             <Route path="/create-sponsor" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateSponsorPage /></PrivateRoute>} />
             <Route path="/sponsors/edit/:id" element={<PrivateRoute allowedRoles={["Администратор"]}><EditSponsorPage /></PrivateRoute>} />
-            <Route path="/loans" element={<PrivateRoute allowedRoles={["Администратор"]}><LoanSponsorsPage /></PrivateRoute>} />
-            <Route path="/loans/create" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateLoanSponsor /></PrivateRoute>} />
-            <Route path="/loan-payments" element={<PrivateRoute allowedRoles={["Администратор"]}><LoanPaymentsPage /></PrivateRoute>} />
-            <Route path="/loans/:loanId/payments" element={<PrivateRoute allowedRoles={["Администратор"]}><LoanPaymentsPage /></PrivateRoute>} />
+            <Route path="/sponsors/:id/loans/:currency" element={<PrivateRoute allowedRoles={["Администратор"]}><SponsorLoansPage /></PrivateRoute>} />
+            <Route path="/sponsors/:id/loans/:loanId/payments" element={<PrivateRoute allowedRoles={["Администратор"]}><LoanPaymentsPage /></PrivateRoute>} />
+            {/* <Route path="/loans" element={<PrivateRoute allowedRoles={["Администратор"]}><LoanSponsorsPage /></PrivateRoute>} /> */}
+            {/* <Route path="/loans/create" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateLoanSponsor /></PrivateRoute>} /> */}
+            {/* <Route path="/loan-payments" element={<PrivateRoute allowedRoles={["Администратор"]}><LoanPaymentsPage /></PrivateRoute>} /> */}
+            {/* <Route path="/loans/:loanId/payments" element={<PrivateRoute allowedRoles={["Администратор"]}><LoanPaymentsPage /></PrivateRoute>} /> */}
             {/* Routes accessible by all authenticated users */}
             {/* Default route */}
             <Route path="/" element={<Navigate to="/dashboard" />} />
