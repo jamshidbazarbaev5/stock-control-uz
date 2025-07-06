@@ -1,24 +1,31 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { ResourceTable } from '../helpers/ResourseTable';
-import { type Sale, useGetSales, useDeleteSale } from '../api/sale';
-import { useGetProducts } from '../api/product';
-import { toast } from 'sonner';
-import { useCurrentUser } from '../hooks/useCurrentUser';
-import { Button } from '../../components/ui/button';
-import { Card } from '../../components/ui/card';
-import { Input } from '../../components/ui/input';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { ResourceTable } from "../helpers/ResourseTable";
+import { type Sale, useGetSales, useDeleteSale } from "../api/sale";
+// import { useGetProducts } from '../api/product';
+import { toast } from "sonner";
+import { useCurrentUser } from "../hooks/useCurrentUser";
+import { Button } from "../../components/ui/button";
+import { Card } from "../../components/ui/card";
+import { Input } from "../../components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { CheckCircle2, AlertCircle,  CreditCard, Wallet, SmartphoneNfc,Landmark } from 'lucide-react';
-import {type Store, useGetStores} from "@/core/api/store.ts";
-import '../../expanded-row-dark.css';
+} from "@/components/ui/select";
+import {
+  CheckCircle2,
+  AlertCircle,
+  CreditCard,
+  Wallet,
+  SmartphoneNfc,
+  Landmark,
+} from "lucide-react";
+import { type Store, useGetStores } from "@/core/api/store.ts";
+import "../../expanded-row-dark.css";
 
 type PaginatedData<T> = { results: T[]; count: number } | T[];
 export default function SalesPage() {
@@ -31,37 +38,44 @@ export default function SalesPage() {
   // const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // Set initial states
-  const [selectedProduct, setSelectedProduct] = useState<string>('all');
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
-  const [creditStatus, setCreditStatus] = useState<string>('all');
-  const [selectedStore, setSelectedStore] = useState<string>('all');
+  const [selectedProduct, setSelectedProduct] = useState<string>("all");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [creditStatus, setCreditStatus] = useState<string>("all");
+  const [selectedStore, setSelectedStore] = useState<string>("all");
+  const [productName, setProductName] = useState<string>("");
+
   const { data: storesData } = useGetStores({});
-  const { data: salesData, isLoading } = useGetSales({ 
-    params: { 
+  const { data: salesData, isLoading } = useGetSales({
+    params: {
       page,
-      product: selectedProduct !== 'all' ? selectedProduct : undefined,
-      store: selectedStore === 'all' ? undefined : selectedStore,
+      product: selectedProduct !== "all" ? selectedProduct : undefined,
+      store: selectedStore === "all" ? undefined : selectedStore,
       start_date: startDate || undefined,
+      product_name: productName || undefined, // Send as product_name
       end_date: endDate || undefined,
-      on_credit: creditStatus !== 'all' ? creditStatus === 'true' : undefined
-    }
+      on_credit: creditStatus !== "all" ? creditStatus === "true" : undefined,
+    },
   });
-  const getPaginatedData = <T extends { id?: number }>(data: PaginatedData<T> | undefined): T[] => {
+  const getPaginatedData = <T extends { id?: number }>(
+    data: PaginatedData<T> | undefined
+  ): T[] => {
     if (!data) return [];
     return Array.isArray(data) ? data : data.results;
   };
-  const { data: productsData } = useGetProducts({});
-  const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
+  // const { data: productsData } = useGetProducts({});
+  // const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
   const stores = getPaginatedData<Store>(storesData);
   const deleteSale = useDeleteSale();
 
   // Get sales array and total count
   const sales = Array.isArray(salesData) ? salesData : salesData?.results || [];
-  const totalCount = Array.isArray(salesData) ? sales.length : salesData?.count || 0;
+  const totalCount = Array.isArray(salesData)
+    ? sales.length
+    : salesData?.count || 0;
 
   const formatCurrency = (amount: string | number) => {
-    return new Intl.NumberFormat('ru-RU').format(Number(amount));
+    return new Intl.NumberFormat("ru-RU").format(Number(amount));
   };
 
   // const formatDate = (dateString: string) => {
@@ -82,19 +96,21 @@ export default function SalesPage() {
   const handleDelete = async (id: number) => {
     try {
       await deleteSale.mutateAsync(id);
-      toast.success(t('messages.success.deleted', { item: t('navigation.sales') }));
+      toast.success(
+        t("messages.success.deleted", { item: t("navigation.sales") })
+      );
       // setIsDetailsModalOpen(false);
     } catch (error) {
-      toast.error(t('messages.error.delete', { item: t('navigation.sales') }));
-      console.error('Failed to delete sale:', error);
+      toast.error(t("messages.error.delete", { item: t("navigation.sales") }));
+      console.error("Failed to delete sale:", error);
     }
   };
 
   const handleClearFilters = () => {
-    setSelectedProduct('all');
-    setStartDate('');
-    setEndDate('');
-    setCreditStatus('all');
+    setSelectedProduct("all");
+    setStartDate("");
+    setEndDate("");
+    setCreditStatus("all");
     setPage(1);
   };
 
@@ -107,24 +123,37 @@ export default function SalesPage() {
   };
 
   const renderExpandedRow = (row: Sale) => {
-    if (!row.sale_items?.length) return <div className="p-4 text-center text-gray-500">{t('messages.no_items_found')}</div>;
-    
+    if (!row.sale_items?.length)
+      return (
+        <div className="p-4 text-center text-gray-500">
+          {t("messages.no_items_found")}
+        </div>
+      );
+
     return (
       <div className="p-4">
         <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-          {t('common.sale_items')} 
+          {t("common.sale_items")}
           <span className="text-sm bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
             {row.sale_items.length}
           </span>
         </h3>
         <div className="space-y-3">
           {row.sale_items.map((item, index) => (
-            <div key={index} className=" dark:bg-expanded-row-dark p-4 rounded-lg transition-all duration-200">
+            <div
+              key={index}
+              className=" dark:bg-expanded-row-dark p-4 rounded-lg transition-all duration-200"
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                  <span className="text-sm text-gray-500 block mb-1">{t('table.product')}</span>
-                  <span className="font-medium line-clamp-2" title={item.stock_read?.product_read?.product_name || '-'}>
-                    {item.stock_read?.product_read?.product_name || '-'}
+                  <span className="text-sm text-gray-500 block mb-1">
+                    {t("table.product")}
+                  </span>
+                  <span
+                    className="font-medium line-clamp-2"
+                    title={item.stock_read?.product_read?.product_name || "-"}
+                  >
+                    {item.stock_read?.product_read?.product_name || "-"}
                   </span>
                   {item.stock_read?.product_read?.category_read && (
                     <span className="text-xs text-gray-500">
@@ -133,14 +162,26 @@ export default function SalesPage() {
                   )}
                 </div>
                 <div>
-                  <span className="text-sm text-gray-500 block mb-1">{t('table.quantity')}</span>
+                  <span className="text-sm text-gray-500 block mb-1">
+                    {t("table.quantity")}
+                  </span>
                   <span className="font-medium">
                     {(item.stock_read?.product_read as any)?.has_metr
                       ? `${item.quantity} метр`
                       : (item.stock_read?.product_read as any)?.has_shtuk
-                        ? `${item.quantity} штук`
-                        : `${item.quantity} ${item.selling_method === 'Штук' ? t('table.pieces') : item.stock_read?.product_read?.measurement?.find((m: { for_sale: boolean; measurement_read?: { measurement_name: string } }) => m.for_sale)?.measurement_read?.measurement_name || ''}`
-                    }
+                      ? `${item.quantity} штук`
+                      : `${item.quantity} ${
+                          item.selling_method === "Штук"
+                            ? t("table.pieces")
+                            : item.stock_read?.product_read?.measurement?.find(
+                                (m: {
+                                  for_sale: boolean;
+                                  measurement_read?: {
+                                    measurement_name: string;
+                                  };
+                                }) => m.for_sale
+                              )?.measurement_read?.measurement_name || ""
+                        }`}
                   </span>
                 </div>
                 {/* <div>
@@ -150,8 +191,12 @@ export default function SalesPage() {
                   </span>
                 </div> */}
                 <div>
-                  <span className="text-sm text-gray-500 block mb-1">{t('forms.amount4')}</span>
-                  <span className="font-medium text-emerald-600">{formatCurrency(item.subtotal)} UZS</span>
+                  <span className="text-sm text-gray-500 block mb-1">
+                    {t("forms.amount4")}
+                  </span>
+                  <span className="font-medium text-emerald-600">
+                    {formatCurrency(item.subtotal)} UZS
+                  </span>
                 </div>
               </div>
             </div>
@@ -163,21 +208,33 @@ export default function SalesPage() {
 
   const columns = [
     {
-      header: t('table.store'),
-      accessorKey: 'store_read',
-      cell: (row: Sale) => row.store_read?.name || '-',
+      header: t("table.store"),
+      accessorKey: "store_read",
+      cell: (row: Sale) => row.store_read?.name || "-",
     },
     {
-      header: t('table.payment_method'),
-      accessorKey: 'sale_payments',
+      header: t("table.payment_method"),
+      accessorKey: "sale_payments",
       cell: (row: any) => (
         <div className="flex flex-col items-center gap-1">
           {row.sale_payments.map((payment: any, index: number) => (
-            <div key={index} className="flex items-center gap-1 text-xs justify-center">
-              {payment.payment_method === 'Наличные' && <Wallet className="h-4 w-4 text-green-600" />}
-              {payment.payment_method === 'Карта' && <CreditCard className="h-4 w-4 text-blue-600" />}
-              {payment.payment_method === 'Click' && <SmartphoneNfc className="h-4 w-4 text-purple-600" />}
-              {payment.payment_method === 'Перечисление' && <Landmark className="h-4 w-4 text-orange-500" />} {/* New method */}
+            <div
+              key={index}
+              className="flex items-center gap-1 text-xs justify-center"
+            >
+              {payment.payment_method === "Наличные" && (
+                <Wallet className="h-4 w-4 text-green-600" />
+              )}
+              {payment.payment_method === "Карта" && (
+                <CreditCard className="h-4 w-4 text-blue-600" />
+              )}
+              {payment.payment_method === "Click" && (
+                <SmartphoneNfc className="h-4 w-4 text-purple-600" />
+              )}
+              {payment.payment_method === "Перечисление" && (
+                <Landmark className="h-4 w-4 text-orange-500" />
+              )}{" "}
+              {/* New method */}
               <span className="whitespace-nowrap">
                 {formatCurrency(payment.amount)}
               </span>
@@ -187,14 +244,16 @@ export default function SalesPage() {
       ),
     },
     {
-      header: t('table.items'),
-      accessorKey: 'sale_items',
+      header: t("table.items"),
+      accessorKey: "sale_items",
       cell: (row: Sale) => {
-        if (!row.sale_items?.length) return '-';
-        const itemsText = row.sale_items.map(item => {
-          const product = item.stock_read?.product_read?.product_name || '-';
-          return `${product}`;
-        }).join(' • ');
+        if (!row.sale_items?.length) return "-";
+        const itemsText = row.sale_items
+          .map((item) => {
+            const product = item.stock_read?.product_read?.product_name || "-";
+            return `${product}`;
+          })
+          .join(" • ");
         return (
           <div className="max-w-[300px]">
             <p className="text-sm truncate" title={itemsText}>
@@ -205,23 +264,31 @@ export default function SalesPage() {
       },
     },
     {
-      header: t('table.quantity'),
-      accessorKey: 'quantity',
+      header: t("table.quantity"),
+      accessorKey: "quantity",
       cell: (row: Sale) => {
-        if (!row.sale_items?.length) return '-';
-        const quantities = row.sale_items.map(item => {
-          const product = item.stock_read?.product_read as any;
-          if (product?.has_metr) {
-            return `${item.quantity} метр`;
-          } else if (product?.has_shtuk) {
-            return `${item.quantity} штук`;
-          } else {
-            let measurement = item.selling_method === 'Штук'
-              ? t('table.pieces')
-              : product?.measurement?.find((m: { for_sale: boolean; measurement_read?: { measurement_name: string } }) => m.for_sale)?.measurement_read?.measurement_name || '';
-            return `${item.quantity} ${measurement}`;
-          }
-        }).join(' • ');
+        if (!row.sale_items?.length) return "-";
+        const quantities = row.sale_items
+          .map((item) => {
+            const product = item.stock_read?.product_read as any;
+            if (product?.has_metr) {
+              return `${item.quantity} метр`;
+            } else if (product?.has_shtuk) {
+              return `${item.quantity} штук`;
+            } else {
+              let measurement =
+                item.selling_method === "Штук"
+                  ? t("table.pieces")
+                  : product?.measurement?.find(
+                      (m: {
+                        for_sale: boolean;
+                        measurement_read?: { measurement_name: string };
+                      }) => m.for_sale
+                    )?.measurement_read?.measurement_name || "";
+              return `${item.quantity} ${measurement}`;
+            }
+          })
+          .join(" • ");
         return (
           <div className="max-w-[200px]">
             <p className="text-sm truncate" title={quantities}>
@@ -232,58 +299,72 @@ export default function SalesPage() {
       },
     },
     {
-      header: t('table.total_amount'),
-      accessorKey: 'total_amount',
+      header: t("table.total_amount"),
+      accessorKey: "total_amount",
       cell: (row: Sale) => (
         <span className="font-medium text-emerald-600">
-          {formatCurrency(row.total_amount)} 
+          {formatCurrency(row.total_amount)}
         </span>
       ),
     },
     // Show for all superusers OR if role is Администратор
-    ...((currentUser?.is_superuser || currentUser?.role === "Администратор")
-      ? [{
-          header: t('table.total_pure_revenue'),
-          accessorKey: 'total_pure_revenue',
-          cell: (row: Sale) => (
-            <span className="font-medium text-emerald-600">
-              {formatCurrency(row.total_pure_revenue || '0')} 
-            </span>
-          ),
-        }]
+    ...(currentUser?.is_superuser || currentUser?.role === "Администратор"
+      ? [
+          {
+            header: t("table.total_pure_revenue"),
+            accessorKey: "total_pure_revenue",
+            cell: (row: Sale) => (
+              <span className="font-medium text-emerald-600">
+                {formatCurrency(row.total_pure_revenue || "0")}
+              </span>
+            ),
+          },
+        ]
       : []),
     {
-      header: t('table.status'),
-      accessorKey: 'on_credit',
+      header: t("table.status"),
+      accessorKey: "on_credit",
       cell: (row: Sale) => (
         <div className="flex flex-col gap-1">
           {row.is_paid ? (
             <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
               <CheckCircle2 className="h-3 w-3" />
-              {t('common.paid')}
+              {t("common.paid")}
             </div>
           ) : (
-            <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${row.on_credit ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
-              {row.on_credit ? <AlertCircle className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
-              {row.on_credit ? t('common.on_credit') : t('common.paid2')}
+            <div
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                row.on_credit
+                  ? "bg-amber-100 text-amber-700"
+                  : "bg-emerald-100 text-emerald-700"
+              }`}
+            >
+              {row.on_credit ? (
+                <AlertCircle className="h-3 w-3" />
+              ) : (
+                <CheckCircle2 className="h-3 w-3" />
+              )}
+              {row.on_credit ? t("common.on_credit") : t("common.paid2")}
             </div>
           )}
         </div>
       ),
     },
-    
+
     {
-      header: t('table.sold_date'),
-      accessorKey: 'sold_date',
+      header: t("table.sold_date"),
+      accessorKey: "sold_date",
       cell: (row: Sale) => (
         <div className="whitespace-nowrap">
-          {row.sold_date ? new Date(row.sold_date).toLocaleDateString('ru-RU', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-          }) : '-'}
+          {row.sold_date
+            ? new Date(row.sold_date).toLocaleDateString("ru-RU", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "-"}
         </div>
       ),
     },
@@ -307,105 +388,105 @@ export default function SalesPage() {
     // }
   ];
 
+  // Fetch all products with pagination
+
   return (
     <div className="container mx-auto py-4 sm:py-6 md:py-8 px-2 sm:px-4">
-     
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold">{t('navigation.sales')}</h1>
-        <Button onClick={() => navigate('/create-sale')} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
-          {t('common.create')}
+        <h1 className="text-xl sm:text-2xl font-bold">
+          {t("navigation.sales")}
+        </h1>
+        <Button
+          onClick={() => navigate("/create-sale")}
+          className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
+        >
+          {t("common.create")}
         </Button>
       </div>
 
       {/* Filters */}
-      <Card className="p-3 sm:p-4 mb-4 sm:mb-6">
-        <div className="flex justify-between items-center mb-3 sm:mb-4">
-          <h2 className="text-base sm:text-lg font-medium">{t('common.filters')}</h2>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleClearFilters}
-          >
-            {t('common.reset') || 'Сбросить'}
-          </Button>
+      {/* <Card className="p-3 sm:p-4 mb-4 sm:mb-6"> */}
+      <div className="flex justify-between items-center mb-3 sm:mb-4">
+        <h2 className="text-base sm:text-lg font-medium">
+          {t("common.filters")}
+        </h2>
+        <Button variant="outline" size="sm" onClick={handleClearFilters}>
+          {t("common.reset") || "Сбросить"}
+        </Button>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-5">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            {t("forms.type_product_name")}
+          </label>
+          <Input
+            type="text"
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
+            placeholder={t("forms.type_product_name")}
+            className="w-full"
+          />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {currentUser?.is_superuser && (
           <div className="space-y-2">
-            <label className="text-sm font-medium">{t('table.product')}</label>
-            <Select
-              value={selectedProduct}
-              onValueChange={setSelectedProduct}
-            >
+            <label className="text-sm font-medium">
+              {t("forms.select_store")}
+            </label>
+            <Select value={selectedStore} onValueChange={setSelectedStore}>
               <SelectTrigger className="w-full">
-                <SelectValue placeholder={t('placeholders.select_product')} />
+                <SelectValue placeholder={t("forms.select_store")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">{t('common.all')}</SelectItem>
-                {products.map((product) => (
-                  <SelectItem key={product.id} value={String(product.id || '')}>
-                    {product.product_name}
-                  </SelectItem>
-                ))}
+                <SelectItem value="all">{t("forms.all_stores")}</SelectItem>
+                {stores?.map((store: Store) =>
+                  store.id ? (
+                    <SelectItem key={store.id} value={store.id.toString()}>
+                      {store.name}
+                    </SelectItem>
+                  ) : null
+                ) || null}
               </SelectContent>
             </Select>
           </div>
-          {currentUser?.is_superuser && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t('forms.select_store')}</label>
-              <Select value={selectedStore} onValueChange={setSelectedStore}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={t('forms.select_store')} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('forms.all_stores')}</SelectItem>
-                  {stores?.map((store: Store) => store.id ? (
-                      <SelectItem key={store.id} value={store.id.toString()}>
-                        {store.name}
-                      </SelectItem>
-                  ) : null) || null}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-           
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('forms.start_date')}</label>
-            <Input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full"
-            />
-          </div>
+        )}
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('forms.end_date')}</label>
-            <Input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{t('table.credit_status')}</label>
-            <Select
-              value={creditStatus}
-              onValueChange={setCreditStatus}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t('placeholders.select_status')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('common.all')}</SelectItem>
-                <SelectItem value="true">{t('common.on_credit')}</SelectItem>
-                <SelectItem value="false">{t('common.paid2')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">{t("forms.start_date")}</label>
+          <Input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="w-full"
+          />
         </div>
-      </Card>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">{t("forms.end_date")}</label>
+          <Input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="w-full"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            {t("table.credit_status")}
+          </label>
+          <Select value={creditStatus} onValueChange={setCreditStatus}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={t("placeholders.select_status")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("common.all")}</SelectItem>
+              <SelectItem value="true">{t("common.on_credit")}</SelectItem>
+              <SelectItem value="false">{t("common.paid2")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      {/* </Card> */}
 
       {/* Table */}
       <div className="overflow-hidden rounded-lg mb-4 sm:mb-6">
@@ -415,9 +496,15 @@ export default function SalesPage() {
               data={sales}
               columns={columns}
               isLoading={isLoading}
-              onDelete={currentUser?.role === "Продавец" ? undefined : handleDelete}
+              onDelete={
+                currentUser?.role === "Продавец" ? undefined : handleDelete
+              }
               totalCount={totalCount}
-              onEdit={currentUser?.is_superuser ? (sale: Sale) => navigate(`/edit-sale/${sale.id}`) : undefined}
+              onEdit={
+                currentUser?.is_superuser
+                  ? (sale: Sale) => navigate(`/edit-sale/${sale.id}`)
+                  : undefined
+              }
               pageSize={30}
               currentPage={page}
               onPageChange={(newPage) => setPage(newPage)}
