@@ -38,7 +38,7 @@ export default function SalesPage() {
   // const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // Set initial states
-  const [selectedProduct, setSelectedProduct] = useState<string>("all");
+  const [_selectedProduct, setSelectedProduct] = useState<string>("all");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [creditStatus, setCreditStatus] = useState<string>("all");
@@ -49,10 +49,10 @@ export default function SalesPage() {
   const { data: salesData, isLoading } = useGetSales({
     params: {
       page,
-      product: selectedProduct !== "all" ? selectedProduct : undefined,
+      // product: selectedProduct !== "all" ? selectedProduct : undefined,
       store: selectedStore === "all" ? undefined : selectedStore,
       start_date: startDate || undefined,
-      product_name: productName || undefined, // Send as product_name
+      product: productName || undefined, // Send as product_name
       end_date: endDate || undefined,
       on_credit: creditStatus !== "all" ? creditStatus === "true" : undefined,
     },
