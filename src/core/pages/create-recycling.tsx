@@ -476,7 +476,20 @@ export default function CreateRecycling() {
     const spentAmt = Number(form.watch("spent_amount"));
     // Only auto-calculate if spent_amount is a valid number
     if (!isNaN(spentAmt) && spentAmt > 0) {
-       if (categoryId === 17) {
+      if (categoryId === 13) { // Рейка
+        // Find the measurement with name "Метр"
+        const metrMeasurement = selectedProduct.measurement?.find(
+          (m) => m.measurement_read?.measurement_name === "Метр"
+        );
+        const metrValue = metrMeasurement ? Number(metrMeasurement.number) : 1;
+        const newGetAmount = spentAmt * metrValue;
+        if (form.getValues("get_amount") !== String(newGetAmount)) {
+          form.setValue("get_amount", String(newGetAmount), {
+            shouldValidate: false,
+            shouldDirty: true,
+          });
+        }
+      } else if (categoryId === 17) {
         // коньёк
         const newGetAmount = spentAmt * 6;
         if (form.getValues("get_amount") !== String(newGetAmount)) {
@@ -495,7 +508,7 @@ export default function CreateRecycling() {
           });
         }
       }
-       else if (categoryId === 19) { // снегозадержатель
+      else if (categoryId === 19) { // снегозадержатель
         const newGetAmount = spentAmt * 12;
         if (form.getValues("get_amount") !== String(newGetAmount)) {
           form.setValue("get_amount", String(newGetAmount), {
