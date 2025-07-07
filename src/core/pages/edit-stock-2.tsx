@@ -56,7 +56,7 @@ export default function EditStock() {
       setCurrencyLoading(true);
       try {
         const token = getAccessToken();
-        const res = await axios.get('https://stock-control.uz/api/v1/items/currency/', {
+        const res = await axios.get('https://bondify.uz/api/v1/items/currency/', {
           headers: { Authorization: token ? `Bearer ${token}` : '' },
         });
         if (res.data.results && res.data.results.length > 0) {

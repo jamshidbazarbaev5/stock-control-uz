@@ -2,7 +2,7 @@
 // Usage: await fetchAllStockProducts({ params })
 
 export async function fetchAllStockProducts({ params = {} } = {}): Promise<any[]> {
-  const baseUrl = 'https://stock-control.uz/api/v1/items/stock/';
+  const baseUrl = 'https://bondify.uz/api/v1/items/stock/';
   let page = 1;
   let allResults: any[] = [];
   let totalPages = 1;

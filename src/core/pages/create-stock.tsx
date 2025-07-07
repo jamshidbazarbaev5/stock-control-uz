@@ -203,7 +203,7 @@ export default function CreateStock() {
       const token = getAccessToken();
       try {
         do {
-          const url = `https://stock-control.uz/api/v1/items/product/?page=${page}` + (productSearchTerm ? `&product_name=${encodeURIComponent(productSearchTerm)}` : '');
+          const url = `https://bondify.uz/api/v1/items/product/?page=${page}` + (productSearchTerm ? `&product_name=${encodeURIComponent(productSearchTerm)}` : '');
           const res = await axios.get(url, {
             headers: {
               Authorization: token ? `Bearer ${token}` : '',
@@ -233,7 +233,7 @@ export default function CreateStock() {
       setCurrencyLoading(true);
       try {
         const token = getAccessToken();
-        const res = await axios.get('https://stock-control.uz/api/v1/items/currency/', {
+        const res = await axios.get('https://bondify.uz/api/v1/items/currency/', {
           headers: { Authorization: token ? `Bearer ${token}` : '' },
         });
         if (res.data.results && res.data.results.length > 0) {
