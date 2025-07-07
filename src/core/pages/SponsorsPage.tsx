@@ -86,7 +86,7 @@ export default function SponsorsPage() {
         <div>
           <div>
             <button
-              onClick={() => handleSelectCurrency(sponsor?.id)}
+              onClick={() => handleRowClick(sponsor)}
               className="text-blue-600 hover:underline hover:text-blue-800"
             >
               {sponsor.name}

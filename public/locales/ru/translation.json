@@ -281,6 +281,7 @@
   "forms": {
     "type":"Тип",
     "paid_at":"Дата оплаты",
+    "overpayment_unused":"Переоплачено",
     "notes":"Заметки",
     "currency":"Валюта",
     "created_at":"Дата создания",

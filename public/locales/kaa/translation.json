@@ -249,6 +249,7 @@
   },
   "forms": {
     "type": "Túr",
+    "overpayment_unused": "Artiq to'lendi",
     "sponsor": "Sponsor",
     "select_payment_method": "Tólew usılın tańlań",
     "total_amount4":"Barliq summa",

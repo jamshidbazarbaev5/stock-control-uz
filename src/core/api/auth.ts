@@ -14,7 +14,7 @@ interface TokenResponse {
 
 
 // Constants
-const BASE_URL = 'https://stock-control.uz/api/v1/'
+const BASE_URL = 'https://bondify.uz/api/v1/'
 const TOKEN_ENDPOINT = 'token/';
 const REFRESH_ENDPOINT = 'token/refresh/';
 const VERIFY_ENDPOINT = 'token/verify/';
