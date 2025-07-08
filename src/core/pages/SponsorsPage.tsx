@@ -81,7 +81,7 @@ export default function SponsorsPage() {
   const sponsorColumns = [
     {
       accessorKey: 'name',
-      header: t('forms.client_name'),
+      header: t('forms.sponsor_name'),
       cell: (sponsor: any) => (
         <div>
           <div>

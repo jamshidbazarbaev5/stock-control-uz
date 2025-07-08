@@ -316,29 +316,44 @@ const DashboardPage = () => {
     }
     return grouped;
   };
-  function groupPaymentsByMethod(paymentsByMethod:any, thresholdPercent = 0.05) {
-  if (!paymentsByMethod) return [];
-  const entries = Object.entries(paymentsByMethod);
-  const total = entries.reduce((sum, [, data]:any) => sum + Number(data.total_amount), 0);
-  if (total === 0) return entries.map(([method, data]:any) => ({ name: method, value: data.total_amount, count: data.count }));
-  const grouped = [];
-  let othersAmount = 0;
-  let othersCount = 0;
-  entries.forEach(([method, data]:any) => {
-    const percent = data.total_amount / total;
-    if (percent < thresholdPercent) {
-      othersAmount += data.total_amount;
-      othersCount += data.count;
-    } else {
-      grouped.push({ name: method, value: data.total_amount, count: data.count });
-    }
-  });
-  if (othersAmount > 0) {
-    grouped.push({ name: 'другие', value: othersAmount, count: othersCount });
-  }
-  return grouped;
-}
-const groupedPayments = groupPaymentsByMethod(salesProfit?.payments_by_method, 0.05); // 5% threshold
+  // function groupPaymentsByMethod(
+  //   paymentsByMethod: any,
+  //   thresholdPercent = 0.05
+  // ) {
+  //   if (!paymentsByMethod) return [];
+  //   const entries = Object.entries(paymentsByMethod);
+  //   const total = entries.reduce(
+  //     (sum, [, data]: any) => sum + Number(data.total_amount),
+  //     0
+  //   );
+  //   if (total === 0)
+  //     return entries.map(([method, data]: any) => ({
+  //       name: method,
+  //       value: data.total_amount,
+  //       count: data.count,
+  //     }));
+  //   const grouped = [];
+  //   let othersAmount = 0;
+  //   let othersCount = 0;
+  //   entries.forEach(([method, data]: any) => {
+  //     const percent = data.total_amount / total;
+  //     if (percent < thresholdPercent) {
+  //       othersAmount += data.total_amount;
+  //       othersCount += data.count;
+  //     } else {
+  //       grouped.push({
+  //         name: method,
+  //         value: data.total_amount,
+  //         count: data.count,
+  //       });
+  //     }
+  //   });
+  //   if (othersAmount > 0) {
+  //     grouped.push({ name: "другие", value: othersAmount, count: othersCount });
+  //   }
+  //   return grouped;
+  // }
+  // const groupedPayments = groupPaymentsByMethod(salesProfit?.payments_by_method, 0.05); // 5% threshold
 
   // Format the trend data for the charts
   const formattedData =
@@ -372,6 +387,27 @@ const groupedPayments = groupPaymentsByMethod(salesProfit?.payments_by_method, 0
       </div>
     );
   }
+
+  // Define a stable array of payment method names and colors
+  const paymentColors = [
+    "#FF6384",
+    "#36A2EB",
+    "#FFCE56",
+    "#4BC0C0",
+    "#9966FF",
+    "#FF9F40",
+    "#8BC34A",
+    "#673AB7",
+  ];
+
+  const paymentMethodNames = salesProfit?.payments_by_method
+    ? Object.keys(salesProfit.payments_by_method).sort()
+    : [];
+
+  const groupedPaymentsStable = paymentMethodNames.map((name) => ({
+    name,
+    value: salesProfit?.payments_by_method?.[name]?.total_amount || 0,
+  }));
 
   // Determine which dashboard to show based on user role
   if (currentUser?.role === "Продавец") {
@@ -818,46 +854,29 @@ const groupedPayments = groupPaymentsByMethod(salesProfit?.payments_by_method, 0
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {salesProfit?.payments_by_method &&
-          Object.keys(salesProfit.payments_by_method).length > 0 ? (
+          {salesProfit?.payments_by_method && paymentMethodNames.length > 0 ? (
             <div className="flex flex-col md:flex-row gap-8 items-center justify-between">
               <div className="w-full md:w-1/2 h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={groupedPayments.map(({ name, value }) => ({
-                        name,
-                        value,
-                      }))}
+                      data={groupedPaymentsStable}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
                       label={({ name, percent }) =>
-                        `${name} (${(percent * 100).toFixed(0)}%)`
+                        `${name}\n${(percent * 100).toFixed(0)}%`
                       }
                       outerRadius={100}
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {Object.keys(salesProfit.payments_by_method).map(
-                        (_, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={
-                              [
-                                "#FF6384",
-                                "#36A2EB",
-                                "#FFCE56",
-                                "#4BC0C0",
-                                "#9966FF",
-                                "#FF9F40",
-                                "#8BC34A",
-                                "#673AB7",
-                              ][index % 8]
-                            }
-                          />
-                        )
-                      )}
+                      {paymentMethodNames.map((_, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={paymentColors[index % paymentColors.length]}
+                        />
+                      ))}
                     </Pie>
                     <Legend />
                     <Tooltip
@@ -878,8 +897,9 @@ const groupedPayments = groupPaymentsByMethod(salesProfit?.payments_by_method, 0
               </div>
               <div className="w-full md:w-1/2">
                 <div className="space-y-2">
-                  {Object.entries(salesProfit.payments_by_method).map(
-                    ([method, data], idx) => (
+                  {paymentMethodNames.map((method, idx) => {
+                    const data = salesProfit?.payments_by_method?.[method];
+                    return (
                       <div
                         key={method}
                         className="flex items-center justify-between p-2 rounded-md bg-muted/50"
@@ -888,16 +908,8 @@ const groupedPayments = groupPaymentsByMethod(salesProfit?.payments_by_method, 0
                           <span
                             className="inline-block w-3 h-3 rounded-full mr-2"
                             style={{
-                              backgroundColor: [
-                                "#FF6384",
-                                "#36A2EB",
-                                "#FFCE56",
-                                "#4BC0C0",
-                                "#9966FF",
-                                "#FF9F40",
-                                "#8BC34A",
-                                "#673AB7",
-                              ][idx % 8],
+                              backgroundColor:
+                                paymentColors[idx % paymentColors.length],
                             }}
                           ></span>
                           <span className="font-medium">{method}</span>
@@ -910,18 +922,18 @@ const groupedPayments = groupPaymentsByMethod(salesProfit?.payments_by_method, 0
                               minimumFractionDigits: 0,
                               maximumFractionDigits: 0,
                             })
-                              .format(data.total_amount)
+                              .format(data?.total_amount || 0)
                               .replace("UZS", "")
                               .trim()}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {t("dashboard.transactions") || "Transactions"}:{" "}
-                            {data.count}
+                            {data?.count || 0}
                           </div>
                         </div>
                       </div>
-                    )
-                  )}
+                    );
+                  })}
                 </div>
               </div>
             </div>

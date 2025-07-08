@@ -95,25 +95,23 @@ export default function EditStock() {
 
   // Effect to update purchase_price_in_uz when its dependencies change
   useEffect(() => {
-    if (usdPrice && exchangeRateValue) {
+    // Only auto-calculate if usdPrice is not empty and not zero
+    if (usdPrice && usdPrice !== '0' && exchangeRateValue) {
       const priceInUSD = parseFloat(usdPrice);
       const rate = parseFloat(exchangeRateValue);
-      // const quantityString = form.watch('quantity')?.toString() || '0';
-      // const quantity = parseFloat(quantityString);
       if (!isNaN(priceInUSD) && !isNaN(rate)) {
         const calculatedPrice = priceInUSD * rate;
         form.setValue('purchase_price_in_uz', calculatedPrice.toString(), {
           shouldValidate: false,
           shouldDirty: true
         });
-        // Calculate per unit price (optional, for helper text)
-        // if (!isNaN(quantity) && quantity > 0) {
-        //   const perUnit = calculatedPrice / quantity;
-        //   setPerUnitPrice(perUnit);
-        // } else {
-        //   setPerUnitPrice(null);
-        // }
       }
+    } else if (stock?.purchase_price_in_uz) {
+      // If usdPrice is zero or empty, restore backend value
+      form.setValue('purchase_price_in_uz', stock.purchase_price_in_uz.toString(), {
+        shouldValidate: false,
+        shouldDirty: true
+      });
     }
   }, [usdPrice, exchangeRateValue, form, form.watch('quantity')]);
 

@@ -249,6 +249,7 @@
   },
   "forms": {
     "type": "Túr",
+    "sponsor_name": "Sponsor atı",
     "overpayment_unused": "Artiq to'lendi",
     "sponsor": "Sponsor",
     "select_payment_method": "Tólew usılın tańlań",

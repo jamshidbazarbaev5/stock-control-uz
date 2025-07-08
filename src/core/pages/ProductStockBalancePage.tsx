@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useGetStores } from '../api/store';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { Button } from '@/components/ui/button';
 
 interface ProductStockBalance {
   product__product_name: string;
@@ -93,6 +94,32 @@ export default function ProductStockBalancePage() {
     setShowZeroStock(value === 'true' ? 'true' : 'false');
   };
 
+  // Add Excel export handler
+  const handleExportExcel = async () => {
+    const params = new URLSearchParams({
+      page: currentPage.toString(),
+    });
+    if (selectedStore !== 'all') {
+      params.append('store', selectedStore);
+    }
+    params.append('product_zero', showZeroStock);
+    try {
+      const response = await api.get(`/dashboard/excel_export/?${params.toString()}`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'stock_balance.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+    } catch (error) {
+      // Optionally show error to user
+      alert('Ошибка при экспорте Excel');
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex flex-col space-y-4">
@@ -126,7 +153,7 @@ export default function ProductStockBalancePage() {
             </SelectContent>
           </Select>
         </div>
-        <div>
+        <div className="flex items-center gap-4">
           <h1 className='text-lg font-bold'>
             {t('table.total_volume')}
             {/* Show as 135,37 if value exists */}
@@ -134,6 +161,9 @@ export default function ProductStockBalancePage() {
               <span> {data.results.total.toFixed(2).replace('.', ',')}</span>
             )}
           </h1>
+          <Button onClick={handleExportExcel} variant="outline">
+            {t('buttons.export_excel', 'Экспорт в Excel')}
+          </Button>
         </div>
       </div>
       <Card className="mt-4">
