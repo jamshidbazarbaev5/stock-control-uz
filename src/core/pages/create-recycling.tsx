@@ -482,7 +482,6 @@ export default function CreateRecycling() {
           (m) => m.measurement_read?.measurement_name === "Метр"
         );
         const metrValue = metrMeasurement ? Number(metrMeasurement.number) : 1;
-        // Check if from_to's product category is Половой агаш (id 8)
         let multiplier = 1;
         const selectedFromStock = stocks.find((stock) => stock.id === Number(form.watch("from_to")));
         if (selectedFromStock?.product_read?.category_read?.id === 8) {

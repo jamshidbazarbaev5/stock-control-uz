@@ -27,6 +27,8 @@ export default function ExpensesPage() {
   const [selectedPaymentType, setSelectedPaymentType] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize = 30;
   const { data: currentUser } = useCurrentUser();
 
   const { data: expensesData, isLoading } = useGetExpenses({
@@ -40,6 +42,8 @@ export default function ExpensesPage() {
       }),
       date_gte: dateFrom || undefined,
       date_lte: dateTo || undefined,
+      page: currentPage,
+      // page_size: pageSize,
     },
   });
   const deleteExpense = useDeleteExpense();
@@ -56,6 +60,12 @@ export default function ExpensesPage() {
   const expenses = Array.isArray(expensesData)
     ? expensesData
     : expensesData?.results || [];
+  let totalCount = 0;
+  if (Array.isArray(expensesData)) {
+    totalCount = expensesData.length;
+  } else if (expensesData && typeof expensesData.count === 'number') {
+    totalCount = expensesData.count;
+  }
 
   const handleEdit = (expense: Expense) => {
     navigation(`/edit-expense/${expense.id}`);
@@ -187,6 +197,10 @@ export default function ExpensesPage() {
         onDelete={currentUser?.is_superuser ? handleDelete : undefined}
         onEdit={currentUser?.is_superuser ? handleEdit : undefined}
         isLoading={isLoading}
+        currentPage={currentPage}
+        onPageChange={(page) => setCurrentPage(page)}
+        totalCount={totalCount}
+        pageSize={pageSize}
       />
     </div>
   );

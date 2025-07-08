@@ -89,6 +89,7 @@ export interface Stock extends CreateStockDTO {
     name: string;
     phone_number: string;
   };
+  quantity_for_history?: number;
   history_of_prices?: {
     quantity: number;
     min_price: number;
