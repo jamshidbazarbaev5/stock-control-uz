@@ -515,6 +515,7 @@
     "complex": "Сложная оплата"
   },
   "table": {
+    "exchange_rate":"Курс обмена",
     "subtotal": "Сумма за единицу",
     "profit":"Прибыль",
     "total_pure_revenue":"чистый доход",

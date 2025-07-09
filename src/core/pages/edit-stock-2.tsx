@@ -458,6 +458,7 @@ export default function EditStock() {
         supplier_write: typeof data.supplier_write === 'string' ? parseInt(data.supplier_write, 10) : data.supplier_write!,
         date_of_arrived: data.date_of_arrived,
         measurement_write: [],
+        quantity_for_history:data.quantity,
         ...(data.income_weight ? { income_weight: data.income_weight } : {})
       };
       if (data.purchase_price_in_us && data.purchase_price_in_us !== '') {

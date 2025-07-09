@@ -88,8 +88,8 @@ export default function StockPriceHistoryPage() {
 
         {renderValueCard(
           t('table.exchange_rate'),
-          `${stock.exchange_rate?.toLocaleString()} UZS`,
-          `${stock.history_of_prices.exchange_rate?.toLocaleString()} UZS`,
+          typeof stock.exchange_rate === 'number' && stock.exchange_rate !== 0 ? Number(stock.exchange_rate).toLocaleString() + ' UZS' : '',
+          typeof stock.history_of_prices.exchange_rate === 'number' && stock.history_of_prices.exchange_rate !== 0 ? Number(stock.history_of_prices.exchange_rate).toLocaleString() + ' UZS' : '',
           'text-blue-600'
         )}
       </div>
@@ -111,8 +111,8 @@ export default function StockPriceHistoryPage() {
 
         {renderValueCard(
           t('table.purchase_price_us'),
-          `$${stock.purchase_price_in_us?.toLocaleString()}`,
-          `$${stock.history_of_prices.purchase_price_in_us?.toLocaleString()}`,
+          typeof stock.purchase_price_in_us === 'number' && stock.purchase_price_in_us !== 0 ? `$${Number(stock.purchase_price_in_us).toLocaleString()}` : '',
+          typeof stock.history_of_prices.purchase_price_in_us === 'number' && stock.history_of_prices.purchase_price_in_us !== 0 ? `$${Number(stock.history_of_prices.purchase_price_in_us).toLocaleString()}` : '',
           'text-indigo-600'
         )}
 
