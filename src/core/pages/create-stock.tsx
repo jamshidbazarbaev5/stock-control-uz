@@ -489,7 +489,8 @@ export default function CreateStock() {
         supplier_write: typeof data.supplier_write === 'string' ? parseInt(data.supplier_write, 10) : data.supplier_write!,
         date_of_arrived: data.date_of_arrived,
         income_weight: data.income_weight,
-        measurement_write: []
+        measurement_write: [],
+        quantity_for_history: quantity,
       };
       if (data.purchase_price_in_us && data.purchase_price_in_us !== '') {
         formattedData.purchase_price_in_us = String(data.purchase_price_in_us);

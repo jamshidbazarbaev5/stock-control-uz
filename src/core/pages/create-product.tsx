@@ -104,7 +104,7 @@ export default function CreateProduct() {
         has_color: data.has_color === 'true',
         ...(data.has_color === 'true' && { color }),
         has_kub: data.has_kub === 'true',
-        ...(data.has_kub === 'true' && { kub: parseFloat(kub) || 0 }),
+        ...(data.has_kub === 'true' && { kub: parseFloat(kub.replace(',', '.')) || 0 }),
         has_recycling: data.has_recycling === 'true',
         ...((data.has_recycling === 'true' && categoriesForRecycling.length > 0) && { categories_for_recycling: categoriesForRecycling }),
         is_list: isList === 'true',
