@@ -99,7 +99,6 @@ export default function SponsorLoansPage() {
               className="btn btn-primary flex items-center justify-center"
               title={t('Оплатить')}
               onClick={() => setPayModalLoan(loan)}
-              disabled={loan.is_paid}
             >
               <FaRegMoneyBillAlt className="w-5 h-5 mr-2" />
               {t('Оплатить')}

@@ -131,6 +131,10 @@ const DashboardPage = () => {
       Math.min(prev + 9, unsoldProducts.length)
     );
   };
+  const formatLocalDate = (date: Date | null) =>
+  date
+    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+    : "";
 
   // Get current user to determine role
   const { data: currentUser } = useCurrentUser();
@@ -153,12 +157,8 @@ const DashboardPage = () => {
 
           // If using custom dates, prepare the date parameters
           if (startDate || endDate) {
-            const formattedStartDate = startDate
-              ? startDate.toISOString().split("T")[0]
-              : "";
-            const formattedEndDate = endDate
-              ? endDate.toISOString().split("T")[0]
-              : "";
+            const formattedStartDate = formatLocalDate(startDate);
+            const formattedEndDate = formatLocalDate(endDate);
             dateParams = `date_from=${formattedStartDate}&date_to=${formattedEndDate}`;
           } else if (period !== "custom") {
             // Only use period if we're not using custom dates
@@ -188,10 +188,10 @@ const DashboardPage = () => {
           // If using custom dates, prepare the date parameters
           if (startDate || endDate) {
             const formattedStartDate = startDate
-              ? startDate.toISOString().split("T")[0]
+              ? formatLocalDate(startDate)
               : "";
             const formattedEndDate = endDate
-              ? endDate.toISOString().split("T")[0]
+              ? formatLocalDate (endDate)
               : "";
             dateParams = `date_from=${formattedStartDate}&date_to=${formattedEndDate}`;
           } else if (period !== "custom") {
@@ -275,10 +275,10 @@ const DashboardPage = () => {
     let apiPeriod: "day" | "week" | "month" | undefined = undefined;
     if (startDate || endDate) {
       const formattedStartDate = startDate
-        ? startDate.toISOString().split("T")[0]
+        ? formatLocalDate(startDate)
         : "";
       const formattedEndDate = endDate
-        ? endDate.toISOString().split("T")[0]
+        ? formatLocalDate(endDate)
         : "";
       dateParams = `date_from=${formattedStartDate}&date_to=${formattedEndDate}`;
     } else if (period !== "custom") {
