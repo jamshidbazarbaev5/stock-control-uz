@@ -399,6 +399,7 @@
       "balance_incremented": "Balans tabıslı kóbeytirildi"
     },
     "error": {
+      "delete_budget_negative": "Bul dúkannıń byudjeti teris boladı, óshiriw múmkin emes",
       "create": " jaratıw ámelge aspadı",
       "insufficient_quantity": "Muǵdarı jetkilik emes",
       "update": " jańalaw ámelge aspadı",

@@ -94,6 +94,21 @@ export default function SalesPage() {
   // };
 
   const handleDelete = async (id: number) => {
+    // Find the sale to be deleted
+    const saleToDelete = sales.find((sale: any) => sale.id === id);
+    if (!saleToDelete) {
+      toast.error(t("messages.error.delete", { item: t("navigation.sales") }));
+      return;
+    }
+    // Get the store budget and sale total_amount
+    // Some store_read objects may not have budget, so fallback to 0 if missing
+    const storeBudget = Number((saleToDelete.store_read && 'budget' in saleToDelete.store_read) ? (saleToDelete.store_read as any).budget : 0);
+    const saleAmount = Number(saleToDelete.total_amount ?? 0);
+    // If deleting would make budget negative, show error
+    if (storeBudget - saleAmount < 0) {
+      toast.error(t("messages.error.delete_budget_negative", { item: t("navigation.sales") }) || "Cannot delete: store budget would be negative.");
+      return;
+    }
     try {
       await deleteSale.mutateAsync(id);
       toast.success(
