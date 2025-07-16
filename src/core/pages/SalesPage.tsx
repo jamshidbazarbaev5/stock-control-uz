@@ -109,6 +109,7 @@ export default function SalesPage() {
       toast.error(t("messages.error.delete_budget_negative", { item: t("navigation.sales") }) || "Cannot delete: store budget would be negative.");
       return;
     }
+
     try {
       await deleteSale.mutateAsync(id);
       toast.success(
@@ -222,6 +223,11 @@ export default function SalesPage() {
   };
 
   const columns = [
+    {
+      header: t("table.id"),
+      accessorKey: "sale_id",
+      cell: (row: Sale) => row.id
+    },
     {
       header: t("table.store"),
       accessorKey: "store_read",

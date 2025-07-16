@@ -37,6 +37,7 @@ export default function StocksPage() {
   const [dateTo, setDateTo] = useState<string>('');
   const [productZero, setProductZero] = useState(false); // Show zero arrivals filter
   const pageSize = 30;
+  const [productId,setProductId] = useState<string>('');
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -54,6 +55,11 @@ export default function StocksPage() {
 
   // Columns definition
   const columns = [
+    {
+      header: t('table.id'),
+      accessorKey: 'stock_id',
+      cell: (row: Stock) => row.id,
+    },
     {
       header: t('table.product'),
       accessorKey: 'product_read',
@@ -241,6 +247,7 @@ export default function StocksPage() {
       page: currentPage,
       product_zero: productZero, // Add product_zero param
       store: selectedStore === 'all' ? undefined : selectedStore, // Add store filter
+      id:productId,
     }
   });
 
@@ -378,10 +385,15 @@ export default function StocksPage() {
 
         <Input
           type="text"
+          value={productId}
+          onChange={e => setProductId(e.target.value)}
+          placeholder={t('forms.type_product_id')}
+        />  <Input
+          type="text"
           value={productName}
           onChange={e => setProductName(e.target.value)}
           placeholder={t('forms.type_product_name')}
-        />
+      />
          <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
           <SelectTrigger>
             <SelectValue placeholder={t('forms.select_supplier')} />
