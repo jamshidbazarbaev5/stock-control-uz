@@ -160,7 +160,13 @@ export default function SalesPage() {
               key={index}
               className=" dark:bg-expanded-row-dark p-4 rounded-lg transition-all duration-200"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                <div>
+                  <span className="text-sm text-gray-500 block mb-1">
+                    {t("table.id")}
+                  </span>
+                  <span className="font-medium">{item.id}</span>
+                </div>
                 <div>
                   <span className="text-sm text-gray-500 block mb-1">
                     {t("table.product")}
@@ -223,11 +229,7 @@ export default function SalesPage() {
   };
 
   const columns = [
-    {
-      header: t("table.id"),
-      accessorKey: "sale_id",
-      cell: (row: Sale) => row.sale_items?.[0]?.stock_read?.id || "-",
-    },
+   
     {
       header: t("table.store"),
       accessorKey: "store_read",
