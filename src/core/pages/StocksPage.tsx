@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
 import type { Stock } from '../api/stock';
@@ -29,6 +30,8 @@ export default function StocksPage() {
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [stockToDelete, setStockToDelete] = useState<Stock | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [productName, setProductName] = useState<string>(''); // New state for product name
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
@@ -96,60 +99,68 @@ export default function StocksPage() {
       header: t('table.actions'),
       accessorKey: 'actions',
       cell: (row: any) => (
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigate(`/stocks/${row.id}/history`)}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => navigate(`/stocks/${row.id}/history`)}
             >
-              <path d="M3 3v5h5" />
-              <path d="M3 3l6.1 6.1" />
-              <circle cx="12" cy="12" r="9" />
-              <path d="M12 7v5l3 3" />
-            </svg>
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem 
-                onClick={() => navigate(`/create-sale?productId=${row.product_read?.id}&stockId=${row.id}`)}
-              >
-                {t('common.create')} {t('navigation.sale')}
+              <span className="flex items-center gap-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 3v5h5" />
+                  <path d="M3 3l6.1 6.1" />
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 3" />
+                </svg>
+                {t('navigation.history')}
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleEdit(row)}>
+              {t('common.edit')}
+            </DropdownMenuItem>
+            {/* Only show remove if superuser */}
+            {currentUser?.is_superuser ? (
+              <DropdownMenuItem onClick={() => { setStockToDelete(row); setDeleteModalOpen(true); }}>
+                {t('common.remove')}
               </DropdownMenuItem>
-              {currentUser?.role?.toLowerCase() !== 'продавец' && (
-                <>
+            ) : null}
+            <DropdownMenuItem 
+              onClick={() => navigate(`/create-sale?productId=${row.product_read?.id}&stockId=${row.id}`)}
+            >
+              {t('common.create')} {t('navigation.sale')}
+            </DropdownMenuItem>
+            {currentUser?.role?.toLowerCase() !== 'продавец' && (
+              <>
+                <DropdownMenuItem 
+                  onClick={() => navigate(`/create-transfer?fromProductId=${row.product_read?.id}&fromStockId=${row.id}`)}
+                >
+                  {t('common.create')} {t('navigation.transfer')}
+                </DropdownMenuItem>
+                {row.product_read?.has_recycling && (
                   <DropdownMenuItem 
-                    onClick={() => navigate(`/create-transfer?fromProductId=${row.product_read?.id}&fromStockId=${row.id}`)}
+                    onClick={() => navigate(`/create-recycling?fromProductId=${row.product_read?.id}&fromStockId=${row.id}&storeId=${row.store_read?.id}`)}
                   >
-                    {t('common.create')} {t('navigation.transfer')}
+                    {t('common.create')} {t('navigation.recycling')}
                   </DropdownMenuItem>
-                  {row.product_read?.has_recycling && (
-                    <DropdownMenuItem 
-                      onClick={() => navigate(`/create-recycling?fromProductId=${row.product_read?.id}&fromStockId=${row.id}&storeId=${row.store_read?.id}`)}
-                    >
-                      {t('common.create')} {t('navigation.recycling')}
-                    </DropdownMenuItem>
-                  )}
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                )}
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       ),
     },
   ];
@@ -366,11 +377,13 @@ export default function StocksPage() {
     try {
       await deleteStock.mutateAsync(id);
       toast.success(t('messages.success.deleted', { item: t('table.product') }));
+      setDeleteModalOpen(false);
+      setStockToDelete(null);
     } catch (error) {
       toast.error(t('messages.error.delete', { item: t('table.product') }));
       console.error('Failed to delete stock:', error);
     }
-  };
+  }
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -447,8 +460,8 @@ export default function StocksPage() {
         data={stocks}
         columns={columns}
         isLoading={isLoading}
-        onEdit={handleEdit}
-        onDelete={currentUser?.is_superuser ? handleDelete : undefined}
+        // onEdit={handleEdit}
+        // onDelete={currentUser?.is_superuser ? handleDelete : undefined}
         pageSize={pageSize}
         totalCount={stocksData?.count || 0}
         currentPage={currentPage}
@@ -468,6 +481,14 @@ export default function StocksPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => { setDeleteModalOpen(false); setStockToDelete(null); }}
+        onConfirm={() => stockToDelete?.id !== undefined && handleDelete(stockToDelete.id)}
+        title={t('common.delete') + ' ' + t('table.product')}
+        // description={t('messages.confirm.delete', { item: t('table.product') })}
+      />
     </div>
   );
 }

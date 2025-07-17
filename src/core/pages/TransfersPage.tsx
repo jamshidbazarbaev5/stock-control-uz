@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { useGetTransfers, useUpdateTransfer, useDeleteTransfer, type Transfer } from '../api/transfer';
 import { useGetStocks, type Stock } from '../api/stock';
 import { useGetStores, type Store } from '../api/store';
+import { Input } from '@/components/ui/input';
 
 export default function TransfersPage() {
   const { t } = useTranslation();
@@ -17,9 +18,11 @@ export default function TransfersPage() {
   // Add product name filter state
   const [productNameFilter, setProductNameFilter] = useState('');
 
+  const [fromStockId, setFromStockId] = useState<string>('');
   const { data: transfersData, isLoading } = useGetTransfers({
     params: {
       page: page,
+      from_stock_id: fromStockId,
     },
   });
   const { data: stocksData } = useGetStocks();
@@ -156,14 +159,17 @@ export default function TransfersPage() {
         <h1 className="text-xl sm:text-2xl font-bold">{t('navigation.transfers')}</h1>
       </div>
       {/* Product name filter input */}
-      <div className="mb-4">
-        <input
+      <div className="flex items-center gap-2 mb-4 width-[300px]">
+
+        <Input
           type="text"
           placeholder={t('forms.type_product_name') || 'Filter by product name'}
           value={productNameFilter}
           onChange={e => setProductNameFilter(e.target.value)}
           className="border rounded px-2 py-1 w-full max-w-xs"
         />
+         <Input value={fromStockId} onChange={(e) => setFromStockId(String(e.target.value))} placeholder={t('table.stock_id')} />
+
       </div>
       <div className="overflow-hidden rounded-lg">
         <div className="overflow-x-auto">

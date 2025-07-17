@@ -226,7 +226,7 @@ export default function SalesPage() {
     {
       header: t("table.id"),
       accessorKey: "sale_id",
-      cell: (row: Sale) => row.id
+      cell: (row: Sale) => row.sale_items?.[0]?.stock_read?.id || "-",
     },
     {
       header: t("table.store"),
