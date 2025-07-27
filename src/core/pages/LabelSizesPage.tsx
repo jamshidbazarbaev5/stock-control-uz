@@ -8,110 +8,110 @@ import { toast } from 'sonner';
 import { type LabelSize, useGetLabelSizes, useUpdateLabelSize, useDeleteLabelSize } from '../api/label-size';
 
 const labelSizeFields = (t: any) => [
-  {
-    name: 'width',
-    label: t('forms.width'),
-    type: 'number',
-    placeholder: t('placeholders.enter_width'),
-    required: true,
-  },
-  {
-    name: 'height',
-    label: t('forms.height'),
-    type: 'number',
-    placeholder: t('placeholders.enter_height'),
-    required: true,
-  },
+    {
+        name: 'width',
+        label: t('forms.width'),
+        type: 'number',
+        placeholder: t('placeholders.enter_width'),
+        required: true,
+    },
+    {
+        name: 'height',
+        label: t('forms.height'),
+        type: 'number',
+        placeholder: t('placeholders.enter_height'),
+        required: true,
+    },
 ];
 
 const columns = (t: any) => [
-  {
-    header: t('forms.width'),
-    accessorKey: 'width',
-  },
-  {
-    header: t('forms.height'),
-    accessorKey: 'height',
-  },
+    {
+        header: t('forms.width'),
+        accessorKey: 'width',
+    },
+    {
+        header: t('forms.height'),
+        accessorKey: 'height',
+    },
 ];
 
 export default function LabelSizesPage() {
-  const navigate = useNavigate();
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingLabelSize, setEditingLabelSize] = useState<LabelSize | null>(null);
+    const navigate = useNavigate();
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [editingLabelSize, setEditingLabelSize] = useState<LabelSize | null>(null);
 //   const [searchTerm] = useState('');
-  const { t } = useTranslation();
-  
-  const { data: labelSizesData, isLoading } = useGetLabelSizes({
-    params: {}
-  });
+    const { t } = useTranslation();
 
-  const fields = labelSizeFields(t);
-
-  // Get the label sizes array from the response
-  const labelSizes = (Array.isArray(labelSizesData) ? labelSizesData : []) as LabelSize[];
-
-  const { mutate: updateLabelSize, isPending: isUpdating } = useUpdateLabelSize();
-  const { mutate: deleteLabelSize } = useDeleteLabelSize();
-
-  const handleEdit = (labelSize: LabelSize) => {
-    setEditingLabelSize(labelSize);
-    setIsFormOpen(true);
-  };
-
-  const handleUpdateSubmit = (data: Partial<LabelSize>) => {
-    if (!editingLabelSize?.id) return;
-
-    updateLabelSize(
-      { ...data, id: editingLabelSize.id } as LabelSize,
-      {
-        onSuccess: () => {
-          toast.success(t('messages.success.updated', { item: t('navigation.labelSizes') }));
-          setIsFormOpen(false);
-          setEditingLabelSize(null);
-        },
-        onError: () => toast.error(t('messages.error.update', { item: t('navigation.labelSizes') })),
-      }
-    );
-  };
-
-  const handleDelete = (id: number) => {
-    deleteLabelSize(id, {
-      onSuccess: () => toast.success(t('messages.success.deleted', { item: t('navigation.labelSizes') })),
-      onError: () => toast.error(t('messages.error.delete', { item: t('navigation.labelSizes') })),
+    const { data: labelSizesData, isLoading } = useGetLabelSizes({
+        params: {}
     });
-  };
 
-  return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">{t('navigation.labelSizes')}</h1>
-      </div>
-      
-      <ResourceTable
-        data={labelSizes}
-        columns={columns(t)}
-        isLoading={isLoading}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onAdd={() => navigate('/create-label-size')}
-        totalCount={labelSizes.length}
-        pageSize={30}
-        currentPage={1}
-        onPageChange={() => {}}
-      />
+    const fields = labelSizeFields(t);
 
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent>
-          <ResourceForm
-            fields={fields}
-            onSubmit={handleUpdateSubmit}
-            defaultValues={editingLabelSize || {}}
-            isSubmitting={isUpdating}
-            title={t('messages.edit')}
-          />
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
+    // Get the label sizes array from the response
+    const labelSizes = (Array.isArray(labelSizesData) ? labelSizesData : []) as LabelSize[];
+
+    const { mutate: updateLabelSize, isPending: isUpdating } = useUpdateLabelSize();
+    const { mutate: deleteLabelSize } = useDeleteLabelSize();
+
+    const handleEdit = (labelSize: LabelSize) => {
+        setEditingLabelSize(labelSize);
+        setIsFormOpen(true);
+    };
+
+    const handleUpdateSubmit = (data: Partial<LabelSize>) => {
+        if (!editingLabelSize?.id) return;
+
+        updateLabelSize(
+            { ...data, id: editingLabelSize.id } as LabelSize,
+            {
+                onSuccess: () => {
+                    toast.success(t('messages.success.updated', { item: t('navigation.labelSizes') }));
+                    setIsFormOpen(false);
+                    setEditingLabelSize(null);
+                },
+                onError: () => toast.error(t('messages.error.update', { item: t('navigation.labelSizes') })),
+            }
+        );
+    };
+
+    const handleDelete = (id: number) => {
+        deleteLabelSize(id, {
+            onSuccess: () => toast.success(t('messages.success.deleted', { item: t('navigation.labelSizes') })),
+            onError: () => toast.error(t('messages.error.delete', { item: t('navigation.labelSizes') })),
+        });
+    };
+
+    return (
+        <div className="container mx-auto py-6">
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-2xl font-bold">{t('navigation.labelSizes')}</h1>
+            </div>
+
+            <ResourceTable
+                data={labelSizes}
+                columns={columns(t)}
+                isLoading={isLoading}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onAdd={() => navigate('/create-label-size')}
+                totalCount={labelSizes.length}
+                pageSize={30}
+                currentPage={1}
+                onPageChange={() => {}}
+            />
+
+            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+                <DialogContent>
+                    <ResourceForm
+                        fields={fields}
+                        onSubmit={handleUpdateSubmit}
+                        defaultValues={editingLabelSize || {}}
+                        isSubmitting={isUpdating}
+                        title={t('messages.edit')}
+                    />
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
 }

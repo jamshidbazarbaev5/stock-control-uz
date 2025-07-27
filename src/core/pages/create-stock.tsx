@@ -16,8 +16,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import axios from 'axios';
-import { getAccessToken } from '../api/auth';
+import api from '../api/api';
 
 
 interface FormValues extends Partial<Stock> {
@@ -53,7 +52,7 @@ export default function CreateStock() {
   const [currency, setCurrency] = useState<{ id: number; currency_rate: string } | null>(null);
   const [currencyLoading, setCurrencyLoading] = useState(true);
   const [_calculatedSellingPrice, setCalculatedSellingPrice] = useState<string>('');
-  
+
   // Define stock fields with translations
   const stockFields = [
     {
@@ -132,7 +131,7 @@ export default function CreateStock() {
       placeholder: t('common.enter_arrival_date'),
       required: true,
     },
-   
+
     {
       name: 'supplier_write',
       label: t('common.supplier'),
@@ -141,23 +140,23 @@ export default function CreateStock() {
       required: true,
       options: [], // Will be populated with suppliers
     },
-   
-  
+
+
   ];
   const createStock = useCreateStock();
-  
+
   // Create mutations
   const createProduct = useCreateProduct();
   const createSupplier = useCreateSupplier();
-  
+
   // State for create new modals
   const [createProductOpen, setCreateProductOpen] = useState(false);
   const [createSupplierOpen, setCreateSupplierOpen] = useState(false);
-  
+
   // Forms for creating new items
   const productForm = useForm<CreateProductForm>();
   const supplierForm = useForm<CreateSupplierForm>();
-  
+
   const form = useForm<FormValues>({
     defaultValues: {
       purchase_price_in_us: '',
@@ -175,7 +174,7 @@ export default function CreateStock() {
   const usdPrice = form.watch('purchase_price_in_us');
   // const exchangeRate = form.watch('exchange_rate');
   const exchangeRateValue = currency?.currency_rate || '';
-  
+
   // Fetch products, stores, measurements, suppliers and categories for the select dropdowns
   // const { data: productsData } = useGetProducts({
   //   params: {
@@ -193,21 +192,20 @@ export default function CreateStock() {
 
   const suppliers = Array.isArray(suppliersData) ? suppliersData : suppliersData?.results || [];
   const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData?.results || [];
-  
-  // Fetch all products from all API pages using axios
+
+  // Fetch all products from all API pages using api instance
   useEffect(() => {
     const fetchAllProducts = async () => {
       let page = 1;
       let products: any[] = [];
       let totalPages = 1;
-      const token = getAccessToken();
       try {
         do {
-          const url = `https://bondify.uz/api/v1/items/product/?page=${page}` + (productSearchTerm ? `&product_name=${encodeURIComponent(productSearchTerm)}` : '');
-          const res = await axios.get(url, {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : '',
-            },
+          const res = await api.get('items/product/', {
+            params: {
+              page,
+              ...(productSearchTerm ? { product_name: productSearchTerm } : {})
+            }
           });
           products = products.concat(res.data.results);
           totalPages = res.data.total_pages;
@@ -224,18 +222,14 @@ export default function CreateStock() {
   const handleCreateSupplier = () => {
     setCreateSupplierOpen(true);
   };
-  
 
 
-  // Fetch currency rate on mount
+
   useEffect(() => {
     const fetchCurrency = async () => {
       setCurrencyLoading(true);
       try {
-        const token = getAccessToken();
-        const res = await axios.get('https://bondify.uz/api/v1/items/currency/', {
-          headers: { Authorization: token ? `Bearer ${token}` : '' },
-        });
+        const res = await api.get('items/currency/');
         if (res.data.results && res.data.results.length > 0) {
           setCurrency(res.data.results[0]);
           form.setValue('exchange_rate', res.data.results[0].currency_rate);
@@ -250,14 +244,13 @@ export default function CreateStock() {
     // eslint-disable-next-line
   }, []);
 
-  // Effect to update purchase_price_in_uz and per unit price when dependencies change
   useEffect(() => {
     if (usdPrice && exchangeRateValue) {
       const priceInUSD = parseFloat(usdPrice);
       const rate = parseFloat(exchangeRateValue);
       const quantityString = form.watch('quantity')?.toString() || '0';
       const quantity = parseFloat(quantityString);
-      
+
       if (!isNaN(priceInUSD) && !isNaN(rate)) {
         const calculatedPrice = priceInUSD * rate;
         form.setValue('purchase_price_in_uz', calculatedPrice.toString(), {
@@ -265,7 +258,6 @@ export default function CreateStock() {
           shouldDirty: true
         });
 
-        // Calculate per unit price
         if (!isNaN(quantity) && quantity > 0) {
           const perUnit = calculatedPrice / quantity;
           setPerUnitPrice(perUnit);
@@ -278,10 +270,10 @@ export default function CreateStock() {
 
   // Effect to update calculated selling price and min price for has_kub products
   useEffect(() => {
-    // Only calculate for category 2 or 8
-    const allowedCategories = ['Половой агаш','Стропила','Страпила','Половой'];
-    const categoryId = selectedProduct?.category_read?.category_name;
-    if (selectedProduct?.has_kub && allowedCategories.includes(categoryId)) {
+    // Only calculate for categories: "Половой", "Страпила", "Половой агаш", "Стропила"
+    const allowedCategoryNames = ["Половой", "Страпила", "Половой агаш", "Стропила"];
+    const categoryName = selectedProduct?.category_read?.category_name;
+    if (selectedProduct?.has_kub && allowedCategoryNames.includes(categoryName)) {
       // Get all measurement numbers and multiply them
       const measurements = selectedProduct.measurement || [];
       const baseValue = measurements.reduce((acc: number, m: any) => {
@@ -334,7 +326,6 @@ export default function CreateStock() {
         placeholder: t('common.enter_purchase_price_uzs') || 'Enter purchase price in UZS',
       };
     }
-    // Set min_price and helperText for any product with has_shtuk or has_metr
     if (field.name === 'min_price') {
       let helperText = '';
       let minPriceValue = form.watch('min_price');
@@ -497,26 +488,25 @@ export default function CreateStock() {
   }, [incomeWeight, pricePerTone, selectedProduct]);
 
   const handleSubmit = async (data: FormValues) => {
+    // Validate all visible and required fields
+    const visibleRequiredFields = fields.filter(f => !f.hidden && f.required);
+    const missingFields = visibleRequiredFields.filter(f => {
+      const value = (data as any)[f.name];
+      return value === undefined || value === '' || value === null;
+    });
+    if (missingFields.length > 0) {
+      toast.error(t('validation.fill_all_required_fields') || 'Please fill all required fields');
+      return;
+    }
     try {
-      // Validate all visible and required fields
-      const visibleRequiredFields = fields.filter(f => !f.hidden && f.required);
-      const missingFields = visibleRequiredFields.filter(f => {
-        const value = (data as any)[f.name];
-        return value === undefined || value === '' || value === null;
-      });
-      if (missingFields.length > 0) {
-        toast.error(t('validation.fill_all_required_fields') || 'Please fill all required fields');
-        return;
-      }
-
       // Always parse numbers for numeric fields
       const quantity = typeof data.quantity === 'string' ? parseFloat(data.quantity) : data.quantity!;
       const sellingPrice = typeof data.selling_price === 'string' ? parseFloat(data.selling_price) : data.selling_price;
       const minPrice = typeof data.min_price === 'string' ? parseFloat(data.min_price) : data.min_price;
       // Validation: selling_price must be greater than min_price
       if (
-        sellingPrice === undefined || isNaN(sellingPrice) ||
-        minPrice === undefined || isNaN(minPrice)
+          sellingPrice === undefined || isNaN(sellingPrice) ||
+          minPrice === undefined || isNaN(minPrice)
       ) {
         toast.error(t('validation.selling_price_and_min_price_numbers') || 'Selling price and minimum price must be valid numbers');
         return;
@@ -621,8 +611,8 @@ export default function CreateStock() {
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
-                    <SelectItem 
-                      key={String(category.id)} 
+                    <SelectItem
+                      key={String(category.id)}
                       value={String(category.id || '')}>
                       {category.category_name}
                     </SelectItem>

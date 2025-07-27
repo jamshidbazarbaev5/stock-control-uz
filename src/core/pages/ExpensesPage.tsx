@@ -52,14 +52,14 @@ export default function ExpensesPage() {
   const { data: expenseNamesData } = useGetExpenseNames({});
 
   const stores = Array.isArray(storesData)
-    ? storesData
-    : storesData?.results || [];
+      ? storesData
+      : storesData?.results || [];
   const expenseNames = Array.isArray(expenseNamesData)
-    ? expenseNamesData
-    : expenseNamesData?.results || [];
+      ? expenseNamesData
+      : expenseNamesData?.results || [];
   const expenses = Array.isArray(expensesData)
-    ? expensesData
-    : expensesData?.results || [];
+      ? expensesData
+      : expensesData?.results || [];
   let totalCount = 0;
   if (Array.isArray(expensesData)) {
     totalCount = expensesData.length;
@@ -86,21 +86,21 @@ export default function ExpensesPage() {
       header: t("forms.amount3"),
       accessorKey: "amount",
       cell: (row: Expense) => (
-        <div className="text-center font-medium">
-          {Number(row.amount).toLocaleString()}
-        </div>
+          <div className="text-center font-medium">
+            {Number(row.amount).toLocaleString()}
+          </div>
       ),
     },
     {
       header: t("forms.date"),
       accessorKey: "expense.date",
       cell: (row: any) => <p> {row.date ? new Date(row.date).toLocaleDateString('ru-RU', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-          }) : '-'}</p>,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : '-'}</p>,
     },
     {
       header: t("forms.comment"),
@@ -120,88 +120,88 @@ export default function ExpensesPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">{t("navigation.expenses")}</h1>
-        <Button onClick={() => navigation("/create-expense")}>
-          {t("common.create")}
-        </Button>
-      </div>
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">{t("navigation.expenses")}</h1>
+          <Button onClick={() => navigation("/create-expense")}>
+            {t("common.create")}
+          </Button>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {currentUser?.is_superuser && (
-          <Select value={selectedStore} onValueChange={setSelectedStore}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {currentUser?.is_superuser && (
+              <Select value={selectedStore} onValueChange={setSelectedStore}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("placeholders.select_store")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("common.all_stores")}</SelectItem>
+                  {stores.map((store) => (
+                      <SelectItem key={store.id} value={String(store.id)}>
+                        {store.name}
+                      </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+          )}
+
+          <Select
+              value={selectedExpenseName}
+              onValueChange={setSelectedExpenseName}
+          >
             <SelectTrigger>
-              <SelectValue placeholder={t("placeholders.select_store")} />
+              <SelectValue placeholder={t("placeholders.select_expense_name")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t("common.all_stores")}</SelectItem>
-              {stores.map((store) => (
-                <SelectItem key={store.id} value={String(store.id)}>
-                  {store.name}
-                </SelectItem>
+              <SelectItem value="all">{t("common.all_expense_names")}</SelectItem>
+              {expenseNames.map((expenseName) => (
+                  <SelectItem key={expenseName.id} value={String(expenseName.id)}>
+                    {expenseName.name}
+                  </SelectItem>
               ))}
             </SelectContent>
           </Select>
-        )}
 
-        <Select
-          value={selectedExpenseName}
-          onValueChange={setSelectedExpenseName}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder={t("placeholders.select_expense_name")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("common.all_expense_names")}</SelectItem>
-            {expenseNames.map((expenseName) => (
-              <SelectItem key={expenseName.id} value={String(expenseName.id)}>
-                {expenseName.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select
+              value={selectedPaymentType}
+              onValueChange={setSelectedPaymentType}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={t("placeholders.select_payment_type")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("common.all_payment_types")}</SelectItem>
+              <SelectItem value="Наличные">{t("payment_types.cash")}</SelectItem>
+              <SelectItem value="Карта">{t("payment_types.card")}</SelectItem>
+              <SelectItem value="Click">{t("payment_types.click")}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              placeholder={t("forms.from_date")}
+          />
 
-        <Select
-          value={selectedPaymentType}
-          onValueChange={setSelectedPaymentType}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder={t("placeholders.select_payment_type")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("common.all_payment_types")}</SelectItem>
-            <SelectItem value="Наличные">{t("payment_types.cash")}</SelectItem>
-            <SelectItem value="Карта">{t("payment_types.card")}</SelectItem>
-            <SelectItem value="Click">{t("payment_types.click")}</SelectItem>
-          </SelectContent>
-        </Select>
-        <Input
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          placeholder={t("forms.from_date")}
-        />
+          <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              placeholder={t("forms.to_date")}
+          />
+        </div>
 
-        <Input
-          type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          placeholder={t("forms.to_date")}
+        <ResourceTable
+            columns={columns}
+            data={expenses}
+            onDelete={currentUser?.is_superuser ? handleDelete : undefined}
+            onEdit={currentUser?.is_superuser ? handleEdit : undefined}
+            isLoading={isLoading}
+            currentPage={currentPage}
+            onPageChange={(page) => setCurrentPage(page)}
+            totalCount={totalCount}
+            pageSize={pageSize}
         />
       </div>
-
-      <ResourceTable
-        columns={columns}
-        data={expenses}
-        onDelete={currentUser?.is_superuser ? handleDelete : undefined}
-        onEdit={currentUser?.is_superuser ? handleEdit : undefined}
-        isLoading={isLoading}
-        currentPage={currentPage}
-        onPageChange={(page) => setCurrentPage(page)}
-        totalCount={totalCount}
-        pageSize={pageSize}
-      />
-    </div>
   );
 }

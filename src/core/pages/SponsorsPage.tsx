@@ -83,53 +83,53 @@ export default function SponsorsPage() {
       accessorKey: 'name',
       header: t('forms.sponsor_name'),
       cell: (sponsor: any) => (
-        <div>
           <div>
-            <button
-              onClick={() => handleRowClick(sponsor)}
-              className="text-blue-600 hover:underline hover:text-blue-800"
-            >
-              {sponsor.name}
-            </button>
+            <div>
+              <button
+                  onClick={() => handleRowClick(sponsor)}
+                  className="text-blue-600 hover:underline hover:text-blue-800"
+              >
+                {sponsor.name}
+              </button>
+            </div>
+            <div className="text-sm text-gray-500">
+              {sponsor.phone_number}
+            </div>
           </div>
-          <div className="text-sm text-gray-500">
-            {sponsor.phone_number}
-          </div>
-        </div>
       ),
     },
   ];
 
   const sponsorActions = (sponsor: Sponsor) => (
-    <Button size="sm" variant="outline" onClick={() => handleOpenCreateLoan(sponsor.id!)}>
-      {t('Создать займ')}
-    </Button>
+      <Button size="sm" variant="outline" onClick={() => handleOpenCreateLoan(sponsor.id!)}>
+        {t('Создать займ')}
+      </Button>
   );
 
   return (
-    <div className="container py-8 px-4">
-      <ResourceTable<Sponsor>
-        data={sponsors}
-        columns={sponsorColumns}
-        isLoading={isLoading}
-        onAdd={handleAdd}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        totalCount={sponsors.length}
-        actions={sponsorActions}
-        onRowClick={handleRowClick}
-      />
-      <CreateLoanModal
-        open={createLoanOpen}
-        onOpenChange={setCreateLoanOpen}
-        sponsorId={selectedSponsorId}
-        onCreate={handleCreateLoan}
-      />
-      <SelectCurrencyModal
-        open={currencyModalOpen}
-        onOpenChange={setCurrencyModalOpen}
-        onSelect={handleSelectCurrency}
-      />
-    </div>
+      <div className="container py-8 px-4">
+        <ResourceTable<Sponsor>
+            data={sponsors}
+            columns={sponsorColumns}
+            isLoading={isLoading}
+            onAdd={handleAdd}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            totalCount={sponsors.length}
+            actions={sponsorActions}
+            onRowClick={handleRowClick}
+        />
+        <CreateLoanModal
+            open={createLoanOpen}
+            onOpenChange={setCreateLoanOpen}
+            sponsorId={selectedSponsorId}
+            onCreate={handleCreateLoan}
+        />
+        <SelectCurrencyModal
+            open={currencyModalOpen}
+            onOpenChange={setCurrencyModalOpen}
+            onSelect={handleSelectCurrency}
+        />
+      </div>
   );
 }

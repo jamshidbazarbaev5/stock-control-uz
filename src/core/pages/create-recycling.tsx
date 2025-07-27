@@ -479,7 +479,7 @@ export default function CreateRecycling() {
       if (categoryName === "Рейка") {
         // Find the measurement with name "Метр"
         const metrMeasurement = selectedProduct.measurement?.find(
-          (m) => m.measurement_read?.measurement_name === "Метр"
+            (m) => m.measurement_read?.measurement_name === "Метр"
         );
         const metrValue = metrMeasurement ? Number(metrMeasurement.number) : 1;
         // Check if from_to's product category is Половой агаш or Половой
@@ -547,7 +547,7 @@ export default function CreateRecycling() {
         purchase_price_in_uz, // <-- add calculated value to API payload
         purchase_price_in_us:selectedStock.purchase_price_in_us,
         selling_price_in_us:Number(selectedStock.selling_price_in_us)
-     
+
       };
 
       await createRecycling.mutateAsync(formattedData);

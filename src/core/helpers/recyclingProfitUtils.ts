@@ -10,10 +10,10 @@ import type { Recycling } from '@/core/api/recycling';
  */
 export function findRecyclingForStock(recyclings: Recycling[], productId: number,stockId: number) {
   return recyclings.find(
-    (rec) =>
-      rec.to_product_read?.id === productId &&
-      rec.to_stock_read.id === stockId &&
-      rec.to_product_read?.category_read?.category_name === 'Рейка'
+      (rec) =>
+          rec.to_product_read?.id === productId &&
+          rec.to_stock_read.id === stockId &&
+          rec.to_product_read?.category_read?.category_name === 'Рейка'
   );
 }
 
@@ -33,8 +33,8 @@ export function calculateRecyclingProfit(recycling: any, quantity: number, custo
   const profitPerUnit = originalSellingPrice - originalMinPrice;
   const totalProfit = profitPerUnit * spentAmount;
   let finalProfit = (originalMinPrice / getAmount) * quantity;
-  
-  
+
+
   // Add additional profit if selling at a custom price
   if (customSellingPrice) {
     const defaultPrice = Number(recycling.to_stock_read.selling_price);

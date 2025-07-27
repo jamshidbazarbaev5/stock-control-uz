@@ -71,22 +71,22 @@ export default function RecyclingsPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">{t('navigation.recyclings')}</h1>
-      </div>
-      <Input value={id} onChange={(e) => setId(String(e.target.value))} placeholder={t('table.id')} />
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">{t('navigation.recyclings')}</h1>
+        </div>
+        <Input value={id} onChange={(e) => setId(String(e.target.value))} placeholder={t('table.id')} />
 
-      <ResourceTable
-        data={recyclings}
-        columns={columns(t)}
-        isLoading={isLoading}
-        onDelete={currentUser?.is_superuser ? handleDelete : undefined}
-        pageSize={30}
-        totalCount={totalCount}
-        currentPage={page}
-        onPageChange={setPage}
-      />
-    </div>
+        <ResourceTable
+            data={recyclings}
+            columns={columns(t)}
+            isLoading={isLoading}
+            onDelete={currentUser?.is_superuser ? handleDelete : undefined}
+            pageSize={30}
+            totalCount={totalCount}
+            currentPage={page}
+            onPageChange={setPage}
+        />
+      </div>
   );
 }

@@ -103,8 +103,8 @@ function calculateTotalProfit({ saleItems, salePayments, totalAmount, selectedPr
       }
       if (!recyclingProfitUsed && selectedStock) {
         if (
-          selectedStock.product_read?.has_kub &&
-          ['Половой', 'Стропила', 'Половой агаш','Страпила'].includes(selectedStock.product_read?.category_read?.category_name)
+            selectedStock.product_read?.has_kub &&
+            ['Половой', 'Стропила', 'Половой агаш','Страпила'].includes(selectedStock.product_read?.category_read?.category_name)
         ) {
           const measurements = selectedStock.product_read.measurement || [];
           const getNumber = (name: string) => {
@@ -151,7 +151,7 @@ export default function CreateSale() {
   const isAdmin = currentUser?.role === 'Администратор';
   const isSuperUser = currentUser?.is_superuser === true;
   const [selectedStore, setSelectedStore] = useState<number | null>(
-    currentUser?.store_read?.id || null
+      currentUser?.store_read?.id || null
   );
   const [selectedStocks, setSelectedStocks] = useState<Record<number, number>>({});
   const [selectedPrices, setSelectedPrices] = useState<Record<number, {
@@ -222,8 +222,8 @@ export default function CreateSale() {
   useEffect(() => {
     setLoadingAllStocks(true);
     fetchAllStocks({ product_name: productSearchTerm.length > 0 ? productSearchTerm : undefined })
-      .then((data) => setAllStocks(data))
-      .finally(() => setLoadingAllStocks(false));
+        .then((data) => setAllStocks(data))
+        .finally(() => setLoadingAllStocks(false));
   }, [productSearchTerm]);
 
   // Replace stocks with allStocks
@@ -342,7 +342,7 @@ export default function CreateSale() {
         } else if (productId) {
           // Find stocks with this product that have quantity > 0
           const stocksWithProduct = stocks.filter(stock =>
-            stock.product_read?.id === Number(productId) && stock.quantity > 0
+              stock.product_read?.id === Number(productId) && stock.quantity > 0
           );
 
           if (stocksWithProduct.length > 0) {
@@ -420,8 +420,8 @@ export default function CreateSale() {
       // Use recycling profit logic for recycled products
       profit = calculateRecyclingProfit(recyclingRecord, 1, sellingPrice);
     } else if (
-      selectedStock.product_read?.has_kub &&
-      ['Половой', 'Стропила', 'Половой агаш','Страпила'].includes(selectedStock.product_read?.category_read?.category_name)
+        selectedStock.product_read?.has_kub &&
+        ['Половой', 'Стропила', 'Половой агаш','Страпила'].includes(selectedStock.product_read?.category_read?.category_name)
     ) {
       // PROFIT_FAKE logic for specific categories by name
       const measurements = selectedStock.product_read.measurement || [];
@@ -468,12 +468,12 @@ export default function CreateSale() {
       updateTotalAmount();
       return;
     }
-  
+
     const maxQuantity = selectedStocks[index] || 0;
     const subtotal = parseFloat(form.getValues(`sale_items.${index}.subtotal`)) || 0;
     const stockId = form.getValues(`sale_items.${index}.stock_write`);
     const selectedStock = stocks.find(stock => stock.id === stockId);
-  
+
     if (value > maxQuantity) {
       toast.error(t('messages.error.insufficient_quantity'));
       form.setValue(`sale_items.${index}.quantity`, maxQuantity);
@@ -488,8 +488,8 @@ export default function CreateSale() {
           const newProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1, currentSubtotal);
           profit = newProfitPerUnit * value;
         } else if (
-          selectedStock.product_read?.has_kub &&
-          ['Половой', 'Стропила', 'Половой агаш','Страпила'].includes(selectedStock.product_read?.category_read?.category_name)
+            selectedStock.product_read?.has_kub &&
+            ['Половой', 'Стропила', 'Половой агаш','Страпила'].includes(selectedStock.product_read?.category_read?.category_name)
         ) {
           // PROFIT_FAKE logic by category name
           const measurements = selectedStock.product_read.measurement || [];
@@ -534,72 +534,58 @@ export default function CreateSale() {
 
     // Calculate profit if we have price information
     if (selectedPrices[index] && selectedStock) {
-        let profit = 0;
-        const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id,selectedStock.id);
+      let profit = 0;
+      const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id,selectedStock.id);
 
-        if (recyclingRecord) {
-            // Use recycling profit calculation with custom selling price
-            profit = calculateRecyclingProfit(recyclingRecord, quantity, newSubtotal);
+      if (recyclingRecord) {
+        // Use recycling profit calculation with custom selling price
+        profit = calculateRecyclingProfit(recyclingRecord, quantity, newSubtotal);
 
-        } else if (
-            selectedStock.product_read?.has_kub &&
-              ['Половой', 'Стропила', 'Половой агаш','Страпила'].includes(selectedStock.product_read?.category_read?.category_name)
-        ) {
-            // PROFIT_FAKE logic by category name
-            const measurements = selectedStock.product_read.measurement || [];
-            const getNumber = (name: string) => {
-                const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
-                return m ? parseFloat(m.number) : 1;
-            };
-            const length = getNumber('длина');
-            const thickness = getNumber('Толщина');
-            const meter = getNumber('Метр');
-            const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
-            const purchasePriceInUs = parseFloat(selectedStock.purchase_price_in_us || '0');
-            const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
-            // Use the new subtotal from the input as the current selling price
-            profit = (newSubtotal - PROFIT_FAKE) * quantity;
-        } else {
-            // Standard profit calculation (FIXED)
-            // Recalculate purchase price per unit to ensure accuracy
-            const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
-            const stockQuantityForHistory = selectedStock.quantity_for_history || selectedStock.quantity || 1;
-            const purchasePricePerUnit = totalPurchasePrice / stockQuantityForHistory;
-            profit = (newSubtotal - purchasePricePerUnit) * quantity;
+      } else if (
+          selectedStock.product_read?.has_kub &&
+          ['Половой', 'Стропила', 'Половой агаш','Страпила'].includes(selectedStock.product_read?.category_read?.category_name)
+      ) {
+        // PROFIT_FAKE logic by category name
+        const measurements = selectedStock.product_read.measurement || [];
+        const getNumber = (name: string) => {
+          const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
+          return m ? parseFloat(m.number) : 1;
+        };
+        const length = getNumber('длина');
+        const thickness = getNumber('Толщина');
+        const meter = getNumber('Метр');
+        const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
+        const purchasePriceInUs = parseFloat(selectedStock.purchase_price_in_us || '0');
+        const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
+        // Use the new subtotal from the input as the current selling price
+        profit = (newSubtotal - PROFIT_FAKE) * quantity;
+      } else {
+        // Standard profit calculation (FIXED)
+        // Recalculate purchase price per unit to ensure accuracy
+        const totalPurchasePrice = parseFloat(selectedStock.purchase_price_in_uz || '0');
+        const stockQuantityForHistory = selectedStock.quantity_for_history || selectedStock.quantity || 1;
+        const purchasePricePerUnit = totalPurchasePrice / stockQuantityForHistory;
+        profit = (newSubtotal - purchasePricePerUnit) * quantity;
+      }
+
+      setSelectedPrices(prev => ({
+        ...prev,
+        [index]: {
+          ...prev[index],
+          profit: profit
         }
-        
-        setSelectedPrices(prev => ({
-            ...prev,
-            [index]: {
-                ...prev[index],
-                profit: profit
-            }
-        }));
+      }));
     }
 
     form.setValue(`sale_items.${index}.subtotal`, newValue);
     updateTotalAmount();
-};
+  };
 
   const handleSubmit = async (data: SaleFormData) => {
     try {
-      // Calculate the total amount from sale items
-      const itemsTotal = data.sale_items.reduce((sum, item) => {
-        const quantity = parseFloat(item.quantity.toString()) || 0;
-        const subtotal = parseFloat(item.subtotal) || 0;
-        return sum + (quantity * subtotal);
-      }, 0);
+      data.total_amount = data.sale_payments.reduce((sum, payment) => sum + (payment.amount || 0), 0).toString();
 
-      // Calculate the total amount from payments
-      const paymentsTotal = data.sale_payments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
-
-      // Check if payments total is less than items total
-      if (paymentsTotal < itemsTotal) {
-        toast.error(t('messages.error.insufficient_payment') || 'Total payment amount must match the total sale amount');
-        return;
-      }
-
-      data.total_amount = paymentsTotal.toString();
+      // data.total_amount = paymentsTotal.toString();
 
       // Set store_write based on user role
       if (!isAdmin && !isSuperUser && currentUser?.store_read?.id) {
@@ -719,9 +705,9 @@ export default function CreateSale() {
       delete newPrices[index];
       // Re-index the keys to match the new sale_items array
       const filtered = Object.entries(newPrices)
-        .filter(([k, _]) => Number(k) !== index)
-        .sort((a, b) => Number(a[0]) - Number(b[0]))
-        .map(([, v], i) => [i, v]);
+          .filter(([k, _]) => Number(k) !== index)
+          .sort((a, b) => Number(a[0]) - Number(b[0]))
+          .map(([, v], i) => [i, v]);
       return Object.fromEntries(filtered);
     });
     updateTotalAmount();
@@ -760,551 +746,551 @@ export default function CreateSale() {
   const hasNegativeProfit = Object.values(selectedPrices).some(priceObj => priceObj && priceObj.profit < 0);
 
   return (
-    <div className="container mx-auto py-4 sm:py-8 px-2 sm:px-4">
-      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
-        {t('common.create')} {t('navigation.sale')}
-      </h1>
+      <div className="container mx-auto py-4 sm:py-8 px-2 sm:px-4">
+        <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
+          {t('common.create')} {t('navigation.sale')}
+        </h1>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
-          {/* Store Selection - Only shown for superuser */}
-          {isSuperUser && (
-            <div className="w-full sm:w-2/3 lg:w-1/2">
-              <FormField
-                control={form.control}
-                name="store_write"
-                rules={{ required: t('validation.required') }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('table.store')}</FormLabel>
-                    <Select
-                      value={field.value?.toString()}
-                      onValueChange={(value) => {
-                        const storeId = parseInt(value, 10);
-                        field.onChange(storeId);
-                        setSelectedStore(storeId);
-                        // Reset sold_by when store changes
-                        form.setValue('sold_by', undefined);
-                      }}
-                    >
-                      <SelectTrigger className={form.formState.errors.store_write ? "border-red-500" : ""}>
-                        <SelectValue placeholder={t('placeholders.select_store')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {stores.map((store) => (
-                          <SelectItem key={store.id} value={store.id?.toString() || ''}>
-                            {store.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {form.formState.errors.store_write && (
-                      <p className="text-sm text-red-500 mt-1">{form.formState.errors.store_write.message}</p>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 sm:space-y-6">
+            {/* Store Selection - Only shown for superuser */}
+            {isSuperUser && (
+                <div className="w-full sm:w-2/3 lg:w-1/2">
+                  <FormField
+                      control={form.control}
+                      name="store_write"
+                      rules={{ required: t('validation.required') }}
+                      render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t('table.store')}</FormLabel>
+                            <Select
+                                value={field.value?.toString()}
+                                onValueChange={(value) => {
+                                  const storeId = parseInt(value, 10);
+                                  field.onChange(storeId);
+                                  setSelectedStore(storeId);
+                                  // Reset sold_by when store changes
+                                  form.setValue('sold_by', undefined);
+                                }}
+                            >
+                              <SelectTrigger className={form.formState.errors.store_write ? "border-red-500" : ""}>
+                                <SelectValue placeholder={t('placeholders.select_store')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {stores.map((store) => (
+                                    <SelectItem key={store.id} value={store.id?.toString() || ''}>
+                                      {store.name}
+                                    </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {form.formState.errors.store_write && (
+                                <p className="text-sm text-red-500 mt-1">{form.formState.errors.store_write.message}</p>
+                            )}
+                          </FormItem>
+                      )}
+                  />
+                </div>
+            )}
+
+            {/* Seller Selection - Only shown for superuser or admin */}
+            {(isSuperUser || isAdmin) && (
+                <div className="w-full sm:w-2/3 lg:w-1/2">
+                  <FormField
+                      control={form.control}
+                      name="sold_by"
+                      rules={{ required: t('validation.required') }}
+                      render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t('table.seller')}</FormLabel>
+                            <Select
+                                value={field.value?.toString()}
+                                onValueChange={(value) => {
+                                  field.onChange(parseInt(value, 10));
+                                }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={t('placeholders.select_seller')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {users
+                                    .filter(user => {
+                                      const selectedStore = form.watch('store_write');
+                                      // Cast user to ExtendedUser to access store_read
+                                      const extendedUser = user as ExtendedUser;
+                                      return (
+                                          (user.role === 'Продавец' || user.role === 'Администратор') &&
+                                          extendedUser.store_read &&
+                                          (!selectedStore || extendedUser.store_read.id === selectedStore)
+                                      );
+                                    })
+                                    .map((user) => (
+                                        <SelectItem key={user.id} value={user.id?.toString() || ''}>
+                                          {user.name}
+                                        </SelectItem>
+                                    ))}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                      )}
+                  />
+                </div>
+            )}
+
+            {/* Sale Items */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-base sm:text-lg font-semibold">{t('common.sale_items')}</h2>
+                <Button type="button" onClick={addSaleItem}>
+                  {t('common.add_item')}
+                </Button>
+              </div>
+
+              {form.watch('sale_items').map((_, index: number) => (
+                  <div key={index} className="flex flex-col sm:flex-row flex-wrap items-start gap-2 sm:gap-4 p-3 sm:p-4 border rounded-lg bg-white dark:bg-card dark:border-border shadow-sm">
+                    <div className="w-full sm:w-[250px]">
+                      <FormField
+                          control={form.control}
+                          name={`sale_items.${index}.stock_write`}
+                          rules={{ required: t('validation.required') }}
+                          render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">{t('table.product')}</FormLabel>
+                                <input
+                                    type="text"
+                                    placeholder={t('placeholders.search_products')}
+                                    value={productSearchTerm}
+                                    onChange={(e) => handleMobileSearch(e.target.value, setProductSearchTerm)}
+                                    className="flex-1 mb-2 w-full border rounded px-2 py-1"
+                                    autoComplete="off"
+                                />
+                                <Select
+                                    value={field.value?.toString()}
+                                    onValueChange={(value) => handleStockSelection(value, index)}
+                                >
+                                  <SelectTrigger className={form.formState.errors.sale_items?.[index]?.stock_write ? "border-red-500" : ""}>
+                                    <SelectValue placeholder={t('placeholders.select_product')} />
+                                  </SelectTrigger>
+                                  <SelectContent
+                                      onPointerDownOutside={(e) => {
+                                        const target = e.target as Node;
+                                        const selectContent = document.querySelector('.select-content-wrapper');
+                                        if (selectContent && selectContent.contains(target)) {
+                                          e.preventDefault();
+                                        }
+                                      }}
+                                  >
+                                    <div className="mobile-select-wrapper">
+                                      {/* No search input here anymore */}
+                                      {filteredStocks
+                                          .filter(stock => stock.quantity > 0)
+                                          .map((stock) => (
+                                              <SelectItem key={stock.id} value={stock.id?.toString() || ''}>
+                                                {stock.product_read?.product_name} ({stock.quantity} {stock.product_read?.measurement_read?.name})
+                                              </SelectItem>
+                                          ))}
+                                    </div>
+                                  </SelectContent>
+                                </Select>
+                                {selectedPrices[index] && (
+                                    <div className="mt-2 space-y-1 text-xs">
+                                      <div className="flex items-center justify-between px-2 py-1 bg-gray-50 rounded">
+                                        {(isAdmin || currentUser?.is_superuser) && (
+                                            <>
+                                              <span className="text-gray-600">{t('table.min_price')}:</span>
+                                              <span className="font-medium text-red-600">{selectedPrices[index].min}</span>
+                                            </>
+                                        )}
+
+                                      </div>
+                                      {(isAdmin || currentUser?.is_superuser) && (
+                                          <div className="flex items-center justify-between px-2 py-1 bg-green-50 rounded">
+                                            <span className="text-gray-600">{t('table.profit')}:</span>
+                                            <span className="font-medium text-green-600">
+                                  {selectedPrices[index].profit.toFixed(1).toLocaleString()}
+                                </span>
+                                          </div>
+                                      )}
+                                    </div>
+                                )}
+                              </FormItem>
+                          )}
+                      />
+                    </div>
+
+                    <div className="w-full sm:w-[250px]">
+                      <FormField
+                          control={form.control}
+                          name={`sale_items.${index}.selling_method`}
+                          render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">{t('common.selling_method')}</FormLabel>
+                                <Select
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Штук">{t('table.pieces')}</SelectItem>
+                                    <SelectItem value="Ед.измерения">{t('table.measurement')}</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </FormItem>
+                          )}
+                      />
+                    </div>
+
+                    <div className="w-full sm:w-[120px]">
+                      <FormField
+                          control={form.control}
+                          name={`sale_items.${index}.quantity`}
+                          render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">{t('table.quantity')}</FormLabel>
+                                <FormControl>
+                                  <Input
+                                      type="number"
+                                      min="0"
+                                      step="any"
+                                      max={selectedStocks[index] || 1}
+                                      placeholder={t('placeholders.enter_quantity')}
+                                      className="text-right"
+                                      {...field}
+                                      onChange={(e) => handleQuantityChange(e, index)}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                          )}
+                      />
+                    </div>
+
+                    <div className="w-full sm:w-[150px]">
+                      <FormField
+                          control={form.control}
+                          name={`sale_items.${index}.subtotal`}
+                          render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-sm font-medium">{t('table.subtotal')}</FormLabel>
+                                <FormControl>
+                                  <Input
+                                      type="text"
+                                      className="text-right font-medium"
+                                      {...field}
+                                      onChange={(e) => handleSubtotalChange(e, index)}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                          )}
+                      />
+                    </div>
+
+                    {index > 0 && (
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => removeSaleItem(index)}
+                            className="mt-2 sm:mt-8"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                          </svg>
+                        </Button>
                     )}
-                  </FormItem>
-                )}
-              />
+                  </div>
+              ))}
             </div>
-          )}
 
-          {/* Seller Selection - Only shown for superuser or admin */}
-          {(isSuperUser || isAdmin) && (
-            <div className="w-full sm:w-2/3 lg:w-1/2">
-              <FormField
-                control={form.control}
-                name="sold_by"
-                rules={{ required: t('validation.required') }}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('table.seller')}</FormLabel>
-                    <Select
-                      value={field.value?.toString()}
-                      onValueChange={(value) => {
-                        field.onChange(parseInt(value, 10));
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t('placeholders.select_seller')} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {users
-                          .filter(user => {
-                            const selectedStore = form.watch('store_write');
-                            // Cast user to ExtendedUser to access store_read
-                            const extendedUser = user as ExtendedUser;
-                            return (
-                              (user.role === 'Продавец' || user.role === 'Администратор') &&
-                              extendedUser.store_read &&
-                              (!selectedStore || extendedUser.store_read.id === selectedStore)
-                            );
-                          })
-                          .map((user) => (
-                            <SelectItem key={user.id} value={user.id?.toString() || ''}>
-                              {user.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-                )}
-              />
-            </div>
-          )}
+            {/* Payment Methods */}
+            <div className="space-y-4">
+              <h3 className="text-base sm:text-lg font-semibold">{t('table.payment_methods')}</h3>
+              {form.watch('sale_payments').map((_, index) => (
+                  <div key={index} className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-end">
+                    <FormField
+                        control={form.control}
+                        name={`sale_payments.${index}.payment_method`}
+                        render={({ field }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel>{t('table.payment_method')}</FormLabel>
+                              <Select
+                                  value={typeof field.value === 'string' ? field.value : ''}
+                                  onValueChange={field.onChange}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Наличные">{t('payment.cash')}</SelectItem>
+                                  <SelectItem value="Click">{t('payment.click')}</SelectItem>
+                                  <SelectItem value="Карта">{t('payment.card')}</SelectItem>
+                                  <SelectItem value="Перечисление">{t('payment.per')}</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name={`sale_payments.${index}.amount`}
+                        render={({ field: { onChange, value } }) => (
+                            <FormItem className="flex-1">
+                              <FormLabel>{t('table.amount')}</FormLabel>
+                              <FormControl>
+                                <Input
+                                    type="text"
+                                    value={
+                                      value !== undefined && value !== null
+                                          ? Number(value).toLocaleString()
+                                          : ''
+                                    }
+                                    onChange={(e) => {
+                                      // Remove all non-digit and non-decimal characters for parsing
+                                      const rawValue = e.target.value.replace(/[^\d.,]/g, '').replace(/,/g, '');
+                                      const newAmount = parseFloat(rawValue) || 0;
+                                      const totalAmount = parseFloat(form.watch('total_amount'));
+                                      const otherPaymentsTotal = form.watch('sale_payments')
+                                          .filter((_, i) => i !== index)
+                                          .reduce((sum, p) => sum + (p.amount || 0), 0);
 
-          {/* Sale Items */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-base sm:text-lg font-semibold">{t('common.sale_items')}</h2>
-              <Button type="button" onClick={addSaleItem}>
-                {t('common.add_item')}
+                                      // Update payment amount
+                                      if (newAmount + otherPaymentsTotal > totalAmount) {
+                                        onChange(totalAmount - otherPaymentsTotal);
+                                      } else {
+                                        onChange(newAmount);
+                                      }
+                                    }}
+                                />
+                              </FormControl>
+                            </FormItem>
+                        )}
+                    />
+                    {index > 0 && (
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => {
+                              const payments = form.getValues('sale_payments');
+                              payments.splice(index, 1);
+                              const totalAmount = parseFloat(form.watch('total_amount'));
+                              const remainingAmount = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+                              if (remainingAmount < totalAmount) {
+                                payments[payments.length - 1].amount = totalAmount - remainingAmount;
+                                form.setValue('sale_payments', payments);
+                              } else {
+                                form.setValue('sale_payments', payments);
+                              }
+                            }}
+                            className="mt-0 sm:mt-1"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18 6L6 18M6 6l12 12" />
+                          </svg>
+                        </Button>
+                    )}
+                  </div>
+              ))}
+              <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const payments = form.getValues('sale_payments');
+                    const totalAmount = parseFloat(form.watch('total_amount'));
+                    const currentTotal = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+                    const remaining = totalAmount - currentTotal;
+
+                    if (remaining > 0) {
+                      payments.push({ payment_method: 'Наличные', amount: remaining });
+                      form.setValue('sale_payments', payments);
+                    }
+                  }}
+                  className="w-full sm:w-auto"
+              >
+                {t('common.add_payment_method')}
               </Button>
             </div>
 
-            {form.watch('sale_items').map((_, index: number) => (
-              <div key={index} className="flex flex-col sm:flex-row flex-wrap items-start gap-2 sm:gap-4 p-3 sm:p-4 border rounded-lg bg-white dark:bg-card dark:border-border shadow-sm">
-                <div className="w-full sm:w-[250px]">
-                  <FormField
-                    control={form.control}
-                    name={`sale_items.${index}.stock_write`}
-                    rules={{ required: t('validation.required') }}
-                    render={({ field }) => (
+            {/* On Credit */}
+            <div className="w-full sm:w-2/3 lg:w-1/2">
+              <FormField
+                  control={form.control}
+                  name="on_credit"
+                  render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-medium">{t('table.product')}</FormLabel>
-                        <input
-                          type="text"
-                          placeholder={t('placeholders.search_products')}
-                          value={productSearchTerm}
-                          onChange={(e) => handleMobileSearch(e.target.value, setProductSearchTerm)}
-                          className="flex-1 mb-2 w-full border rounded px-2 py-1"
-                          autoComplete="off"
-                        />
+                        <FormLabel>{t('table.on_credit')}</FormLabel>
                         <Select
-                          value={field.value?.toString()}
-                          onValueChange={(value) => handleStockSelection(value, index)}
-                        >
-                          <SelectTrigger className={form.formState.errors.sale_items?.[index]?.stock_write ? "border-red-500" : ""}>
-                            <SelectValue placeholder={t('placeholders.select_product')} />
-                          </SelectTrigger>
-                          <SelectContent
-                            onPointerDownOutside={(e) => {
-                              const target = e.target as Node;
-                              const selectContent = document.querySelector('.select-content-wrapper');
-                              if (selectContent && selectContent.contains(target)) {
-                                e.preventDefault();
+                            value={field.value ? 'true' : 'false'}
+                            onValueChange={(value) => {
+                              const isCredit = value === 'true';
+                              field.onChange(isCredit);
+                              if (!isCredit) {
+                                form.setValue('sale_debt', undefined);
                               }
                             }}
-                          >
-                            <div className="mobile-select-wrapper">
-                              {/* No search input here anymore */}
-                              {filteredStocks
-                                .filter(stock => stock.quantity > 0)
-                                .map((stock) => (
-                                  <SelectItem key={stock.id} value={stock.id?.toString() || ''}>
-                                    {stock.product_read?.product_name} ({stock.quantity} {stock.product_read?.measurement_read?.name})
-                                  </SelectItem>
-                                ))}
-                            </div>
-                          </SelectContent>
-                        </Select>
-                        {selectedPrices[index] && (
-                          <div className="mt-2 space-y-1 text-xs">
-                            <div className="flex items-center justify-between px-2 py-1 bg-gray-50 rounded">
-                              {(isAdmin || currentUser?.is_superuser) && (
-                                <>
-                                  <span className="text-gray-600">{t('table.min_price')}:</span>
-                                  <span className="font-medium text-red-600">{selectedPrices[index].min}</span>
-                                </>
-                              )}
-
-                            </div>
-                            {(isAdmin || currentUser?.is_superuser) && (
-                              <div className="flex items-center justify-between px-2 py-1 bg-green-50 rounded">
-                                <span className="text-gray-600">{t('table.profit')}:</span>
-                                <span className="font-medium text-green-600">
-                                  {selectedPrices[index].profit.toFixed(1).toLocaleString()}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="w-full sm:w-[250px]">
-                  <FormField
-                    control={form.control}
-                    name={`sale_items.${index}.selling_method`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium">{t('common.selling_method')}</FormLabel>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
                         >
                           <SelectTrigger>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Штук">{t('table.pieces')}</SelectItem>
-                            <SelectItem value="Ед.измерения">{t('table.measurement')}</SelectItem>
+                            <SelectItem value="true">{t('common.yes')}</SelectItem>
+                            <SelectItem value="false">{t('common.no')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormItem>
-                    )}
-                  />
-                </div>
+                  )}
+              />
+            </div>
 
-                <div className="w-full sm:w-[120px]">
-                  <FormField
-                    control={form.control}
-                    name={`sale_items.${index}.quantity`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium">{t('table.quantity')}</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="any"
-                            max={selectedStocks[index] || 1}
-                            placeholder={t('placeholders.enter_quantity')}
-                            className="text-right"
-                            {...field}
-                            onChange={(e) => handleQuantityChange(e, index)}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="w-full sm:w-[150px]">
-                  <FormField
-                    control={form.control}
-                    name={`sale_items.${index}.subtotal`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium">{t('table.subtotal')}</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="text"
-                            className="text-right font-medium"
-                            {...field}
-                            onChange={(e) => handleSubtotalChange(e, index)}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {index > 0 && (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => removeSaleItem(index)}
-                    className="mt-2 sm:mt-8"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 6L6 18M6 6l12 12" />
-                    </svg>
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Payment Methods */}
-          <div className="space-y-4">
-            <h3 className="text-base sm:text-lg font-semibold">{t('table.payment_methods')}</h3>
-            {form.watch('sale_payments').map((_, index) => (
-              <div key={index} className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-end">
-                <FormField
+            {/* Client Selection */}
+            <div className="w-full sm:w-2/3 lg:w-1/2">
+              <FormField
                   control={form.control}
-                  name={`sale_payments.${index}.payment_method`}
+                  name="sale_debt.client"
                   render={({ field }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel>{t('table.payment_method')}</FormLabel>
-                      <Select
-                        value={typeof field.value === 'string' ? field.value : ''}
-                        onValueChange={field.onChange}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Наличные">{t('payment.cash')}</SelectItem>
-                          <SelectItem value="Click">{t('payment.click')}</SelectItem>
-                          <SelectItem value="Карта">{t('payment.card')}</SelectItem>
-                          <SelectItem value="Перечисление">{t('payment.per')}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`sale_payments.${index}.amount`}
-                  render={({ field: { onChange, value } }) => (
-                    <FormItem className="flex-1">
-                      <FormLabel>{t('table.amount')}</FormLabel>
-                      <FormControl>
+                      <FormItem>
+                        <FormLabel>{t('table.client')}</FormLabel>
+                        {/* Search input outside of Select */}
                         <Input
-                          type="text"
-                          value={
-                            value !== undefined && value !== null
-                              ? Number(value).toLocaleString()
-                              : ''
-                          }
-                          onChange={(e) => {
-                            // Remove all non-digit and non-decimal characters for parsing
-                            const rawValue = e.target.value.replace(/[^\d.,]/g, '').replace(/,/g, '');
-                            const newAmount = parseFloat(rawValue) || 0;
-                            const totalAmount = parseFloat(form.watch('total_amount'));
-                            const otherPaymentsTotal = form.watch('sale_payments')
-                              .filter((_, i) => i !== index)
-                              .reduce((sum, p) => sum + (p.amount || 0), 0);
-
-                            // Update payment amount
-                            if (newAmount + otherPaymentsTotal > totalAmount) {
-                              onChange(totalAmount - otherPaymentsTotal);
-                            } else {
-                              onChange(newAmount);
-                            }
-                          }}
+                            type="text"
+                            placeholder={t('forms.search_clients')}
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            className="mb-2"
+                            autoComplete="off"
                         />
-                      </FormControl>
-                    </FormItem>
+                        <Select
+                            value={field.value?.toString()}
+                            onValueChange={value => {
+                              field.onChange(parseInt(value, 10));
+                              if (value && !form.getValues('on_credit')) {
+                                form.setValue('on_credit', false);
+                              }
+                            }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('placeholders.select_client')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <div className="max-h-[200px] overflow-y-auto">
+                              {clients && clients.length > 0 ? (
+                                  clients
+                                      .filter(client =>
+                                          (form.watch('on_credit') ? true : client.type === 'Юр.лицо') &&
+                                          client.name.toLowerCase().includes(searchTerm.toLowerCase())
+                                      )
+                                      .map(client => (
+                                          <SelectItem key={client.id} value={client.id?.toString() || ''}>
+                                            {client.name} {client.type !== 'Юр.лицо' && `(${client.type})`}
+                                          </SelectItem>
+                                      ))
+                              ) : (
+                                  <div className="p-2 text-center text-gray-500 text-sm">
+                                    No clients found
+                                  </div>
+                              )}
+                            </div>
+                          </SelectContent>
+                        </Select>
+                      </FormItem>
                   )}
-                />
-                {index > 0 && (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => {
-                      const payments = form.getValues('sale_payments');
-                      payments.splice(index, 1);
-                      const totalAmount = parseFloat(form.watch('total_amount'));
-                      const remainingAmount = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-                      if (remainingAmount < totalAmount) {
-                        payments[payments.length - 1].amount = totalAmount - remainingAmount;
-                        form.setValue('sale_payments', payments);
-                      } else {
-                        form.setValue('sale_payments', payments);
-                      }
-                    }}
-                    className="mt-0 sm:mt-1"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 6L6 18M6 6l12 12" />
-                    </svg>
-                  </Button>
-                )}
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                const payments = form.getValues('sale_payments');
-                const totalAmount = parseFloat(form.watch('total_amount'));
-                const currentTotal = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-                const remaining = totalAmount - currentTotal;
+              />
+            </div>
 
-                if (remaining > 0) {
-                  payments.push({ payment_method: 'Наличные', amount: remaining });
-                  form.setValue('sale_payments', payments);
-                }
-              }}
-              className="w-full sm:w-auto"
-            >
-              {t('common.add_payment_method')}
-            </Button>
-          </div>
-
-          {/* On Credit */}
-          <div className="w-full sm:w-2/3 lg:w-1/2">
-            <FormField
-              control={form.control}
-              name="on_credit"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('table.on_credit')}</FormLabel>
-                  <Select
-                    value={field.value ? 'true' : 'false'}
-                    onValueChange={(value) => {
-                      const isCredit = value === 'true';
-                      field.onChange(isCredit);
-                      if (!isCredit) {
-                        form.setValue('sale_debt', undefined);
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="true">{t('common.yes')}</SelectItem>
-                      <SelectItem value="false">{t('common.no')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Client Selection */}
-          <div className="w-full sm:w-2/3 lg:w-1/2">
-            <FormField
-              control={form.control}
-              name="sale_debt.client"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('table.client')}</FormLabel>
-                  {/* Search input outside of Select */}
-                  <Input
-                    type="text"
-                    placeholder={t('forms.search_clients')}
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="mb-2"
-                    autoComplete="off"
-                  />
-                  <Select
-                    value={field.value?.toString()}
-                    onValueChange={value => {
-                      field.onChange(parseInt(value, 10));
-                      if (value && !form.getValues('on_credit')) {
-                        form.setValue('on_credit', false);
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('placeholders.select_client')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <div className="max-h-[200px] overflow-y-auto">
-                        {clients && clients.length > 0 ? (
-                          clients
-                            .filter(client =>
-                              (form.watch('on_credit') ? true : client.type === 'Юр.лицо') &&
-                              client.name.toLowerCase().includes(searchTerm.toLowerCase())
-                            )
-                            .map(client => (
-                              <SelectItem key={client.id} value={client.id?.toString() || ''}>
-                                {client.name} {client.type !== 'Юр.лицо' && `(${client.type})`}
-                              </SelectItem>
-                            ))
-                        ) : (
-                          <div className="p-2 text-center text-gray-500 text-sm">
-                            No clients found
-                          </div>
-                        )}
-                      </div>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-          </div>
-
-          {/* Credit Details */}
-          {form.watch('on_credit') && (
-            <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-amber-50 border-amber-200">
-              <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+            {/* Credit Details */}
+            {form.watch('on_credit') && (
+                <div className="space-y-4 p-3 sm:p-4 border rounded-lg bg-amber-50 border-amber-200">
+                  <h3 className="font-semibold text-gray-800 flex items-center gap-2">
                 <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full flex items-center gap-1">
                   {t('common.on_credit')}
                 </span>
-              </h3>
+                  </h3>
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="sale_debt.due_date"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('table.due_date')}</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="sale_debt.due_date"
+                        render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('table.due_date')}</FormLabel>
+                              <FormControl>
+                                <Input type="date" {...field} />
+                              </FormControl>
+                            </FormItem>
+                        )}
+                    />
 
-                <FormField
-                  control={form.control}
-                  name="sale_debt.deposit"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('table.deposit')}</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          {...field}
-                          onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-          )}
+                    <FormField
+                        control={form.control}
+                        name="sale_debt.deposit"
+                        render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>{t('table.deposit')}</FormLabel>
+                              <FormControl>
+                                <Input
+                                    type="number"
+                                    placeholder="0"
+                                    {...field}
+                                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                                />
+                              </FormControl>
+                            </FormItem>
+                        )}
+                    />
+                  </div>
+                </div>
+            )}
 
-          {/* Total Amount and Profit Display */}
-          <div className="mt-6 sm:mt-8 p-4 sm:p-6 border rounded-lg bg-gray-50 dark:bg-card dark:border-border">
-            <div className="flex flex-col space-y-4">
-              <div className="flex items-center justify-between border-b pb-4">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-700">
-                  {t('table.total_amount')}
-                </h3>
-                <p className="text-xl sm:text-3xl font-bold text-green-600">
-                  {form.watch('sale_payments').reduce((sum, payment) => sum + (payment.amount || 0), 0).toLocaleString()}
-                </p>
-              </div>
-              {(isAdmin || currentUser?.is_superuser) && (
-                <div className="flex items-center justify-between">
+            {/* Total Amount and Profit Display */}
+            <div className="mt-6 sm:mt-8 p-4 sm:p-6 border rounded-lg bg-gray-50 dark:bg-card dark:border-border">
+              <div className="flex flex-col space-y-4">
+                <div className="flex items-center justify-between border-b pb-4">
                   <h3 className="text-base sm:text-lg font-semibold text-gray-700">
-                    {t('table.profit')}
+                    {t('table.total_amount')}
                   </h3>
                   <p className="text-xl sm:text-3xl font-bold text-green-600">
-                    {(() => {
-                      const saleItems = form.watch('sale_items');
-                      const salePayments = form.watch('sale_payments');
-                      const totalAmount = parseFloat(form.watch('total_amount')) || 0;
-                      const totalProfit = calculateTotalProfit({
-                        saleItems,
-                        salePayments,
-                        totalAmount,
-                        selectedPrices,
-                        stocks,
-                        recyclingData,
-                        getRecyclingRecord
-                      });
-                      return totalProfit.toFixed(1).toLocaleString();
-                    })()}
+                    {form.watch('sale_payments').reduce((sum, payment) => sum + (payment.amount || 0), 0).toLocaleString()}
                   </p>
                 </div>
-              )}
+                {(isAdmin || currentUser?.is_superuser) && (
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-700">
+                        {t('table.profit')}
+                      </h3>
+                      <p className="text-xl sm:text-3xl font-bold text-green-600">
+                        {(() => {
+                          const saleItems = form.watch('sale_items');
+                          const salePayments = form.watch('sale_payments');
+                          const totalAmount = parseFloat(form.watch('total_amount')) || 0;
+                          const totalProfit = calculateTotalProfit({
+                            saleItems,
+                            salePayments,
+                            totalAmount,
+                            selectedPrices,
+                            stocks,
+                            recyclingData,
+                            getRecyclingRecord
+                          });
+                          return totalProfit.toFixed(1).toLocaleString();
+                        })()}
+                      </p>
+                    </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          <Button
-            type="submit"
-            className="w-full mt-4 sm:mt-6 h-10 sm:h-12 text-base sm:text-lg font-medium"
-            disabled={createSale.isPending || hasNegativeProfit}
-          >
-            {hasNegativeProfit
-              ? t('messages.error.negative') || 'Profit cannot be negative'
-              : (createSale.isPending ? t('common.creating') : t('common.create'))}
-          </Button>
-        </form>
-      </Form>
-    </div>
+            <Button
+                type="submit"
+                className="w-full mt-4 sm:mt-6 h-10 sm:h-12 text-base sm:text-lg font-medium"
+                disabled={createSale.isPending || hasNegativeProfit}
+            >
+              {hasNegativeProfit
+                  ? t('messages.error.negative') || 'Profit cannot be negative'
+                  : (createSale.isPending ? t('common.creating') : t('common.create'))}
+            </Button>
+          </form>
+        </Form>
+      </div>
   );
 }

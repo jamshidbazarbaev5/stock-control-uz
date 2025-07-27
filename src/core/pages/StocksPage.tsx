@@ -22,7 +22,7 @@ import { ResourceTable } from '../helpers/ResourseTable';
 import { useTranslation } from 'react-i18next';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
- 
+
 type PaginatedData<T> = { results: T[]; count: number } | T[];
 
 export default function StocksPage() {
@@ -99,27 +99,27 @@ export default function StocksPage() {
       header: t('table.actions'),
       accessorKey: 'actions',
       cell: (row: any) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => navigate(`/stocks/${row.id}/history`)}
-            >
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                  onClick={() => navigate(`/stocks/${row.id}/history`)}
+              >
               <span className="flex items-center gap-2">
                 <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                 >
                   <path d="M3 3v5h5" />
                   <path d="M3 3l6.1 6.1" />
@@ -128,39 +128,39 @@ export default function StocksPage() {
                 </svg>
                 {t('navigation.history')}
               </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleEdit(row)}>
-              {t('common.edit')}
-            </DropdownMenuItem>
-            {/* Only show remove if superuser */}
-            {currentUser?.is_superuser ? (
-              <DropdownMenuItem onClick={() => { setStockToDelete(row); setDeleteModalOpen(true); }}>
-                {t('common.remove')}
               </DropdownMenuItem>
-            ) : null}
-            <DropdownMenuItem 
-              onClick={() => navigate(`/create-sale?productId=${row.product_read?.id}&stockId=${row.id}`)}
-            >
-              {t('common.create')} {t('navigation.sale')}
-            </DropdownMenuItem>
-            {currentUser?.role?.toLowerCase() !== 'продавец' && (
-              <>
-                <DropdownMenuItem 
-                  onClick={() => navigate(`/create-transfer?fromProductId=${row.product_read?.id}&fromStockId=${row.id}`)}
-                >
-                  {t('common.create')} {t('navigation.transfer')}
-                </DropdownMenuItem>
-                {row.product_read?.has_recycling && (
-                  <DropdownMenuItem 
-                    onClick={() => navigate(`/create-recycling?fromProductId=${row.product_read?.id}&fromStockId=${row.id}&storeId=${row.store_read?.id}`)}
-                  >
-                    {t('common.create')} {t('navigation.recycling')}
+              <DropdownMenuItem onClick={() => handleEdit(row)}>
+                {t('common.edit')}
+              </DropdownMenuItem>
+              {/* Only show remove if superuser */}
+              {currentUser?.is_superuser ? (
+                  <DropdownMenuItem onClick={() => { setStockToDelete(row); setDeleteModalOpen(true); }}>
+                    {t('common.remove')}
                   </DropdownMenuItem>
-                )}
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              ) : null}
+              <DropdownMenuItem
+                  onClick={() => navigate(`/create-sale?productId=${row.product_read?.id}&stockId=${row.id}`)}
+              >
+                {t('common.create')} {t('navigation.sale')}
+              </DropdownMenuItem>
+              {currentUser?.role?.toLowerCase() !== 'продавец' && (
+                  <>
+                    <DropdownMenuItem
+                        onClick={() => navigate(`/create-transfer?fromProductId=${row.product_read?.id}&fromStockId=${row.id}`)}
+                    >
+                      {t('common.create')} {t('navigation.transfer')}
+                    </DropdownMenuItem>
+                    {row.product_read?.has_recycling && (
+                        <DropdownMenuItem
+                            onClick={() => navigate(`/create-recycling?fromProductId=${row.product_read?.id}&fromStockId=${row.id}&storeId=${row.store_read?.id}`)}
+                        >
+                          {t('common.create')} {t('navigation.recycling')}
+                        </DropdownMenuItem>
+                    )}
+                  </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
       ),
     },
   ];
@@ -338,7 +338,7 @@ export default function StocksPage() {
     try {
       const quantity = typeof data.quantity === 'string' ? parseInt(data.quantity, 10) : data.quantity!;
       const measurement = typeof data.measurement_write === 'string' ? parseInt(data.measurement_write, 10) : data.measurement_write!;
-      
+
       // Calculate the UZS price from USD and exchange rate
       const priceInUSD = parseFloat(data.purchase_price_in_us || '0');
       const exchangeRate = parseFloat(data.exchange_rate || '0');
@@ -386,109 +386,109 @@ export default function StocksPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">{t('navigation.stocks')}</h1>
-        <Button onClick={() => navigate('/create-stock')}>{t('common.create')} </Button>
-      </div>
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">{t('navigation.stocks')}</h1>
+          <Button onClick={() => navigate('/create-stock')}>{t('common.create')} </Button>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-5" >
-      
-        {/* Removed store selection dropdown */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-5" >
 
-        <Input
-          type="text"
-          value={productId}
-          onChange={e => setProductId(e.target.value)}
-          placeholder={t('forms.type_product_id')}
-        />  <Input
-          type="text"
-          value={productName}
-          onChange={e => setProductName(e.target.value)}
-          placeholder={t('forms.type_product_name')}
-      />
-         <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
-          <SelectTrigger>
-            <SelectValue placeholder={t('forms.select_supplier')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('forms.all_suppliers')}</SelectItem>
-            {suppliers?.map((supplier: Supplier) => supplier.id ? (
-              <SelectItem key={supplier.id} value={supplier.id.toString()}>
-                {supplier.name}
-              </SelectItem>
-            ) : null) || null}
-          </SelectContent>
-        </Select>
-        <Select value={selectedStore} onValueChange={setSelectedStore}>
-          <SelectTrigger>
-            <SelectValue placeholder={t('forms.select_store')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t('forms.all_stores')}</SelectItem>
-            {stores?.map((store: Store) => store.id ? (
-              <SelectItem key={store.id} value={store.id.toString()}>
-                {store.name}
-              </SelectItem>
-            ) : null) || null}
-          </SelectContent>
-        </Select>
-        <Input
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          placeholder={t('forms.from_date')}
+          {/* Removed store selection dropdown */}
+
+          <Input
+              type="text"
+              value={productId}
+              onChange={e => setProductId(e.target.value)}
+              placeholder={t('forms.type_product_id')}
+          />  <Input
+            type="text"
+            value={productName}
+            onChange={e => setProductName(e.target.value)}
+            placeholder={t('forms.type_product_name')}
         />
-        <Input
-          type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          placeholder={t('forms.to_date')}
+          <Select value={selectedSupplier} onValueChange={setSelectedSupplier}>
+            <SelectTrigger>
+              <SelectValue placeholder={t('forms.select_supplier')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('forms.all_suppliers')}</SelectItem>
+              {suppliers?.map((supplier: Supplier) => supplier.id ? (
+                  <SelectItem key={supplier.id} value={supplier.id.toString()}>
+                    {supplier.name}
+                  </SelectItem>
+              ) : null) || null}
+            </SelectContent>
+          </Select>
+          <Select value={selectedStore} onValueChange={setSelectedStore}>
+            <SelectTrigger>
+              <SelectValue placeholder={t('forms.select_store')} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('forms.all_stores')}</SelectItem>
+              {stores?.map((store: Store) => store.id ? (
+                  <SelectItem key={store.id} value={store.id.toString()}>
+                    {store.name}
+                  </SelectItem>
+              ) : null) || null}
+            </SelectContent>
+          </Select>
+          <Input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              placeholder={t('forms.from_date')}
+          />
+          <Input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              placeholder={t('forms.to_date')}
+          />
+          <Select value={productZero ? 'true' : 'false'} onValueChange={val => setProductZero(val === 'true')}>
+            <SelectTrigger>
+              <SelectValue placeholder="Показать нулевые приходы?" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="false">ненулевые приходы</SelectItem>
+              <SelectItem value="true">показать нулевые приходы</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <ResourceTable
+            data={stocks}
+            columns={columns}
+            isLoading={isLoading}
+            // onEdit={handleEdit}
+            // onDelete={currentUser?.is_superuser ? handleDelete : undefined}
+            pageSize={pageSize}
+            totalCount={stocksData?.count || 0}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
         />
-        <Select value={productZero ? 'true' : 'false'} onValueChange={val => setProductZero(val === 'true')}>
-          <SelectTrigger>
-            <SelectValue placeholder="Показать нулевые приходы?" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="false">ненулевые приходы</SelectItem>
-            <SelectItem value="true">показать нулевые приходы</SelectItem>
-          </SelectContent>
-        </Select>
+
+        <Dialog open={!!selectedStock} onOpenChange={() => setSelectedStock(null)}>
+          <DialogContent>
+            {selectedStock && (
+                <ResourceForm<Stock>
+                    fields={fields}
+                    onSubmit={handleUpdate}
+                    defaultValues={selectedStock}
+                    isSubmitting={updateStock.isPending}
+                    title={t('common.edit') + ' ' + t('table.product')}
+                />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        <DeleteConfirmationModal
+            isOpen={deleteModalOpen}
+            onClose={() => { setDeleteModalOpen(false); setStockToDelete(null); }}
+            onConfirm={() => stockToDelete?.id !== undefined && handleDelete(stockToDelete.id)}
+            title={t('common.delete') + ' ' + t('table.product')}
+            // description={t('messages.confirm.delete', { item: t('table.product') })}
+        />
       </div>
-
-      <ResourceTable
-        data={stocks}
-        columns={columns}
-        isLoading={isLoading}
-        // onEdit={handleEdit}
-        // onDelete={currentUser?.is_superuser ? handleDelete : undefined}
-        pageSize={pageSize}
-        totalCount={stocksData?.count || 0}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-      />
-
-      <Dialog open={!!selectedStock} onOpenChange={() => setSelectedStock(null)}>
-        <DialogContent>
-          {selectedStock && (
-            <ResourceForm<Stock>
-              fields={fields}
-              onSubmit={handleUpdate}
-              defaultValues={selectedStock}
-              isSubmitting={updateStock.isPending}
-              title={t('common.edit') + ' ' + t('table.product')}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <DeleteConfirmationModal
-        isOpen={deleteModalOpen}
-        onClose={() => { setDeleteModalOpen(false); setStockToDelete(null); }}
-        onConfirm={() => stockToDelete?.id !== undefined && handleDelete(stockToDelete.id)}
-        title={t('common.delete') + ' ' + t('table.product')}
-        // description={t('messages.confirm.delete', { item: t('table.product') })}
-      />
-    </div>
   );
 }

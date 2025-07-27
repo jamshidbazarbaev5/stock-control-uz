@@ -130,9 +130,9 @@ export default function EditSale() {
   const { data: recyclingData } = useGetRecyclings({});
 
   // Helper to get recycling record for a stock
-  function getRecyclingRecord(productId: number) {
+  function getRecyclingRecord(productId: number, stockId: number) {
     if (!recyclingData) return undefined;
-    return findRecyclingForStock(recyclingData.results, productId);
+    return findRecyclingForStock(recyclingData.results, productId, stockId);
   }
 
   // Prepare data arrays
@@ -222,7 +222,7 @@ export default function EditSale() {
           const minPrice = parseFloat(stock.min_price || "0");
           const quantity = parseFloat(item.quantity);
           let profit = 0;
-          const recyclingRecord = getRecyclingRecord(stock.product_read.id);
+          const recyclingRecord = getRecyclingRecord(stock.product_read.id,stock.id);
           if (recyclingRecord) {
             profit = calculateRecyclingProfit(recyclingRecord, quantity);
           } else if (stock.product_read?.has_kub) {
@@ -349,7 +349,7 @@ export default function EditSale() {
     let minPrice = parseFloat(selectedStock.min_price || '0');
     let sellingPrice = parseFloat(selectedStock.selling_price || '0');
     let profit = 0;
-    const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
+    const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id,selectedStock.id);
     if (recyclingRecord) {
       profit = calculateRecyclingProfit(recyclingRecord, 1); // default 1 unit
     } else if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
@@ -403,7 +403,7 @@ export default function EditSale() {
       form.setValue(`sale_items.${index}.quantity`, value);
       if (selectedPrices[index] && selectedStock) {
         let profit = 0;
-        const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
+        const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id,selectedStock.id);
         if (recyclingRecord) {
           const originalSubtotal = selectedPrices[index].selling;
           const currentSubtotal = parseFloat(form.getValues(`sale_items.${index}.subtotal`)) || originalSubtotal;
@@ -455,7 +455,7 @@ export default function EditSale() {
     // Calculate profit if we have price information
     if (selectedPrices[index] && selectedStock) {
       let profit = 0;
-      const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
+      const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id,selectedStock.id);
       if (recyclingRecord) {
         const baseProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1);
         const originalSubtotal = selectedPrices[index].selling;
@@ -524,7 +524,7 @@ export default function EditSale() {
           let profitPerUnit = 0;
           let recyclingProfitUsed = false;
           if (selectedStock && recyclingData) {
-            const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
+            const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id,selectedStock.id);
             if (recyclingRecord) {
               const baseProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1);
               const originalSubtotal = selectedPrices[index].selling;
@@ -1273,7 +1273,7 @@ export default function EditSale() {
                           let profitPerUnit = 0;
                           let recyclingProfitUsed = false;
                           if (selectedStock && recyclingData) {
-                            const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
+                            const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id,selectedStock.id);
                             if (recyclingRecord) {
                               const baseProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1);
                               const originalSubtotal = selectedPrices[index].selling;

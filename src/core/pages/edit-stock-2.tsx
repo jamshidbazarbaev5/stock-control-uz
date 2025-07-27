@@ -10,7 +10,7 @@ import { useGetProducts } from '../api/product';
 import { useGetStores } from '../api/store';
 import { useGetSuppliers } from '../api/supplier';
 import api from '../api/api';
-import axios from 'axios';
+
 import { getAccessToken } from '../api/auth';
 
 interface FormValues extends Partial<Stock> {
@@ -56,7 +56,7 @@ export default function EditStock() {
       setCurrencyLoading(true);
       try {
         const token = getAccessToken();
-        const res = await axios.get('https://bondify.uz/api/v1/items/currency/', {
+        const res = await api.get('/items/currency/', {
           headers: { Authorization: token ? `Bearer ${token}` : '' },
         });
         if (res.data.results && res.data.results.length > 0) {
@@ -426,7 +426,7 @@ export default function EditStock() {
         placeholder: t('common.enter_purchase_price_uzs') || 'Введите цену покупки в UZS',
       };
     }
-     // Set min_price and helperText for any product with has_shtuk or has_metr
+    // Set min_price and helperText for any product with has_shtuk or has_metr
     if (field.name === 'min_price') {
       let helperText = '';
       let minPriceValue = form.watch('min_price');
@@ -466,23 +466,14 @@ export default function EditStock() {
   });
 
   const handleSubmit = async (data: FormValues) => {
-      const visibleRequiredFields = fields.filter(f => !f.hidden && f.required);
-      const missingFields = visibleRequiredFields.filter(f => {
-        const value = (data as any)[f.name];
-        return value === undefined || value === '' || value === null;
-      });
-      if (missingFields.length > 0) {
-        toast.error(t('validation.fill_all_required_fields') || 'Please fill all required fields');
-        return;
-      }
     if (!id) return;
     try {
-         const sellingPrice = typeof data.selling_price === 'string' ? parseFloat(data.selling_price) : data.selling_price;
+      const sellingPrice = typeof data.selling_price === 'string' ? parseFloat(data.selling_price) : data.selling_price;
       const minPrice = typeof data.min_price === 'string' ? parseFloat(data.min_price) : data.min_price;
       // Validation: selling_price must be greater than min_price
       if (
-        sellingPrice === undefined || isNaN(sellingPrice) ||
-        minPrice === undefined || isNaN(minPrice)
+          sellingPrice === undefined || isNaN(sellingPrice) ||
+          minPrice === undefined || isNaN(minPrice)
       ) {
         toast.error(t('validation.selling_price_and_min_price_numbers') || 'Selling price and minimum price must be valid numbers');
         return;

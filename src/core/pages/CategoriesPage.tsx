@@ -5,7 +5,7 @@ import { ResourceTable } from '../helpers/ResourseTable';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
-import { type Category, useGetCategories, useUpdateCategory, useDeleteCategory } from '../api/category';
+import { type Category, useGetCategories, useUpdateCategory } from '../api/category';
 
 const categoryFields = (t: any) => [
   {
@@ -59,7 +59,7 @@ export default function CategoriesPage() {
   }));
 
   const { mutate: updateCategory, isPending: isUpdating } = useUpdateCategory();
-  const { mutate: deleteCategory } = useDeleteCategory();
+  // const { mutate: deleteCategory } = useDeleteCategory();
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
@@ -82,12 +82,12 @@ export default function CategoriesPage() {
     );
   };
 
-  const handleDelete = (id: number) => {
-    deleteCategory(id, {
-      onSuccess: () => toast.success(t('messages.success.deleted', { item: t('navigation.categories') })),
-      onError: () => toast.error(t('messages.error.delete', { item: t('navigation.categories') })),
-    });
-  };
+  // const handleDelete = (id: number) => {
+  //   deleteCategory(id, {
+  //     onSuccess: () => toast.success(t('messages.success.deleted', { item: t('navigation.categories') })),
+  //     onError: () => toast.error(t('messages.error.delete', { item: t('navigation.categories') })),
+  //   });
+  // };
 
   return (
     <div className="container mx-auto py-6">
@@ -112,7 +112,7 @@ export default function CategoriesPage() {
         columns={columns(t)}
         isLoading={isLoading}
         onEdit={handleEdit}
-        onDelete={handleDelete}
+        // onDelete={handleDelete}
         onAdd={() => navigate('/create-category')}
         totalCount={enhancedCategories.length}
         pageSize={30}
