@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { fetchLoans, type Loan } from '../api/loan';
+import { fetchLoanPaymentsByLoan } from '../api/loanpaymentByLoan';
 import { createLoanPayment } from '../api/loanpaymentCreate';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { ResourceForm } from '../helpers/ResourceForm';
@@ -18,6 +19,20 @@ export default function SponsorLoansPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'paid' | 'unpaid'>('all');
 
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('ru-RU', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return '-';
+    }
+  }
   useEffect(() => {
     if (!id || !currency) return;
     setIsLoading(true);
@@ -50,9 +65,41 @@ export default function SponsorLoansPage() {
     }
   };
 
+  // Store payments for all loans in a map: {loanId: payments[]}
+  const [paymentsMap, setPaymentsMap] = useState<Record<string, any[]>>({});
+  const [_isPaymentsLoading, setIsPaymentsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!id || loans.length === 0) return;
+    setIsPaymentsLoading(true);
+    // Fetch payments for all loans in parallel
+    Promise.all(
+      loans.map(loan => fetchLoanPaymentsByLoan(String(id), String(loan.id)))
+    ).then(results => {
+      const map: Record<string, any[]> = {};
+      loans.forEach((loan, idx) => {
+        map[String(loan.id)] = results[idx] || [];
+      });
+      setPaymentsMap(map);
+    }).finally(() => setIsPaymentsLoading(false));
+  }, [id, loans]);
+
+  // Helper to get payment summary for a loan
+  const getPaymentSummary = (loan: Loan) => {
+    const payments = paymentsMap[String(loan.id)] || [];
+    const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const lastPayment = payments.length > 0 ? payments[payments.length - 1] : null;
+    return {
+      totalPaid,
+      lastPaymentDate: lastPayment ? formatDate(lastPayment.paid_at) : '-'
+    };
+  };
+
   const loanColumns = [
+    { header: t('forms.id'), accessorKey: 'id' },
     { header: t('forms.remainder'), accessorKey: 'remainder' },
     { header: t('forms.currency'), accessorKey: 'currency' },
+    { header: t('forms.date'), accessorKey: (row: Loan) => formatDate(row.created_at) },
     { header: t('forms.due_date'), accessorKey: 'due_date' },
     { header: t('forms.status'), accessorKey: (row: Loan) => row.is_paid ? t('common.paid') : t('common.unpaid') },
     {
@@ -60,6 +107,18 @@ export default function SponsorLoansPage() {
       accessorKey: (row: Loan) => Number(row.overpayment_unused) > 0 ? (
         <span className="text-green-600 font-bold">{row.overpayment_unused}</span>
       ) : row.overpayment_unused
+    },
+    {
+      header: t('Платежи'),
+      accessorKey: (row: Loan) => {
+        const summary = getPaymentSummary(row);
+        return (
+          <div>
+            <div>{t('Всего оплачено')}: <span className="font-bold">{summary.totalPaid} {row.currency}</span></div>
+            <div>{t('Последний платеж')}: <span>{summary.lastPaymentDate}</span></div>
+          </div>
+        );
+      }
     },
   ];
 

@@ -79,7 +79,7 @@ function calculateTotalProfit({ saleItems, salePayments, totalAmount, selectedPr
   selectedPrices: Record<number, any>,
   stocks: any[],
   recyclingData: any,
-  getRecyclingRecord: (productId: number) => any
+  getRecyclingRecord: (productId: number, stockId: number) => any
 }) {
   const totalPayments = salePayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
   let totalProfit = 0;
@@ -94,18 +94,18 @@ function calculateTotalProfit({ saleItems, salePayments, totalAmount, selectedPr
       // --- Recycling profit logic ---
       let recyclingProfitUsed = false;
       if (selectedStock && recyclingData) {
-        const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
+        const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id,selectedStock.id);
         if (recyclingRecord) {
-          // Use recycling profit calculation
-          const baseProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1);
-          const originalSubtotal = selectedPrices[index].selling;
-          const priceDifference = subtotal - originalSubtotal;
-          profitPerUnit = baseProfitPerUnit + priceDifference;
+          // Use recycling profit calculation with custom selling price
+          profitPerUnit = calculateRecyclingProfit(recyclingRecord, 1, subtotal);
           recyclingProfitUsed = true;
         }
       }
       if (!recyclingProfitUsed && selectedStock) {
-        if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
+        if (
+          selectedStock.product_read?.has_kub &&
+          ['Половой', 'Стропила', 'Половой агаш','Страпила'].includes(selectedStock.product_read?.category_read?.category_name)
+        ) {
           const measurements = selectedStock.product_read.measurement || [];
           const getNumber = (name: string) => {
             const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
@@ -115,8 +115,7 @@ function calculateTotalProfit({ saleItems, salePayments, totalAmount, selectedPr
           const thickness = getNumber('Толщина');
           const meter = getNumber('Метр');
           const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
-          const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
-          const purchasePriceInUs = purchasePriceInUss;
+          const purchasePriceInUs = parseFloat(selectedStock.purchase_price_in_us || '0');
           const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
           profitPerUnit = subtotal - PROFIT_FAKE;
         } else {
@@ -416,12 +415,15 @@ export default function CreateSale() {
     let profit = 0;
     let minPrice = parseFloat(selectedStock.min_price || '0');
     let sellingPrice = parseFloat(selectedStock.selling_price || '0');
-    const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
+    const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id,selectedStock.id);
     if (recyclingRecord) {
       // Use recycling profit logic for recycled products
-      profit = calculateRecyclingProfit(recyclingRecord, 1); // default 1 unit
-    } else if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
-      // PROFIT_FAKE logic for specific categories
+      profit = calculateRecyclingProfit(recyclingRecord, 1, sellingPrice);
+    } else if (
+      selectedStock.product_read?.has_kub &&
+      ['Половой', 'Стропила', 'Половой агаш','Страпила'].includes(selectedStock.product_read?.category_read?.category_name)
+    ) {
+      // PROFIT_FAKE logic for specific categories by name
       const measurements = selectedStock.product_read.measurement || [];
       const getNumber = (name: string) => {
         const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
@@ -432,7 +434,6 @@ export default function CreateSale() {
       const meter = getNumber('Метр');
       const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
       const purchasePriceInUs = parseFloat(selectedStock.purchase_price_in_us || '0');
-      // const purchasePriceInUs  = purchasePriceInUss / 10;
       const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
       profit = sellingPrice - PROFIT_FAKE;
     } else {
@@ -481,16 +482,16 @@ export default function CreateSale() {
       // Recalculate profit with new quantity
       if (selectedPrices[index] && selectedStock) {
         let profit = 0;
-        const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
+        const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id,selectedStock.id);
         if (recyclingRecord) {
-          const originalSubtotal = selectedPrices[index].selling;
-          const currentSubtotal = parseFloat(form.getValues(`sale_items.${index}.subtotal`)) || originalSubtotal;
-          const baseProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1);
-          const priceDifference = currentSubtotal - originalSubtotal;
-          const newProfitPerUnit = baseProfitPerUnit + priceDifference;
+          const currentSubtotal = parseFloat(form.getValues(`sale_items.${index}.subtotal`)) || selectedPrices[index].selling;
+          const newProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1, currentSubtotal);
           profit = newProfitPerUnit * value;
-        } else if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
-          // PROFIT_FAKE logic
+        } else if (
+          selectedStock.product_read?.has_kub &&
+          ['Половой', 'Стропила', 'Половой агаш','Страпила'].includes(selectedStock.product_read?.category_read?.category_name)
+        ) {
+          // PROFIT_FAKE logic by category name
           const measurements = selectedStock.product_read.measurement || [];
           const getNumber = (name: string) => {
             const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
@@ -500,10 +501,9 @@ export default function CreateSale() {
           const thickness = getNumber('Толщина');
           const meter = getNumber('Метр');
           const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
-          const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
-          const purchasePriceInUs = purchasePriceInUss;
+          const purchasePriceInUs = parseFloat(selectedStock.purchase_price_in_us || '0');
           const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
-                    const sellingPrice = parseFloat(selectedStock.selling_price || '0');
+          const sellingPrice = parseFloat(selectedStock.selling_price || '0');
           profit = (sellingPrice - PROFIT_FAKE) * value;
         } else {
           // Standard profit calculation
@@ -535,24 +535,17 @@ export default function CreateSale() {
     // Calculate profit if we have price information
     if (selectedPrices[index] && selectedStock) {
         let profit = 0;
-        const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id);
+        const recyclingRecord = getRecyclingRecord(selectedStock.product_read.id,selectedStock.id);
 
         if (recyclingRecord) {
-            // New logic for recycling profit calculation based on subtotal change
-            // 1. Calculate the base profit per unit from the recycling record.
-            const baseProfitPerUnit = calculateRecyclingProfit(recyclingRecord, 1);
-            
-            // 2. Get the original selling price of the stock item when it was selected.
-            const originalSubtotal = selectedPrices[index].selling;
-            
-            // 3. Calculate the difference caused by the manual subtotal change.
-            const priceDifference = newSubtotal - originalSubtotal;
-            
-            // 4. Adjust the profit and multiply to get total profit.
-            profit = (baseProfitPerUnit + priceDifference) * quantity;
+            // Use recycling profit calculation with custom selling price
+            profit = calculateRecyclingProfit(recyclingRecord, quantity, newSubtotal);
 
-        } else if (selectedStock.product_read?.has_kub && (selectedStock.product_read?.category_read?.id === 2 || selectedStock.product_read?.category_read?.id === 8)) {
-            // PROFIT_FAKE logic
+        } else if (
+            selectedStock.product_read?.has_kub &&
+              ['Половой', 'Стропила', 'Половой агаш','Страпила'].includes(selectedStock.product_read?.category_read?.category_name)
+        ) {
+            // PROFIT_FAKE logic by category name
             const measurements = selectedStock.product_read.measurement || [];
             const getNumber = (name: string) => {
                 const m = measurements.find((m: any) => m.measurement_read.measurement_name === name);
@@ -562,8 +555,7 @@ export default function CreateSale() {
             const thickness = getNumber('Толщина');
             const meter = getNumber('Метр');
             const exchangeRate = parseFloat(selectedStock.exchange_rate_read?.currency_rate || '1');
-            const purchasePriceInUss = parseFloat(selectedStock.purchase_price_in_us || '0');
-            const purchasePriceInUs  = purchasePriceInUss;
+            const purchasePriceInUs = parseFloat(selectedStock.purchase_price_in_us || '0');
             const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
             // Use the new subtotal from the input as the current selling price
             profit = (newSubtotal - PROFIT_FAKE) * quantity;
@@ -591,8 +583,23 @@ export default function CreateSale() {
 
   const handleSubmit = async (data: SaleFormData) => {
     try {
-      // Set total_amount to the sum of all payment amounts
-      data.total_amount = data.sale_payments.reduce((sum, payment) => sum + (payment.amount || 0), 0).toString();
+      // Calculate the total amount from sale items
+      const itemsTotal = data.sale_items.reduce((sum, item) => {
+        const quantity = parseFloat(item.quantity.toString()) || 0;
+        const subtotal = parseFloat(item.subtotal) || 0;
+        return sum + (quantity * subtotal);
+      }, 0);
+
+      // Calculate the total amount from payments
+      const paymentsTotal = data.sale_payments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+
+      // Check if payments total is less than items total
+      if (paymentsTotal < itemsTotal) {
+        toast.error(t('messages.error.insufficient_payment') || 'Total payment amount must match the total sale amount');
+        return;
+      }
+
+      data.total_amount = paymentsTotal.toString();
 
       // Set store_write based on user role
       if (!isAdmin && !isSuperUser && currentUser?.store_read?.id) {
@@ -630,6 +637,13 @@ export default function CreateSale() {
         return;
       }
 
+      // Validate profit is not negative for any item
+      const hasNegativeProfit = Object.values(selectedPrices).some(priceObj => priceObj && priceObj.profit < 0);
+      if (hasNegativeProfit) {
+        toast.error(t('messages.error.negative') || 'Profit cannot be negative');
+        return;
+      }
+
       // --- Use the exact same values as the UI for profit calculation ---
       const saleItems = form.getValues('sale_items');
       const salePayments = form.getValues('sale_payments');
@@ -663,10 +677,9 @@ export default function CreateSale() {
         })),
         on_credit: data.on_credit,
         total_amount: Math.floor(Number(String(data.total_amount).replace(/,/g, ''))).toString(),
+        // Always send correct profit, regardless of role
         total_pure_revenue: Math.floor(Number(String(totalProfit).replace(/,/g, ''))).toString(),
-        // If client is selected but on credit, send client directly
         ...(data.sale_debt?.client && !data.on_credit ? { client: data.sale_debt.client } : {}),
-        // If on credit and client selected, include in sale_debt
         ...(data.on_credit && data.sale_debt?.client ? {
           sale_debt: {
             client: data.sale_debt.client,
@@ -718,9 +731,9 @@ export default function CreateSale() {
   const { data: recyclingData } = useGetRecyclings({});
 
   // Helper to get recycling record for a stock
-  const getRecyclingRecord = (productId: number) => {
+  const getRecyclingRecord = (productId: number, stockId: number) => {
     if (!recyclingData) return undefined;
-    return findRecyclingForStock(recyclingData.results, productId);
+    return findRecyclingForStock(recyclingData.results, productId, stockId);
   };
 
   // Add isMobile state and handleMobileSearch
@@ -742,6 +755,9 @@ export default function CreateSale() {
       setter(value);
     }
   };
+
+  // Check for negative profit in any item
+  const hasNegativeProfit = Object.values(selectedPrices).some(priceObj => priceObj && priceObj.profit < 0);
 
   return (
     <div className="container mx-auto py-4 sm:py-8 px-2 sm:px-4">
@@ -1281,9 +1297,11 @@ export default function CreateSale() {
           <Button
             type="submit"
             className="w-full mt-4 sm:mt-6 h-10 sm:h-12 text-base sm:text-lg font-medium"
-            disabled={createSale.isPending}
+            disabled={createSale.isPending || hasNegativeProfit}
           >
-            {createSale.isPending ? t('common.creating') : t('common.create')}
+            {hasNegativeProfit
+              ? t('messages.error.negative') || 'Profit cannot be negative'
+              : (createSale.isPending ? t('common.creating') : t('common.create'))}
           </Button>
         </form>
       </Form>

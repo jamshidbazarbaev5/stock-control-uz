@@ -279,8 +279,8 @@ export default function CreateStock() {
   // Effect to update calculated selling price and min price for has_kub products
   useEffect(() => {
     // Only calculate for category 2 or 8
-    const allowedCategories = [2, 8];
-    const categoryId = selectedProduct?.category_read?.id;
+    const allowedCategories = ['Половой агаш','Стропила','Страпила','Половой'];
+    const categoryId = selectedProduct?.category_read?.category_name;
     if (selectedProduct?.has_kub && allowedCategories.includes(categoryId)) {
       // Get all measurement numbers and multiply them
       const measurements = selectedProduct.measurement || [];
@@ -332,6 +332,29 @@ export default function CreateStock() {
         readOnly: !(hideUsdFields),
         required: true,
         placeholder: t('common.enter_purchase_price_uzs') || 'Enter purchase price in UZS',
+      };
+    }
+    // Set min_price and helperText for any product with has_shtuk or has_metr
+    if (field.name === 'min_price') {
+      let helperText = '';
+      let minPriceValue = form.watch('min_price');
+      const purchasePriceInUz = parseFloat(form.watch('purchase_price_in_uz')?.toString() || '0');
+      const quantityRaw = form.watch('quantity');
+      const quantityValue = parseFloat(quantityRaw?.toString() || '0');
+      if ((selectedProduct?.has_shtuk || selectedProduct?.has_metr || selectedProduct?.category_read?.category_name === 'Рейка') && !isNaN(purchasePriceInUz)) {
+        if (!isNaN(purchasePriceInUz) && !isNaN(quantityValue) && quantityValue > 0) {
+          const calculatedMinPrice = purchasePriceInUz / quantityValue;
+          minPriceValue = calculatedMinPrice.toString();
+          helperText = `${t('common.per_unit_cost') || 'Per unit cost'}: ${calculatedMinPrice.toFixed(2)} UZS`;
+          // Set the min_price value in the form
+          if (form.getValues('min_price') !== minPriceValue) {
+            form.setValue('min_price', minPriceValue, { shouldValidate: false, shouldDirty: true });
+          }
+        }
+      }
+      return {
+        ...field,
+        helperText,
       };
     }
     if (field.name === 'product_write') {
@@ -475,8 +498,33 @@ export default function CreateStock() {
 
   const handleSubmit = async (data: FormValues) => {
     try {
+      // Validate all visible and required fields
+      const visibleRequiredFields = fields.filter(f => !f.hidden && f.required);
+      const missingFields = visibleRequiredFields.filter(f => {
+        const value = (data as any)[f.name];
+        return value === undefined || value === '' || value === null;
+      });
+      if (missingFields.length > 0) {
+        toast.error(t('validation.fill_all_required_fields') || 'Please fill all required fields');
+        return;
+      }
+
       // Always parse numbers for numeric fields
       const quantity = typeof data.quantity === 'string' ? parseFloat(data.quantity) : data.quantity!;
+      const sellingPrice = typeof data.selling_price === 'string' ? parseFloat(data.selling_price) : data.selling_price;
+      const minPrice = typeof data.min_price === 'string' ? parseFloat(data.min_price) : data.min_price;
+      // Validation: selling_price must be greater than min_price
+      if (
+        sellingPrice === undefined || isNaN(sellingPrice) ||
+        minPrice === undefined || isNaN(minPrice)
+      ) {
+        toast.error(t('validation.selling_price_and_min_price_numbers') || 'Selling price and minimum price must be valid numbers');
+        return;
+      }
+      if (sellingPrice <= minPrice) {
+        toast.error(t('validation.selling_price_greater_than_min_price'));
+        return;
+      }
       // Build payload only with typed fields
       const formattedData: any = {
         store_write: typeof data.store_write === 'string' ? parseInt(data.store_write, 10) : data.store_write!,

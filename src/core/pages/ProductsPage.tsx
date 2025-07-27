@@ -8,8 +8,9 @@ import { useTranslation } from 'react-i18next';
 import { useGetMeasurements } from '../api/measurement';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
-const columns = (t: any) => [
+const columns = (t: any, onPrint: (product: Product) => void) => [
   {
     header: t('table.name'),
     accessorKey: 'product_name',
@@ -27,6 +28,28 @@ const columns = (t: any) => [
         const number = typeof m.number === 'string' ? parseFloat(m.number) : m.number;
         return `${measurementName}: ${number}${m.for_sale ? ' (продажа)' : ''}`;
       }).join(', ');
+    },
+  },
+  {
+    header: t('table.actions'),
+    accessorKey: 'id', // Adding accessorKey to fix the type error
+    cell: (row: any) => {
+      const product = row as Product;
+      return (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (product && product.id) {
+              onPrint(product);
+            }
+          }}
+          disabled={!product?.id}
+        >
+          {t('buttons.print')}
+        </Button>
+      );
     },
   },
 ];
@@ -68,7 +91,7 @@ export default function ProductsPage() {
   const measurementsList = Array.isArray(measurementsData) ? measurementsData : measurementsData?.results || [];
 
   const handleEdit = (product: Product) => {
-    navigate(`/edit-product/${product.id}`);
+    navigate(`/edit-product/${product?.id}`);
   };
 
   const handleDelete = (id: number) => {
@@ -76,6 +99,14 @@ export default function ProductsPage() {
       onSuccess: () => toast.success(t('messages.success.deleted', { item: t('table.product') })),
       onError: () => toast.error(t('messages.error.delete', { item: t('table.product') })),
     });
+  };
+
+  const handlePrint = (product: Product) => {
+    if (!product?.id) {
+      toast.error(t('messages.error.invalidProduct'));
+      return;
+    }
+    navigate(`/print-barcode/${product.id}`);
   };
 
   return (
@@ -126,7 +157,7 @@ export default function ProductsPage() {
 
       <ResourceTable
         data={products}
-        columns={columns(t)}
+        columns={columns(t, handlePrint)}
         isLoading={isLoading}
         onEdit={handleEdit}
         onDelete={handleDelete}

@@ -15,9 +15,9 @@ import api from "../api/api";
 interface FormValues extends Partial<Recycling> {}
 
 const recyclingFields = (
-  t: any,
-  productSearchTerm: string,
-  perUnitPrice: number | null
+    t: any,
+    productSearchTerm: string,
+    perUnitPrice: number | null
 ) => [
   // --- Product Selection ---
   {
@@ -93,8 +93,8 @@ const recyclingFields = (
     placeholder: t("common.calculated_purchase_price_uzs"),
     readOnly: true,
     helperText: perUnitPrice
-      ? `${t("common.per_unit_cost")}: ${perUnitPrice.toFixed(2)} UZS`
-      : "",
+        ? `${t("common.per_unit_cost")}: ${perUnitPrice.toFixed(2)} UZS`
+        : "",
   },
   // --- Date ---
   {
@@ -121,7 +121,7 @@ export default function CreateRecycling() {
   const { data: currentUser } = useCurrentUser();
   const [productSearchTerm, setProductSearchTerm] = useState("");
   const [allowedCategories, setAllowedCategories] = useState<number[] | null>(
-    null
+      null
   );
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
@@ -142,25 +142,25 @@ export default function CreateRecycling() {
       from_to: fromStockId ? Number(fromStockId) : undefined,
       date_of_recycle: new Date().toISOString().split("T")[0], // Today's date
       store: storeIdFromUrl
-        ? Number(storeIdFromUrl)
-        : currentUser?.role === "Администратор"
-        ? currentUser.store_read?.id
-        : undefined,
+          ? Number(storeIdFromUrl)
+          : currentUser?.role === "Администратор"
+              ? currentUser.store_read?.id
+              : undefined,
     },
   });
 
   const { data: storesData } = useGetStores();
   const stores = Array.isArray(storesData)
-    ? storesData
-    : storesData?.results || [];
+      ? storesData
+      : storesData?.results || [];
 
   // Effect to ensure store is set and locked for admin or if storeIdFromUrl is present
   useEffect(() => {
     if (storeIdFromUrl) {
       form.setValue("store", Number(storeIdFromUrl));
     } else if (
-      currentUser?.role === "Администратор" &&
-      currentUser?.store_read?.id
+        currentUser?.role === "Администратор" &&
+        currentUser?.store_read?.id
     ) {
       form.setValue("store", currentUser.store_read.id);
     }
@@ -213,12 +213,12 @@ export default function CreateRecycling() {
   useEffect(() => {
     setLoadingStocks(true);
     fetchAllStocks()
-      .then(setStocks)
-      .catch((err) => {
-        console.error("Error fetching all stocks:", err);
-        toast.error(t("messages.error.load", { item: t("navigation.stocks") }));
-      })
-      .finally(() => setLoadingStocks(false));
+        .then(setStocks)
+        .catch((err) => {
+          console.error("Error fetching all stocks:", err);
+          toast.error(t("messages.error.load", { item: t("navigation.stocks") }));
+        })
+        .finally(() => setLoadingStocks(false));
   }, [t]);
 
   // Watch for changes in the from_to field to update allowed categories
@@ -226,11 +226,11 @@ export default function CreateRecycling() {
     const subscription = form.watch((value, { name }) => {
       if (name === "from_to" && value.from_to) {
         const selectedStock = stocks.find(
-          (stock) => stock.id === Number(value.from_to)
+            (stock) => stock.id === Number(value.from_to)
         );
         if (selectedStock?.product_read?.has_recycling) {
           setAllowedCategories(
-            selectedStock.product_read.categories_for_recycling || null
+              selectedStock.product_read.categories_for_recycling || null
           );
           // Clear the to_product selection when changing from_to
           form.setValue("to_product", undefined);
@@ -249,16 +249,16 @@ export default function CreateRecycling() {
         form.setValue("from_to", Number(fromStockId));
 
         const stockItem = stocks.find(
-          (stock) => stock.id === Number(fromStockId)
+            (stock) => stock.id === Number(fromStockId)
         );
         if (stockItem?.product_read?.id) {
           form.setValue("to_product", stockItem.product_read.id);
         }
       } else if (fromProductId) {
         const stockWithProduct = stocks.find(
-          (stock) =>
-            stock.product_read?.id === Number(fromProductId) &&
-            stock.quantity > 0
+            (stock) =>
+                stock.product_read?.id === Number(fromProductId) &&
+                stock.quantity > 0
         );
 
         if (stockWithProduct) {
@@ -291,85 +291,85 @@ export default function CreateRecycling() {
   const selectedStore = form.watch("store");
   // Update fields with dynamic options
   const fields = recyclingFields(t, productSearchTerm, null)
-    .map((field) => {
-      if (field.name === "from_to") {
-        return {
-          ...field,
-          options: stocks
-            .filter((stock: any) => {
-              // Allow stocks from selected store or from main store
-              if (!selectedStore) return true;
-              return (
-                stock.store_read?.id === Number(selectedStore) ||
-                stock.store_read?.is_main
-              );
-            })
-            .map((stock: any) => ({
-              value: stock.id,
-              label: `${stock.product_read?.product_name} (${
-                stock.quantity || 0
-              }) [${stock.store_read?.name}]`,
-            }))
-            .filter((opt: any) => opt.value),
-          isLoading: loadingStocks,
-        };
-      }
-      if (field.name === "to_product") {
-        return {
-          ...field,
-          options: allProducts
-            .filter((product) => {
-              if (!allowedCategories || !product.category_read) return true;
-              return allowedCategories.includes(product.category_read.id);
-            })
-            .map((product: any) => ({
-              value: product.id,
-              label: product.product_name,
-            }))
-            .filter((opt: any) => opt.value),
-          onSearch: setProductSearchTerm,
-          isLoading: isLoadingProducts,
-        };
-      }
-      if (field.name === "store") {
-        const isAdmin = currentUser?.role === "Администратор";
-        const isStoreIdLocked = Boolean(storeIdFromUrl);
-        return {
-          ...field,
-          options: stores
-            .map((store: any) => ({
-              value: store.id,
-              label: store.name,
-            }))
-            .filter((opt: any) =>
-              isStoreIdLocked
-                ? opt.value === Number(storeIdFromUrl)
-                : isAdmin
-                ? opt.value === currentUser?.store_read?.id
-                : opt.value
-            ),
-          disabled: isAdmin || isStoreIdLocked,
-        };
-      }
-      if (field.name === "exchange_rate") {
-        return {
-          ...field,
-          disabled: true,
-          value: exchangeRate !== null ? exchangeRate : "",
-        };
-      }
-      return field;
-    })
-    // Hide specified fields
-    .filter(
-      (field) =>
-        ![
-          "store",
-          "exchange_rate",
-          "purchase_price_in_uz",
-          "purchase_price_in_us",
-        ].includes(field.name)
-    );
+      .map((field) => {
+        if (field.name === "from_to") {
+          return {
+            ...field,
+            options: stocks
+                .filter((stock: any) => {
+                  // Allow stocks from selected store or from main store
+                  if (!selectedStore) return true;
+                  return (
+                      stock.store_read?.id === Number(selectedStore) ||
+                      stock.store_read?.is_main
+                  );
+                })
+                .map((stock: any) => ({
+                  value: stock.id,
+                  label: `${stock.product_read?.product_name} (${
+                      stock.quantity || 0
+                  }) [${stock.store_read?.name}]`,
+                }))
+                .filter((opt: any) => opt.value),
+            isLoading: loadingStocks,
+          };
+        }
+        if (field.name === "to_product") {
+          return {
+            ...field,
+            options: allProducts
+                .filter((product) => {
+                  if (!allowedCategories || !product.category_read) return true;
+                  return allowedCategories.includes(product.category_read.id);
+                })
+                .map((product: any) => ({
+                  value: product.id,
+                  label: product.product_name,
+                }))
+                .filter((opt: any) => opt.value),
+            onSearch: setProductSearchTerm,
+            isLoading: isLoadingProducts,
+          };
+        }
+        if (field.name === "store") {
+          const isAdmin = currentUser?.role === "Администратор";
+          const isStoreIdLocked = Boolean(storeIdFromUrl);
+          return {
+            ...field,
+            options: stores
+                .map((store: any) => ({
+                  value: store.id,
+                  label: store.name,
+                }))
+                .filter((opt: any) =>
+                    isStoreIdLocked
+                        ? opt.value === Number(storeIdFromUrl)
+                        : isAdmin
+                            ? opt.value === currentUser?.store_read?.id
+                            : opt.value
+                ),
+            disabled: isAdmin || isStoreIdLocked,
+          };
+        }
+        if (field.name === "exchange_rate") {
+          return {
+            ...field,
+            disabled: true,
+            value: exchangeRate !== null ? exchangeRate : "",
+          };
+        }
+        return field;
+      })
+      // Hide specified fields
+      .filter(
+          (field) =>
+              ![
+                "store",
+                "exchange_rate",
+                "purchase_price_in_uz",
+                "purchase_price_in_us",
+              ].includes(field.name)
+      );
 
   // Watch specific fields for changes
   const fromTo = form.watch("from_to");
@@ -383,22 +383,22 @@ export default function CreateRecycling() {
     if (!fromTo) return;
     const selectedStock = stocks.find((stock) => stock.id === Number(fromTo));
     const baseSellingPrice = selectedStock?.selling_price
-      ? Number(selectedStock.selling_price)
-      : 0;
+        ? Number(selectedStock.selling_price)
+        : 0;
     const spentAmt = Number(form.watch("spent_amount"));
     const getAmt = Number(getAmount);
     // Get selected to_product and its category
     const toProductId = form.watch("to_product");
     const selectedProduct = allProducts.find(
-      (product) => product.id === Number(toProductId)
+        (product) => product.id === Number(toProductId)
     );
     const categoryId = selectedProduct?.category_read?.id;
     // Special calculation for коньёк (17) and снегозадержатель (18)
     if (
-      (categoryId === 17 || categoryId === 18 || categoryId === 19) &&
-      baseSellingPrice &&
-      spentAmt &&
-      getAmt
+        (categoryId === 17 || categoryId === 18 || categoryId === 19) &&
+        baseSellingPrice &&
+        spentAmt &&
+        getAmt
     ) {
       let calculated = (baseSellingPrice * spentAmt) / getAmt;
       calculated = Math.round((calculated + Number.EPSILON) * 100) / 100;
@@ -469,22 +469,24 @@ export default function CreateRecycling() {
     const toProductId = form.watch("to_product");
     if (!toProductId) return;
     const selectedProduct = allProducts.find(
-      (product) => product.id === Number(toProductId)
+        (product) => product.id === Number(toProductId)
     );
     if (!selectedProduct || !selectedProduct.category_read) return;
-    const categoryId = selectedProduct.category_read.id;
+    const categoryName = selectedProduct.category_read.category_name;
     const spentAmt = Number(form.watch("spent_amount"));
     // Only auto-calculate if spent_amount is a valid number
     if (!isNaN(spentAmt) && spentAmt > 0) {
-      if (categoryId === 13) { // Рейка
+      if (categoryName === "Рейка") {
         // Find the measurement with name "Метр"
         const metrMeasurement = selectedProduct.measurement?.find(
           (m) => m.measurement_read?.measurement_name === "Метр"
         );
         const metrValue = metrMeasurement ? Number(metrMeasurement.number) : 1;
+        // Check if from_to's product category is Половой агаш or Половой
         let multiplier = 1;
         const selectedFromStock = stocks.find((stock) => stock.id === Number(form.watch("from_to")));
-        if (selectedFromStock?.product_read?.category_read?.id === 8) {
+        const fromCategoryName = selectedFromStock?.product_read?.category_read?.category_name;
+        if (fromCategoryName === "Половой агаш" || fromCategoryName === "Половой") {
           multiplier = 2;
         }
         const newGetAmount = spentAmt * metrValue * multiplier;
@@ -494,8 +496,7 @@ export default function CreateRecycling() {
             shouldDirty: true,
           });
         }
-      } else if (categoryId === 17) {
-        // коньёк
+      } else if (categoryName === "коньёк") {
         const newGetAmount = spentAmt * 6;
         if (form.getValues("get_amount") !== String(newGetAmount)) {
           form.setValue("get_amount", String(newGetAmount), {
@@ -503,8 +504,7 @@ export default function CreateRecycling() {
             shouldDirty: true,
           });
         }
-      } else if (categoryId === 18) {
-        // снегозадержатель
+      } else if (categoryName === "снегозадержатель") {
         const newGetAmount = spentAmt * 7;
         if (form.getValues("get_amount") !== String(newGetAmount)) {
           form.setValue("get_amount", String(newGetAmount), {
@@ -512,8 +512,7 @@ export default function CreateRecycling() {
             shouldDirty: true,
           });
         }
-      }
-      else if (categoryId === 19) { // снегозадержатель
+      } else if (categoryName === "Уголок") {
         const newGetAmount = spentAmt * 12;
         if (form.getValues("get_amount") !== String(newGetAmount)) {
           form.setValue("get_amount", String(newGetAmount), {
@@ -523,8 +522,7 @@ export default function CreateRecycling() {
         }
       }
     }
-    
-  }, [form.watch("to_product"), form.watch("spent_amount"), allProducts, form]);
+  }, [form.watch("to_product"), form.watch("spent_amount"), allProducts, form, stocks]);
 
   const handleSubmit = async (data: FormValues) => {
     try {
@@ -532,7 +530,8 @@ export default function CreateRecycling() {
       const sellingPrice = Number(data.selling_price);
       const getAmount = Number(data.get_amount);
       const purchase_price_in_uz = sellingPrice * getAmount;
-
+      const selectedStock = stocks.find((stock) => stock.id === Number(fromTo));
+      console.log('selling_price_in_us',selectedStock.selling_price_in_us)
       const formattedData: any = {
         from_to: Number(data.from_to),
         to_product: Number(data.to_product),
@@ -546,32 +545,35 @@ export default function CreateRecycling() {
         exchange_rate: Number(data.exchange_rate),
         // purchase_price_in_uz: Number(data.purchase_price_in_uz),
         purchase_price_in_uz, // <-- add calculated value to API payload
+        purchase_price_in_us:selectedStock.purchase_price_in_us,
+        selling_price_in_us:Number(selectedStock.selling_price_in_us)
+     
       };
 
       await createRecycling.mutateAsync(formattedData);
       toast.success(
-        t("messages.success.created", { item: t("navigation.recyclings") })
+          t("messages.success.created", { item: t("navigation.recyclings") })
       );
       navigate("/recyclings");
     } catch (error) {
       toast.error(
-        t("messages.error.create", {
-          item: t("navigation.recyclings").toLowerCase(),
-        })
+          t("messages.error.create", {
+            item: t("navigation.recyclings").toLowerCase(),
+          })
       );
       console.error("Failed to create recycling:", error);
     }
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <ResourceForm<FormValues>
-        fields={fields}
-        onSubmit={handleSubmit}
-        isSubmitting={createRecycling.isPending}
-        title={t("common.create") + " " + t("navigation.recyclings")}
-        form={form}
-      />
-    </div>
+      <div className="container mx-auto py-8 px-4">
+        <ResourceForm<FormValues>
+            fields={fields}
+            onSubmit={handleSubmit}
+            isSubmitting={createRecycling.isPending}
+            title={t("common.create") + " " + t("navigation.recyclings")}
+            form={form}
+        />
+      </div>
   );
 }

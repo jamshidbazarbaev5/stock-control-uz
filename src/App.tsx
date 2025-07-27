@@ -64,6 +64,9 @@ import CreateSponsorPage from "./core/pages/create-sponsor";
 import EditSponsorPage from "./core/pages/edit-sponsor";
 import SponsorLoansPage from "./core/pages/SponsorLoansPage";
 import LoanPaymentsPage from "./core/pages/LoanPaymentsPage";
+import LabelSizesPage from "./core/pages/LabelSizesPage";
+import CreateLabelSize from "./core/pages/create-label-size";
+import PrintBarcodePage from "./core/pages/PrintBarcodePage";
 
 const queryClient = new QueryClient();
 
@@ -137,6 +140,10 @@ function App() {
             <Route path="/sponsors/edit/:id" element={<PrivateRoute allowedRoles={["Администратор"]}><EditSponsorPage /></PrivateRoute>} />
             <Route path="/sponsors/:id/loans/:currency" element={<PrivateRoute allowedRoles={["Администратор"]}><SponsorLoansPage /></PrivateRoute>} />
             <Route path="/sponsors/:id/loans/:loanId/payments" element={<PrivateRoute allowedRoles={["Администратор"]}><LoanPaymentsPage /></PrivateRoute>} />
+            <Route path="/label-sizes" element={<PrivateRoute allowedRoles={["Администратор"]}><LabelSizesPage /></PrivateRoute>} />
+            <Route path="/create-label-size" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateLabelSize /></PrivateRoute>} />
+            <Route path="/print-barcode/:productId" element={<PrivateRoute allowedRoles={["Администратор"]}><PrintBarcodePage /></PrivateRoute>} />
+            {/* Routes accessible by all authenticated users */}
             {/* <Route path="/loans" element={<PrivateRoute allowedRoles={["Администратор"]}><LoanSponsorsPage /></PrivateRoute>} /> */}
             {/* <Route path="/loans/create" element={<PrivateRoute allowedRoles={["Администратор"]}><CreateLoanSponsor /></PrivateRoute>} /> */}
             {/* <Route path="/loan-payments" element={<PrivateRoute allowedRoles={["Администратор"]}><LoanPaymentsPage /></PrivateRoute>} /> */}

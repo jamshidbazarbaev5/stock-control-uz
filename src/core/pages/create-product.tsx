@@ -47,6 +47,8 @@ export default function CreateProduct() {
   const [staticWeight, setStaticWeight] = useState('');
   const [hasMetr, setHasMetr] = useState(false);
   const [hasShtuk, setHasShtuk] = useState(false);
+  const [hasBarcode, setHasBarcode] = useState(false);
+  const [barcode, setBarcode] = useState('');
 
   // Fetch categories, stores and measurements for the select dropdowns
   const { data: categoriesData } = useGetCategories({});
@@ -94,6 +96,8 @@ export default function CreateProduct() {
       const formattedData: Product = {
         product_name: data.product_name,
         category_write: typeof data.category_write === 'string' ? parseInt(data.category_write, 10) : data.category_write,
+        has_barcode: hasBarcode,
+        ...(hasBarcode && { barcode }),
         measurement: measurements.map((m: MeasurementItem) => ({
           id: m.id,
           measurement_write: m.measurement_write,
@@ -300,6 +304,23 @@ export default function CreateProduct() {
             />
             {t('forms.has_shtuk')}
           </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={hasBarcode}
+              onChange={e => setHasBarcode(e.target.checked)}
+            />
+            {t('forms.has_barcode')}
+          </label>
+          {hasBarcode && (
+            <input
+              type="text"
+              className="px-3 py-2 border rounded-md"
+              placeholder={t('placeholders.enter_barcode')}
+              value={barcode}
+              onChange={e => setBarcode(e.target.value)}
+            />
+          )}
         </div>
         <div className="space-y-4">
           <h3 className="text-lg font-medium">{t('table.measurements')}</h3>

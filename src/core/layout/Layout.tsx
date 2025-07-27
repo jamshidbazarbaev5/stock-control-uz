@@ -15,6 +15,7 @@ import {
   User,
   ChevronDown,
   type LucideIcon,
+  PrinterCheck,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
@@ -248,6 +249,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             icon: User2,
             label: t("navigation.sponsors"),
             href: "/sponsors",
+          },
+          {
+            icon: Ruler,
+            label: t("navigation.labelSizes"),
+            href: "/label-sizes",
+          },
+           {
+            icon: PrinterCheck,
+            label: t("navigation.printBarcode"),
+            href: "/print-barcode",
           },
          
         ],

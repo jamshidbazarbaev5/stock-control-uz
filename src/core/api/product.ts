@@ -14,6 +14,8 @@ export interface ProductMeasurement {
 
 export interface Product {
   id?: number;
+  has_barcode?: boolean;
+  barcode?: string;
   product_name: string;
   color?: string;
   category_write: number;

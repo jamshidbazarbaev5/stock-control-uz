@@ -426,6 +426,29 @@ export default function EditStock() {
         placeholder: t('common.enter_purchase_price_uzs') || 'Введите цену покупки в UZS',
       };
     }
+     // Set min_price and helperText for any product with has_shtuk or has_metr
+    if (field.name === 'min_price') {
+      let helperText = '';
+      let minPriceValue = form.watch('min_price');
+      const purchasePriceInUz = parseFloat(form.watch('purchase_price_in_uz')?.toString() || '0');
+      const quantityRaw = form.watch('quantity');
+      const quantityValue = parseFloat(quantityRaw?.toString() || '0');
+      if ((selectedProduct?.has_shtuk || selectedProduct?.has_metr || selectedProduct?.category_read?.category_name === 'Рейка') && !isNaN(purchasePriceInUz)) {
+        if (!isNaN(purchasePriceInUz) && !isNaN(quantityValue) && quantityValue > 0) {
+          const calculatedMinPrice = purchasePriceInUz / quantityValue;
+          minPriceValue = calculatedMinPrice.toString();
+          helperText = `${t('common.per_unit_cost') || 'Per unit cost'}: ${calculatedMinPrice.toFixed(2)} UZS`;
+          // Set the min_price value in the form
+          if (form.getValues('min_price') !== minPriceValue) {
+            form.setValue('min_price', minPriceValue, { shouldValidate: false, shouldDirty: true });
+          }
+        }
+      }
+      return {
+        ...field,
+        helperText,
+      };
+    }
     if (field.name === 'quantity') {
       let placeholder = field.placeholder;
       if (selectedProduct?.has_shtuk) {
@@ -443,8 +466,31 @@ export default function EditStock() {
   });
 
   const handleSubmit = async (data: FormValues) => {
+      const visibleRequiredFields = fields.filter(f => !f.hidden && f.required);
+      const missingFields = visibleRequiredFields.filter(f => {
+        const value = (data as any)[f.name];
+        return value === undefined || value === '' || value === null;
+      });
+      if (missingFields.length > 0) {
+        toast.error(t('validation.fill_all_required_fields') || 'Please fill all required fields');
+        return;
+      }
     if (!id) return;
     try {
+         const sellingPrice = typeof data.selling_price === 'string' ? parseFloat(data.selling_price) : data.selling_price;
+      const minPrice = typeof data.min_price === 'string' ? parseFloat(data.min_price) : data.min_price;
+      // Validation: selling_price must be greater than min_price
+      if (
+        sellingPrice === undefined || isNaN(sellingPrice) ||
+        minPrice === undefined || isNaN(minPrice)
+      ) {
+        toast.error(t('validation.selling_price_and_min_price_numbers') || 'Selling price and minimum price must be valid numbers');
+        return;
+      }
+      if (sellingPrice <= minPrice) {
+        toast.error(t('validation.selling_price_greater_than_min_price'));
+        return;
+      }
       // Build payload only with typed fields
       const formattedData: any = {
         id: Number(id),

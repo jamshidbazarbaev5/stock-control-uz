@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ResourceTable } from "../helpers/ResourseTable";
@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { type Store, useGetStores } from "@/core/api/store.ts";
 import "../../expanded-row-dark.css";
+import { findRecyclingForStock, calculateRecyclingProfit } from "../helpers/recyclingProfitUtils";
 
 type PaginatedData<T> = { results: T[]; count: number } | T[];
 export default function SalesPage() {
@@ -44,7 +45,7 @@ export default function SalesPage() {
   const [creditStatus, setCreditStatus] = useState<string>("all");
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [productName, setProductName] = useState<string>("");
-
+  const [stockId,setStockId] =  useState<string>("");
   const { data: storesData } = useGetStores({});
   const { data: salesData, isLoading } = useGetSales({
     params: {
@@ -54,6 +55,7 @@ export default function SalesPage() {
       start_date: startDate || undefined,
       product: productName || undefined, // Send as product_name
       end_date: endDate || undefined,
+      stock_id:stockId,
       on_credit: creditStatus !== "all" ? creditStatus === "true" : undefined,
     },
   });
@@ -73,6 +75,117 @@ export default function SalesPage() {
   const totalCount = Array.isArray(salesData)
     ? sales.length
     : salesData?.count || 0;
+
+  // Log details for each sale
+  useEffect(() => {
+    if (sales && sales.length > 0) {
+      console.group(`Sales Profit Calculation Details - Page ${page} (${sales.length} items)`);
+      sales.forEach((sale: any) => {
+        logSaleDetails(sale);
+      });
+      console.groupEnd();
+    }
+  }, [sales, page]);
+
+  // Debug function to show profit calculation details
+  const logSaleDetails = (sale: any) => {
+    console.group(`Sale #${sale.id} Details`);
+    console.log('Store:', sale.store_read?.name);
+    
+    sale.sale_items?.forEach((item: any, index: number) => {
+      const stock = item.stock_read;
+      const product = stock?.product_read;
+      
+      console.group(`Item ${index + 1}: ${product?.product_name}`);
+      console.log('Stock ID:', stock?.id);
+      console.log('Product ID:', product?.id);
+      console.log('Category:', product?.category_read?.category_name);
+      console.log('Has Kub:', product?.has_kub);
+      console.log('Quantity:', item.quantity);
+      console.log('Quantity for history:', item.stock_read?.quantity_for_history);
+
+      if (product?.has_kub) {
+        const measurements = product.measurement || [];
+        console.log('Measurements:', measurements.map((m: any) => ({
+          name: m.measurement_read?.measurement_name,
+          value: m.number
+        })));
+      }
+      
+      console.log('\nProfit Calculation Process:');
+
+      // Check if it's a recycled product (category "Рейка") and has a recycling record
+      const recyclingRecord = product?.id && stock?.id
+        ? findRecyclingForStock(
+            stock?.recycling_read ? [stock.recycling_read] : [],
+            product.id,
+            stock.id
+          )
+        : undefined;
+
+      if (recyclingRecord) {
+        console.log('Calculation Type: Recycled Product (with recycling record)');
+        const profit = calculateRecyclingProfit(recyclingRecord, item.quantity, Number(item.subtotal));
+        console.log('Formula: See recyclingProfitUtils.calculateRecyclingProfit');
+        console.log('Calculation Steps:');
+        console.log('1. Recycling Record:', recyclingRecord);
+        console.log('2. Quantity:', item.quantity);
+        console.log('3. Subtotal (custom selling price):', item.subtotal);
+        console.log('4. Calculated profit:', profit);
+      }
+      // Check if it's a has_kub product with specific categories
+      else if (product?.has_kub && ['Половой агаш', 'Стропила', 'Страпила', 'Половой'].includes(product?.category_read?.category_name)) {
+        console.log('Calculation Type: Has Kub Product (Category:', product?.category_read?.category_name, ')');
+        console.log('Formula: (sellingPrice - PROFIT_FAKE) * quantity');
+        console.log('where PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs');
+
+        const measurements = product.measurement || [];
+        const getNumber = (name: string) => {
+          const m = measurements.find((m: any) => m.measurement_read?.measurement_name === name);
+          return m ? parseFloat(m.number) : 1;
+        };
+
+        const length = getNumber('длина');
+        const thickness = getNumber('Толщина');
+        const meter = getNumber('Метр');
+        const exchangeRate = parseFloat(stock?.exchange_rate_read?.currency_rate || '1');
+        const purchasePriceInUs = parseFloat(stock?.purchase_price_in_us || '0');
+        const PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs;
+        
+        console.log('Calculation Steps:');
+        console.log('1. Measurements:', { length, thickness, meter });
+        console.log('2. Exchange Rate:', exchangeRate);
+        console.log('3. Purchase Price in US:', purchasePriceInUs);
+        console.log('4. PROFIT_FAKE calculation:', `${length} * ${meter} * ${thickness} * ${exchangeRate} * ${purchasePriceInUs} = ${PROFIT_FAKE}`);
+            const finalProfit = (Number(item.subtotal) - PROFIT_FAKE) * item.quantity;
+            console.log('5. Final profit calculation:', `(${item.subtotal} - ${PROFIT_FAKE}) * ${item.quantity} = ${finalProfit}`);
+      }
+      // Standard profit calculation
+      else {
+        console.log('Calculation Type: Standard Product');
+        console.log('Formula: (sellingPrice - purchasePricePerUnit) * quantity');
+
+        const totalPurchasePrice = parseFloat(stock?.purchase_price_in_uz || '0');
+        const stockQuantityForHistory = stock?.quantity_for_history || stock?.quantity || 1;
+        const purchasePricePerUnit = totalPurchasePrice / stockQuantityForHistory;
+        const sellingPricePerUnit = Number(item.subtotal) 
+        const profit = (sellingPricePerUnit - purchasePricePerUnit) * item.quantity;
+
+        console.log('Calculation Steps:');
+        console.log('1. Total Purchase Price:', totalPurchasePrice);
+        console.log('2. Stock Quantity for History:', stockQuantityForHistory);
+        console.log('3. Purchase Price per Unit:', `${totalPurchasePrice} / ${stockQuantityForHistory} = ${purchasePricePerUnit}`);
+        console.log('4. Selling Price per Unit:', sellingPricePerUnit);
+        console.log('5. Final profit calculation:', `(${sellingPricePerUnit} - ${purchasePricePerUnit}) * ${item.quantity} = ${profit}`);
+      }
+
+      console.log('\nFinal Values:');
+      console.log('- Total Selling Price:', item.subtotal);
+      console.log('- Total Pure Revenue:', sale.total_pure_revenue);
+      console.groupEnd();
+    });
+    console.groupEnd();
+  };
 
   const formatCurrency = (amount: string | number) => {
     return new Intl.NumberFormat("ru-RU").format(Number(amount));
@@ -165,7 +278,7 @@ export default function SalesPage() {
                   <span className="text-sm text-gray-500 block mb-1">
                     {t("table.id")}
                   </span>
-                  <span className="font-medium">{item.id}</span>
+                  <span className="font-medium">{item.stock_read?.id}</span>
                 </div>
                 <div>
                   <span className="text-sm text-gray-500 block mb-1">
@@ -204,7 +317,7 @@ export default function SalesPage() {
                                 }) => m.for_sale
                               )?.measurement_read?.measurement_name || ""
                         }`}
-                  </span>
+                  </span>в
                 </div>
                 {/* <div>
                   <span className="text-sm text-gray-500 block mb-1">{t('table.price')}</span>
@@ -447,6 +560,16 @@ export default function SalesPage() {
             value={productName}
             onChange={(e) => setProductName(e.target.value)}
             placeholder={t("forms.type_product_name")}
+            className="w-full"
+          />
+           <label className="text-sm font-medium">
+            {t("forms.type_product_id")}
+          </label>
+          <Input
+            type="text"
+            value={stockId}
+            onChange={(e) => setStockId(e.target.value)}
+            placeholder={t("forms.type_product_id")}
             className="w-full"
           />
         </div>

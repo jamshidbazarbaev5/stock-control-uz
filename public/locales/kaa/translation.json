@@ -1,7 +1,8 @@
 {
   "validation": {
     "amount_must_be_positive": "Summa oń san bolıwı kerek",
-    "amount_exceeds_total": "Summa ulıwma qarz summasınan artıq bolmawı kerek"
+    "amount_exceeds_total": "Summa ulıwma qarz summasınan artıq bolmawı kerek",
+    "selling_price_greater_than_min_price": "Satıw bahası min bahadan ulıwma bolmawı kerek"
   },
   "dashboard": {
     "no_expenses":"Rasxodlar yoq",

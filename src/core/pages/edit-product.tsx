@@ -48,6 +48,7 @@ export default function EditProduct() {
   const [categoriesForRecycling, setCategoriesForRecycling] = useState<number[]>([]);
   const [hasMetr, setHasMetr] = useState(false);
   const [hasShtuk, setHasShtuk] = useState(false);
+  const [barcode, setBarcode] = useState('');
 
   // Fetch categories and measurements for the select dropdowns
   const { data: categoriesData } = useGetCategories({});
@@ -82,6 +83,7 @@ export default function EditProduct() {
     }
     setHasMetr(!!product?.has_metr);
     setHasShtuk(!!product?.has_shtuk);
+    setBarcode(product?.barcode || '');
   }, [product]);
 
   const handleAddMeasurement = () => {
@@ -120,6 +122,8 @@ export default function EditProduct() {
         id: Number(id),
         product_name: data.product_name,
         category_write: typeof data.category_write === 'string' ? parseInt(data.category_write, 10) : data.category_write,
+        has_barcode: true,
+        barcode: barcode,
         has_color: (data.has_color === 'true') as boolean,
         has_kub: (data.has_kub === 'true' || (kub !== '' && parseFloat(kub) > 0)) as boolean,
         has_recycling: (data.has_recycling === 'true') as boolean,
@@ -421,6 +425,21 @@ export default function EditProduct() {
             />
             {t('forms.has_shtuk')}
           </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={true}
+              disabled={true}
+            />
+            {t('forms.has_barcode')}
+          </label>
+          <input
+            type="text"
+            className="px-3 py-2 border rounded-md"
+            placeholder={t('placeholders.enter_barcode')}
+            value={barcode}
+            onChange={e => setBarcode(e.target.value)}
+          />
         </div>
       </ResourceForm>
     </div>
