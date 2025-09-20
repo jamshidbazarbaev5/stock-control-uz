@@ -27,6 +27,8 @@ export interface CreateStockDTO {
 
 export interface Stock extends CreateStockDTO {
   id?: number;
+  total_amount?:number;
+  total_pure_revenue?:number;
   product_read?: {
     id: number;
     product_name: string;

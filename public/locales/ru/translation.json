@@ -4,6 +4,9 @@
     "amount_exceeds_total": "Сумма не может превышать общую сумму долга",
     "selling_price_greater_than_min_price":"Цена продажи не может быть ниже минимальной цены"
   },
+  "buttons":{
+    "print": "Распечатать штрих-код"
+  },
 
   "dashboard": {
     "other":"Другие",
@@ -222,6 +225,7 @@
   },
   "navigation": {
     "dashobard": "Дашбоард",
+    "labelSizes": "Размеры",
     "payments": "Платежи",
     "history": "История",
     "loan":"Долги",
@@ -283,6 +287,9 @@
 
   "forms": {
     "id":"ИД",
+    "width": "Ширина",
+    "height": "Высота",
+
     "type_product_id": "Пишите ид прихода",
     "sponsor_name": "Имя спонсора",
     "type":"Тип",
@@ -464,6 +471,7 @@
   },
   "placeholders": {
     "select_sponsor": "Выберите спонсора",
+    "quantity_of_parts":"Введите количество частей",
     "search_loansponsor":"Пишите спонсора",
     "select_currency":"Выберите валюту",
     "enter_length":"Введите толщину",
@@ -523,6 +531,8 @@
   },
   "table": {
     "id": "ИД",
+    "revenue_details":"Прибыль",
+    "quantity_of_parts":"Количество частей",
     "exchange_rate":"Курс обмена",
     "subtotal": "Сумма за единицу",
     "profit":"Прибыль",

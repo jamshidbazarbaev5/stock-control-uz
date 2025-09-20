@@ -123,6 +123,31 @@ export default function StockPriceHistoryPage() {
           'text-purple-600'
         )}
       </div>
+
+      <div className="mt-8">
+        <h2 className="text-xl font-bold mb-4">{t('table.revenue_details')}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Total Amount Card */}
+          <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
+            <CardContent className="p-6">
+              <h3 className="text-sm font-medium opacity-75 mb-2">{t('table.total_amount')}</h3>
+              <p className="text-3xl font-bold">
+                {stock.total_amount?.toLocaleString()} UZS
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Pure Revenue Card */}
+          <Card className="bg-gradient-to-br from-violet-500 to-violet-600 text-white">
+            <CardContent className="p-6">
+              <h3 className="text-sm font-medium opacity-75 mb-2">{t('table.total_pure_revenue')}</h3>
+              <p className="text-3xl font-bold">
+                {stock.total_pure_revenue?.toLocaleString()} UZS
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

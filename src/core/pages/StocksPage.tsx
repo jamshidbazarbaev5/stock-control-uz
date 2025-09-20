@@ -41,20 +41,20 @@ export default function StocksPage() {
   const [productZero, setProductZero] = useState(false); // Show zero arrivals filter
   const pageSize = 30;
   const [productId,setProductId] = useState<string>('');
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('ru-RU', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (error) {
-      return '-';
+    const formatDate = (dateString: string) => {
+      try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ru-RU', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } catch (error) {
+        return '-';
+      }
     }
-  }
 
   // Columns definition
   const columns = [

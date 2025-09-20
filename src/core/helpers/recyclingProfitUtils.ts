@@ -24,33 +24,48 @@ export function findRecyclingForStock(recyclings: Recycling[], productId: number
  * @param customSellingPrice - Optional custom selling price (e.g. from subtotal input)
  * @returns Calculated profit
  */
-export function calculateRecyclingProfit(recycling: any, quantity: number, customSellingPrice?: number) {
+export function calculateRecyclingProfit(recycling: any, _quantity: number, customSellingPrice?: number) {
   const spentAmount = Number(recycling.spent_amount);
   const getAmount = Number(recycling.get_amount);
   // Use the original (from) product's prices for profit calculation
-  const originalSellingPrice = Number(recycling.from_to_read.selling_price);
-  const originalMinPrice = Number(recycling.from_to_read.min_price);
-  const profitPerUnit = originalSellingPrice - originalMinPrice;
-  const totalProfit = profitPerUnit * spentAmount;
-  let finalProfit = (originalMinPrice / getAmount) * quantity;
+  // const originalSellingPrice = Number(recycling.from_to_read.selling_price);
+  // const originalMinPrice = Number(recycling.from_to_read.min_price);
+  // const profitPerUnit = originalSellingPrice - originalMinPrice;
+  // const totalProfit = profitPerUnit * spentAmount;
+  const quantityOfParts = Number(recycling.quantity_of_parts);
+  // const profitPerMinPrice= (originalMinPrice / quantityOfParts) * quantity;
+  // const profitPerSellingPrice= (originalSellingPrice / quantityOfParts) * quantity;
+  
+  // let finalProfit= profitPerSellingPrice - profitPerMinPrice;
 
-
-  // Add additional profit if selling at a custom price
-  if (customSellingPrice) {
-    const defaultPrice = Number(recycling.to_stock_read.selling_price);
-    const additionalProfit = (customSellingPrice - defaultPrice) * quantity;
-    finalProfit += additionalProfit;
-  }
+  const measurements = recycling.from_to_read.product_read.measurement;
+  const measurementsProduct = measurements.reduce((acc: number, m: any) => acc * Number(m.number), 1);
+  const exchangeRate = Number(recycling.from_to_read.exchange_rate_read.currency_rate);
+  const sellingPriceUS = Number(recycling.from_to_read.selling_price_in_us);
+  const purchasePriceUS = Number(recycling.from_to_read.purchase_price_in_us);
+  const one = measurementsProduct * exchangeRate * sellingPriceUS
+  const two = measurementsProduct * exchangeRate * purchasePriceUS
+  
+  // Use default selling price if customSellingPrice is not provided
+  const effectiveSellingPrice = customSellingPrice ?? Number(recycling.to_stock_read.selling_price);
+  const three = effectiveSellingPrice * quantityOfParts;
+  
+  let finalProfit = (three - two) / quantityOfParts;
 
   // Debugging logs
   console.log('Recycling Profit Calculation Debug:', {
     spentAmount,
     getAmount,
     customSellingPrice,
-    originalSellingPrice,
-    originalMinPrice,
-    profitPerUnit,
-    totalProfit,
+    // originalSellingPrice,
+    // originalMinPrice,
+    // profitPerUnit,
+    // totalProfit,
+    one,
+    two,
+    three,
+    effectiveSellingPrice,
+    quantityOfParts,
     finalProfit,
     recyclingDetails: {
       fromProduct: recycling.from_to_read?.product_read?.product_name,

@@ -12,12 +12,14 @@ import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import api from "../api/api";
 
-interface FormValues extends Partial<Recycling> {}
+interface FormValues extends Partial<Recycling> {
+  quantity_of_parts?: number;
+}
 
 const recyclingFields = (
     t: any,
     productSearchTerm: string,
-    perUnitPrice: number | null
+    perUnitPrice: number | null,
 ) => [
   // --- Product Selection ---
   {
@@ -61,6 +63,13 @@ const recyclingFields = (
     label: t("table.get_amount"),
     type: "string",
     placeholder: t("placeholders.enter_quantity"),
+    required: true,
+  },
+  {
+    name: "quantity_of_parts",
+    label: t("table.quantity_of_part"),
+    type: "string",
+    placeholder: t("placeholders.quantity_of_parts"),
     required: true,
   },
   // --- Prices ---
@@ -121,7 +130,7 @@ export default function CreateRecycling() {
   const { data: currentUser } = useCurrentUser();
   const [productSearchTerm, setProductSearchTerm] = useState("");
   const [allowedCategories, setAllowedCategories] = useState<number[] | null>(
-      null
+      null,
   );
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
@@ -147,6 +156,7 @@ export default function CreateRecycling() {
               ? currentUser.store_read?.id
               : undefined,
     },
+    mode: "onChange",
   });
 
   const { data: storesData } = useGetStores();
@@ -226,11 +236,11 @@ export default function CreateRecycling() {
     const subscription = form.watch((value, { name }) => {
       if (name === "from_to" && value.from_to) {
         const selectedStock = stocks.find(
-            (stock) => stock.id === Number(value.from_to)
+            (stock) => stock.id === Number(value.from_to),
         );
         if (selectedStock?.product_read?.has_recycling) {
           setAllowedCategories(
-              selectedStock.product_read.categories_for_recycling || null
+              selectedStock.product_read.categories_for_recycling || null,
           );
           // Clear the to_product selection when changing from_to
           form.setValue("to_product", undefined);
@@ -249,7 +259,7 @@ export default function CreateRecycling() {
         form.setValue("from_to", Number(fromStockId));
 
         const stockItem = stocks.find(
-            (stock) => stock.id === Number(fromStockId)
+            (stock) => stock.id === Number(fromStockId),
         );
         if (stockItem?.product_read?.id) {
           form.setValue("to_product", stockItem.product_read.id);
@@ -258,7 +268,7 @@ export default function CreateRecycling() {
         const stockWithProduct = stocks.find(
             (stock) =>
                 stock.product_read?.id === Number(fromProductId) &&
-                stock.quantity > 0
+                stock.quantity > 0,
         );
 
         if (stockWithProduct) {
@@ -289,6 +299,14 @@ export default function CreateRecycling() {
   }, []);
 
   const selectedStore = form.watch("store");
+  const toProduct = form.watch("to_product");
+
+  // Get selected product to check if it's "Рейка"
+  const selectedProduct = allProducts.find(
+      (product) => product.id === Number(toProduct),
+  );
+  const isReyka = selectedProduct?.category_read?.category_name === "Рейка";
+
   // Update fields with dynamic options
   const fields = recyclingFields(t, productSearchTerm, null)
       .map((field) => {
@@ -346,7 +364,7 @@ export default function CreateRecycling() {
                         ? opt.value === Number(storeIdFromUrl)
                         : isAdmin
                             ? opt.value === currentUser?.store_read?.id
-                            : opt.value
+                            : opt.value,
                 ),
             disabled: isAdmin || isStoreIdLocked,
           };
@@ -360,20 +378,28 @@ export default function CreateRecycling() {
         }
         return field;
       })
-      // Hide specified fields
-      .filter(
-          (field) =>
-              ![
-                "store",
-                "exchange_rate",
-                "purchase_price_in_uz",
-                "purchase_price_in_us",
-              ].includes(field.name)
-      );
+      // Hide specified fields and conditionally show quantity_of_parts
+      .filter((field) => {
+        // Always hide these fields
+        if (
+            [
+              "store",
+              "exchange_rate",
+              "purchase_price_in_uz",
+              "purchase_price_in_us",
+            ].includes(field.name)
+        ) {
+          return false;
+        }
+        // Only show quantity_of_parts when to_product is "Рейка"
+        if (field.name === "quantity_of_parts") {
+          return isReyka;
+        }
+        return true;
+      });
 
   // Watch specific fields for changes
   const fromTo = form.watch("from_to");
-  // const toProduct = form.watch('to_product');
   const getAmount = form.watch("get_amount");
   const purchasePriceInUs = form.watch("purchase_price_in_us");
   const exchangeRateField = form.watch("exchange_rate");
@@ -390,7 +416,7 @@ export default function CreateRecycling() {
     // Get selected to_product and its category
     const toProductId = form.watch("to_product");
     const selectedProduct = allProducts.find(
-        (product) => product.id === Number(toProductId)
+        (product) => product.id === Number(toProductId),
     );
     const categoryId = selectedProduct?.category_read?.id;
     // Special calculation for коньёк (17) and снегозадержатель (18)
@@ -469,7 +495,7 @@ export default function CreateRecycling() {
     const toProductId = form.watch("to_product");
     if (!toProductId) return;
     const selectedProduct = allProducts.find(
-        (product) => product.id === Number(toProductId)
+        (product) => product.id === Number(toProductId),
     );
     if (!selectedProduct || !selectedProduct.category_read) return;
     const categoryName = selectedProduct.category_read.category_name;
@@ -479,14 +505,20 @@ export default function CreateRecycling() {
       if (categoryName === "Рейка") {
         // Find the measurement with name "Метр"
         const metrMeasurement = selectedProduct.measurement?.find(
-            (m) => m.measurement_read?.measurement_name === "Метр"
+            (m) => m.measurement_read?.measurement_name === "Метр",
         );
         const metrValue = metrMeasurement ? Number(metrMeasurement.number) : 1;
         // Check if from_to's product category is Половой агаш or Половой
         let multiplier = 1;
-        const selectedFromStock = stocks.find((stock) => stock.id === Number(form.watch("from_to")));
-        const fromCategoryName = selectedFromStock?.product_read?.category_read?.category_name;
-        if (fromCategoryName === "Половой агаш" || fromCategoryName === "Половой") {
+        const selectedFromStock = stocks.find(
+            (stock) => stock.id === Number(form.watch("from_to")),
+        );
+        const fromCategoryName =
+            selectedFromStock?.product_read?.category_read?.category_name;
+        if (
+            fromCategoryName === "Половой агаш" ||
+            fromCategoryName === "Половой"
+        ) {
           multiplier = 2;
         }
         const newGetAmount = spentAmt * metrValue * multiplier;
@@ -522,16 +554,28 @@ export default function CreateRecycling() {
         }
       }
     }
-  }, [form.watch("to_product"), form.watch("spent_amount"), allProducts, form, stocks]);
+  }, [
+    form.watch("to_product"),
+    form.watch("spent_amount"),
+    allProducts,
+    form,
+    stocks,
+  ]);
 
   const handleSubmit = async (data: FormValues) => {
     try {
+      // Validate quantity_of_parts is required when to_product is "Рейка"
+      if (isReyka && (!data.quantity_of_parts || data.quantity_of_parts <= 0)) {
+        toast.error(t("common.quantity_of_parts_required"));
+        return;
+      }
+
       // Calculate purchase_price_uzs as selling_price * get_amount
       const sellingPrice = Number(data.selling_price);
       const getAmount = Number(data.get_amount);
       const purchase_price_in_uz = sellingPrice * getAmount;
       const selectedStock = stocks.find((stock) => stock.id === Number(fromTo));
-      console.log('selling_price_in_us',selectedStock.selling_price_in_us)
+      console.log("selling_price_in_us", selectedStock.selling_price_in_us);
       const formattedData: any = {
         from_to: Number(data.from_to),
         to_product: Number(data.to_product),
@@ -545,21 +589,21 @@ export default function CreateRecycling() {
         exchange_rate: Number(data.exchange_rate),
         // purchase_price_in_uz: Number(data.purchase_price_in_uz),
         purchase_price_in_uz, // <-- add calculated value to API payload
-        purchase_price_in_us:selectedStock.purchase_price_in_us,
-        selling_price_in_us:Number(selectedStock.selling_price_in_us)
-
+        purchase_price_in_us: selectedStock.purchase_price_in_us,
+        selling_price_in_us: Number(selectedStock.selling_price_in_us),
+        quantity_of_parts: isReyka ? Number(data.quantity_of_parts) : undefined,
       };
 
       await createRecycling.mutateAsync(formattedData);
       toast.success(
-          t("messages.success.created", { item: t("navigation.recyclings") })
+          t("messages.success.created", { item: t("navigation.recyclings") }),
       );
       navigate("/recyclings");
     } catch (error) {
       toast.error(
           t("messages.error.create", {
             item: t("navigation.recyclings").toLowerCase(),
-          })
+          }),
       );
       console.error("Failed to create recycling:", error);
     }

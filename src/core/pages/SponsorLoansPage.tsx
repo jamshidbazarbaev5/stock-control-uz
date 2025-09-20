@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { fetchLoans, type Loan } from '../api/loan';
+import { fetchLoanTotalsByCurrency, type LoanTotalsByCurrency } from '../api/loan-totals';
 import { fetchLoanPaymentsByLoan } from '../api/loanpaymentByLoan';
 import { createLoanPayment } from '../api/loanpaymentCreate';
 import { ResourceTable } from '../helpers/ResourseTable';
@@ -18,6 +19,7 @@ export default function SponsorLoansPage() {
   const [payModalLoan, setPayModalLoan] = useState<Loan | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'paid' | 'unpaid'>('all');
+  const [loanTotals, setLoanTotals] = useState<LoanTotalsByCurrency[]>([]);
 
   const formatDate = (dateString: string) => {
     try {
@@ -36,13 +38,23 @@ export default function SponsorLoansPage() {
   useEffect(() => {
     if (!id || !currency) return;
     setIsLoading(true);
-    let is_paid: boolean | undefined;
-    if (activeTab === 'paid') is_paid = true;
-    else if (activeTab === 'unpaid') is_paid = false;
-    fetchLoans(Number(id), currency, is_paid)
-      .then(setLoans)
-      .catch(() => toast.error(t('Failed to fetch loans')))
-      .finally(() => setIsLoading(false));
+
+    const fetchData = async () => {
+      try {
+        const [loansData, totalsData] = await Promise.all([
+          fetchLoans(Number(id), currency, activeTab === 'paid' ? true : activeTab === 'unpaid' ? false : undefined),
+          fetchLoanTotalsByCurrency(Number(id))
+        ]);
+        setLoans(loansData);
+        setLoanTotals(totalsData);
+      } catch (error) {
+        toast.error(t('Failed to fetch loans'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
   }, [id, currency, t, activeTab]);
 
   const handlePayLoan = async (data: any) => {
@@ -124,6 +136,27 @@ export default function SponsorLoansPage() {
 
   return (
     <div className="container py-8 px-4">
+      {loanTotals
+        .filter((total) => total.currency === currency)
+        .map((total) => (
+          <div key={total.currency} className="bg-white rounded-lg shadow-md p-4 mb-6">
+            <h3 className="text-lg font-bold mb-4">{t('Займы')} ({total.currency})</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <div className="text-sm text-blue-600">{t('Общая сумма займов')}</div>
+                <div className="text-2xl font-bold text-blue-700">{total.total_loan.toLocaleString()}</div>
+              </div>
+              <div className="bg-green-50 rounded-lg p-4">
+                <div className="text-sm text-green-600">{t('Оплачено')}</div>
+                <div className="text-2xl font-bold text-green-700">{total.total_paid.toLocaleString()}</div>
+              </div>
+              <div className="bg-red-50 rounded-lg p-4">
+                <div className="text-sm text-red-600">{t('Неоплачено')}</div>
+                <div className="text-2xl font-bold text-red-700">{total.total_unpaid.toLocaleString()}</div>
+              </div>
+            </div>
+          </div>
+        ))}
       <h3 className="text-lg font-bold mb-2">
         {t('Займы')} ({currency})
       </h3>

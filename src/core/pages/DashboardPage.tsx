@@ -115,7 +115,7 @@ const DashboardPage = () => {
   const [_netProfitError, setNetProfitError] = useState<string | null>(null);
   // UI period can include 'custom', but API only accepts 'day', 'week', 'month'
   const [period, setPeriod] = useState<"day" | "week" | "month" | "custom">(
-      "month"
+      "day"
   );
   const [topProductsLimit, setTopProductsLimit] = useState<number>(5);
   const [topSellersLimit, _setTopSellersLimit] = useState<number>(5);

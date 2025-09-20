@@ -15,7 +15,7 @@ import {
   User,
   ChevronDown,
   type LucideIcon,
-  PrinterCheck,
+  // PrinterCheck,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
@@ -142,6 +142,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         label: t("navigation.dashobard"),
         href: "/dashboard",
       },
+       {
+            icon: Ruler,
+            label: t("navigation.pos"),
+            href: "/pos",
+          },
       {
         icon: ArrowLeftRight,
         label: t("navigation.transfers"),
@@ -255,17 +260,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             label: t("navigation.labelSizes"),
             href: "/label-sizes",
           },
-           {
-            icon: PrinterCheck,
-            label: t("navigation.printBarcode"),
-            href: "/print-barcode",
-          },
+           
+
          
         ],
       });
     }
 
     return baseItems;
+
   })();
 
   return (

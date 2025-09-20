@@ -101,7 +101,7 @@ export default function EditStock() {
       const rate = parseFloat(exchangeRateValue);
       if (!isNaN(priceInUSD) && !isNaN(rate)) {
         const calculatedPrice = priceInUSD * rate;
-        form.setValue('purchase_price_in_uz', calculatedPrice.toString(), {
+        form.setValue('purchase_price_in_uz', calculatedPrice.toFixed(2), {
           shouldValidate: false,
           shouldDirty: true
         });
@@ -436,7 +436,7 @@ export default function EditStock() {
       if ((selectedProduct?.has_shtuk || selectedProduct?.has_metr || selectedProduct?.category_read?.category_name === 'Рейка') && !isNaN(purchasePriceInUz)) {
         if (!isNaN(purchasePriceInUz) && !isNaN(quantityValue) && quantityValue > 0) {
           const calculatedMinPrice = purchasePriceInUz / quantityValue;
-          minPriceValue = calculatedMinPrice.toString();
+          minPriceValue = calculatedMinPrice.toFixed(2);
           helperText = `${t('common.per_unit_cost') || 'Per unit cost'}: ${calculatedMinPrice.toFixed(2)} UZS`;
           // Set the min_price value in the form
           if (form.getValues('min_price') !== minPriceValue) {
