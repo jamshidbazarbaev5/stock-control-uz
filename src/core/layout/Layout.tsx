@@ -135,7 +135,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, [location.pathname]);
 
   const navItems: NavItem[] = (() => {
-    // Base navigation items that all users can see
     const baseItems: NavItem[] = [
       {
         icon: Package,
