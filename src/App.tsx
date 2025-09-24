@@ -53,6 +53,7 @@ import EditMoney from "./core/pages/edit-money";
 import EditProduct from "./core/pages/edit-product";
 import StockPriceHistoryPage from "./core/pages/StockPriceHistoryPage";
 import EditStock from "./core/pages/edit-stock-2";
+import ReceiptDesignerPage from "./pages/ReceiptDesignerPage";
 import IncomePage from "./core/pages/IncomePage";
 import EditSale from "./core/pages/edit-sale";
 import DashboardPage from "./core/pages/DashboardPage";
@@ -428,14 +429,63 @@ function App() {
                 }
               />
 
-            {/* Routes accessible by both Администратор and Продавец */}
-            <Route path="/sales" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><SalesPage /></PrivateRoute>} />
-            <Route path="/create-sale" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><CreateSale /></PrivateRoute>} />
-            <Route path="/edit-sale/:id" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><EditSale /></PrivateRoute>} />
-            <Route path="/profile" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><ProfilePage /></PrivateRoute>} />
-            <Route path="/dashboard" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><DashboardPage /></PrivateRoute>} />
-            <Route path="/product-stock-balance" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><ProductStockBalancePage /></PrivateRoute>} />
-             <Route path="/debts/:id/payments" element={<PrivateRoute allowedRoles={["Администратор", "Продавец"]}><DebtPaymentsPage/></PrivateRoute>} />
+              {/* Routes accessible by both Администратор and Продавец */}
+              <Route
+                path="/sales"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
+                    <SalesPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/create-sale"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
+                    <CreateSale />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/edit-sale/:id"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
+                    <EditSale />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
+                    <ProfilePage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
+                    <DashboardPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/product-stock-balance"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
+                    <ProductStockBalancePage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/debts/:id/payments"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
+                    <DebtPaymentsPage />
+                  </PrivateRoute>
+                }
+              />
 
               <Route
                 path="/sponsors"
@@ -516,7 +566,7 @@ function App() {
                   </PrivateRoute>
                 }
               />
-                {/* <Route
+              {/* <Route
                 path="/pos-create"
                 element={
                   <PrivateRoute allowedRoles={["Администратор"]}>
@@ -525,6 +575,14 @@ function App() {
                 }
               /> */}
               <Route path="/" element={<Navigate to="/dashboard" />} />
+              <Route
+                path="/receipt-designer"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <ReceiptDesignerPage />
+                  </PrivateRoute>
+                }
+              />
             </Route>
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

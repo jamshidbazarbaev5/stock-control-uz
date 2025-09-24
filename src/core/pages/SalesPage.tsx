@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Printer } from "lucide-react";
+import PrintDialog from "../../components/receipt-designer/PrintDialog";
+import type { ReceiptPreviewData, ReceiptTemplate } from "../../types/receipt";
+import { DEFAULT_TEMPLATE } from "../../types/receipt";
 import { ResourceTable } from "../helpers/ResourseTable";
 import { type Sale, useGetSales, useDeleteSale } from "../api/sale";
 // import { useGetProducts } from '../api/product';
@@ -472,6 +476,9 @@ export default function SalesPage() {
     );
   };
 
+  const [showPrintReceipt, setShowPrintReceipt] = useState(false);
+  const [selectedSaleForPrint, setSelectedSaleForPrint] = useState<Sale | null>(null);
+
   const columns = [
     {
       header: t("table.store"),
@@ -634,6 +641,25 @@ export default function SalesPage() {
         </div>
       ),
     },
+    {
+      header: t('common.actions'),
+      accessorKey: 'actions',
+      cell: (row: Sale) => (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setSelectedSaleForPrint(row);
+              setShowPrintReceipt(true);
+            }}
+          >
+            <Printer className="w-4 h-4 mr-2" />
+            {t('common.print')}
+          </Button>
+        </div>
+      ),
+    },
     // {
     //   header: t('common.actions'),
     //   accessorKey: 'actions',
@@ -656,8 +682,51 @@ export default function SalesPage() {
 
   // Fetch all products with pagination
 
+  // Transform sale data to receipt format
+  const transformSaleToReceiptData = (sale: Sale): ReceiptPreviewData => {
+    const totalAmount = Number(sale.total_amount || 0);
+    return {
+      storeName: sale.store_read?.name || "",
+      // storeAddress: sale.store_read?.address || "",
+      storePhone: sale.store_read?.phone_number || "",
+      cashierName: "Cashier", // Add proper cashier name if available
+      receiptNumber: `#${sale.id}`,
+      date: sale.sold_date ? new Date(sale.sold_date).toLocaleDateString("ru-RU") : "-",
+      time: sale.sold_date ? new Date(sale.sold_date).toLocaleTimeString("ru-RU") : "-",
+      paymentMethod: sale.sale_payments?.map(p => p.payment_method).join(", ") || "",
+      subtotal: Number(sale.total_amount),
+      discount: 0, // Add if you have discount data
+      tax: 0, // Add if you have tax data
+      total: Number(sale.total_amount),
+      change: 0, // Add if you track change amount
+      items: sale.sale_items?.map(item => {
+        // Calculate price per unit based on total amount divided by quantity
+        const quantity = Number(item.quantity || 0);
+        const total = totalAmount / (sale.sale_items?.length || 1); // Distribute total evenly if no individual prices
+        const price = quantity > 0 ? total / quantity : 0;
+        
+        return {
+          name: item.stock_read?.product_read?.product_name || "",
+          quantity: quantity,
+          price: price,
+          total: total
+        };
+      }) || [],
+      footerText:'СПАСИБО ЗА ПОКУПКУ!'
+    };
+  };
+
   return (
     <div className="container mx-auto py-4 sm:py-6 md:py-8 px-2 sm:px-4">
+      {/* Print Receipt Dialog */}
+      {selectedSaleForPrint && (
+        <PrintDialog
+          open={showPrintReceipt}
+          onOpenChange={setShowPrintReceipt}
+          template={DEFAULT_TEMPLATE}
+          previewData={transformSaleToReceiptData(selectedSaleForPrint)}
+        />
+      )}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">
           {t("navigation.sales")}
