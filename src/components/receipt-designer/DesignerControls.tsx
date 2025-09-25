@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -20,12 +21,12 @@ import {
   Image,
   List,
   Calculator,
-  QrCode,
   MessageSquare,
   Minus,
   Space,
   Plus,
   Trash2,
+  QrCode,
 } from "lucide-react";
 
 interface DesignerControlsProps {
@@ -53,6 +54,7 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
   onNameChange,
   disabled = false,
 }) => {
+  const { t } = useTranslation();
   // Toggle component visibility
   const handleToggleComponent = (componentId: string) => {
     if (disabled) return;
@@ -144,13 +146,13 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
   // Get default data for component type
   const getDefaultData = (type: ReceiptComponent["type"]) => {
     const defaults = {
-      logo: { url: "", text: "{{storeName}}" },
-      header: { text: "{{storeName}}" },
-      text: { text: "Custom text here..." },
+      logo: { url: "", text: "" },
+      header: { text: t("receiptDesignerControls.storeName") },
+      text: { text: t("receiptDesignerControls.customText") },
       itemList: {},
       totals: {},
-      qrCode: { qrData: "{{qrCodeData}}" },
-      footer: { text: "Thank you for your business!" },
+      qrCode: { qrData: "" },
+      footer: { text: t("receiptDesignerControls.thankYouMessage") },
       divider: {},
       spacer: {},
     };
@@ -163,7 +165,7 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
       logo: {
         textAlign: "center" as const,
         margin: "0 0 10px 0",
-        width: "150px",
+        width: "250px",
       },
       header: {
         fontSize: "16px",
@@ -171,18 +173,25 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
         textAlign: "center" as const,
         margin: "0 0 10px 0",
       },
-      text: { fontSize: "11px", margin: "5px 0", fontWeight: "bold" as const, },
-      itemList: { fontSize: "10px", margin: "10px 0", fontWeight: "bold" as const, },
-      totals: { fontSize: "11px", margin: "10px 0" , fontWeight: "bold" as const,},
-      qrCode: {
-        textAlign: "center" as const,
+      text: { fontSize: "11px", margin: "5px 0", fontWeight: "bold" as const },
+      itemList: {
+        fontSize: "10px",
         margin: "10px 0",
-        width: "100px",
+        fontWeight: "bold" as const,
+      },
+      totals: {
+        fontSize: "11px",
+        margin: "10px 0",
+        fontWeight: "bold" as const,
       },
       footer: {
         fontSize: "10px",
         textAlign: "center" as const,
         margin: "10px 0 0 0",
+      },
+      qrCode: {
+        textAlign: "center" as const,
+        margin: "10px 0",
       },
       divider: { margin: "10px 0" },
       spacer: { height: "20px" },
@@ -200,16 +209,20 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
         {/* Template Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>Template Settings</CardTitle>
+            <CardTitle>
+              {t("receiptDesignerControls.templateSettings")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="templateName">Template Name</Label>
+              <Label htmlFor="templateName">
+                {t("receiptDesignerControls.templateName")}
+              </Label>
               <Input
                 id="templateName"
                 value={template.name}
                 onChange={(e) => onNameChange(e.target.value)}
-                placeholder="Enter template name"
+                placeholder={t("receiptDesignerControls.enterTemplateName")}
                 disabled={disabled}
               />
             </div>
@@ -219,12 +232,14 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
         {/* Global Styles */}
         <Card>
           <CardHeader>
-            <CardTitle>Global Styles</CardTitle>
+            <CardTitle>{t("receiptDesignerControls.globalStyles")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="fontSize">Font Size</Label>
+                <Label htmlFor="fontSize">
+                  {t("receiptDesignerControls.fontSize")}
+                </Label>
                 <Select
                   value={template.style.styles.fontSize}
                   onValueChange={(value) =>
@@ -246,7 +261,9 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
               </div>
 
               <div>
-                <Label htmlFor="fontFamily">Font Family</Label>
+                <Label htmlFor="fontFamily">
+                  {t("receiptDesignerControls.fontFamily")}
+                </Label>
                 <Select
                   value={template.style.styles.fontFamily}
                   onValueChange={(value) =>
@@ -258,11 +275,17 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="monospace">Monospace</SelectItem>
-                    <SelectItem value="Arial, sans-serif">Arial</SelectItem>
-                    <SelectItem value="Times, serif">Times</SelectItem>
+                    <SelectItem value="monospace">
+                      {t("receiptDesignerControls.monospace")}
+                    </SelectItem>
+                    <SelectItem value="Arial, sans-serif">
+                      {t("receiptDesignerControls.arial")}
+                    </SelectItem>
+                    <SelectItem value="Times, serif">
+                      {t("receiptDesignerControls.times")}
+                    </SelectItem>
                     <SelectItem value="Courier New, monospace">
-                      Courier New
+                      {t("receiptDesignerControls.courierNew")}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -270,7 +293,9 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="receiptWidth">Receipt Width</Label>
+              <Label htmlFor="receiptWidth">
+                {t("receiptDesignerControls.receiptWidth")}
+              </Label>
               <Select
                 value={template.style.styles.width}
                 onValueChange={(value) =>
@@ -282,10 +307,18 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="250px">Small (250px)</SelectItem>
-                  <SelectItem value="300px">Medium (300px)</SelectItem>
-                  <SelectItem value="350px">Large (350px)</SelectItem>
-                  <SelectItem value="400px">Extra Large (400px)</SelectItem>
+                  <SelectItem value="250px">
+                    {t("receiptDesignerControls.small")} (250px)
+                  </SelectItem>
+                  <SelectItem value="300px">
+                    {t("receiptDesignerControls.medium")} (300px)
+                  </SelectItem>
+                  <SelectItem value="350px">
+                    {t("receiptDesignerControls.large")} (350px)
+                  </SelectItem>
+                  <SelectItem value="400px">
+                    {t("receiptDesignerControls.extraLarge")} (400px)
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -295,19 +328,27 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
         {/* Components */}
         <Card>
           <CardHeader>
-            <CardTitle>Receipt Components</CardTitle>
+            <CardTitle>
+              {t("receiptDesignerControls.receiptComponents")}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="components" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="components">Components</TabsTrigger>
-                <TabsTrigger value="add-new">Add New</TabsTrigger>
+                <TabsTrigger value="components">
+                  {t("receiptDesignerControls.components")}
+                </TabsTrigger>
+                <TabsTrigger value="add-new">
+                  {t("receiptDesignerControls.addNew")}
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="components" className="space-y-4">
                 {sortedComponents.length === 0 ? (
                   <div className="text-center text-gray-500 py-8">
-                    <p className="text-sm">No components added yet</p>
+                    <p className="text-sm">
+                      {t("receiptDesignerControls.noComponentsAdded")}
+                    </p>
                   </div>
                 ) : (
                   sortedComponents.map((component) => {
@@ -353,7 +394,9 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
                             component.type === "text" ||
                             component.type === "footer") && (
                             <div>
-                              <Label>Text Content</Label>
+                              <Label>
+                                {t("receiptDesignerControls.textContent")}
+                              </Label>
                               <Textarea
                                 value={component.data.text || ""}
                                 onChange={(e) =>
@@ -364,27 +407,10 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
                                     },
                                   })
                                 }
-                                placeholder="Enter text content"
+                                placeholder={t(
+                                  "receiptDesignerControls.enterTextContent",
+                                )}
                                 rows={3}
-                                disabled={disabled || !component.enabled}
-                              />
-                            </div>
-                          )}
-
-                          {component.type === "logo" && (
-                            <div>
-                              <Label>Logo URL</Label>
-                              <Input
-                                value={component.data.url || ""}
-                                onChange={(e) =>
-                                  handleUpdateComponent(component.id, {
-                                    data: {
-                                      ...component.data,
-                                      url: e.target.value,
-                                    },
-                                  })
-                                }
-                                placeholder="Enter logo image URL"
                                 disabled={disabled || !component.enabled}
                               />
                             </div>
@@ -396,7 +422,9 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
                               component.type !== "spacer" && (
                                 <>
                                   <div>
-                                    <Label>Text Align</Label>
+                                    <Label>
+                                      {t("receiptDesignerControls.textAlign")}
+                                    </Label>
                                     <Select
                                       value={
                                         component.styles.textAlign || "left"
@@ -419,20 +447,22 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
                                       </SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="left">
-                                          Left
+                                          {t("receiptDesignerControls.left")}
                                         </SelectItem>
                                         <SelectItem value="center">
-                                          Center
+                                          {t("receiptDesignerControls.center")}
                                         </SelectItem>
                                         <SelectItem value="right">
-                                          Right
+                                          {t("receiptDesignerControls.right")}
                                         </SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>
 
                                   <div>
-                                    <Label>Font Size</Label>
+                                    <Label>
+                                      {t("receiptDesignerControls.fontSize")}
+                                    </Label>
                                     <Select
                                       value={
                                         component.styles.fontSize ||
@@ -481,7 +511,9 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
 
                           {component.type !== "divider" && (
                             <div>
-                              <Label>Margin</Label>
+                              <Label>
+                                {t("receiptDesignerControls.margin")}
+                              </Label>
                               <Input
                                 value={component.styles.margin || "0"}
                                 onChange={(e) =>
@@ -498,29 +530,123 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
                             </div>
                           )}
 
-                          {(component.type === "logo" ||
-                            component.type === "qrCode") && (
-                            <div>
-                              <Label>Width</Label>
-                              <Input
-                                value={component.styles.width || ""}
-                                onChange={(e) =>
-                                  handleUpdateComponent(component.id, {
-                                    styles: {
-                                      ...component.styles,
-                                      width: e.target.value,
-                                    },
-                                  })
-                                }
-                                placeholder="e.g., 150px"
-                                disabled={disabled || !component.enabled}
-                              />
-                            </div>
+                          {component.type === "logo" && (
+                            <>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <Label>
+                                    {t("receiptDesignerControls.width")}
+                                  </Label>
+                                  <Input
+                                    value={component.styles.width || ""}
+                                    onChange={(e) =>
+                                      handleUpdateComponent(component.id, {
+                                        styles: {
+                                          ...component.styles,
+                                          width: e.target.value,
+                                        },
+                                      })
+                                    }
+                                    placeholder="e.g., 150px"
+                                    disabled={disabled || !component.enabled}
+                                  />
+                                </div>
+                                <div>
+                                  <Label>
+                                    {t("receiptDesignerControls.height")}
+                                  </Label>
+                                  <Input
+                                    value={component.styles.height || ""}
+                                    onChange={(e) =>
+                                      handleUpdateComponent(component.id, {
+                                        styles: {
+                                          ...component.styles,
+                                          height: e.target.value,
+                                        },
+                                      })
+                                    }
+                                    placeholder="auto"
+                                    disabled={disabled || !component.enabled}
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <Label>
+                                  {t("receiptDesignerControls.presetSizes")}
+                                </Label>
+                                <div className="grid grid-cols-3 gap-2 mt-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleUpdateComponent(component.id, {
+                                        styles: {
+                                          ...component.styles,
+                                          width: "80px",
+                                          height: "auto",
+                                          textAlign:
+                                            component.styles.textAlign ||
+                                            "center",
+                                        },
+                                      })
+                                    }
+                                    disabled={disabled || !component.enabled}
+                                  >
+                                    Small
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleUpdateComponent(component.id, {
+                                        styles: {
+                                          ...component.styles,
+                                          width: "150px",
+                                          height: "auto",
+                                          textAlign:
+                                            component.styles.textAlign ||
+                                            "center",
+                                        },
+                                      })
+                                    }
+                                    disabled={disabled || !component.enabled}
+                                  >
+                                    Medium
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleUpdateComponent(component.id, {
+                                        styles: {
+                                          ...component.styles,
+                                          width: "250px",
+                                          height: "auto",
+                                          textAlign:
+                                            component.styles.textAlign ||
+                                            "center",
+                                        },
+                                      })
+                                    }
+                                    disabled={disabled || !component.enabled}
+                                  >
+                                    Large
+                                  </Button>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">
+                                  {t(
+                                    "receiptDesignerControls.dragCornerToResize",
+                                  )}
+                                </p>
+                              </div>
+                            </>
                           )}
 
                           {component.type === "spacer" && (
                             <div>
-                              <Label>Height</Label>
+                              <Label>
+                                {t("receiptDesignerControls.height")}
+                              </Label>
                               <Input
                                 value={
                                   component.styles.height ||
@@ -572,31 +698,39 @@ const DesignerControls: React.FC<DesignerControlsProps> = ({
 
                 <div className="text-xs text-gray-500 space-y-1">
                   <p>
-                    <strong>Logo:</strong> Store logo image
+                    <strong>{t("receiptDesigner.components.logo")}:</strong>{" "}
+                    {t("receiptDesignerControls.componentDescriptions.logo")}
                   </p>
                   <p>
-                    <strong>Header:</strong> Main title/heading
+                    <strong>{t("receiptDesigner.components.header")}:</strong>{" "}
+                    {t("receiptDesignerControls.componentDescriptions.header")}
                   </p>
                   <p>
-                    <strong>Text:</strong> Custom text block
+                    <strong>{t("receiptDesigner.components.text")}:</strong>{" "}
+                    {t("receiptDesignerControls.componentDescriptions.text")}
                   </p>
                   <p>
-                    <strong>Item List:</strong> Product items table
+                    <strong>{t("receiptDesigner.components.itemList")}:</strong>{" "}
+                    {t(
+                      "receiptDesignerControls.componentDescriptions.itemList",
+                    )}
                   </p>
                   <p>
-                    <strong>Totals:</strong> Order totals section
+                    <strong>{t("receiptDesigner.components.totals")}:</strong>{" "}
+                    {t("receiptDesignerControls.componentDescriptions.totals")}
+                  </p>
+
+                  <p>
+                    <strong>{t("receiptDesigner.components.footer")}:</strong>{" "}
+                    {t("receiptDesignerControls.componentDescriptions.footer")}
                   </p>
                   <p>
-                    <strong>QR Code:</strong> QR code for receipt
+                    <strong>{t("receiptDesigner.components.divider")}:</strong>{" "}
+                    {t("receiptDesignerControls.componentDescriptions.divider")}
                   </p>
                   <p>
-                    <strong>Footer:</strong> Bottom message
-                  </p>
-                  <p>
-                    <strong>Divider:</strong> Horizontal line
-                  </p>
-                  <p>
-                    <strong>Spacer:</strong> Empty space
+                    <strong>{t("receiptDesigner.components.spacer")}:</strong>{" "}
+                    {t("receiptDesignerControls.componentDescriptions.spacer")}
                   </p>
                 </div>
               </TabsContent>

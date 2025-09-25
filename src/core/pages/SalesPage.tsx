@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Printer } from "lucide-react";
 import PrintDialog from "../../components/receipt-designer/PrintDialog";
-import type { ReceiptPreviewData, ReceiptTemplate } from "../../types/receipt";
+import type { ReceiptPreviewData } from "../../types/receipt";
 import { DEFAULT_TEMPLATE } from "../../types/receipt";
 import { ResourceTable } from "../helpers/ResourseTable";
 import { type Sale, useGetSales, useDeleteSale } from "../api/sale";
@@ -68,7 +68,7 @@ export default function SalesPage() {
     },
   });
   const getPaginatedData = <T extends { id?: number }>(
-    data: PaginatedData<T> | undefined
+    data: PaginatedData<T> | undefined,
   ): T[] => {
     if (!data) return [];
     return Array.isArray(data) ? data : data.results;
@@ -97,7 +97,7 @@ export default function SalesPage() {
   useEffect(() => {
     if (sales && sales.length > 0) {
       console.group(
-        `Sales Profit Calculation Details - Page ${page} (${sales.length} items)`
+        `Sales Profit Calculation Details - Page ${page} (${sales.length} items)`,
       );
       sales.forEach((sale: any) => {
         logSaleDetails(sale);
@@ -123,7 +123,7 @@ export default function SalesPage() {
       console.log("Quantity:", item.quantity);
       console.log(
         "Quantity for history:",
-        item.stock_read?.quantity_for_history
+        item.stock_read?.quantity_for_history,
       );
 
       if (product?.has_kub) {
@@ -133,7 +133,7 @@ export default function SalesPage() {
           measurements.map((m: any) => ({
             name: m.measurement_read?.measurement_name,
             value: m.number,
-          }))
+          })),
         );
       }
 
@@ -145,15 +145,15 @@ export default function SalesPage() {
         const recyclingRecord = getRecyclingRecord(product.id, stock.id);
         if (recyclingRecord) {
           console.log(
-            "Calculation Type: Recycled Product (with recycling record)"
+            "Calculation Type: Recycled Product (with recycling record)",
           );
           const profit = calculateRecyclingProfit(
             recyclingRecord,
             Number(item.quantity),
-            Number(item.subtotal)
+            Number(item.subtotal),
           );
           console.log(
-            "Formula: See recyclingProfitUtils.calculateRecyclingProfit"
+            "Formula: See recyclingProfitUtils.calculateRecyclingProfit",
           );
           console.log("Calculation Steps:");
           console.log("1. Recycling Record:", recyclingRecord);
@@ -172,14 +172,14 @@ export default function SalesPage() {
         product?.category_read?.category_name === "Рейка"
       ) {
         console.log(
-          "Calculation Type: Standard Product (Рейка without recycling record)"
+          "Calculation Type: Standard Product (Рейка without recycling record)",
         );
         console.log(
-          "Formula: (sellingPrice - purchasePricePerUnit) * quantity"
+          "Formula: (sellingPrice - purchasePricePerUnit) * quantity",
         );
 
         const totalPurchasePrice = parseFloat(
-          stock?.purchase_price_in_uz || "0"
+          stock?.purchase_price_in_uz || "0",
         );
         const stockQuantityForHistory =
           stock?.quantity_for_history || stock?.quantity || 1;
@@ -194,12 +194,12 @@ export default function SalesPage() {
         console.log("2. Stock Quantity for History:", stockQuantityForHistory);
         console.log(
           "3. Purchase Price per Unit:",
-          `${totalPurchasePrice} / ${stockQuantityForHistory} = ${purchasePricePerUnit}`
+          `${totalPurchasePrice} / ${stockQuantityForHistory} = ${purchasePricePerUnit}`,
         );
         console.log("4. Selling Price per Unit:", sellingPricePerUnit);
         console.log(
           "5. Final profit calculation:",
-          `(${sellingPricePerUnit} - ${purchasePricePerUnit}) * ${item.quantity} = ${profit}`
+          `(${sellingPricePerUnit} - ${purchasePricePerUnit}) * ${item.quantity} = ${profit}`,
         );
         return;
       }
@@ -207,23 +207,23 @@ export default function SalesPage() {
       else if (
         product?.has_kub &&
         ["Половой агаш", "Стропила", "Страпила", "Половой"].includes(
-          product?.category_read?.category_name
+          product?.category_read?.category_name,
         )
       ) {
         console.log(
           "Calculation Type: Has Kub Product (Category:",
           product?.category_read?.category_name,
-          ")"
+          ")",
         );
         console.log("Formula: (sellingPrice - PROFIT_FAKE) * quantity");
         console.log(
-          "where PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs"
+          "where PROFIT_FAKE = length * meter * thickness * exchangeRate * purchasePriceInUs",
         );
 
         const measurements = product.measurement || [];
         const getNumber = (name: string) => {
           const m = measurements.find(
-            (m: any) => m.measurement_read?.measurement_name === name
+            (m: any) => m.measurement_read?.measurement_name === name,
           );
           return m ? parseFloat(m.number) : 1;
         };
@@ -232,10 +232,10 @@ export default function SalesPage() {
         const thickness = getNumber("Толщина");
         const meter = getNumber("Метр");
         const exchangeRate = parseFloat(
-          stock?.exchange_rate_read?.currency_rate || "1"
+          stock?.exchange_rate_read?.currency_rate || "1",
         );
         const purchasePriceInUs = parseFloat(
-          stock?.purchase_price_in_us || "0"
+          stock?.purchase_price_in_us || "0",
         );
         const PROFIT_FAKE =
           length * meter * thickness * exchangeRate * purchasePriceInUs;
@@ -246,24 +246,24 @@ export default function SalesPage() {
         console.log("3. Purchase Price in US:", purchasePriceInUs);
         console.log(
           "4. PROFIT_FAKE calculation:",
-          `${length} * ${meter} * ${thickness} * ${exchangeRate} * ${purchasePriceInUs} = ${PROFIT_FAKE}`
+          `${length} * ${meter} * ${thickness} * ${exchangeRate} * ${purchasePriceInUs} = ${PROFIT_FAKE}`,
         );
         const finalProfit =
           (Number(item.subtotal) - PROFIT_FAKE) * item.quantity;
         console.log(
           "5. Final profit calculation:",
-          `(${item.subtotal} - ${PROFIT_FAKE}) * ${item.quantity} = ${finalProfit}`
+          `(${item.subtotal} - ${PROFIT_FAKE}) * ${item.quantity} = ${finalProfit}`,
         );
       }
       // Standard profit calculation
       else {
         console.log("Calculation Type: Standard Product");
         console.log(
-          "Formula: (sellingPrice - purchasePricePerUnit) * quantity"
+          "Formula: (sellingPrice - purchasePricePerUnit) * quantity",
         );
 
         const totalPurchasePrice = parseFloat(
-          stock?.purchase_price_in_uz || "0"
+          stock?.purchase_price_in_uz || "0",
         );
         const stockQuantityForHistory =
           stock?.quantity_for_history || stock?.quantity || 1;
@@ -278,12 +278,12 @@ export default function SalesPage() {
         console.log("2. Stock Quantity for History:", stockQuantityForHistory);
         console.log(
           "3. Purchase Price per Unit:",
-          `${totalPurchasePrice} / ${stockQuantityForHistory} = ${purchasePricePerUnit}`
+          `${totalPurchasePrice} / ${stockQuantityForHistory} = ${purchasePricePerUnit}`,
         );
         console.log("4. Selling Price per Unit:", sellingPricePerUnit);
         console.log(
           "5. Final profit calculation:",
-          `(${sellingPricePerUnit} - ${purchasePricePerUnit}) * ${item.quantity} = ${profit}`
+          `(${sellingPricePerUnit} - ${purchasePricePerUnit}) * ${item.quantity} = ${profit}`,
         );
       }
 
@@ -326,7 +326,7 @@ export default function SalesPage() {
     const storeBudget = Number(
       saleToDelete.store_read && "budget" in saleToDelete.store_read
         ? (saleToDelete.store_read as any).budget
-        : 0
+        : 0,
     );
     const saleAmount = Number(saleToDelete.total_amount ?? 0);
     // If deleting would make budget negative, show error
@@ -334,7 +334,7 @@ export default function SalesPage() {
       toast.error(
         t("messages.error.delete_budget_negative", {
           item: t("navigation.sales"),
-        }) || "Cannot delete: store budget would be negative."
+        }) || "Cannot delete: store budget would be negative.",
       );
       return;
     }
@@ -342,7 +342,7 @@ export default function SalesPage() {
     try {
       await deleteSale.mutateAsync(id);
       toast.success(
-        t("messages.success.deleted", { item: t("navigation.sales") })
+        t("messages.success.deleted", { item: t("navigation.sales") }),
       );
       // setIsDetailsModalOpen(false);
     } catch (error) {
@@ -420,19 +420,19 @@ export default function SalesPage() {
                     {(item.stock_read?.product_read as any)?.has_metr
                       ? `${item.quantity} метр`
                       : (item.stock_read?.product_read as any)?.has_shtuk
-                      ? `${item.quantity} штук`
-                      : `${item.quantity} ${
-                          item.selling_method === "Штук"
-                            ? t("table.pieces")
-                            : item.stock_read?.product_read?.measurement?.find(
-                                (m: {
-                                  for_sale: boolean;
-                                  measurement_read?: {
-                                    measurement_name: string;
-                                  };
-                                }) => m.for_sale
-                              )?.measurement_read?.measurement_name || ""
-                        }`}
+                        ? `${item.quantity} штук`
+                        : `${item.quantity} ${
+                            item.selling_method === "Штук"
+                              ? t("table.pieces")
+                              : item.stock_read?.product_read?.measurement?.find(
+                                  (m: {
+                                    for_sale: boolean;
+                                    measurement_read?: {
+                                      measurement_name: string;
+                                    };
+                                  }) => m.for_sale,
+                                )?.measurement_read?.measurement_name || ""
+                          }`}
                   </span>
                   в
                 </div>
@@ -477,7 +477,9 @@ export default function SalesPage() {
   };
 
   const [showPrintReceipt, setShowPrintReceipt] = useState(false);
-  const [selectedSaleForPrint, setSelectedSaleForPrint] = useState<Sale | null>(null);
+  const [selectedSaleForPrint, setSelectedSaleForPrint] = useState<Sale | null>(
+    null,
+  );
 
   const columns = [
     {
@@ -556,7 +558,7 @@ export default function SalesPage() {
                       (m: {
                         for_sale: boolean;
                         measurement_read?: { measurement_name: string };
-                      }) => m.for_sale
+                      }) => m.for_sale,
                     )?.measurement_read?.measurement_name || "";
               return `${item.quantity} ${measurement}`;
             }
@@ -642,8 +644,8 @@ export default function SalesPage() {
       ),
     },
     {
-      header: t('common.actions'),
-      accessorKey: 'actions',
+      header: t("common.actions"),
+      accessorKey: "actions",
       cell: (row: Sale) => (
         <div className="flex items-center gap-2">
           <Button
@@ -655,7 +657,7 @@ export default function SalesPage() {
             }}
           >
             <Printer className="w-4 h-4 mr-2" />
-            {t('common.print')}
+            {t("common.print")}
           </Button>
         </div>
       ),
@@ -687,32 +689,38 @@ export default function SalesPage() {
     const totalAmount = Number(sale.total_amount || 0);
     return {
       storeName: sale.store_read?.name || "",
-      // storeAddress: sale.store_read?.address || "",
+      storeAddress: sale.store_read?.address || "",
       storePhone: sale.store_read?.phone_number || "",
       cashierName: "Cashier", // Add proper cashier name if available
       receiptNumber: `#${sale.id}`,
-      date: sale.sold_date ? new Date(sale.sold_date).toLocaleDateString("ru-RU") : "-",
-      time: sale.sold_date ? new Date(sale.sold_date).toLocaleTimeString("ru-RU") : "-",
-      paymentMethod: sale.sale_payments?.map(p => p.payment_method).join(", ") || "",
+      date: sale.sold_date
+        ? new Date(sale.sold_date).toLocaleDateString("ru-RU")
+        : "-",
+      time: sale.sold_date
+        ? new Date(sale.sold_date).toLocaleTimeString("ru-RU")
+        : "-",
+      paymentMethod:
+        sale.sale_payments?.map((p) => p.payment_method).join(", ") || "",
       subtotal: Number(sale.total_amount),
       discount: 0, // Add if you have discount data
       tax: 0, // Add if you have tax data
       total: Number(sale.total_amount),
       change: 0, // Add if you track change amount
-      items: sale.sale_items?.map(item => {
-        // Calculate price per unit based on total amount divided by quantity
-        const quantity = Number(item.quantity || 0);
-        const total = totalAmount / (sale.sale_items?.length || 1); // Distribute total evenly if no individual prices
-        const price = quantity > 0 ? total / quantity : 0;
-        
-        return {
-          name: item.stock_read?.product_read?.product_name || "",
-          quantity: quantity,
-          price: price,
-          total: total
-        };
-      }) || [],
-      footerText:'СПАСИБО ЗА ПОКУПКУ!'
+      items:
+        sale.sale_items?.map((item) => {
+          // Calculate price per unit based on total amount divided by quantity
+          const quantity = Number(item.quantity || 0);
+          const total = totalAmount / (sale.sale_items?.length || 1); // Distribute total evenly if no individual prices
+          const price = quantity > 0 ? total / quantity : 0;
+
+          return {
+            name: item.stock_read?.product_read?.product_name || "",
+            quantity: quantity,
+            price: price,
+            total: total,
+          };
+        }) || [],
+      footerText: "СПАСИБО ЗА ПОКУПКУ!",
     };
   };
 
@@ -788,7 +796,7 @@ export default function SalesPage() {
                     <SelectItem key={store.id} value={store.id.toString()}>
                       {store.name}
                     </SelectItem>
-                  ) : null
+                  ) : null,
                 ) || null}
               </SelectContent>
             </Select>

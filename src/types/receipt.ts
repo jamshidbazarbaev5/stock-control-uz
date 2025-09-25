@@ -36,10 +36,10 @@ export interface ReceiptComponent {
     | "text"
     | "itemList"
     | "totals"
-    | "qrCode"
     | "footer"
     | "divider"
-    | "spacer";
+    | "spacer"
+    | "qrCode";
   data: ReceiptComponentData;
   styles: ReceiptComponentStyles;
   enabled: boolean;
@@ -88,8 +88,8 @@ export interface ReceiptPreviewData {
   total: number;
   paymentMethod: string;
   change: number;
-  qrCodeData: string;
   footerText: string;
+  qrCodeData?: string;
 }
 
 export const DEFAULT_RECEIPT_DATA: ReceiptPreviewData = {
@@ -126,8 +126,7 @@ export const DEFAULT_RECEIPT_DATA: ReceiptPreviewData = {
   total: 87.1,
   paymentMethod: "Cash",
   change: 12.9,
-  qrCodeData: "https://bondify.uz/receipt/R001234",
-  footerText: 'СПАСИБО ЗА ПОКУПКУ!.ЖДЁМ ВАС СНОВА'
+  footerText: "СПАСИБО ЗА ПОКУПКУ!.ЖДЁМ ВАС СНОВА",
 };
 
 export const DEFAULT_TEMPLATE: ReceiptTemplate = {
@@ -153,12 +152,12 @@ export const DEFAULT_TEMPLATE: ReceiptTemplate = {
         styles: {
           textAlign: "center",
           margin: "0 0 20px 0",
-          width: "150px",
+          width: "250px",
         },
         enabled: true,
         order: 0,
       },
-      
+
       {
         id: "store-info",
         type: "text",
@@ -244,18 +243,7 @@ export const DEFAULT_TEMPLATE: ReceiptTemplate = {
         enabled: true,
         order: 8,
       },
-      {
-        id: "qr-code",
-        type: "qrCode",
-        data: { qrData: "{{qrCodeData}}" },
-        styles: {
-          textAlign: "center",
-          margin: "20px 0",
-          width: "100px",
-        },
-        enabled: true,
-        order: 9,
-      },
+
       {
         id: "footer",
         type: "footer",
@@ -267,7 +255,7 @@ export const DEFAULT_TEMPLATE: ReceiptTemplate = {
           fontWeight: "bold",
         },
         enabled: true,
-        order: 10,
+        order: 9,
       },
     ],
   },

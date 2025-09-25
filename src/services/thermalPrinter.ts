@@ -4,6 +4,19 @@ import type {
   ReceiptComponent,
 } from "../types/receipt";
 
+// Web Serial API interface
+interface SerialPort {
+  open(options: { baudRate: number }): Promise<void>;
+  close(): Promise<void>;
+  writable: WritableStream<Uint8Array>;
+}
+
+interface NavigatorSerial {
+  serial: {
+    requestPort(): Promise<SerialPort>;
+  };
+}
+
 // ESC/POS Commands
 const ESC = "\x1B";
 const GS = "\x1D";
@@ -101,13 +114,42 @@ export class ThermalPrinterService {
     return `$${amount.toFixed(2)}`;
   }
 
-  private padString(
-    text: string,
-    width: number,
-    padChar: string = " ",
-  ): string {
-    if (text.length >= width) return text.substring(0, width);
-    return text + padChar.repeat(width - text.length);
+  // private padString(
+  //   text: string,
+  //   width: number,
+  //   padChar: string = " ",
+  // ): string {
+  //   if (text.length >= width) return text.substring(0, width);
+  //   return text + padChar.repeat(width - text.length);
+  // }
+
+  private lineWrap(text: string, width: number): string[] {
+    if (text.length <= width) return [text];
+
+    const words = text.split(" ");
+    const lines: string[] = [];
+    let currentLine = "";
+
+    for (const word of words) {
+      if ((currentLine + " " + word).length <= width) {
+        currentLine += (currentLine ? " " : "") + word;
+      } else {
+        if (currentLine) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          // Word is longer than width, force break
+          lines.push(word.substring(0, width));
+          currentLine = word.substring(width);
+        }
+      }
+    }
+
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+
+    return lines;
   }
 
   private justifyText(left: string, right: string, width: number = 32): string {
@@ -131,7 +173,7 @@ export class ThermalPrinterService {
       .replace(/\{\{time\}\}/g, data.time)
       .replace(/\{\{paymentMethod\}\}/g, data.paymentMethod)
       .replace(/\{\{change\}\}/g, data.change.toFixed(2))
-      .replace(/\{\{qrCodeData\}\}/g, data.qrCodeData)
+      .replace(/\{\{qrCodeData\}\}/g, data.qrCodeData || "")
       .replace(/\{\{footerText\}\}/g, data.footerText);
   }
 
@@ -194,7 +236,7 @@ export class ThermalPrinterService {
         this.processFooter(component, data);
         break;
       case "divider":
-        this.processDivider(component);
+        this.processDivider();
         break;
       case "spacer":
         this.processSpacer(component);
@@ -247,8 +289,8 @@ export class ThermalPrinterService {
     });
   }
 
-private processItemList(
-    component: ReceiptComponent,
+  private processItemList(
+    _component: ReceiptComponent,
     data: ReceiptPreviewData,
   ): void {
     const width = 32; // For your 58mm printer
@@ -256,10 +298,10 @@ private processItemList(
 
     data.items.forEach((item) => {
       const total = this.formatCurrency(item.total);
-      
+
       // Calculate the space available for the item name
       const availableNameWidth = width - total.length - 1; // -1 for a space buffer
-      
+
       // Wrap the item name to fit within that available space
       const wrappedNameLines = this.lineWrap(item.name, availableNameWidth);
 
@@ -279,7 +321,7 @@ private processItemList(
     this.addSeparatorLine(width, "-");
   }
   private processTotals(
-    component: ReceiptComponent,
+    _component: ReceiptComponent,
     data: ReceiptPreviewData,
   ): void {
     this.setBold(true);
@@ -315,7 +357,7 @@ private processItemList(
   ): void {
     // Most thermal printers support QR code printing via specific commands
     const qrData = this.replaceVariables(
-      component.data.qrData || data.qrCodeData,
+      component.data.qrData || data.qrCodeData || "",
       data,
     );
 
@@ -351,7 +393,7 @@ private processItemList(
     });
   }
 
-  private processDivider(component: ReceiptComponent): void {
+  private processDivider(): void {
     this.addSeparatorLine(32, "-");
   }
 
@@ -376,7 +418,7 @@ private processItemList(
       // This would require native USB access - typically handled by a desktop app or service
       if ("serial" in navigator) {
         // Web Serial API (Chrome only, requires user permission)
-        const port = await (navigator as any).serial.requestPort();
+        const port = await (navigator as NavigatorSerial).serial.requestPort();
         await port.open({ baudRate: 9600 });
 
         const writer = port.writable.getWriter();
@@ -444,7 +486,7 @@ private processItemList(
     }, 250);
   }
 
-  private generatePrintHTML(
+  public generatePrintHTML(
     template: ReceiptTemplate,
     data: ReceiptPreviewData,
   ): string {
@@ -468,8 +510,8 @@ private processItemList(
           }
 
           body {
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
+            font-family: ${template.style.styles.fontFamily || "'Courier New', monospace"};
+            font-size: ${template.style.styles.fontSize || "12px"};
             line-height: 1.2;
             width: 80mm;
             margin: 0;
@@ -481,14 +523,12 @@ private processItemList(
           .receipt-header {
             text-align: center;
             font-weight: bold;
-            font-size: 16px;
             margin-bottom: 5mm;
           }
 
           .receipt-logo {
             text-align: center;
             font-weight: bold;
-            font-size: 18px;
             margin-bottom: 3mm;
           }
 
@@ -499,7 +539,6 @@ private processItemList(
           .receipt-items table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 10px;
           }
 
           .receipt-items th,
@@ -508,7 +547,7 @@ private processItemList(
             text-align: left;
             vertical-align: top; /* Ensures alignment */
           }
-          
+
           .item-name {
             word-break: break-all; /* This forces long words to wrap */
           }
@@ -532,7 +571,6 @@ private processItemList(
 
           .receipt-total-final {
             font-weight: bold;
-            font-size: 14px;
             border-top: 2px solid black;
             padding-top: 2mm;
             margin-top: 2mm;
@@ -541,7 +579,6 @@ private processItemList(
           .receipt-footer {
             text-align: center;
             margin-top: 5mm;
-            font-size: 10px;
           }
 
           .receipt-divider {
@@ -589,39 +626,68 @@ private processItemList(
     const alignment = component.styles.textAlign || "left";
     const alignmentClass = `text-${alignment}`;
     const boldClass = component.styles.fontWeight === "bold" ? "bold" : "";
+    const fontSize = component.styles.fontSize || "12px";
+    const fontFamily =
+      component.styles.fontFamily || "'Courier New', monospace";
+    const fontWeight = component.styles.fontWeight || "normal";
+    const color = component.styles.color || "black";
+    const margin = component.styles.margin || "0";
+    const padding = component.styles.padding || "0";
+
+    const inlineStyles = `font-size: ${fontSize}; font-family: ${fontFamily}; font-weight: ${fontWeight}; color: ${color}; margin: ${margin}; padding: ${padding};`;
 
     switch (component.type) {
-      case "logo":
+      case "logo": {
+        const logoAlignmentClass = `text-${component.styles.textAlign || "center"}`;
+        // If an image was uploaded, render an <img> tag
+        if (component.data.url) {
+          return `
+            <div class="receipt-logo ${logoAlignmentClass}">
+              <img
+                src="${component.data.url}"
+                alt="Logo"
+                style="width: ${
+                  component.styles.width || "150px"
+                }; max-width: 100%; height: auto;"
+              />
+            </div>
+          `;
+        }
+        // Fallback to text if no image exists
         const logoText = this.replaceVariables(
           component.data.text || data.storeName,
           data,
         );
-        return `<div class="receipt-logo ${alignmentClass} ${boldClass}">${logoText}</div>`;
+        const logoBoldClass =
+          component.styles.fontWeight === "bold" ? "bold" : "";
+        return `<div class="receipt-logo ${logoAlignmentClass} ${logoBoldClass}" style="${inlineStyles}">${logoText}</div>`;
+      }
 
-      case "header":
+      case "header": {
         const headerText = this.replaceVariables(
           component.data.text || "",
           data,
         );
-        return `<div class="receipt-header ${alignmentClass} ${boldClass}">${headerText}</div>`;
+        return `<div class="receipt-header ${alignmentClass} ${boldClass}" style="${inlineStyles}">${headerText}</div>`;
+      }
 
-      case "text":
+      case "text": {
         const text = this.replaceVariables(component.data.text || "", data);
-        return `<div class="receipt-text ${alignmentClass} ${boldClass}">${text.replace(/\n/g, "<br>")}</div>`;
+        return `<div class="receipt-text ${alignmentClass} ${boldClass}" style="${inlineStyles}">${text.replace(/\n/g, "<br>")}</div>`;
+      }
 
-     // ... inside the generateComponentHTML method
+      // ... inside the generateComponentHTML method
 
       case "itemList": {
-        let itemsHTML =
-          '<div class="receipt-items"><table><thead><tr><th style="text-align: left;" colspan="2">Item</th><th style="text-align: right;" colspan="2">Total</th></tr></thead><tbody>';
-        
+        let itemsHTML = `<div class="receipt-items" style="${inlineStyles}"><table><thead><tr><th style="text-align: left;" colspan="2">Item</th><th style="text-align: right;" colspan="2">Total</th></tr></thead><tbody>`;
+
         data.items.forEach((item) => {
           // Row 1: The item name, spanning the full width
           itemsHTML += `<tr><td colspan="4" class="item-name bold">${item.name}</td></tr>`;
 
           // Row 2: Details on the left, total on the right
           const details = `${item.quantity} x ${this.formatCurrency(item.price)}`;
-          const total = this.formatCurrency(item.total);
+          // const total = this.formatCurrency(item.total);
 
           itemsHTML += `<tr>
             <td colspan="2" class="bold" style="text-align: left; padding-left: 8px;">${details}</td>
@@ -632,61 +698,62 @@ private processItemList(
         return itemsHTML;
       }
 
-    // ... inside the generateComponentHTML method in thermalPrinterService.ts
+      // ... inside the generateComponentHTML method in thermalPrinterService.ts
 
-case "totals": {
-  // Use a <pre> tag to ensure whitespace is respected, which is key for our manual alignment.
-  // We'll also apply bold styling directly here.
-  let totalsHTML =
-    '<div class="receipt-totals"><pre style="font-family: \'Courier New\', monospace; font-weight: bold; font-size: 12px; margin: 0; padding: 0;">';
+      case "totals": {
+        // Use a <pre> tag to ensure whitespace is respected, which is key for our manual alignment.
+        // We'll also apply bold styling directly here.
+        let totalsHTML = `<div class="receipt-totals"><pre style="font-family: ${fontFamily}; font-weight: bold; font-size: ${fontSize}; margin: 0; padding: 0;">`;
 
-  // Character width for 80mm paper is typically around 42.
-  const printWidth = 32;
+        // Character width for 80mm paper is typically around 42.
+        const printWidth = 32;
 
-  // Use the justifyText helper to create each line with perfect alignment.
-  totalsHTML +=
-    this.justifyText(
-      "Subtotal:",
-      this.formatCurrency(data.subtotal),
-      printWidth,
-    ) + "\n";
+        // Use the justifyText helper to create each line with perfect alignment.
+        totalsHTML +=
+          this.justifyText(
+            "Subtotal:",
+            this.formatCurrency(data.subtotal),
+            printWidth,
+          ) + "\n";
 
-  if (data.discount > 0) {
-    totalsHTML +=
-      this.justifyText(
-        "Discount:",
-        `-${this.formatCurrency(data.discount)}`,
-        printWidth,
-      ) + "\n";
-  }
+        if (data.discount > 0) {
+          totalsHTML +=
+            this.justifyText(
+              "Discount:",
+              `-${this.formatCurrency(data.discount)}`,
+              printWidth,
+            ) + "\n";
+        }
 
-  totalsHTML +=
-    this.justifyText("Tax:", this.formatCurrency(data.tax), printWidth) + "\n";
+        totalsHTML +=
+          this.justifyText("Tax:", this.formatCurrency(data.tax), printWidth) +
+          "\n";
 
-  // Add a separator line for clarity.
-  totalsHTML += "=".repeat(printWidth) + "\n";
+        // Add a separator line for clarity.
+        totalsHTML += "=".repeat(printWidth) + "\n";
 
-  totalsHTML += this.justifyText(
-    "TOTAL:",
-    this.formatCurrency(data.total),
-    printWidth,
-  );
+        totalsHTML += this.justifyText(
+          "TOTAL:",
+          this.formatCurrency(data.total),
+          printWidth,
+        );
 
-  totalsHTML += "</pre></div>";
-  return totalsHTML;
-}
+        totalsHTML += "</pre></div>";
+        return totalsHTML;
+      }
 
-// ... rest of the method
+      // ... rest of the method
 
       case "qrCode":
         return `<div class="${alignmentClass}"><div style="width: 100px; height: 100px; border: 1px solid black; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 8px;">QR CODE</div></div>`;
 
-      case "footer":
+      case "footer": {
         const footerText = this.replaceVariables(
           component.data.text || "",
           data,
         );
-        return `<div class="receipt-footer ${alignmentClass} ${boldClass}">${footerText.replace(/\n/g, "<br>")}</div>`;
+        return `<div class="receipt-footer ${alignmentClass} ${boldClass}" style="${inlineStyles}">${footerText.replace(/\n/g, "<br>")}</div>`;
+      }
 
       case "divider":
         return '<div class="receipt-divider"></div>';
@@ -729,3 +796,78 @@ case "totals": {
 }
 
 export default new ThermalPrinterService();
+
+// Test function to verify font size handling
+export function testFontSizeHandling() {
+  const testTemplate: ReceiptTemplate = {
+    id: "test",
+    name: "Test Template",
+    style: {
+      styles: {
+        fontSize: "14px",
+        fontFamily: "Arial, sans-serif",
+      },
+      components: [
+        {
+          id: "test-header",
+          type: "header",
+          order: 0,
+          enabled: true,
+          data: { text: "Test Header" },
+          styles: {
+            fontSize: "18px",
+            fontWeight: "bold",
+            textAlign: "center",
+          },
+        },
+        {
+          id: "test-text",
+          type: "text",
+          order: 1,
+          enabled: true,
+          data: { text: "Test text with custom font size" },
+          styles: {
+            fontSize: "16px",
+            fontWeight: "normal",
+            textAlign: "left",
+          },
+        },
+      ],
+    },
+  };
+
+  const testData: ReceiptPreviewData = {
+    storeName: "Test Store",
+    storeAddress: "123 Test St",
+    storePhone: "555-0123",
+    cashierName: "Test Cashier",
+    receiptNumber: "TEST-001",
+    date: "2024-01-01",
+    time: "12:00",
+    items: [],
+    subtotal: 0,
+    discount: 0,
+    tax: 0,
+    total: 0,
+    paymentMethod: "Cash",
+    change: 0,
+    qrCodeData: "test",
+    footerText: "Thank you!",
+  };
+
+  const service = new ThermalPrinterService();
+  const html = service.generatePrintHTML(testTemplate, testData);
+
+  console.log("Generated HTML with font sizes:", html);
+
+  // Check if font sizes are applied
+  const hasHeaderFontSize = html.includes("font-size: 18px");
+  const hasTextFontSize = html.includes("font-size: 16px");
+  const hasGlobalFontSize = html.includes("font-size: 14px");
+
+  console.log("Header font size applied:", hasHeaderFontSize);
+  console.log("Text font size applied:", hasTextFontSize);
+  console.log("Global font size applied:", hasGlobalFontSize);
+
+  return { hasHeaderFontSize, hasTextFontSize, hasGlobalFontSize };
+}

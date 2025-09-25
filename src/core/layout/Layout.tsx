@@ -151,6 +151,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         label: t("navigation.transfers"),
         href: "/transfers",
       },
+       {
+        icon: ArrowLeftRight,
+        label: t("navigation.check"),
+        href: "/receipt-designer",
+      },
       { icon: Package, label: t("navigation.stocks"), href: "/stock" },
       {
         icon: Package,

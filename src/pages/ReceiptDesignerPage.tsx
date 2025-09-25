@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import ReceiptDesigner from "../components/receipt-designer/ReceiptDesigner";
 import { DEFAULT_TEMPLATE, DEFAULT_RECEIPT_DATA } from "../types/receipt";
 import type { ReceiptTemplate } from "../types/receipt";
 
 const ReceiptDesignerPage: React.FC = () => {
+  const { t } = useTranslation();
   const [, setSavedTemplates] = useState<ReceiptTemplate[]>([]);
 
   const handleSaveTemplate = (template: ReceiptTemplate) => {
@@ -22,7 +24,7 @@ const ReceiptDesignerPage: React.FC = () => {
       }
     });
 
-    toast.success("Template saved successfully!");
+    toast.success(t("receiptDesigner.templateSavedSuccessfully"));
     console.log("Template saved:", template);
   };
 
