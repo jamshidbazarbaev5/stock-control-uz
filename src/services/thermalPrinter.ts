@@ -799,7 +799,7 @@ export default new ThermalPrinterService();
 
 // Test function to verify font size handling
 export function testFontSizeHandling() {
-  const testTemplate: ReceiptTemplate = {
+  const testTemplate: any = {
     id: "test",
     name: "Test Template",
     style: {
