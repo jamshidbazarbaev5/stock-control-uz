@@ -12,7 +12,6 @@ interface TokenResponse {
   refresh: string;
 }
 
-
 // Constants
 const BASE_URL = 'https://demo.bondify.uz/api/v1/'
 const TOKEN_ENDPOINT = 'token/';
@@ -56,7 +55,7 @@ export const login = async (credentials: LoginCredentials): Promise<TokenRespons
 export const refreshToken = async (): Promise<string> => {
   const refresh = getRefreshToken();
   if (!refresh) throw new Error('No refresh token available');
-  
+
   const response = await authApi.post<{ access: string }>(REFRESH_ENDPOINT, { refresh });
   localStorage.setItem(ACCESS_TOKEN_KEY, response.data.access);
   return response.data.access;
@@ -78,7 +77,7 @@ export const logout = (): void => {
 // React Query hooks
 export const useLogin = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (credentials: LoginCredentials) => login(credentials),
     onSuccess: () => {
@@ -89,7 +88,7 @@ export const useLogin = () => {
 
 export const useLogout = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: () => {
       logout();

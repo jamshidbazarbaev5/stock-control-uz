@@ -69,6 +69,7 @@ import LabelSizesPage from "./core/pages/LabelSizesPage";
 import CreateLabelSize from "./core/pages/create-label-size";
 import PrintBarcodePage from "./core/pages/PrintBarcodePage";
 import POSPage from "./core/pages/POSPage";
+import ProtectedRoute from "@/components/ProtectedRoute.tsx";
 // import CreateSalePos from "./core/pages/create-sale-2";
 
 const queryClient = new QueryClient();
@@ -83,13 +84,15 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
 
             {/* Protected routes wrapped in Layout */}
-            <Route
-              element={
-                <Layout>
-                  <Outlet />
-                </Layout>
-              }
-            >
+              <Route
+                  element={
+                      <ProtectedRoute>
+                          <Layout>
+                              <Outlet />
+                          </Layout>
+                      </ProtectedRoute>
+                  }
+              >
               {/* Routes accessible only by Администратор */}
               <Route
                 path="/create-user"

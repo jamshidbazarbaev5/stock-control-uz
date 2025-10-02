@@ -77,7 +77,7 @@
       setIsSaving(true);
 
       try {
-        const response = await api.post("/receipt/template", template);
+        const response = await api.post("/receipt/template/", template);
 
         const result = await response.data;
         toast.success(t("receiptDesigner.templateSavedSuccessfully"));

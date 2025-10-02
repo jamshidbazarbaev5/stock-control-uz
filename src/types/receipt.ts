@@ -259,7 +259,7 @@ export const DEFAULT_TEMPLATE: ReceiptTemplate = {
       },
     ],
   },
-  is_used: true,
+  is_used: false,
 };
 
 export type ComponentType = ReceiptComponent["type"];

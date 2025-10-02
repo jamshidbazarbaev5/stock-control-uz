@@ -5,8 +5,6 @@ import {
   Menu,
   ExternalLink,
   LogOut,
-  Minus,
-  Plus,
   X,
   BarChart3,
   Search,
@@ -60,6 +58,9 @@ interface ExtendedUser extends User {
 
 const POSInterface = () => {
   const [currentInput, setCurrentInput] = useState("");
+  const [previousInput, setPreviousInput] = useState("");
+  const [operation, setOperation] = useState<string>("");
+  const [waitingForNewValue, setWaitingForNewValue] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [stocks, setStocks] = useState<Stock[]>([]);
@@ -70,7 +71,6 @@ const POSInterface = () => {
 
   // Stock selection state
   const [selectedStocks, setSelectedStocks] = useState<Set<number>>(new Set());
-  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
 
   // User selection modal state
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -135,38 +135,90 @@ const POSInterface = () => {
   }, [stocks, searchTerm]);
 
   const handleNumberClick = (num: string) => {
-    if (focusedProductIndex >= 0) {
-      // If a product is focused, update its quantity
-      const newInput = currentInput + num;
-      const quantity = parseFloat(newInput.replace(",", "."));
-      if (quantity > 0) {
-        const product = products[focusedProductIndex];
-        updateProductQuantity(product.id, quantity);
-      }
-      setCurrentInput(newInput);
+    // Pure calculator behavior
+    if (waitingForNewValue) {
+      setCurrentInput(num);
+      setWaitingForNewValue(false);
     } else {
-      // Normal calculator behavior
       setCurrentInput((prev) => prev + num);
     }
   };
 
   const handleBackspace = () => {
     setCurrentInput((prev) => prev.slice(0, -1));
+    setWaitingForNewValue(false);
   };
 
-  const handleEnterQuantity = () => {
-    if (focusedProductIndex >= 0 && currentInput) {
-      const quantity = parseFloat(currentInput.replace(",", "."));
-      if (quantity > 0) {
-        const product = products[focusedProductIndex];
-        updateProductQuantity(product.id, quantity);
+  const handleOperation = (nextOperation: string) => {
+    const inputValue = parseFloat(currentInput.replace(",", ".")) || 0;
+
+    if (previousInput === "" || waitingForNewValue) {
+      setPreviousInput(inputValue.toString());
+    } else if (operation) {
+      const currentValue = parseFloat(currentInput.replace(",", ".")) || 0;
+      const previousValue = parseFloat(previousInput) || 0;
+      let result = 0;
+
+      switch (operation) {
+        case "+":
+          result = previousValue + currentValue;
+          break;
+        case "-":
+          result = previousValue - currentValue;
+          break;
+        case "*":
+          result = previousValue * currentValue;
+          break;
+        case "/":
+          result = currentValue !== 0 ? previousValue / currentValue : 0;
+          break;
+        default:
+          return;
       }
+
+      setPreviousInput(result.toString());
+      setCurrentInput(result.toString());
     }
-    setCurrentInput("");
+
+    setWaitingForNewValue(true);
+    setOperation(nextOperation);
+  };
+
+  const handleEquals = () => {
+    const inputValue = parseFloat(currentInput.replace(",", ".")) || 0;
+    const previousValue = parseFloat(previousInput) || 0;
+    let result = 0;
+
+    if (operation && previousInput !== "") {
+      switch (operation) {
+        case "+":
+          result = previousValue + inputValue;
+          break;
+        case "-":
+          result = previousValue - inputValue;
+          break;
+        case "*":
+          result = previousValue * inputValue;
+          break;
+        case "/":
+          result = inputValue !== 0 ? previousValue / inputValue : 0;
+          break;
+        default:
+          return;
+      }
+
+      setCurrentInput(result.toString());
+      setPreviousInput("");
+      setOperation("");
+      setWaitingForNewValue(true);
+    }
   };
 
   const handleClearInput = () => {
     setCurrentInput("");
+    setPreviousInput("");
+    setOperation("");
+    setWaitingForNewValue(false);
   };
 
   const handleSearchClick = () => {
@@ -183,19 +235,19 @@ const POSInterface = () => {
   };
 
   const handleProductSelect = (stock: Stock) => {
-    if (isMultiSelectMode) {
-      // Toggle selection in multi-select mode
-      setSelectedStocks((prev) => {
-        const newSelection = new Set(prev);
-        if (newSelection.has(stock.id!)) {
-          newSelection.delete(stock.id!);
-        } else {
-          newSelection.add(stock.id!);
-        }
-        return newSelection;
-      });
-    } else {
-      // Single select mode - add to cart immediately
+    // Always use multi-select behavior
+    setSelectedStocks((prev) => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(stock.id!)) {
+        newSelection.delete(stock.id!);
+      } else {
+        newSelection.add(stock.id!);
+      }
+      return newSelection;
+    });
+
+    // Also add to cart immediately for single selection
+    if (!selectedStocks.has(stock.id!)) {
       if (stock.product_read?.product_name && stock.selling_price && stock.id) {
         const price = parseFloat(stock.selling_price);
         const newProduct: ProductInCart = {
@@ -225,7 +277,6 @@ const POSInterface = () => {
           setProducts((prev) => [...prev, newProduct]);
         }
       }
-      setIsSearchModalOpen(false);
     }
     console.log("Selected product:", stock);
   };
@@ -272,7 +323,6 @@ const POSInterface = () => {
 
     // Reset selection state
     setSelectedStocks(new Set());
-    setIsMultiSelectMode(false);
     setIsSearchModalOpen(false);
   };
 
@@ -369,22 +419,6 @@ const POSInterface = () => {
   }, [products.length, focusedProductIndex]);
 
   // Handle bottom button actions
-  const handleBottomPlusClick = () => {
-    if (focusedProductIndex >= 0) {
-      const product = products[focusedProductIndex];
-      updateProductQuantity(product.id, product.quantity + 1);
-    }
-  };
-
-  const handleBottomMinusClick = () => {
-    if (focusedProductIndex >= 0) {
-      const product = products[focusedProductIndex];
-      const newQuantity = product.quantity - 1;
-      if (newQuantity > 0) {
-        updateProductQuantity(product.id, newQuantity);
-      }
-    }
-  };
 
   const handleBottomXClick = () => {
     if (focusedProductIndex >= 0) {
@@ -430,7 +464,45 @@ const POSInterface = () => {
               </div>
               <div className="text-gray-600 text-lg">%</div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleSearchClick}
+                className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
+                title="Поиск товаров"
+              >
+                <Search className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleUserClick}
+                className={`p-2 rounded-lg transition-colors flex items-center justify-center relative ${
+                  selectedSeller || selectedClient
+                    ? "bg-blue-500 text-white hover:bg-blue-600"
+                    : "bg-green-500 text-white hover:bg-green-600"
+                }`}
+                title="Выбор пользователя"
+              >
+                <UserIcon className="w-5 h-5" />
+                {(selectedSeller || selectedClient) && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
+                )}
+              </button>
+
+              <button
+                onClick={handleBottomDownClick}
+                disabled={products.length === 0}
+                className="bg-indigo-500 text-white p-2 rounded-lg hover:bg-indigo-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
+                title="Вниз по списку"
+              >
+                <ChevronDown className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleBottomUpClick}
+                disabled={products.length === 0}
+                className="bg-teal-500 text-white p-2 rounded-lg hover:bg-teal-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
+                title="Вверх по списку"
+              >
+                <ChevronUp className="w-5 h-5" />
+              </button>
               <Menu className="w-6 h-6 text-gray-700" />
               <ExternalLink className="w-6 h-6 text-gray-700" />
               <LogOut className="w-6 h-6 text-gray-700" />
@@ -572,12 +644,12 @@ const POSInterface = () => {
                     <tr
                       key={product.id}
                       className={`${
-                        index % 2 === 0 ? "bg-gray-50" : "bg-white"
-                      } ${
                         index === focusedProductIndex
-                          ? "ring-2 ring-blue-500 bg-blue-50"
-                          : ""
-                      } transition-all duration-200`}
+                          ? "bg-blue-100 border-l-4 border-blue-500"
+                          : index % 2 === 0
+                            ? "bg-gray-50"
+                            : "bg-white"
+                      } transition-all duration-200 hover:bg-gray-100`}
                     >
                       <td className="p-4 text-gray-900">{index + 1}</td>
                       <td className="p-4 font-medium text-gray-900">
@@ -699,67 +771,16 @@ const POSInterface = () => {
           </div>
         </div>
 
-        {/* Bottom Actions */}
-        <div className="p-6 border-t border-gray-200 bg-white">
-          <div className="flex space-x-3">
+        {/* Bottom Action Bar */}
+        <div className="p-6 border-t border-gray-200">
+          <div className="flex space-x-4">
             <button
               onClick={handleBottomXClick}
               disabled={focusedProductIndex === -1}
               className="flex-1 bg-red-500 text-white py-4 rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
-              title="Remove focused product (Delete/Backspace)"
+              title="Удалить выбранный товар"
             >
               <X className="w-6 h-6" />
-            </button>
-            <button
-              onClick={handleSearchClick}
-              className="flex-1 bg-blue-500 text-white py-4 rounded-xl hover:bg-blue-600 transition-colors flex items-center justify-center"
-            >
-              <Search className="w-6 h-6" />
-            </button>
-            <button
-              onClick={handleUserClick}
-              className={`flex-1 py-4 rounded-xl transition-colors flex items-center justify-center relative ${
-                selectedSeller || selectedClient
-                  ? "bg-blue-500 text-white hover:bg-blue-600"
-                  : "bg-green-500 text-white hover:bg-green-600"
-              }`}
-            >
-              <UserIcon className="w-6 h-6" />
-              {(selectedSeller || selectedClient) && (
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
-              )}
-            </button>
-            <button
-              onClick={handleBottomMinusClick}
-              disabled={focusedProductIndex === -1}
-              className="flex-1 bg-gray-500 text-white py-4 rounded-xl hover:bg-gray-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
-              title="Decrease quantity of focused product (-)"
-            >
-              <Minus className="w-6 h-6" />
-            </button>
-            <button
-              onClick={handleBottomPlusClick}
-              disabled={focusedProductIndex === -1}
-              className="flex-1 bg-purple-500 text-white py-4 rounded-xl hover:bg-purple-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
-              title="Increase quantity of focused product (+)"
-            >
-              <Plus className="w-6 h-6" />
-            </button>
-            <button
-              onClick={handleBottomDownClick}
-              disabled={products.length === 0}
-              className="flex-1 bg-indigo-500 text-white py-4 rounded-xl hover:bg-indigo-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
-              title="Navigate down (Arrow Down)"
-            >
-              <ChevronDown className="w-6 h-6" />
-            </button>
-            <button
-              onClick={handleBottomUpClick}
-              disabled={products.length === 0}
-              className="flex-1 bg-teal-500 text-white py-4 rounded-xl hover:bg-teal-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
-              title="Navigate up (Arrow Up)"
-            >
-              <ChevronUp className="w-6 h-6" />
             </button>
           </div>
         </div>
@@ -770,77 +791,41 @@ const POSInterface = () => {
         {/* Calculator Display */}
         <div className="p-6 border-b border-gray-200">
           <div className="bg-gray-100 p-4 rounded-xl mb-4">
+            {operation && previousInput && (
+              <div className="text-right text-lg text-gray-600 font-mono">
+                {previousInput} {operation}
+              </div>
+            )}
             <div className="text-right text-3xl font-mono text-gray-900">
               {currentInput || "0"}
             </div>
-            {focusedProductIndex >= 0 && (
-              <div className="text-right text-sm text-blue-600 mt-2">
-                Выбран: {products[focusedProductIndex].name}
-              </div>
-            )}
           </div>
-          {focusedProductIndex >= 0 && currentInput && (
-            <div className="flex space-x-2">
-              <button
-                onClick={handleEnterQuantity}
-                className="flex-1 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
-              >
-                Применить
-              </button>
-              <button
-                onClick={handleClearInput}
-                className="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm font-medium"
-              >
-                Очистить
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Calculator Keypad */}
         <div className="flex-1 p-6">
-          <div className="grid grid-cols-3 gap-4 h-full">
+          <div className="grid grid-cols-4 gap-4 h-full">
             {/* Row 1 */}
             <button
-              onClick={() => handleNumberClick("1")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+              onClick={handleClearInput}
+              className="bg-orange-100 hover:bg-orange-200 rounded-2xl transition-colors h-16 flex items-center justify-center col-span-2"
             >
-              1
+              <span className="text-lg font-bold text-orange-600">CLEAR</span>
             </button>
             <button
-              onClick={() => handleNumberClick("2")}
+              onClick={handleBackspace}
               className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
             >
-              2
+              <X className="w-6 h-6" />
             </button>
             <button
-              onClick={() => handleNumberClick("3")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+              onClick={() => handleOperation("/")}
+              className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-blue-600"
             >
-              3
+              ÷
             </button>
 
             {/* Row 2 */}
-            <button
-              onClick={() => handleNumberClick("4")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
-            >
-              4
-            </button>
-            <button
-              onClick={() => handleNumberClick("5")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
-            >
-              5
-            </button>
-            <button
-              onClick={() => handleNumberClick("6")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
-            >
-              6
-            </button>
-
-            {/* Row 3 */}
             <button
               onClick={() => handleNumberClick("7")}
               className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
@@ -859,8 +844,72 @@ const POSInterface = () => {
             >
               9
             </button>
+            <button
+              onClick={() => handleOperation("*")}
+              className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-blue-600"
+            >
+              ×
+            </button>
+
+            {/* Row 3 */}
+            <button
+              onClick={() => handleNumberClick("4")}
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+            >
+              4
+            </button>
+            <button
+              onClick={() => handleNumberClick("5")}
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+            >
+              5
+            </button>
+            <button
+              onClick={() => handleNumberClick("6")}
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+            >
+              6
+            </button>
+            <button
+              onClick={() => handleOperation("-")}
+              className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-blue-600"
+            >
+              −
+            </button>
 
             {/* Row 4 */}
+            <button
+              onClick={() => handleNumberClick("1")}
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+            >
+              1
+            </button>
+            <button
+              onClick={() => handleNumberClick("2")}
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+            >
+              2
+            </button>
+            <button
+              onClick={() => handleNumberClick("3")}
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+            >
+              3
+            </button>
+            <button
+              onClick={() => handleOperation("+")}
+              className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-blue-600"
+            >
+              +
+            </button>
+
+            {/* Row 5 */}
+            <button
+              onClick={() => handleNumberClick("0")}
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900 col-span-2"
+            >
+              0
+            </button>
             <button
               onClick={() => handleNumberClick(",")}
               className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
@@ -868,34 +917,23 @@ const POSInterface = () => {
               ,
             </button>
             <button
-              onClick={() => handleNumberClick("0")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+              onClick={handleEquals}
+              className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-16 flex items-center justify-center"
             >
-              0
-            </button>
-            <button
-              onClick={handleBackspace}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
-            >
-              <X className="w-6 h-6" />
+              <span className="text-2xl font-bold text-green-600">=</span>
             </button>
 
-            {/* Row 5 - Function buttons */}
+            {/* Row 6 - PAY button */}
             <button
-              onClick={handleEnterQuantity}
-              disabled={!currentInput || focusedProductIndex === -1}
-              className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-16 flex items-center justify-center disabled:bg-gray-200 disabled:cursor-not-allowed"
+              onClick={() => {
+                /* TODO: Implement payment logic */
+              }}
+              disabled={products.length === 0}
+              className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-16 flex items-center justify-center disabled:bg-gray-200 disabled:cursor-not-allowed col-span-4"
             >
-              <span className="text-lg font-bold text-green-600">ENTER</span>
-            </button>
-            <button
-              onClick={handleClearInput}
-              className="bg-orange-100 hover:bg-orange-200 rounded-2xl transition-colors h-16 flex items-center justify-center"
-            >
-              <span className="text-lg font-bold text-orange-600">CLEAR</span>
-            </button>
-            <button className="bg-blue-100 hover:bg-blue-200 rounded-2xl transition-colors h-16 flex items-center justify-center">
-              <span className="text-2xl font-bold text-blue-600">¥</span>
+              <span className="text-lg font-bold text-green-600">
+                PAY - {total.toLocaleString()} сум
+              </span>
             </button>
           </div>
         </div>
@@ -946,30 +984,17 @@ const POSInterface = () => {
               />
             </div>
 
-            {/* Multi-select controls */}
+            {/* Selection info and controls */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <button
-                  onClick={() => {
-                    setIsMultiSelectMode(!isMultiSelectMode);
-                    setSelectedStocks(new Set());
-                  }}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    isMultiSelectMode
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  }`}
-                >
-                  {isMultiSelectMode ? "Отменить выбор" : "Множественный выбор"}
-                </button>
-                {isMultiSelectMode && selectedStocks.size > 0 && (
+                {selectedStocks.size > 0 && (
                   <span className="text-sm text-gray-600">
                     Выбрано: {selectedStocks.size} товар(ов)
                   </span>
                 )}
               </div>
 
-              {isMultiSelectMode && selectedStocks.size > 0 && (
+              {selectedStocks.size > 0 && (
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setSelectedStocks(new Set())}
@@ -994,31 +1019,27 @@ const POSInterface = () => {
               <table className="w-full">
                 <thead className="bg-gray-100 sticky top-0 border-b border-gray-200">
                   <tr>
-                    {isMultiSelectMode && (
-                      <th className="text-center p-4 font-semibold text-gray-700 w-16">
-                        <input
-                          type="checkbox"
-                          checked={
-                            filteredStocks.length > 0 &&
-                            filteredStocks.every((stock) =>
-                              selectedStocks.has(stock.id!),
-                            )
+                    <th className="text-center p-4 font-semibold text-gray-700 w-16">
+                      <input
+                        type="checkbox"
+                        checked={
+                          filteredStocks.length > 0 &&
+                          filteredStocks.every((stock) =>
+                            selectedStocks.has(stock.id!),
+                          )
+                        }
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedStocks(
+                              new Set(filteredStocks.map((s) => s.id!)),
+                            );
+                          } else {
+                            setSelectedStocks(new Set());
                           }
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedStocks(
-                                new Set(
-                                  filteredStocks.map((stock) => stock.id!),
-                                ),
-                              );
-                            } else {
-                              setSelectedStocks(new Set());
-                            }
-                          }}
-                          className="w-4 h-4 rounded border-gray-300"
-                        />
-                      </th>
-                    )}
+                        }}
+                        className="w-4 h-4 rounded border-gray-300"
+                      />
+                    </th>
                     <th className="text-left p-4 font-semibold text-gray-700 w-16">
                       №
                     </th>
@@ -1042,10 +1063,7 @@ const POSInterface = () => {
                 <tbody>
                   {loadingStocks ? (
                     <tr>
-                      <td
-                        colSpan={isMultiSelectMode ? 7 : 6}
-                        className="text-center p-8 text-gray-500"
-                      >
+                      <td colSpan={7} className="text-center p-8 text-gray-500">
                         <div className="flex items-center justify-center space-x-2">
                           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                           <span>Загрузка товаров...</span>
@@ -1054,10 +1072,7 @@ const POSInterface = () => {
                     </tr>
                   ) : filteredStocks.length === 0 ? (
                     <tr>
-                      <td
-                        colSpan={isMultiSelectMode ? 7 : 6}
-                        className="text-center p-8 text-gray-500"
-                      >
+                      <td colSpan={7} className="text-center p-8 text-gray-500">
                         {searchTerm
                           ? "Товары не найдены"
                           : "Начните ввод для поиска товаров"}
@@ -1069,28 +1084,28 @@ const POSInterface = () => {
                         key={stock.id}
                         className={`${
                           index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                        } ${selectedStocks.has(stock.id!) ? "bg-blue-100" : ""} hover:bg-blue-50 transition-colors cursor-pointer border-b border-gray-100`}
-                        onClick={() => handleProductSelect(stock)}
+                        } ${selectedStocks.has(stock.id!) ? "bg-blue-100" : ""} hover:bg-blue-50 transition-colors border-b border-gray-100`}
                       >
-                        {isMultiSelectMode && (
-                          <td className="p-4 text-center">
-                            <input
-                              type="checkbox"
-                              checked={selectedStocks.has(stock.id!)}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                handleProductSelect(stock);
-                              }}
-                              className="w-4 h-4 rounded border-gray-300"
-                            />
-                          </td>
-                        )}
+                        <td className="p-4 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedStocks.has(stock.id!)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleProductSelect(stock);
+                            }}
+                            className="w-4 h-4 rounded border-gray-300"
+                          />
+                        </td>
                         <td className="p-4 text-gray-900 font-medium">
                           {index + 1}
                         </td>
-                        <td className="p-4">
+                        <td
+                          className="p-4 cursor-pointer"
+                          onClick={() => handleProductSelect(stock)}
+                        >
                           <div>
-                            <div className="font-medium text-gray-900 text-sm">
+                            <div className="font-medium text-gray-900 text-sm hover:text-blue-600 transition-colors">
                               {stock.product_read?.product_name || "N/A"}
                             </div>
                             <div className="text-xs text-gray-500 mt-1">

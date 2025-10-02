@@ -2,39 +2,103 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import ReceiptDesigner from "../components/receipt-designer/ReceiptDesigner";
+import TemplateManager from "../components/receipt-designer/TemplateManager";
 import { DEFAULT_TEMPLATE, DEFAULT_RECEIPT_DATA } from "../types/receipt";
 import type { ReceiptTemplate } from "../types/receipt";
+import { receiptTemplateService } from "../services/receiptTemplateService";
+import { Button } from "../components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 const ReceiptDesignerPage: React.FC = () => {
   const { t } = useTranslation();
-  const [, setSavedTemplates] = useState<ReceiptTemplate[]>([]);
+  const [currentView, setCurrentView] = useState<"manager" | "designer">(
+    "manager",
+  );
+  const [currentTemplate, setCurrentTemplate] =
+    useState<ReceiptTemplate>(DEFAULT_TEMPLATE);
 
-  const handleSaveTemplate = (template: ReceiptTemplate) => {
-    // In a real app, this would be handled by the backend
-    setSavedTemplates((prev) => {
-      const existingIndex = prev.findIndex((t) => t.id === template.id);
-      if (existingIndex >= 0) {
+  const handleSaveTemplate = async (template: ReceiptTemplate) => {
+    try {
+      const apiTemplate =
+        receiptTemplateService.convertInternalTemplateToApi(template);
+
+      if (template.id && template.id !== "default") {
         // Update existing template
-        const updated = [...prev];
-        updated[existingIndex] = template;
-        return updated;
+        await receiptTemplateService.updateTemplate(
+          parseInt(template.id),
+          apiTemplate,
+        );
+        toast.success(t("receiptDesigner.templateUpdatedSuccessfully"));
       } else {
-        // Add new template
-        return [...prev, { ...template, id: Date.now().toString() }];
+        // Create new template
+        await receiptTemplateService.saveTemplate(apiTemplate);
+        toast.success(t("receiptDesigner.templateSavedSuccessfully"));
       }
-    });
 
-    toast.success(t("receiptDesigner.templateSavedSuccessfully"));
-    console.log("Template saved:", template);
+      // Go back to manager view after saving
+      setCurrentView("manager");
+    } catch (error) {
+      toast.error(t("receiptDesigner.errorSavingTemplate"));
+      console.error("Error saving template:", error);
+    }
+  };
+
+  const handleSelectTemplate = (template: ReceiptTemplate) => {
+    setCurrentTemplate(template);
+    setCurrentView("designer");
+  };
+
+  const handleCreateNew = () => {
+    setCurrentTemplate({
+      ...DEFAULT_TEMPLATE,
+      id: undefined,
+      name: t("receiptDesigner.newTemplate"),
+    });
+    setCurrentView("designer");
+  };
+
+  const handleBackToManager = () => {
+    setCurrentView("manager");
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ReceiptDesigner
-        initialTemplate={DEFAULT_TEMPLATE}
-        previewData={DEFAULT_RECEIPT_DATA}
-        onSave={handleSaveTemplate}
-      />
+      {currentView === "manager" ? (
+        <TemplateManager
+          onSelectTemplate={handleSelectTemplate}
+          onCreateNew={handleCreateNew}
+          selectedTemplateId={currentTemplate.id}
+        />
+      ) : (
+        <div>
+          <div className="bg-white border-b px-6 py-4">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBackToManager}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft size={16} />
+                {t("receiptDesigner.backToTemplates")}
+              </Button>
+              <div>
+                <h1 className="text-xl font-semibold">
+                  {currentTemplate.name}
+                </h1>
+                <p className="text-sm text-gray-600">
+                  {t("receiptDesigner.editingTemplate")}
+                </p>
+              </div>
+            </div>
+          </div>
+          <ReceiptDesigner
+            initialTemplate={currentTemplate}
+            previewData={DEFAULT_RECEIPT_DATA}
+            onSave={handleSaveTemplate}
+          />
+        </div>
+      )}
     </div>
   );
 };
