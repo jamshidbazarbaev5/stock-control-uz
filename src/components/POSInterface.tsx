@@ -27,8 +27,11 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { fetchAllStocks } from "@/core/api/fetchAllStocks";
-import type { Stock } from "@/core/api/stock";
+import {
+  fetchAllProducts,
+  fetchProductByBarcode,
+} from "@/core/api/fetchAllProducts";
+import type { Product } from "@/core/api/product";
 import { useCurrentUser } from "@/core/hooks/useCurrentUser";
 import { useGetUsers } from "@/core/api/user";
 import { useGetClients } from "@/core/api/client";
@@ -36,12 +39,13 @@ import type { User } from "@/core/api/user";
 
 interface ProductInCart {
   id: number;
-  stockId: number;
+  productId: number;
   name: string;
   price: number;
   quantity: number;
   total: number;
-  stock: Stock;
+  product: Product;
+  barcode?: string;
 }
 
 interface ExtendedUser extends User {
@@ -103,7 +107,7 @@ const POSInterface = () => {
   const [waitingForNewValue, setWaitingForNewValue] = useState(
     currentSession.waitingForNewValue,
   );
-  const [products, setProducts] = useState<ProductInCart[]>(
+  const [cartProducts, setCartProducts] = useState<ProductInCart[]>(
     currentSession.products,
   );
   const [focusedProductIndex, setFocusedProductIndex] = useState<number>(
@@ -123,12 +127,19 @@ const POSInterface = () => {
   // Global modal states (shared across sessions)
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [stocks, setStocks] = useState<Stock[]>([]);
-  const [loadingStocks, setLoadingStocks] = useState(false);
+  const [fetchedProducts, setFetchedProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
+  const [barcodeScanInput, setBarcodeScanInput] = useState("");
+  const barcodeInputRef = useRef<HTMLInputElement>(null);
+  const [isProcessingBarcode, setIsProcessingBarcode] = useState(false);
+  const [debugMode, setDebugMode] = useState(false); // Toggle with Ctrl+D
+  const [lastScannedBarcode, setLastScannedBarcode] = useState("");
 
-  // Stock selection state
-  const [selectedStocks, setSelectedStocks] = useState<Set<number>>(new Set());
+  // Product selection state
+  const [selectedProducts, setSelectedProducts] = useState<Set<number>>(
+    new Set(),
+  );
 
   // User selection modal state
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -160,7 +171,7 @@ const POSInterface = () => {
               previousInput,
               operation,
               waitingForNewValue,
-              products,
+              products: cartProducts,
               focusedProductIndex,
               selectedSeller,
               selectedClient,
@@ -176,7 +187,7 @@ const POSInterface = () => {
     previousInput,
     operation,
     waitingForNewValue,
-    products,
+    cartProducts,
     focusedProductIndex,
     selectedSeller,
     selectedClient,
@@ -192,36 +203,240 @@ const POSInterface = () => {
   }, [currentUser?.id, isAdmin, isSuperUser, selectedSeller]);
 
   // Calculate totals
-  const total = products.reduce((sum, product) => sum + product.total, 0);
+  const total = cartProducts.reduce((sum, product) => sum + product.total, 0);
 
-  // Fetch stocks when modal opens or search term changes
+  // Fetch products when modal opens or search term changes
   useEffect(() => {
     if (isSearchModalOpen) {
       const timeoutId = setTimeout(() => {
-        setLoadingStocks(true);
-        fetchAllStocks({
+        setLoadingProducts(true);
+        fetchAllProducts({
           product_name: searchTerm.length > 0 ? searchTerm : undefined,
         })
-          .then((data) => setStocks(data))
-          .catch((error) => console.error("Error fetching stocks:", error))
-          .finally(() => setLoadingStocks(false));
+          .then((data) => setFetchedProducts(data))
+          .catch((error) => console.error("Error fetching products:", error))
+          .finally(() => setLoadingProducts(false));
       }, 300);
 
       return () => clearTimeout(timeoutId);
     }
   }, [isSearchModalOpen, searchTerm]);
 
-  // Filter stocks based on search term and availability
-  const filteredStocks = useMemo(() => {
-    return stocks.filter(
-      (stock) =>
-        (stock.quantity ?? 0) > 0 &&
-        (stock.product_read?.product_name
+  // Handle adding product directly to cart
+  const handleProductDirectAdd = useCallback(
+    (product: Product) => {
+      if (product.product_name && product.id) {
+        // For now, use a default price - you might want to fetch this from elsewhere
+        const price = 10000; // Default price, replace with actual price logic
+        const newProduct: ProductInCart = {
+          id: Date.now(), // Unique ID for the cart item
+          productId: product.id,
+          name: product.product_name,
+          price: price,
+          quantity: 1,
+          total: price,
+          product: product,
+          barcode: product.barcode,
+        };
+
+        // Check if product already exists in cart
+        const existingProductIndex = cartProducts.findIndex(
+          (p) => p.productId === product.id,
+        );
+
+        if (existingProductIndex >= 0) {
+          // Update quantity of existing product
+          const updatedProducts = [...cartProducts];
+          updatedProducts[existingProductIndex].quantity += 1;
+          updatedProducts[existingProductIndex].total =
+            updatedProducts[existingProductIndex].quantity * price;
+          setCartProducts(updatedProducts);
+        } else {
+          // Add new product to cart
+          setCartProducts((prev) => [...prev, newProduct]);
+        }
+      }
+    },
+    [cartProducts],
+  );
+
+  // Handle barcode scanning with Enter key support
+  const processBarcodeInput = useCallback(
+    async (barcode: string) => {
+      if (isProcessingBarcode) return;
+
+      // Clean the barcode (remove any whitespace)
+      const cleanBarcode = barcode.trim();
+
+      if (cleanBarcode.length >= 6) {
+        setIsProcessingBarcode(true);
+        setLoadingProducts(true);
+
+        try {
+          const product = await fetchProductByBarcode(cleanBarcode);
+          if (product) {
+            handleProductDirectAdd(product);
+            if (debugMode) {
+              console.log("✅ Product found and added:", product);
+            }
+          } else {
+            if (debugMode || true) {
+              // Always log when product not found
+              console.warn("❌ Product not found for barcode:", cleanBarcode);
+            }
+            alert(`Product not found for barcode: ${cleanBarcode}`);
+          }
+        } catch (error) {
+          console.error("Error fetching product by barcode:", error);
+        } finally {
+          setLoadingProducts(false);
+          setIsProcessingBarcode(false);
+          setBarcodeScanInput("");
+          // Refocus the input
+          if (barcodeInputRef.current) {
+            barcodeInputRef.current.focus();
+          }
+        }
+      }
+    },
+    [isProcessingBarcode, handleProductDirectAdd],
+  );
+
+  // Handle barcode input changes and Enter key
+  const handleBarcodeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setBarcodeScanInput(value);
+    if (debugMode) {
+      console.log("📝 Barcode input changed:", {
+        newValue: value,
+        length: value.length,
+        lastChar: value[value.length - 1],
+        charCode: value.charCodeAt(value.length - 1),
+        timestamp: new Date().toISOString(),
+      });
+    }
+  };
+
+  const handleBarcodeKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (debugMode) {
+      console.log("⌨️ Key pressed in barcode input:", {
+        key: e.key,
+        code: e.code,
+        keyCode: e.keyCode,
+        charCode: e.charCode,
+        currentValue: barcodeScanInput,
+        valueLength: barcodeScanInput.length,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    if (
+      e.key === "Enter" ||
+      e.key === "\n" ||
+      e.key === "\r" ||
+      e.keyCode === 13
+    ) {
+      e.preventDefault();
+      console.log(
+        "✅ ENTER KEY DETECTED! Processing barcode:",
+        barcodeScanInput,
+        "Length:",
+        barcodeScanInput.length,
+      );
+      setLastScannedBarcode(barcodeScanInput);
+      processBarcodeInput(barcodeScanInput);
+    }
+  };
+
+  // Debug mode toggle with Ctrl+D and global keyboard logging
+  useEffect(() => {
+    const handleDebugToggle = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === "d") {
+        e.preventDefault();
+        setDebugMode((prev) => {
+          const newMode = !prev;
+          console.log(`Debug mode ${newMode ? "ENABLED" : "DISABLED"}`);
+          return newMode;
+        });
+      }
+    };
+
+    // Global keyboard event logger for debugging scanner
+    const handleGlobalKeydown = (e: KeyboardEvent) => {
+      if (debugMode) {
+        console.log("🎹 GLOBAL KEY EVENT:", {
+          key: e.key,
+          code: e.code,
+          keyCode: e.keyCode,
+          charCode: e.charCode,
+          ctrlKey: e.ctrlKey,
+          shiftKey: e.shiftKey,
+          altKey: e.altKey,
+          metaKey: e.metaKey,
+          target: e.target,
+          targetTagName: (e.target as HTMLElement)?.tagName,
+          targetId: (e.target as HTMLElement)?.id,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    };
+
+    document.addEventListener("keydown", handleDebugToggle);
+    document.addEventListener("keydown", handleGlobalKeydown);
+
+    return () => {
+      document.removeEventListener("keydown", handleDebugToggle);
+      document.removeEventListener("keydown", handleGlobalKeydown);
+    };
+  }, [debugMode]);
+
+  // Keep barcode input always focused
+  useEffect(() => {
+    const focusInput = () => {
+      if (
+        barcodeInputRef.current &&
+        document.activeElement !== barcodeInputRef.current
+      ) {
+        if (debugMode) {
+          console.log("Refocusing barcode input");
+        }
+        barcodeInputRef.current.focus();
+      }
+    };
+
+    // Initial focus
+    focusInput();
+
+    // Refocus when clicking anywhere on the document
+    const handleClick = () => {
+      setTimeout(focusInput, 100);
+    };
+
+    // Refocus on window focus
+    const handleWindowFocus = () => {
+      focusInput();
+    };
+
+    document.addEventListener("click", handleClick);
+    window.addEventListener("focus", handleWindowFocus);
+
+    return () => {
+      document.removeEventListener("click", handleClick);
+      window.removeEventListener("focus", handleWindowFocus);
+    };
+  }, [currentSessionIndex]);
+
+  // Filter products based on search term
+  const filteredProducts = useMemo(() => {
+    return fetchedProducts.filter(
+      (product) =>
+        product.product_name
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
-          String(stock.id).includes(searchTerm)),
+        product.barcode?.includes(searchTerm) ||
+        String(product.id).includes(searchTerm),
     );
-  }, [stocks, searchTerm]);
+  }, [fetchedProducts, searchTerm]);
 
   const handleNumberClick = (num: string) => {
     // Pure calculator behavior
@@ -360,7 +575,7 @@ const POSInterface = () => {
       }
     } else if (selectedSeller) {
       const seller = users.find((u) => u.id === selectedSeller);
-      if (seller?.name ) {
+      if (seller?.name) {
         newName = `${seller.name || ""}`.trim();
       }
     }
@@ -393,7 +608,7 @@ const POSInterface = () => {
       setPreviousInput(targetSession.previousInput);
       setOperation(targetSession.operation);
       setWaitingForNewValue(targetSession.waitingForNewValue);
-      setProducts(targetSession.products);
+      setCartProducts(targetSession.products);
       setFocusedProductIndex(targetSession.focusedProductIndex);
       setSelectedSeller(targetSession.selectedSeller);
       setSelectedClient(targetSession.selectedClient);
@@ -420,7 +635,7 @@ const POSInterface = () => {
         setPreviousInput(newActiveSession.previousInput);
         setOperation(newActiveSession.operation);
         setWaitingForNewValue(newActiveSession.waitingForNewValue);
-        setProducts(newActiveSession.products);
+        setCartProducts(newActiveSession.products);
         setFocusedProductIndex(newActiveSession.focusedProductIndex);
         setSelectedSeller(newActiveSession.selectedSeller);
         setSelectedClient(newActiveSession.selectedClient);
@@ -430,151 +645,96 @@ const POSInterface = () => {
     }
   };
 
-  const handleProductSelect = (stock: Stock) => {
+  const handleProductSelect = (product: Product) => {
     // Always use multi-select behavior
-    setSelectedStocks((prev) => {
+    setSelectedProducts((prev) => {
       const newSelection = new Set(prev);
-      if (newSelection.has(stock.id!)) {
-        newSelection.delete(stock.id!);
+      if (newSelection.has(product.id!)) {
+        newSelection.delete(product.id!);
       } else {
-        newSelection.add(stock.id!);
+        newSelection.add(product.id!);
       }
       return newSelection;
     });
 
     // Also add to cart immediately for single selection
-    if (!selectedStocks.has(stock.id!)) {
-      if (stock.product_read?.product_name && stock.selling_price && stock.id) {
-        const price = parseFloat(stock.selling_price);
-        const newProduct: ProductInCart = {
-          id: Date.now(), // Unique ID for the cart item
-          stockId: stock.id,
-          name: stock.product_read.product_name,
-          price: price,
-          quantity: 1,
-          total: price,
-          stock: stock,
-        };
-
-        // Check if product already exists in cart
-        const existingProductIndex = products.findIndex(
-          (p) => p.stockId === stock.id,
-        );
-
-        if (existingProductIndex >= 0) {
-          // Update quantity of existing product
-          const updatedProducts = [...products];
-          updatedProducts[existingProductIndex].quantity += 1;
-          updatedProducts[existingProductIndex].total =
-            updatedProducts[existingProductIndex].quantity * price;
-          setProducts(updatedProducts);
-        } else {
-          // Add new product to cart
-          setProducts((prev) => [...prev, newProduct]);
-        }
-      }
+    if (!selectedProducts.has(product.id!)) {
+      handleProductDirectAdd(product);
     }
-    console.log("Selected product:", stock);
+    console.log("Selected product:", product);
   };
 
-  const handleSaveSelectedStocks = () => {
-    // Add all selected stocks to cart
-    const selectedStockItems = stocks.filter((stock) =>
-      selectedStocks.has(stock.id!),
+  const handleSaveSelectedProducts = () => {
+    // Add all selected products to cart
+    const selectedProductItems = fetchedProducts.filter((product) =>
+      selectedProducts.has(product.id!),
     );
 
-    selectedStockItems.forEach((stock) => {
-      if (stock.product_read?.product_name && stock.selling_price && stock.id) {
-        const price = parseFloat(stock.selling_price);
-        const newProduct: ProductInCart = {
-          id: Date.now() + Math.random(), // Unique ID for the cart item
-          stockId: stock.id,
-          name: stock.product_read.product_name,
-          price: price,
-          quantity: 1,
-          total: price,
-          stock: stock,
-        };
-
-        // Check if product already exists in cart
-        const existingProductIndex = products.findIndex(
-          (p) => p.stockId === stock.id,
-        );
-
-        if (existingProductIndex >= 0) {
-          // Update quantity of existing product
-          setProducts((prev) => {
-            const updatedProducts = [...prev];
-            updatedProducts[existingProductIndex].quantity += 1;
-            updatedProducts[existingProductIndex].total =
-              updatedProducts[existingProductIndex].quantity * price;
-            return updatedProducts;
-          });
-        } else {
-          // Add new product to cart
-          setProducts((prev) => [...prev, newProduct]);
-        }
-      }
+    selectedProductItems.forEach((product) => {
+      handleProductDirectAdd(product);
     });
 
     // Reset selection state
-    setSelectedStocks(new Set());
+    setSelectedProducts(new Set());
     setIsSearchModalOpen(false);
   };
 
-  const updateProductQuantity = (productId: number, newQuantity: number) => {
-    // Prevent negative or zero quantities
-    if (newQuantity <= 0) {
-      return;
-    }
+  const updateProductQuantity = useCallback(
+    (productId: number, newQuantity: number) => {
+      // Prevent negative or zero quantities
+      if (newQuantity <= 0) {
+        return;
+      }
 
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === productId
-          ? { ...p, quantity: newQuantity, total: p.price * newQuantity }
-          : p,
-      ),
-    );
-  };
+      setCartProducts((prev) =>
+        prev.map((p) =>
+          p.id === productId
+            ? { ...p, quantity: newQuantity, total: p.price * newQuantity }
+            : p,
+        ),
+      );
+    },
+    [],
+  );
 
-  const removeProduct = (productId: number) => {
-    setProducts((prev) => prev.filter((p) => p.id !== productId));
-  };
+  const removeProduct = useCallback((productId: number) => {
+    setCartProducts((prev) => prev.filter((p) => p.id !== productId));
+  }, []);
 
   const clearCart = () => {
-    setProducts([]);
+    setCartProducts([]);
     setFocusedProductIndex(-1);
   };
 
   // Keyboard navigation handlers
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (products.length === 0) return;
+      if (cartProducts.length === 0) return;
 
       switch (e.key) {
         case "ArrowUp":
           e.preventDefault();
           setFocusedProductIndex((prev) =>
-            prev <= 0 ? products.length - 1 : prev - 1,
+            prev <= 0 ? cartProducts.length - 1 : prev - 1,
           );
           break;
         case "ArrowDown":
           e.preventDefault();
           setFocusedProductIndex((prev) =>
-            prev >= products.length - 1 ? 0 : prev + 1,
+            prev >= cartProducts.length - 1 ? 0 : prev + 1,
           );
           break;
         case "+":
           e.preventDefault();
           if (focusedProductIndex >= 0) {
-            const product = products[focusedProductIndex];
+            const product = cartProducts[focusedProductIndex];
             updateProductQuantity(product.id, product.quantity + 1);
           }
           break;
         case "-":
           e.preventDefault();
           if (focusedProductIndex >= 0) {
-            const product = products[focusedProductIndex];
+            const product = cartProducts[focusedProductIndex];
             const newQuantity = product.quantity - 1;
             if (newQuantity > 0) {
               updateProductQuantity(product.id, newQuantity);
@@ -585,16 +745,16 @@ const POSInterface = () => {
         case "Backspace":
           if (e.target === document.body && focusedProductIndex >= 0) {
             e.preventDefault();
-            const product = products[focusedProductIndex];
+            const product = cartProducts[focusedProductIndex];
             removeProduct(product.id);
             setFocusedProductIndex((prev) =>
-              prev >= products.length - 1 ? products.length - 2 : prev,
+              prev >= cartProducts.length - 1 ? cartProducts.length - 2 : prev,
             );
           }
           break;
       }
     },
-    [products, focusedProductIndex, updateProductQuantity, removeProduct],
+    [cartProducts, focusedProductIndex, updateProductQuantity, removeProduct],
   );
 
   // Set up keyboard event listeners
@@ -607,36 +767,36 @@ const POSInterface = () => {
 
   // Auto-focus first product when products are added
   useEffect(() => {
-    if (products.length > 0 && focusedProductIndex === -1) {
+    if (cartProducts.length > 0 && focusedProductIndex === -1) {
       setFocusedProductIndex(0);
-    } else if (products.length === 0) {
+    } else if (cartProducts.length === 0) {
       setFocusedProductIndex(-1);
     }
-  }, [products.length, focusedProductIndex]);
+  }, [cartProducts.length, focusedProductIndex]);
 
   // Handle bottom button actions
 
   const handleBottomXClick = () => {
     if (focusedProductIndex >= 0) {
-      const product = products[focusedProductIndex];
+      const product = cartProducts[focusedProductIndex];
       removeProduct(product.id);
       setFocusedProductIndex((prev) =>
-        prev >= products.length - 1 ? products.length - 2 : prev,
+        prev >= cartProducts.length - 1 ? cartProducts.length - 2 : prev,
       );
     }
   };
 
   const handleBottomUpClick = () => {
-    if (products.length === 0) return;
+    if (cartProducts.length === 0) return;
     setFocusedProductIndex((prev) =>
-      prev <= 0 ? products.length - 1 : prev - 1,
+      prev <= 0 ? cartProducts.length - 1 : prev - 1,
     );
   };
 
   const handleBottomDownClick = () => {
-    if (products.length === 0) return;
+    if (cartProducts.length === 0) return;
     setFocusedProductIndex((prev) =>
-      prev >= products.length - 1 ? 0 : prev + 1,
+      prev >= cartProducts.length - 1 ? 0 : prev + 1,
     );
   };
 
@@ -748,7 +908,7 @@ const POSInterface = () => {
 
               <button
                 onClick={handleBottomDownClick}
-                disabled={products.length === 0}
+                disabled={cartProducts.length === 0}
                 className="bg-indigo-500 text-white p-2 rounded-lg hover:bg-indigo-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
                 title="Вниз по списку"
               >
@@ -756,7 +916,7 @@ const POSInterface = () => {
               </button>
               <button
                 onClick={handleBottomUpClick}
-                disabled={products.length === 0}
+                disabled={cartProducts.length === 0}
                 className="bg-teal-500 text-white p-2 rounded-lg hover:bg-teal-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
                 title="Вверх по списку"
               >
@@ -771,8 +931,8 @@ const POSInterface = () => {
           {/* Product Header */}
           <div className="mb-6">
             <h2 className="text-3xl font-bold mb-2 text-gray-900">
-              {products.length > 0
-                ? `${products.length} товар(ов) в корзине`
+              {cartProducts.length > 0
+                ? `${cartProducts.length} товар(ов) в корзине`
                 : "Корзина пуста"}
             </h2>
             <div className="text-xl text-gray-700 font-medium">
@@ -825,6 +985,46 @@ const POSInterface = () => {
             )}
           </div>
 
+          {/* Debug Mode Display */}
+          {debugMode && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-300 rounded-lg">
+              <div className="text-sm font-bold text-yellow-800 mb-2">
+                🔧 DEBUG MODE ACTIVE (Ctrl+D to toggle)
+              </div>
+              <div className="space-y-1 text-xs text-yellow-700 font-mono">
+                <div>
+                  Barcode Input Focus:{" "}
+                  {document.activeElement === barcodeInputRef.current
+                    ? "✅ YES"
+                    : "❌ NO"}
+                </div>
+                <div>Current Input: "{barcodeScanInput}"</div>
+                <div>Last Scanned: "{lastScannedBarcode}"</div>
+                <div>Processing: {isProcessingBarcode ? "YES" : "NO"}</div>
+                <div className="text-yellow-600 mt-2">
+                  Open console (F12) to see detailed logs
+                </div>
+                <div className="text-xs text-yellow-600 mt-1">
+                  Try: 1) Type any number 2) Press Enter 3) Check console
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Barcode Display */}
+          {(barcodeScanInput || isProcessingBarcode) && (
+            <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded-lg animate-pulse">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-blue-600 font-medium">
+                  {isProcessingBarcode ? "Обработка:" : "Сканирование:"}
+                </span>
+                <span className="text-sm text-blue-900 font-mono">
+                  {barcodeScanInput || "..."}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Summary Cards */}
           <div className="flex space-x-4">
             <div className="flex-1 bg-gray-100 rounded-xl p-6">
@@ -858,6 +1058,79 @@ const POSInterface = () => {
 
         {/* Product Table */}
         <div className="flex-1 p-6">
+          {/* Barcode Scanner Input - Positioned off-screen but still focusable */}
+          <input
+            ref={barcodeInputRef}
+            type="text"
+            value={barcodeScanInput}
+            onChange={handleBarcodeInputChange}
+            onKeyPress={handleBarcodeKeyPress}
+            onKeyDown={(e) => {
+              if (debugMode) {
+                console.log("🔽 KeyDown in barcode input:", {
+                  key: e.key,
+                  code: e.code,
+                  keyCode: e.keyCode,
+                  isEnter: e.key === "Enter" || e.keyCode === 13,
+                  currentValue: barcodeScanInput,
+                });
+              }
+              // Also handle Enter in keydown as some scanners might not trigger keypress
+              if (e.key === "Enter" || e.keyCode === 13) {
+                e.preventDefault();
+                console.log(
+                  "✅ ENTER in KeyDown! Processing:",
+                  barcodeScanInput,
+                );
+                setLastScannedBarcode(barcodeScanInput);
+                processBarcodeInput(barcodeScanInput);
+              }
+            }}
+            onKeyUp={(e) => {
+              if (debugMode) {
+                console.log("🔼 KeyUp in barcode input:", {
+                  key: e.key,
+                  code: e.code,
+                  keyCode: e.keyCode,
+                });
+              }
+            }}
+            onInput={(e) => {
+              if (debugMode) {
+                console.log("📥 Input event:", {
+                  value: (e.target as HTMLInputElement).value,
+                  inputType: (e as any).inputType,
+                  data: (e as any).data,
+                });
+              }
+            }}
+            onBlur={(e) => {
+              // Prevent losing focus
+              setTimeout(() => {
+                if (barcodeInputRef.current) {
+                  if (debugMode) {
+                    console.log("Input lost focus, refocusing...");
+                  }
+                  barcodeInputRef.current.focus();
+                }
+              }, 10);
+            }}
+            onFocus={() => {
+              if (debugMode) {
+                console.log("Barcode input gained focus");
+              }
+            }}
+            style={{
+              position: "absolute",
+              left: "-9999px",
+              width: "1px",
+              height: "1px",
+            }}
+            autoFocus
+            autoComplete="off"
+            placeholder="Barcode scanner input"
+          />
+
           <div
             ref={tableRef}
             className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm"
@@ -886,7 +1159,7 @@ const POSInterface = () => {
                 </tr>
               </thead>
               <tbody>
-                {products.length === 0 ? (
+                {cartProducts.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="p-8 text-center text-gray-500">
                       <div className="flex flex-col items-center space-y-2">
@@ -899,7 +1172,7 @@ const POSInterface = () => {
                     </td>
                   </tr>
                 ) : (
-                  products.map((product, index) => (
+                  cartProducts.map((product, index) => (
                     <tr
                       key={product.id}
                       className={`${
@@ -914,11 +1187,11 @@ const POSInterface = () => {
                       <td className="p-4 font-medium text-gray-900">
                         <div>
                           <div>{product.name}</div>
-                          <div className="text-xs text-gray-500">
-                            Остаток: {product.stock.quantity ?? 0}{" "}
-                            {product.stock.measurement_read?.[0]
-                              ?.measurement_read?.measurement_name || "шт"}
-                          </div>
+                          {product.barcode && (
+                            <div className="text-xs text-gray-500">
+                              Штрихкод: {product.barcode}
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="p-4 text-right text-gray-900">
@@ -991,8 +1264,8 @@ const POSInterface = () => {
                             removeProduct(product.id);
                             if (index === focusedProductIndex) {
                               setFocusedProductIndex((prev) =>
-                                prev >= products.length - 1
-                                  ? products.length - 2
+                                prev >= cartProducts.length - 1
+                                  ? cartProducts.length - 2
                                   : prev,
                               );
                             }
@@ -1017,12 +1290,12 @@ const POSInterface = () => {
           <div className="flex items-center justify-between mt-6">
             <div className="flex items-center space-x-3">
               <span className="text-gray-600">
-                Товаров в корзине: {products.length}
+                Товаров в корзине: {cartProducts.length}
               </span>
               <button
                 onClick={clearCart}
                 className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg text-sm font-medium transition-colors"
-                disabled={products.length === 0}
+                disabled={cartProducts.length === 0}
               >
                 Очистить корзину
               </button>
@@ -1187,7 +1460,7 @@ const POSInterface = () => {
               onClick={() => {
                 /* TODO: Implement payment logic */
               }}
-              disabled={products.length === 0}
+              disabled={cartProducts.length === 0}
               className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-16 flex items-center justify-center disabled:bg-gray-200 disabled:cursor-not-allowed col-span-4"
             >
               <span className="text-lg font-bold text-green-600">
@@ -1200,14 +1473,14 @@ const POSInterface = () => {
         {/* Payment Button */}
         <div className="p-6 border-t border-gray-200">
           <button
-            disabled={products.length === 0}
+            disabled={cartProducts.length === 0}
             className={`w-full py-5 rounded-2xl text-lg font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed ${
               onCredit
                 ? "bg-amber-600 text-white hover:bg-amber-700"
                 : "bg-blue-600 text-white hover:bg-blue-700"
             }`}
           >
-            {products.length === 0
+            {cartProducts.length === 0
               ? "Добавьте товары"
               : onCredit
                 ? `В долг ${total.toLocaleString()} сум`
@@ -1246,26 +1519,34 @@ const POSInterface = () => {
             {/* Selection info and controls */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                {selectedStocks.size > 0 && (
-                  <span className="text-sm text-gray-600">
-                    Выбрано: {selectedStocks.size} товар(ов)
-                  </span>
+                {selectedProducts.size > 0 && (
+                  <>
+                    <span className="text-sm text-gray-600">
+                      Выбрано: {selectedProducts.size} товар(ов)
+                    </span>
+                    <button
+                      onClick={handleSaveSelectedProducts}
+                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Добавить выбранные
+                    </button>
+                  </>
                 )}
               </div>
 
-              {selectedStocks.size > 0 && (
+              {selectedProducts.size > 0 && (
                 <div className="flex space-x-2">
                   <button
-                    onClick={() => setSelectedStocks(new Set())}
+                    onClick={() => setSelectedProducts(new Set())}
                     className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
                   >
                     Очистить
                   </button>
                   <button
-                    onClick={handleSaveSelectedStocks}
+                    onClick={handleSaveSelectedProducts}
                     className="px-4 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
                   >
-                    Добавить в корзину ({selectedStocks.size})
+                    Добавить в корзину ({selectedProducts.size})
                   </button>
                 </div>
               )}
@@ -1282,18 +1563,18 @@ const POSInterface = () => {
                       <input
                         type="checkbox"
                         checked={
-                          filteredStocks.length > 0 &&
-                          filteredStocks.every((stock) =>
-                            selectedStocks.has(stock.id!),
+                          filteredProducts.length > 0 &&
+                          filteredProducts.every((product) =>
+                            selectedProducts.has(product.id!),
                           )
                         }
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedStocks(
-                              new Set(filteredStocks.map((s) => s.id!)),
+                            setSelectedProducts(
+                              new Set(filteredProducts.map((p) => p.id!)),
                             );
                           } else {
-                            setSelectedStocks(new Set());
+                            setSelectedProducts(new Set());
                           }
                         }}
                         className="w-4 h-4 rounded border-gray-300"
@@ -1320,7 +1601,7 @@ const POSInterface = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {loadingStocks ? (
+                  {loadingProducts ? (
                     <tr>
                       <td colSpan={7} className="text-center p-8 text-gray-500">
                         <div className="flex items-center justify-center space-x-2">
@@ -1329,7 +1610,7 @@ const POSInterface = () => {
                         </div>
                       </td>
                     </tr>
-                  ) : filteredStocks.length === 0 ? (
+                  ) : filteredProducts.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="text-center p-8 text-gray-500">
                         {searchTerm
@@ -1338,20 +1619,20 @@ const POSInterface = () => {
                       </td>
                     </tr>
                   ) : (
-                    filteredStocks.map((stock, index) => (
+                    filteredProducts.map((product, index) => (
                       <tr
-                        key={stock.id}
+                        key={product.id}
                         className={`${
                           index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                        } ${selectedStocks.has(stock.id!) ? "bg-blue-100" : ""} hover:bg-blue-50 transition-colors border-b border-gray-100`}
+                        } ${selectedProducts.has(product.id!) ? "bg-blue-100" : ""} hover:bg-blue-50 transition-colors border-b border-gray-100`}
                       >
                         <td className="p-4 text-center">
                           <input
                             type="checkbox"
-                            checked={selectedStocks.has(stock.id!)}
+                            checked={selectedProducts.has(product.id!)}
                             onChange={(e) => {
                               e.stopPropagation();
-                              handleProductSelect(stock);
+                              handleProductSelect(product);
                             }}
                             className="w-4 h-4 rounded border-gray-300"
                           />
@@ -1361,32 +1642,28 @@ const POSInterface = () => {
                         </td>
                         <td
                           className="p-4 cursor-pointer"
-                          onClick={() => handleProductSelect(stock)}
+                          onClick={() => handleProductSelect(product)}
                         >
                           <div>
                             <div className="font-medium text-gray-900 text-sm hover:text-blue-600 transition-colors">
-                              {stock.product_read?.product_name || "N/A"}
+                              {product.product_name || "N/A"}
                             </div>
                             <div className="text-xs text-gray-500 mt-1">
-                              Остаток: {stock.quantity ?? 0}{" "}
-                              {stock.measurement_read?.[0]?.measurement_read
-                                ?.measurement_name || "шт"}
+                              {product.has_barcode && product.barcode && (
+                                <span>Штрихкод: {product.barcode}</span>
+                              )}
                             </div>
                           </div>
                         </td>
                         <td className="p-4 text-center text-gray-600 font-mono text-sm">
-                          {stock.product_read?.id
-                            ?.toString()
-                            .padStart(10, "0") || "N/A"}
+                          {product.id?.toString().padStart(10, "0") || "N/A"}
                         </td>
                         <td className="p-4 text-center text-gray-600 font-mono text-sm">
-                          {stock.id?.toString().padStart(10, "0") || "N/A"}
+                          {product.barcode || "—"}
                         </td>
                         <td className="p-4 text-right">
                           <div className="text-gray-900 font-semibold">
-                            {parseFloat(
-                              stock.selling_price || "0",
-                            ).toLocaleString()}
+                            {"10,000"}
                           </div>
                         </td>
                         <td className="p-4 text-center">
@@ -1396,7 +1673,7 @@ const POSInterface = () => {
                             className="text-gray-400 hover:text-gray-600"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleProductSelect(stock);
+                              handleProductSelect(product);
                             }}
                           >
                             •••
