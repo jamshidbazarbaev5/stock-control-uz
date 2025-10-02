@@ -9,6 +9,8 @@ import {
   BarChart3,
   Search,
   User as UserIcon,
+  Plus,
+  X as CloseIcon,
 } from "lucide-react";
 import {
   WideDialog,
@@ -56,17 +58,73 @@ interface ExtendedUser extends User {
   };
 }
 
+interface SessionState {
+  id: string;
+  name: string;
+  currentInput: string;
+  previousInput: string;
+  operation: string;
+  waitingForNewValue: boolean;
+  products: ProductInCart[];
+  focusedProductIndex: number;
+  selectedSeller: number | null;
+  selectedClient: number | null;
+  clientSearchTerm: string;
+  onCredit: boolean;
+}
+
 const POSInterface = () => {
-  const [currentInput, setCurrentInput] = useState("");
-  const [previousInput, setPreviousInput] = useState("");
-  const [operation, setOperation] = useState<string>("");
-  const [waitingForNewValue, setWaitingForNewValue] = useState(false);
+  // Session management
+  const [sessions, setSessions] = useState<SessionState[]>([
+    {
+      id: "1",
+      name: "Сессия 1",
+      currentInput: "",
+      previousInput: "",
+      operation: "",
+      waitingForNewValue: false,
+      products: [],
+      focusedProductIndex: -1,
+      selectedSeller: null,
+      selectedClient: null,
+      clientSearchTerm: "",
+      onCredit: false,
+    },
+  ]);
+  const [currentSessionIndex, setCurrentSessionIndex] = useState(0);
+
+  // Current session state (derived from active session)
+  const currentSession = sessions[currentSessionIndex];
+  const [currentInput, setCurrentInput] = useState(currentSession.currentInput);
+  const [previousInput, setPreviousInput] = useState(
+    currentSession.previousInput,
+  );
+  const [operation, setOperation] = useState<string>(currentSession.operation);
+  const [waitingForNewValue, setWaitingForNewValue] = useState(
+    currentSession.waitingForNewValue,
+  );
+  const [products, setProducts] = useState<ProductInCart[]>(
+    currentSession.products,
+  );
+  const [focusedProductIndex, setFocusedProductIndex] = useState<number>(
+    currentSession.focusedProductIndex,
+  );
+  const [selectedSeller, setSelectedSeller] = useState<number | null>(
+    currentSession.selectedSeller,
+  );
+  const [selectedClient, setSelectedClient] = useState<number | null>(
+    currentSession.selectedClient,
+  );
+  const [clientSearchTerm, setClientSearchTerm] = useState(
+    currentSession.clientSearchTerm,
+  );
+  const [onCredit, setOnCredit] = useState(currentSession.onCredit);
+
+  // Global modal states (shared across sessions)
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [loadingStocks, setLoadingStocks] = useState(false);
-  const [products, setProducts] = useState<ProductInCart[]>([]);
-  const [focusedProductIndex, setFocusedProductIndex] = useState<number>(-1);
   const tableRef = useRef<HTMLDivElement>(null);
 
   // Stock selection state
@@ -74,10 +132,6 @@ const POSInterface = () => {
 
   // User selection modal state
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-  const [selectedSeller, setSelectedSeller] = useState<number | null>(null);
-  const [selectedClient, setSelectedClient] = useState<number | null>(null);
-  const [clientSearchTerm, setClientSearchTerm] = useState("");
-  const [onCredit, setOnCredit] = useState(false);
 
   // User data
   const { data: currentUser } = useCurrentUser();
@@ -94,6 +148,41 @@ const POSInterface = () => {
   // Check user roles
   const isAdmin = currentUser?.role === "Администратор";
   const isSuperUser = currentUser?.is_superuser === true;
+
+  // Save current session state whenever it changes
+  useEffect(() => {
+    setSessions((prev) =>
+      prev.map((session, index) =>
+        index === currentSessionIndex
+          ? {
+              ...session,
+              currentInput,
+              previousInput,
+              operation,
+              waitingForNewValue,
+              products,
+              focusedProductIndex,
+              selectedSeller,
+              selectedClient,
+              clientSearchTerm,
+              onCredit,
+            }
+          : session,
+      ),
+    );
+  }, [
+    currentSessionIndex,
+    currentInput,
+    previousInput,
+    operation,
+    waitingForNewValue,
+    products,
+    focusedProductIndex,
+    selectedSeller,
+    selectedClient,
+    clientSearchTerm,
+    onCredit,
+  ]);
 
   // Initialize seller selection for non-admin users
   useEffect(() => {
@@ -231,6 +320,113 @@ const POSInterface = () => {
     // Initialize seller selection based on user role
     if (!isAdmin && !isSuperUser && currentUser?.id) {
       setSelectedSeller(currentUser.id);
+    }
+  };
+
+  // Session management functions
+  const createNewSession = () => {
+    const newSessionId = (sessions.length + 1).toString();
+    const newSession: SessionState = {
+      id: newSessionId,
+      name: `Сессия ${newSessionId}`,
+      currentInput: "",
+      previousInput: "",
+      operation: "",
+      waitingForNewValue: false,
+      products: [],
+      focusedProductIndex: -1,
+      selectedSeller:
+        !isAdmin && !isSuperUser && currentUser?.id ? currentUser.id : null,
+      selectedClient: null,
+      clientSearchTerm: "",
+      onCredit: false,
+    };
+
+    setSessions((prev) => [...prev, newSession]);
+    setCurrentSessionIndex(sessions.length);
+  };
+
+  // Auto-update session name based on selected client or seller
+  useEffect(() => {
+    const currentSessionData = sessions[currentSessionIndex];
+    if (!currentSessionData) return;
+
+    let newName = `Сессия ${currentSessionData.id}`;
+
+    if (selectedClient) {
+      const client = clients.find((c) => c.id === selectedClient);
+      if (client?.name) {
+        newName = client.name;
+      }
+    } else if (selectedSeller) {
+      const seller = users.find((u) => u.id === selectedSeller);
+      if (seller?.name ) {
+        newName = `${seller.name || ""}`.trim();
+      }
+    }
+
+    if (newName !== currentSessionData.name) {
+      setSessions((prev) =>
+        prev.map((session, index) =>
+          index === currentSessionIndex
+            ? { ...session, name: newName }
+            : session,
+        ),
+      );
+    }
+  }, [
+    selectedClient,
+    selectedSeller,
+    currentSessionIndex,
+    clients,
+    users,
+    sessions,
+  ]);
+
+  const switchToSession = (index: number) => {
+    if (index >= 0 && index < sessions.length) {
+      const targetSession = sessions[index];
+      setCurrentSessionIndex(index);
+
+      // Load session state
+      setCurrentInput(targetSession.currentInput);
+      setPreviousInput(targetSession.previousInput);
+      setOperation(targetSession.operation);
+      setWaitingForNewValue(targetSession.waitingForNewValue);
+      setProducts(targetSession.products);
+      setFocusedProductIndex(targetSession.focusedProductIndex);
+      setSelectedSeller(targetSession.selectedSeller);
+      setSelectedClient(targetSession.selectedClient);
+      setClientSearchTerm(targetSession.clientSearchTerm);
+      setOnCredit(targetSession.onCredit);
+    }
+  };
+
+  const closeSession = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (sessions.length <= 1) return; // Don't close if it's the last session
+
+    setSessions((prev) => prev.filter((_, i) => i !== index));
+
+    // Adjust current session index if needed
+    if (currentSessionIndex >= index) {
+      const newIndex = Math.max(0, currentSessionIndex - 1);
+      setCurrentSessionIndex(newIndex);
+
+      // Load the new active session
+      const newActiveSession = sessions[newIndex];
+      if (newActiveSession) {
+        setCurrentInput(newActiveSession.currentInput);
+        setPreviousInput(newActiveSession.previousInput);
+        setOperation(newActiveSession.operation);
+        setWaitingForNewValue(newActiveSession.waitingForNewValue);
+        setProducts(newActiveSession.products);
+        setFocusedProductIndex(newActiveSession.focusedProductIndex);
+        setSelectedSeller(newActiveSession.selectedSeller);
+        setSelectedClient(newActiveSession.selectedClient);
+        setClientSearchTerm(newActiveSession.clientSearchTerm);
+        setOnCredit(newActiveSession.onCredit);
+      }
     }
   };
 
@@ -448,6 +644,61 @@ const POSInterface = () => {
     <div className="flex h-screen bg-gray-50">
       {/* Left Panel */}
       <div className="flex-1 flex flex-col bg-white">
+        {/* Session Tabs */}
+        <div className="bg-white px-6 pt-4 border-b border-gray-200">
+          <div
+            className="flex space-x-2 mb-4 overflow-x-auto"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {sessions.map((session, index) => (
+              <div
+                key={session.id}
+                className={`relative group rounded-t-lg flex-shrink-0 min-w-max ${
+                  index === currentSessionIndex
+                    ? "bg-blue-500"
+                    : "bg-gray-100 hover:bg-gray-200"
+                }`}
+              >
+                <button
+                  onClick={() => switchToSession(index)}
+                  className={`px-4 py-2 rounded-t-lg text-sm font-medium transition-colors w-full text-left whitespace-nowrap ${
+                    index === currentSessionIndex
+                      ? "text-white"
+                      : "text-gray-600"
+                  }`}
+                >
+                  {session.name}
+                  {session.products.length > 0 && (
+                    <span className="ml-2 bg-white bg-opacity-30 text-xs px-1.5 py-0.5 rounded-full">
+                      {session.products.length}
+                    </span>
+                  )}
+                  {session.products.length > 0 && (
+                    <div className="text-xs opacity-75 mt-0.5">
+                      {session.products
+                        .reduce((sum, product) => sum + product.total, 0)
+                        .toLocaleString()}{" "}
+                      сум
+                    </div>
+                  )}
+                </button>
+                {sessions.length > 1 && (
+                  <button
+                    onClick={(e) => closeSession(index, e)}
+                    className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${
+                      index === currentSessionIndex
+                        ? "bg-red-500 text-white hover:bg-red-600"
+                        : "bg-gray-500 text-white hover:bg-gray-600"
+                    }`}
+                  >
+                    <CloseIcon className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Header */}
         <div className="bg-white p-6 border-b border-gray-200">
           <div className="flex items-center justify-between mb-6">
@@ -485,6 +736,14 @@ const POSInterface = () => {
                 {(selectedSeller || selectedClient) && (
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
                 )}
+              </button>
+
+              <button
+                onClick={createNewSession}
+                className="bg-purple-500 text-white p-2 rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center"
+                title="Новая сессия"
+              >
+                <Plus className="w-5 h-5" />
               </button>
 
               <button
