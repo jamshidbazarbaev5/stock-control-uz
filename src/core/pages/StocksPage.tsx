@@ -59,7 +59,32 @@ export default function StocksPage() {
     }
 
   // Columns definition
+  const [selectedStocks, setSelectedStocks] = useState<number[]>([]);
+
   const columns = [
+    {
+      header: t('table.select'),
+      accessorKey: 'select',
+      cell: (stock: any) => {
+        return (
+          <input
+            type="checkbox"
+            checked={stock?.id ? selectedStocks.includes(stock?.id) : false}
+            onChange={(e) => {
+              e.stopPropagation();
+              if (stock?.id) {
+                setSelectedStocks(prev =>
+                  prev.includes(stock.id)
+                    ? prev.filter(id => id !== stock.id)
+                    : [...prev, stock.id]
+                );
+              }
+            }}
+            className="w-4 h-4"
+          />
+        );
+      },
+    },
     {
       header: t('table.id'),
       accessorKey: 'stock_id',
@@ -499,7 +524,12 @@ export default function StocksPage() {
 
         <WriteOffDialog
           open={writeOffDialogOpen}
-          onClose={() => setWriteOffDialogOpen(false)}
+          onClose={() => {
+            setWriteOffDialogOpen(false);
+            setSelectedStocks([]);
+          }}
+          selectedStocks={selectedStocks}
+          stocksData={stocksData}
         />
       </div>
   );

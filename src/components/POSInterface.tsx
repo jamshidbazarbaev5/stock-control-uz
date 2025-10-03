@@ -559,7 +559,20 @@ const POSInterface = () => {
     };
 
     setSessions((prev) => [...prev, newSession]);
-    setCurrentSessionIndex(sessions.length);
+    const newIndex = sessions.length;
+    setCurrentSessionIndex(newIndex);
+    
+    // Clear all state for the new session
+    setCurrentInput("");
+    setPreviousInput("");
+    setOperation("");
+    setWaitingForNewValue(false);
+    setCartProducts([]);
+    setFocusedProductIndex(-1);
+    setSelectedSeller(!isAdmin && !isSuperUser && currentUser?.id ? currentUser.id : null);
+    setSelectedClient(null);
+    setClientSearchTerm("");
+    setOnCredit(false);
   };
 
   // Auto-update session name based on selected client or seller
@@ -601,10 +614,28 @@ const POSInterface = () => {
 
   const switchToSession = (index: number) => {
     if (index >= 0 && index < sessions.length) {
-      const targetSession = sessions[index];
+      // First save current session state
+      const updatedSessions = [...sessions];
+      updatedSessions[currentSessionIndex] = {
+        ...updatedSessions[currentSessionIndex],
+        currentInput,
+        previousInput,
+        operation,
+        waitingForNewValue,
+        products: cartProducts,
+        focusedProductIndex,
+        selectedSeller,
+        selectedClient,
+        clientSearchTerm,
+        onCredit,
+      };
+      setSessions(updatedSessions);
+
+      // Then switch to new session
+      const targetSession = updatedSessions[index];
       setCurrentSessionIndex(index);
 
-      // Load session state
+      // Load target session state
       setCurrentInput(targetSession.currentInput);
       setPreviousInput(targetSession.previousInput);
       setOperation(targetSession.operation);

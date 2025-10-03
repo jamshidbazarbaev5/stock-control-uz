@@ -85,7 +85,7 @@ export default function CassasPage() {
     return (
         <div className="container mx-auto py-6">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">{t('navigation.categories')}</h1>
+                <h1 className="text-2xl font-bold">{t('navigation.cassa')}</h1>
                 {/* <Button onClick={() => navigate('/create-recycling')}>
           {t('common.create')} {t('navigation.recyclings')}
         </Button> */}
@@ -93,7 +93,7 @@ export default function CassasPage() {
             <div className="mb-4">
                 <input
                     type="text"
-                    placeholder={t('placeholders.search_category')}
+                    placeholder={t('placeholders.search_cassa')}
                     className="w-full p-2 border rounded"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -106,7 +106,7 @@ export default function CassasPage() {
                 isLoading={isLoading}
                 onEdit={handleEdit}
                 // onDelete={handleDelete}
-                onAdd={() => navigate('/create-category')}
+                onAdd={() => navigate('/create-cassa')}
                 totalCount={enhancedCassas?.length}
                 pageSize={30}
                 currentPage={1}

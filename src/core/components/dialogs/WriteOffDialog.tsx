@@ -5,8 +5,6 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useGetStocks } from '../../api/stock'
 import { WRITEOFF_REASONS, type WriteOff, useCreateWriteOff } from '../../api/writeoff'
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -14,45 +12,28 @@ import { toast } from 'sonner';
 interface WriteOffDialogProps {
   open: boolean;
   onClose: () => void;
+  selectedStocks: number[];
+  stocksData: any;
 }
 
-export function WriteOffDialog({ open, onClose }: WriteOffDialogProps) {
+export function WriteOffDialog({ open, onClose, selectedStocks, stocksData }: WriteOffDialogProps) {
   const { t } = useTranslation();
-  const [selectedStocks, setSelectedStocks] = useState<{ [key: number]: { quantity: string; store: number } }>({});
+  const [quantities, setQuantities] = useState<{ [key: number]: string }>({});
   const [reason, setReason] = useState<keyof typeof WRITEOFF_REASONS>('Брак');
   const [notes, setNotes] = useState('');
 
   const createWriteOff = useCreateWriteOff();
   
-  const { data: stocksData } = useGetStocks({
-    params: {
-      product_zero: false,
-    }
-  });
-
   const stocks = stocksData?.results || [];
-  
-  // Get the store of the first selected stock
-  const selectedStore = Object.entries(selectedStocks)[0]?.[1]?.store;
+  interface StockWithRefs {
+    id: number;
+    product_read?: { product_name: string };
+    store_read?: { id: number; name: string };
+    quantity: number;
+  }
 
-  const handleStockSelect = (stockId: number, checked: boolean, stockStore: number) => {
-    if (checked) {
-      setSelectedStocks(prev => ({
-        ...prev,
-        [stockId]: { quantity: '', store: stockStore }
-      }));
-    } else {
-      const { [stockId]: removed, ...rest } = selectedStocks;
-      setSelectedStocks(rest);
-    }
-  };
-
-  const handleQuantityChange = (stockId: number, quantity: string) => {
-    setSelectedStocks(prev => ({
-      ...prev,
-      [stockId]: { ...prev[stockId], quantity }
-    }));
-  };
+  const selectedStockObjects = stocks.filter((stock: StockWithRefs) => selectedStocks.includes(stock.id));
+  const selectedStore = selectedStockObjects[0]?.store_read?.id;
 
   const handleSubmit = async () => {
     try {
@@ -61,9 +42,9 @@ export function WriteOffDialog({ open, onClose }: WriteOffDialogProps) {
         return;
       }
 
-      const items = Object.entries(selectedStocks).map(([stockId, data]) => ({
-        stock: parseInt(stockId),
-        quantity: parseFloat(data.quantity)
+      const items = selectedStocks.map(stockId => ({
+        stock: stockId,
+        quantity: parseFloat(quantities[stockId] || '0')
       }));
 
       if (items.some(item => !item.quantity)) {
@@ -82,7 +63,7 @@ export function WriteOffDialog({ open, onClose }: WriteOffDialogProps) {
       toast.success(t('messages.success.created', { item: t('navigation.writeoff') }));
       onClose();
       // Reset form
-      setSelectedStocks({});
+      setQuantities({});
       setReason('Брак');
       setNotes('');
     } catch (error) {
@@ -119,36 +100,22 @@ export function WriteOffDialog({ open, onClose }: WriteOffDialogProps) {
           <div className="border rounded p-4">
             <Label className="mb-2 block">{t('table.products')}</Label>
             <div className="space-y-2 max-h-60 overflow-y-auto">
-              {stocks.map(stock => {
-                const isEnabled = !selectedStore || stock.store_read?.id === selectedStore;
-                
-                return (
-                  <div key={stock.id} className="flex items-center gap-4">
-                    <Checkbox
-                      id={`stock-${stock.id}`}
-                      checked={!!selectedStocks[stock.id!]}
-                      onCheckedChange={(checked) => 
-                        handleStockSelect(stock.id!, checked as boolean, stock.store_read?.id!)
-                      }
-                      disabled={!isEnabled}
-                    />
-                    <Label htmlFor={`stock-${stock.id}`} className="flex-grow">
-                      {stock.product_read?.product_name} ({stock.store_read?.name})
-                    </Label>
-                    {selectedStocks[stock.id!] && (
-                      <Input
-                        type="number"
-                        value={selectedStocks[stock.id!].quantity}
-                        onChange={e => handleQuantityChange(stock.id!, e.target.value)}
-                        placeholder={t('forms.quantity')}
-                        className="w-24"
-                        min="0"
-                        max={stock.quantity}
-                      />
-                    )}
-                  </div>
-                );
-              })}
+              {selectedStockObjects.map((stock: StockWithRefs) => (
+                <div key={stock.id} className="flex items-center gap-4">
+                  <Label htmlFor={`stock-${stock.id}`} className="flex-grow">
+                    {stock.product_read?.product_name} ({stock.store_read?.name})
+                  </Label>
+                  <Input
+                    type="number"
+                    value={quantities[stock.id!] || ''}
+                    onChange={e => setQuantities(prev => ({ ...prev, [stock.id!]: e.target.value }))}
+                    placeholder={t('forms.quantity')}
+                    className="w-24"
+                    min="0"
+                    max={stock.quantity}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </div>

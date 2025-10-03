@@ -4,6 +4,7 @@ import { createResourceApiHooks } from '../helpers/createResourceApi'
 export interface Cassa {
     id?:number;
     name: string;
+    store_write: number;
 }
 
 // API endpoints

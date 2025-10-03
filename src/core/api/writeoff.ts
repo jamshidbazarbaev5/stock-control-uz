@@ -25,7 +25,7 @@ export const useCreateWriteOff = () => {
 
   return useMutation({
     mutationFn: async (data: WriteOff) => {
-      const response = await api.post('/writeoffs/create', data);
+      const response = await api.post('/writeoffs/create/', data);
       return response.data;
     },
     onSuccess: () => {

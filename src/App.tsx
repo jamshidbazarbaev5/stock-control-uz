@@ -72,6 +72,7 @@ import POSPage from "./core/pages/POSPage";
 import ProtectedRoute from "@/components/ProtectedRoute.tsx";
 import CassasPage from "@/core/pages/Cassa.tsx";
 import RevaluationHistoryPage from "@/pages/RevaluationHistoryPage";
+import CreateCassaPage from "@/core/pages/CreateCassa.tsx";
 // import CreateSalePos from "./core/pages/create-sale-2";
 
 const queryClient = new QueryClient();
@@ -576,6 +577,14 @@ function App() {
                       element={
                           <PrivateRoute allowedRoles={["Администратор"]}>
                               <CassasPage />
+                          </PrivateRoute>
+                      }
+                  />
+                  <Route
+                      path="/create-cassa"
+                      element={
+                          <PrivateRoute allowedRoles={["Администратор"]}>
+                              <CreateCassaPage />
                           </PrivateRoute>
                       }
                   />
