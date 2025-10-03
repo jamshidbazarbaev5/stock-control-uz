@@ -10,7 +10,16 @@
     "max_quantity": "Максимальное количество"
   },
   "buttons": {
-    "print": "Распечатать штрих-код"
+    "print": "Распечатать штрих-код",
+    "revaluate":"Переоценка",
+    "cancel":"Отмена",
+    "submit":"Сохранить"
+  },
+  "dialogs":{
+    "revaluation.title":"Переоценка",
+    "revaluation.new_selling_price":"Цена продажи",
+    "revaluation.new_min_price":"Мин цена",
+    "revaluation.comment":"Комментарий"
   },
 
   "dashboard": {
@@ -543,6 +552,7 @@
     "complex": "Сложная оплата"
   },
   "table": {
+    "select":"Выбрать",
     "id": "ИД",
     "revenue_details": "Прибыль",
     "sale_info": "Информация о продаже",

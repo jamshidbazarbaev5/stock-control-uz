@@ -141,11 +141,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         label: t("navigation.dashobard"),
         href: "/dashboard",
       },
-       {
-            icon: Ruler,
-            label: t("navigation.pos"),
-            href: "/pos",
-          },
+      {
+        icon: Ruler,
+        label: t("navigation.pos"),
+        href: "/pos",
+      },
+      {
+        icon: Package,
+        label: t("navigation.revaluations"),
+        href: "/revaluations",
+      },
       {
         icon: ArrowLeftRight,
         label: t("navigation.transfers"),

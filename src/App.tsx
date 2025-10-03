@@ -71,6 +71,7 @@ import PrintBarcodePage from "./core/pages/PrintBarcodePage";
 import POSPage from "./core/pages/POSPage";
 import ProtectedRoute from "@/components/ProtectedRoute.tsx";
 import CassasPage from "@/core/pages/Cassa.tsx";
+import RevaluationHistoryPage from "@/pages/RevaluationHistoryPage";
 // import CreateSalePos from "./core/pages/create-sale-2";
 
 const queryClient = new QueryClient();
@@ -592,6 +593,14 @@ function App() {
                 element={
                   <PrivateRoute allowedRoles={["Администратор"]}>
                     <ReceiptDesignerPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/revaluations"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <RevaluationHistoryPage />
                   </PrivateRoute>
                 }
               />

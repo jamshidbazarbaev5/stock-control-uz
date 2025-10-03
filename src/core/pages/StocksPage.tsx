@@ -1,4 +1,5 @@
-import { useState } from 'react';
+  import { useState } from 'react';
+  import { WriteOffDialog } from '../components/dialogs/WriteOffDialog';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -32,6 +33,7 @@ export default function StocksPage() {
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [stockToDelete, setStockToDelete] = useState<Stock | null>(null);
+  const [writeOffDialogOpen, setWriteOffDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [productName, setProductName] = useState<string>(''); // New state for product name
   const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
@@ -389,7 +391,12 @@ export default function StocksPage() {
       <div className="container mx-auto py-8 px-4">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">{t('navigation.stocks')}</h1>
-          <Button onClick={() => navigate('/create-stock')}>{t('common.create')} </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setWriteOffDialogOpen(true)}>
+              {t('common.create')} {t('navigation.writeoff')}
+            </Button>
+            <Button onClick={() => navigate('/create-stock')}>{t('common.create')} </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-5" >
@@ -488,6 +495,11 @@ export default function StocksPage() {
             onConfirm={() => stockToDelete?.id !== undefined && handleDelete(stockToDelete.id)}
             title={t('common.delete') + ' ' + t('table.product')}
             // description={t('messages.confirm.delete', { item: t('table.product') })}
+        />
+
+        <WriteOffDialog
+          open={writeOffDialogOpen}
+          onClose={() => setWriteOffDialogOpen(false)}
         />
       </div>
   );
