@@ -264,6 +264,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             label: t("navigation.labelSizes"),
             href: "/label-sizes",
           },
+          {
+            icon: Receipt,
+            label: t("navigation.cassas"),
+            href: "/cassas",
+          },
            
 
          

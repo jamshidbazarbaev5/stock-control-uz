@@ -7,6 +7,7 @@ import type { ReceiptPreviewData } from "../../types/receipt";
 import { DEFAULT_TEMPLATE } from "../../types/receipt";
 import { ResourceTable } from "../helpers/ResourseTable";
 import { type Sale, useGetSales, useDeleteSale } from "../api/sale";
+import { type Refund, type RefundItem, useCreateRefund } from "../api/refund";
 // import { useGetProducts } from '../api/product';
 import { toast } from "sonner";
 import { useCurrentUser } from "../hooks/useCurrentUser";
@@ -35,6 +36,15 @@ import {
   findRecyclingForStock,
   calculateRecyclingProfit,
 } from "../helpers/recyclingProfitUtils";
+import {
+  WideDialog,
+  WideDialogContent,
+  WideDialogHeader,
+  WideDialogTitle,
+  WideDialogFooter,
+} from "@/components/ui/wide-dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Undo2 } from "lucide-react";
 
 type PaginatedData<T> = { results: T[]; count: number } | T[];
 export default function SalesPage() {
@@ -45,6 +55,16 @@ export default function SalesPage() {
   const { data: currentUser } = useCurrentUser();
   // const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   // const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+  // Refund modal states
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+  const [selectedSaleForRefund, setSelectedSaleForRefund] =
+    useState<Sale | null>(null);
+  const [refundQuantities, setRefundQuantities] = useState<
+    Record<number, string>
+  >({});
+  const [refundNotes, setRefundNotes] = useState("");
+  const createRefund = useCreateRefund();
 
   // Set initial states
   const [_selectedProduct, setSelectedProduct] = useState<string>("all");
@@ -357,6 +377,60 @@ export default function SalesPage() {
     setEndDate("");
     setCreditStatus("all");
     setPage(1);
+  };
+
+  const handleOpenRefundModal = (sale: Sale) => {
+    setSelectedSaleForRefund(sale);
+    setRefundQuantities({});
+    setRefundNotes("");
+    setIsRefundModalOpen(true);
+  };
+
+  const handleRefundSubmit = async () => {
+    if (!selectedSaleForRefund?.id) {
+      toast.error(t("errors.no_sale_selected"));
+      return;
+    }
+
+    // Prepare refund items
+    const refundItems: RefundItem[] = [];
+
+    Object.entries(refundQuantities).forEach(([saleItemId, quantity]) => {
+      const parsedQuantity = parseFloat(quantity);
+      if (parsedQuantity > 0) {
+        refundItems.push({
+          sale_item: parseInt(saleItemId),
+          quantity: parsedQuantity,
+        });
+      }
+    });
+
+    if (refundItems.length === 0) {
+      toast.error(t("errors.no_items_selected_for_refund"));
+      return;
+    }
+
+    const refundData = {
+      sale: selectedSaleForRefund.id,
+      notes: refundNotes || undefined,
+      refund_items: refundItems,
+    } as Refund;
+
+    try {
+      await createRefund.mutateAsync(refundData);
+      toast.success(t("messages.success.refund_created"));
+      setIsRefundModalOpen(false);
+      setSelectedSaleForRefund(null);
+      setRefundQuantities({});
+      setRefundNotes("");
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.detail ||
+          error?.response?.data?.error ||
+          t("messages.error.refund_failed"),
+      );
+      console.error("Failed to create refund:", error);
+    }
   };
 
   const handleRowClick = (row: Sale) => {
@@ -858,6 +932,11 @@ export default function SalesPage() {
                   ? (sale: Sale) => navigate(`/edit-sale/${sale.id}`)
                   : undefined
               }
+              onRefund={
+                currentUser?.role !== "Продавец"
+                  ? (sale: Sale) => handleOpenRefundModal(sale)
+                  : undefined
+              }
               pageSize={30}
               currentPage={page}
               onPageChange={(newPage) => setPage(newPage)}
@@ -1030,6 +1109,190 @@ export default function SalesPage() {
       {/*    </div>*/}
       {/*  </DialogContent>*/}
       {/*</Dialog>*/}
+
+      {/* Refund Modal */}
+      <WideDialog open={isRefundModalOpen} onOpenChange={setIsRefundModalOpen}>
+        <WideDialogContent
+          className="max-h-[90vh] overflow-hidden p-0"
+          width="wide"
+        >
+          <WideDialogHeader className="p-6 pb-4 border-b">
+            <WideDialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Undo2 className="h-5 w-5" />
+              {t("common.refund")} - {t("navigation.sales")} #
+              {selectedSaleForRefund?.id}
+            </WideDialogTitle>
+          </WideDialogHeader>
+
+          <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+            {selectedSaleForRefund && (
+              <div className="space-y-6">
+                {/* Sale Information */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-medium text-gray-700 mb-2">
+                    {t("table.sale_info")}
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-500">{t("table.store")}:</span>
+                      <span className="ml-2 font-medium">
+                        {selectedSaleForRefund.store_read?.name || "-"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">
+                        {t("table.total_amount")}:
+                      </span>
+                      <span className="ml-2 font-medium text-emerald-600">
+                        {formatCurrency(selectedSaleForRefund.total_amount)} UZS
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">{t("forms.date")}:</span>
+                      <span className="ml-2 font-medium">
+                        {selectedSaleForRefund.created_at
+                          ? new Date(
+                              selectedSaleForRefund.created_at,
+                            ).toLocaleDateString()
+                          : "-"}
+                      </span>
+                    </div>
+                    {selectedSaleForRefund.sale_debt?.client_read && (
+                      <div>
+                        <span className="text-gray-500">
+                          {t("table.client")}:
+                        </span>
+                        <span className="ml-2 font-medium">
+                          {selectedSaleForRefund.sale_debt.client_read.name}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Refund Items Selection */}
+                <div>
+                  <h3 className="font-medium text-gray-700 mb-3">
+                    {t("common.select_items_for_refund")}
+                  </h3>
+                  <div className="space-y-3">
+                    {selectedSaleForRefund.sale_items?.map((item) => {
+                      const product = item.stock_read?.product_read;
+                      const maxQuantity = parseFloat(item.quantity);
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="bg-white border rounded-lg p-4 hover:border-blue-300 transition-colors"
+                        >
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                            <div className="md:col-span-2">
+                              <div className="font-medium">
+                                {product?.product_name || "-"}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {t("table.quantity")}: {item.quantity}{" "}
+                                {item.selling_method === "Штук"
+                                  ? t("table.pieces")
+                                  : (product as any)?.measurement?.find(
+                                      (m: any) => m.for_sale,
+                                    )?.measurement_read?.measurement_name || ""}
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="text-sm text-gray-500">
+                                {t("table.price")}
+                              </div>
+                              <div className="font-medium">
+                                {formatCurrency(
+                                  parseFloat(item.subtotal) /
+                                    parseFloat(item.quantity),
+                                )}{" "}
+                                UZS
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-sm text-gray-600 mb-1 block">
+                                {t("common.refund_quantity")}
+                              </label>
+                              <Input
+                                type="number"
+                                min="0"
+                                max={maxQuantity}
+                                step="0.01"
+                                value={refundQuantities[item.id!] || ""}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  const numValue = parseFloat(value);
+
+                                  if (numValue > maxQuantity) {
+                                    toast.error(
+                                      `${t("errors.max_quantity")}: ${maxQuantity}`,
+                                    );
+                                    return;
+                                  }
+
+                                  setRefundQuantities((prev) => ({
+                                    ...prev,
+                                    [item.id!]: value,
+                                  }));
+                                }}
+                                placeholder={`0 - ${maxQuantity}`}
+                                className="w-full"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="font-medium text-gray-700 mb-2 block">
+                    {t("common.notes")}
+                  </label>
+                  <Textarea
+                    value={refundNotes}
+                    onChange={(e) => setRefundNotes(e.target.value)}
+                    placeholder={t("placeholders.refund_notes")}
+                    rows={3}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <WideDialogFooter className="p-6 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsRefundModalOpen(false);
+                setSelectedSaleForRefund(null);
+                setRefundQuantities({});
+                setRefundNotes("");
+              }}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={handleRefundSubmit}
+              disabled={createRefund.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {createRefund.isPending ? (
+                <>{t("common.processing")}...</>
+              ) : (
+                <>{t("common.confirm_refund")}</>
+              )}
+            </Button>
+          </WideDialogFooter>
+        </WideDialogContent>
+      </WideDialog>
     </div>
   );
 }

@@ -4,6 +4,11 @@
     "amount_exceeds_total": "Сумма не может превышать общую сумму долга",
     "selling_price_greater_than_min_price": "Цена продажи не может быть ниже минимальной цены"
   },
+  "errors": {
+    "no_sale_selected": "Продажа не выбрана",
+    "no_items_selected_for_refund": "Не выбраны товары для возврата",
+    "max_quantity": "Максимальное количество"
+  },
   "buttons": {
     "print": "Распечатать штрих-код"
   },
@@ -128,6 +133,13 @@
     "create_expense": "Создать расход"
   },
   "common": {
+    "refund": "Возврат",
+    "notes": "Примечания",
+    "confirm_refund": "Подтвердить возврат",
+    "refund_quantity": "Количество возврата",
+    "select_items_for_refund": "Выберите товары для возврата",
+    "processing": "Обработка",
+    "paid2": "Оплачено",
     "pay": "Способ оплаты",
     "enter_price_per_tone": "Введите цену за тонну",
     "price_per_tone": "Цена за тонну",
@@ -474,6 +486,7 @@
     "quantity_of_parts": "Введите количество частей",
     "search_loansponsor": "Пишите спонсора",
     "select_currency": "Выберите валюту",
+    "refund_notes": "Укажите причину возврата",
     "enter_length": "Введите толщину",
     "enter_static_weight": "Введите метр",
     "select_is_list": "Выберите это лист?",
@@ -532,6 +545,7 @@
   "table": {
     "id": "ИД",
     "revenue_details": "Прибыль",
+    "sale_info": "Информация о продаже",
     "quantity_of_parts": "Количество частей",
     "exchange_rate": "Курс обмена",
     "subtotal": "Сумма за единицу",
@@ -598,7 +612,8 @@
       "money_updated": "Депозит успешно обновлен",
       "updated": " успешно обновлен",
       "deleted": " успешно удален",
-      "payment_created": "Платеж успешно создан"
+      "payment_created": "Платеж успешно создан",
+      "refund_created": "Возврат успешно создан"
     },
     "error": {
       "negative": "Невозможно создать: прибыль не может быть отрицательной.",
@@ -612,7 +627,8 @@
       "invalid_stock_selection": "Невозможно создать приход на этот склад",
       "insufficient_payment": "Недостаточно средств для оплаты",
       "same_store_transfer": "Невозможно перевести между складами в одном магазине",
-      "payment_create": "Ошибка при создании платежа"
+      "payment_create": "Ошибка при создании платежа",
+      "refund_failed": "Не удалось создать возврат"
     },
     "confirmation": {
       "delete": "Вы уверены, что хотите удалить это?"

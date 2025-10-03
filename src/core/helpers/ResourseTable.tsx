@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Table,
   TableBody,
@@ -6,20 +6,21 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../components/ui/table';
-import { Button } from '../../components/ui/button';
-import { Skeleton } from '../../components/ui/skeleton';
-import { 
-  ChevronLeftIcon, 
-  ChevronRightIcon, 
+} from "../../components/ui/table";
+import { Button } from "../../components/ui/button";
+import { Skeleton } from "../../components/ui/skeleton";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
   EyeIcon,
   TrashIcon,
   PlusIcon,
   ChevronDownIcon,
-  ChevronUpIcon
-} from 'lucide-react';
-import { t } from 'i18next';
-import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
+  ChevronUpIcon,
+  Undo2,
+} from "lucide-react";
+import { t } from "i18next";
+import { DeleteConfirmationModal } from "../components/modals/DeleteConfirmationModal";
 
 interface Column<T> {
   header: string;
@@ -33,6 +34,7 @@ interface ResourceTableProps<T extends { id?: number }> {
   isLoading: boolean;
   onEdit?: (item: T) => void;
   onDelete?: (id: number) => void;
+  onRefund?: (item: T) => void;
   onAdd?: () => void;
   pageSize?: number;
   totalCount?: number;
@@ -49,6 +51,7 @@ export function ResourceTable<T extends { id?: number }>({
   isLoading,
   onEdit,
   onDelete,
+  onRefund,
   onAdd,
   pageSize = 30,
   totalCount = 0,
@@ -61,10 +64,12 @@ export function ResourceTable<T extends { id?: number }>({
   // Handle case when data is undefined
   const tableData = data || [];
   const totalPages = Math.ceil(totalCount / pageSize);
-  
+
   // State for delete confirmation modal and expanded row
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<number | undefined>(undefined);
+  const [itemToDelete, setItemToDelete] = useState<number | undefined>(
+    undefined,
+  );
   const [expandedRow, setExpandedRow] = useState<number>(-1);
 
   const getPageNumbers = () => {
@@ -89,7 +94,7 @@ export function ResourceTable<T extends { id?: number }>({
     }
 
     if (startPage > 2) {
-      pages.push('...');
+      pages.push("...");
     }
 
     for (let i = startPage; i <= endPage; i++) {
@@ -97,7 +102,7 @@ export function ResourceTable<T extends { id?: number }>({
     }
 
     if (endPage < totalPages - 1) {
-      pages.push('...');
+      pages.push("...");
     }
 
     pages.push(totalPages);
@@ -106,7 +111,7 @@ export function ResourceTable<T extends { id?: number }>({
   };
 
   const getRowNumber = (index: number) => {
-    return ((currentPage - 1) * pageSize) + index + 1;
+    return (currentPage - 1) * pageSize + index + 1;
   };
 
   return (
@@ -115,11 +120,11 @@ export function ResourceTable<T extends { id?: number }>({
         <h2 className="text-xl font-bold"></h2>
         {onAdd && (
           <Button onClick={onAdd} className="flex items-center gap-1">
-            <PlusIcon className="h-4 w-4" /> {t('common.create')}
+            <PlusIcon className="h-4 w-4" /> {t("common.create")}
           </Button>
         )}
       </div>
-      
+
       <div className="rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
@@ -128,7 +133,10 @@ export function ResourceTable<T extends { id?: number }>({
                 №
               </TableHead>
               {columns.map((column, index) => (
-                <TableHead key={index} className="text-xs uppercase text-gray-500 font-medium">
+                <TableHead
+                  key={index}
+                  className="text-xs uppercase text-gray-500 font-medium"
+                >
                   {column.header}
                 </TableHead>
               ))}
@@ -142,7 +150,10 @@ export function ResourceTable<T extends { id?: number }>({
           <TableBody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, index) => (
-                <TableRow key={`skeleton-${index}`} className=" border-gray-100 last:border-0">
+                <TableRow
+                  key={`skeleton-${index}`}
+                  className=" border-gray-100 last:border-0"
+                >
                   <TableCell className="w-[60px]">
                     <Skeleton className="h-4 w-8" />
                   </TableCell>
@@ -163,19 +174,28 @@ export function ResourceTable<T extends { id?: number }>({
               ))
             ) : tableData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length + 1 + (onEdit || onDelete ? 1 : 0)} className="text-center text-gray-500">
+                <TableCell
+                  colSpan={
+                    columns.length +
+                    1 +
+                    (onEdit || onDelete || onRefund ? 1 : 0)
+                  }
+                  className="text-center text-gray-500"
+                >
                   Данные отсутствуют
                 </TableCell>
               </TableRow>
             ) : (
               tableData.map((row, rowIndex) => (
                 <React.Fragment key={rowIndex}>
-                  <TableRow 
-                    className={` border-gray-100 ${(expandedRowRenderer || onRowClick) ? '' : ''}`}
+                  <TableRow
+                    className={` border-gray-100 ${expandedRowRenderer || onRowClick ? "" : ""}`}
                     onClick={(e) => {
                       if (expandedRowRenderer) {
                         e.stopPropagation();
-                        setExpandedRow(expandedRow === rowIndex ? -1 : rowIndex);
+                        setExpandedRow(
+                          expandedRow === rowIndex ? -1 : rowIndex,
+                        );
                       }
                       if (onRowClick) {
                         onRowClick(row);
@@ -187,12 +207,12 @@ export function ResourceTable<T extends { id?: number }>({
                       {(row as any)?.store_read?.color && (
                         <span
                           style={{
-                            display: 'inline-block',
+                            display: "inline-block",
                             width: 16,
                             height: 16,
-                            borderRadius: '50%',
+                            borderRadius: "50%",
                             backgroundColor: (row as any).store_read.color,
-                            border: '1px solid #e5e7eb', // Tailwind gray-200
+                            border: "1px solid #e5e7eb", // Tailwind gray-200
                           }}
                           title={(row as any)?.store_read?.name}
                         />
@@ -200,41 +220,55 @@ export function ResourceTable<T extends { id?: number }>({
                     </TableCell>
                     {columns.map((column, colIndex) => (
                       <TableCell key={colIndex}>
-                        {column.cell 
+                        {column.cell
                           ? column.cell(row)
-                          : typeof column.accessorKey === 'function'
+                          : typeof column.accessorKey === "function"
                             ? column.accessorKey(row)
                             : String(
-                                typeof column.accessorKey === 'string' 
-                                  ? (row as any)[column.accessorKey] || ''
-                                  : row[column.accessorKey as keyof T] || ''
+                                typeof column.accessorKey === "string"
+                                  ? (row as any)[column.accessorKey] || ""
+                                  : row[column.accessorKey as keyof T] || "",
                               )}
                       </TableCell>
                     ))}
-                    {(onEdit || onDelete || actions) && (
-                      <TableCell className="text-right w-[100px]" onClick={e => e.stopPropagation()}>
+                    {(onEdit || onDelete || onRefund || actions) && (
+                      <TableCell
+                        className="text-right w-[100px]"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <div className="flex gap-1 justify-end">
                           {onEdit && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => onEdit(row)}
                               className="h-8 w-8 p-0 hover:bg-gray-100"
                             >
-                              <EyeIcon className="h-4 w-4 text-gray-500" />
+                              <EyeIcon className="h-4 w-4 text-gray-600" />
+                            </Button>
+                          )}
+                          {onRefund && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => onRefund(row)}
+                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                              title="Refund"
+                            >
+                              <Undo2 className="h-4 w-4 text-orange-600" />
                             </Button>
                           )}
                           {onDelete && row.id && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => {
                                 setItemToDelete(row.id);
                                 setIsDeleteModalOpen(true);
                               }}
-                              className="h-8 w-8 p-0 hover:bg-red-50 text-red-500"
+                              className="h-8 w-8 p-0 hover:bg-gray-100"
                             >
-                              <TrashIcon className="h-4 w-4" />
+                              <TrashIcon className="h-4 w-4 text-gray-600" />
                             </Button>
                           )}
                           {actions && actions(row)}
@@ -244,7 +278,9 @@ export function ResourceTable<T extends { id?: number }>({
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setExpandedRow(expandedRow === rowIndex ? -1 : rowIndex);
+                                setExpandedRow(
+                                  expandedRow === rowIndex ? -1 : rowIndex,
+                                );
                               }}
                               className="h-8 w-8 p-0 hover:bg-gray-100"
                             >
@@ -262,7 +298,11 @@ export function ResourceTable<T extends { id?: number }>({
                   {expandedRowRenderer && expandedRow === rowIndex && (
                     <TableRow>
                       <TableCell
-                        colSpan={columns.length + 1 + (onEdit || onDelete ? 1 : 0)}
+                        colSpan={
+                          columns.length +
+                          1 +
+                          (onEdit || onDelete || onRefund ? 1 : 0)
+                        }
                         className=" border-gray-100"
                       >
                         {expandedRowRenderer(row)}
@@ -275,31 +315,31 @@ export function ResourceTable<T extends { id?: number }>({
           </TableBody>
         </Table>
       </div>
-      
+
       {totalPages >= 1 && (
         <div className="flex justify-end gap-2 items-center text-sm text-gray-600">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => onPageChange?.(currentPage - 1)} 
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onPageChange?.(currentPage - 1)}
             disabled={currentPage === 1}
             className="hover:bg-gray-100"
           >
             <ChevronLeftIcon className="h-4 w-4" />
           </Button>
-          
+
           <div className="flex gap-1">
-            {getPageNumbers().map((page, index) => (
-              typeof page === 'number' ? (
+            {getPageNumbers().map((page, index) =>
+              typeof page === "number" ? (
                 <Button
                   key={index}
                   variant={currentPage === page ? "default" : "ghost"}
                   size="sm"
                   onClick={() => onPageChange?.(page)}
                   className={`h-8 w-8 p-0 ${
-                    currentPage === page 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'hover:bg-gray-100'
+                    currentPage === page
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-gray-100"
                   }`}
                 >
                   {page}
@@ -308,14 +348,14 @@ export function ResourceTable<T extends { id?: number }>({
                 <span key={index} className="px-2">
                   {page}
                 </span>
-              )
-            ))}
+              ),
+            )}
           </div>
 
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => onPageChange?.(currentPage + 1)} 
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onPageChange?.(currentPage + 1)}
             disabled={currentPage === totalPages}
             className="hover:bg-gray-100"
           >

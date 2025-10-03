@@ -280,6 +280,7 @@ const POSInterface = () => {
               console.log("✅ Product found and added:", product);
             }
           } else {
+            // eslint-disable-next-line no-constant-condition
             if (debugMode || true) {
               // Always log when product not found
               console.warn("❌ Product not found for barcode:", cleanBarcode);
@@ -1104,7 +1105,7 @@ const POSInterface = () => {
                 });
               }
             }}
-            onBlur={(e) => {
+            onBlur={(_e) => {
               // Prevent losing focus
               setTimeout(() => {
                 if (barcodeInputRef.current) {

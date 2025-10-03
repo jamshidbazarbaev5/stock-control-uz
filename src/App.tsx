@@ -70,6 +70,7 @@ import CreateLabelSize from "./core/pages/create-label-size";
 import PrintBarcodePage from "./core/pages/PrintBarcodePage";
 import POSPage from "./core/pages/POSPage";
 import ProtectedRoute from "@/components/ProtectedRoute.tsx";
+import CassasPage from "@/core/pages/Cassa.tsx";
 // import CreateSalePos from "./core/pages/create-sale-2";
 
 const queryClient = new QueryClient();
@@ -569,6 +570,14 @@ function App() {
                   </PrivateRoute>
                 }
               />
+                  <Route
+                      path="/cassas"
+                      element={
+                          <PrivateRoute allowedRoles={["Администратор"]}>
+                              <CassasPage />
+                          </PrivateRoute>
+                      }
+                  />
               {/* <Route
                 path="/pos-create"
                 element={
