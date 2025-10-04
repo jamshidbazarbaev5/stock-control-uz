@@ -147,6 +147,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         href: "/pos",
       },
       {
+        icon: ListView,
+        label: t("navigation.attributes"),
+        href: "/attributes",
+      },
+      {
         icon: Package,
         label: t("navigation.revaluations"),
         href: "/revaluations",
@@ -161,6 +166,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         label: t("navigation.check"),
         href: "/receipt-designer",
       },
+       {
+        icon: ArrowLeftRight,
+        label: t("navigation.smena"),
+        href: "/shifts",
+      },
+      
       { icon: Package, label: t("navigation.stocks"), href: "/stock" },
       {
         icon: Package,

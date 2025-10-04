@@ -6,6 +6,7 @@ export interface CurrentUser {
   phone_number: string;
   role: string;
   is_superuser: boolean;
+  has_active_shift:boolean;
   store_read?: {
     id: number;
     name: string;

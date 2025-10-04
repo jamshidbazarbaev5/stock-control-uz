@@ -1,123 +1,68 @@
 import { useNavigate } from 'react-router-dom';
 import { ResourceForm } from '../helpers/ResourceForm';
-import type { Product } from '../api/product';
-import { useCreateProduct } from '../api/product';
+import { type Product, useCreateProduct } from '../api/product';
 import { useGetCategories } from '../api/category';
-import { useGetMeasurements } from '../api/measurement';
+import type { Attribute } from '@/types/attribute';
+import { attributeApi } from '../api/attribute';
 import { toast } from 'sonner';
-import { Button } from '../../components/ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ScrollArea } from '@/components/ui/scroll-area';
 
-interface MeasurementItem {
-  id?: number;
-  measurement_write: number;
-  measurement_read?: {
-    id: number;
-    measurement_name: string;
-  };
-  number: string; // store as string for input, allow comma
-  for_sale: boolean;
+interface AttributeValue {
+  attribute_id: number;
+  value: string | number | boolean;
 }
 
 export default function CreateProduct() {
   const navigate = useNavigate();
   const createProduct = useCreateProduct();
   const { t } = useTranslation();
-  const [color, setColor] = useState('');
-  const [measurements, setMeasurements] = useState<MeasurementItem[]>([{ measurement_write: 0, number: '', for_sale: false }]);
-  const [kub, setKub] = useState('');
-  const [categoriesForRecycling, setCategoriesForRecycling] = useState<number[]>([]);
-  const [isList, setIsList] = useState<'true' | 'false'>('false');
-  const [length, setLength] = useState('');
-  const [staticWeight, setStaticWeight] = useState('');
-  const [hasMetr, setHasMetr] = useState(false);
-  const [hasShtuk, setHasShtuk] = useState(false);
-  const [hasBarcode, setHasBarcode] = useState(false);
   const [barcode, setBarcode] = useState('');
+  const [minPrice, setMinPrice] = useState('');
+  const [sellingPrice, setSellingPrice] = useState('');
+  const [attributeValues, setAttributeValues] = useState<AttributeValue[]>([]);
 
-  // Fetch categories, stores and measurements for the select dropdowns
+  // Fetch categories for the select dropdown
   const { data: categoriesData } = useGetCategories({});
-  const { data: measurementsData } = useGetMeasurements({});
 
-  // Get the arrays from response data
+  // Get the array from response data
   const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData?.results || [];
-  const availableMeasurements = Array.isArray(measurementsData) ? measurementsData : measurementsData?.results || [];
 
-  const handleAddMeasurement = () => {
-    setMeasurements([...measurements, { measurement_write: 0, number: '', for_sale: false }]);
-  };
-
-  const handleRemoveMeasurement = (index: number) => {
-    setMeasurements(measurements.filter((_: MeasurementItem, i: number) => i !== index));
-  };
-
-  const handleMeasurementChange = (index: number, field: keyof MeasurementItem, value: string | boolean) => {
-    const newMeasurements = [...measurements];
-    if (field === 'for_sale') {
-      newMeasurements[index] = {
-        ...newMeasurements[index],
-        [field]: Boolean(value)
-      };
-    } else if (field === 'number') {
-      newMeasurements[index] = {
-        ...newMeasurements[index],
-        [field]: value as string
-      };
-    } else {
-      newMeasurements[index] = {
-        ...newMeasurements[index],
-        [field]: value
-      };
-    }
-    setMeasurements(newMeasurements);
-  };
+  // Fetch attributes and filter by selected category
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [attributes, setAttributes] = useState<Attribute[]>([]);
+  
+  useEffect(() => {
+    const fetchAttributes = async () => {
+      try {
+        if (selectedCategory) {
+          const allAttributes = await attributeApi.getAll();
+          setAttributes(allAttributes.filter(attr => attr.category === selectedCategory));
+        } else {
+          setAttributes([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch attributes:', error);
+      }
+    };
+    
+    fetchAttributes();
+  }, [selectedCategory]);
 
   const handleSubmit = async (data: any) => {
     console.log('Form data received:', data);
-    console.log('Length state:', length);
-    console.log('Static weight state:', staticWeight);
     
     try {
       const formattedData: Product = {
         product_name: data.product_name,
         category_write: typeof data.category_write === 'string' ? parseInt(data.category_write, 10) : data.category_write,
-        has_barcode: hasBarcode,
-        ...(hasBarcode && { barcode }),
-        measurement: measurements.map((m: MeasurementItem) => ({
-          id: m.id,
-          measurement_write: m.measurement_write,
-          measurement_read: m.measurement_read,
-          number: m.number.toString().replace(',', '.'), // convert comma to dot
-          for_sale: m.for_sale
-        })),
-        has_color: data.has_color === 'true',
-        ...(data.has_color === 'true' && { color }),
-        has_kub: data.has_kub === 'true',
-        ...(data.has_kub === 'true' && { kub: parseFloat(kub.replace(',', '.')) || 0 }),
-        has_recycling: data.has_recycling === 'true',
-        ...((data.has_recycling === 'true' && categoriesForRecycling.length > 0) && { categories_for_recycling: categoriesForRecycling }),
-        is_list: isList === 'true',
-        ...(isList === 'true' && { 
-          length: data.length ? parseFloat(data.length) : (parseFloat(length) || 0),
-          static_weight: data.static_weight ? parseFloat(data.static_weight) : (parseFloat(staticWeight) || 0)
-        }),
-        has_metr: hasMetr,
-        has_shtuk: hasShtuk,
+        barcode: barcode,
+        min_price: typeof data.min_price === 'string' ? parseFloat(data.min_price) : data.min_price,
+        selling_price: typeof data.selling_price === 'string' ? parseFloat(data.selling_price) : data.selling_price,
+        attribute_values: attributeValues.map(av => ({
+          ...av,
+          value: typeof av.value === 'string' && !isNaN(Number(av.value)) ? Number(av.value) : av.value
+        }))
       };
 
       console.log('Formatted data:', formattedData);
@@ -151,240 +96,137 @@ export default function CreateProduct() {
             options: categories.map(category => ({
               value: category.id,
               label: category.category_name
-            }))
+            })),
+            onChange: (value: string) => setSelectedCategory(Number(value))
           },
           {
-            name: 'has_color',
-            label: t('forms.has_color'),
-            type: 'select',
-            placeholder: t('placeholders.select_has_color'),
-            required: true,
-            options: [
-              { value: 'false', label: t('common.no') },
-              { value: 'true', label: t('common.yes') }
-            ],
-            // No need for onChange since visibility is handled by nestedField,
-            nestedField: (
-              <input
-                type="text"
-                className="w-full px-3 py-2 border rounded-md"
-                placeholder={t('placeholders.enter_color')}
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-              />
-            )
+            name: 'barcode',
+            label: t('forms.barcode'),
+            type: 'number',
+            placeholder: t('placeholders.enter_barcode'),
+            value: barcode,
+            onChange: (value: string) => setBarcode(value)
           },
           {
-            name: 'has_kub',
-            label: t('forms.has_kub'),
-            type: 'select',
-            placeholder: t('placeholders.select_has_kub'),
+            name: 'min_price',
+            label: t('forms.min_price'),
+            type: 'number',
+            placeholder: t('placeholders.enter_min_price'),
             required: true,
-            options: [
-              { value: 'false', label: t('common.no') },
-              { value: 'true', label: t('common.yes') }
-            ],
-            // No need for onChange since visibility is handled by nestedField,
-            nestedField: (
-              <input
-                type="text"
-                className="w-full px-3 py-2 border rounded-md"
-                placeholder={t('placeholders.enter_kub')}
-                value={kub}
-                onChange={(e) => setKub(e.target.value)}
-              />
-            )
+            value: minPrice,
+            onChange: (value: string) => setMinPrice(value)
           },
           {
-            name: 'has_recycling',
-            label: t('forms.has_recycling'),
-            type: 'select',
-            placeholder: t('placeholders.select_has_recycling'),
+            name: 'selling_price',
+            label: t('forms.selling_price'),
+            type: 'number',
+            placeholder: t('placeholders.enter_selling_price'),
             required: true,
-            options: [
-              { value: 'false', label: t('common.no') },
-              { value: 'true', label: t('common.yes') }
-            ],
-            // No need for onChange since visibility is handled by nestedField,
-            nestedField: (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full flex justify-between items-center">
-                    <span>
-                      {categoriesForRecycling.length
-                        ? `${categoriesForRecycling.length} ${t('forms.categories_selected')}`
-                        : t('placeholders.select_categories')}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="start">
-                  <ScrollArea className="h-[200px] p-2">
-                    {categories.map(category => (
-                      <DropdownMenuCheckboxItem
-                        key={category.id?.toString()}
-                        checked={categoriesForRecycling.includes(category.id || 0)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            setCategoriesForRecycling([...categoriesForRecycling, category.id || 0]);
-                          } else {
-                            setCategoriesForRecycling(categoriesForRecycling.filter(id => id !== category.id));
-                          }
-                        }}
-                      >
-                        {category.category_name}
-                      </DropdownMenuCheckboxItem>
-                    ))}
-                  </ScrollArea>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )
+            value: sellingPrice,
+            onChange: (value: string) => setSellingPrice(value)
           },
-          {
-            name: 'is_list',
-            label: t('forms.is_list'),
-            type: 'select',
-            placeholder: t('placeholders.select_is_list'),
-            required: true,
-            options: [
-              { value: 'false', label: t('common.no') },
-              { value: 'true', label: t('common.yes') }
-            ],
-            defaultValue: isList,
-            onChange: (value: 'true' | 'false') => setIsList(value)
-          },
-          ...(isList === 'true'
-            ? [
-                {
-                  name: 'length',
-                  label: t('forms.length'),
-                  type: 'number',
-                  placeholder: t('placeholders.enter_length'),
-                  required: true,
-                  value: length,
-                  onChange: (value: string) => setLength(value)
-                },
-                {
-                  name: 'static_weight',
-                  label: t('forms.static_weight'),
-                  type: 'number',
-                  placeholder: t('placeholders.enter_static_weight'),
-                  required: true,
-                  value: staticWeight,
-                  onChange: (value: string) => setStaticWeight(value)
-                }
-              ]
-            : []),
         ]}
         onSubmit={handleSubmit}
         isSubmitting={createProduct.isPending}
         title={t('common.create') + ' ' + t('table.product')}
       >
-        <div className="flex gap-4 mb-4">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={hasMetr}
-              onChange={e => {
-                setHasMetr(e.target.checked);
-                if (e.target.checked) setHasShtuk(false);
-              }}
-              disabled={hasShtuk}
-            />
-            {t('forms.has_metr')}
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={hasShtuk}
-              onChange={e => {
-                setHasShtuk(e.target.checked);
-                if (e.target.checked) setHasMetr(false);
-              }}
-              disabled={hasMetr}
-            />
-            {t('forms.has_shtuk')}
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={hasBarcode}
-              onChange={e => setHasBarcode(e.target.checked)}
-            />
-            {t('forms.has_barcode')}
-          </label>
-          {hasBarcode && (
-            <input
-              type="text"
-              className="px-3 py-2 border rounded-md"
-              placeholder={t('placeholders.enter_barcode')}
-              value={barcode}
-              onChange={e => setBarcode(e.target.value)}
-            />
-          )}
-        </div>
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">{t('table.measurements')}</h3>
-          {measurements.map((measurement: MeasurementItem, index: number) => (
-            <div key={index} className="flex gap-4 items-end">
-              <div className="flex-1">
-                <Select
-                  value={measurement.measurement_write?.toString() || ''}
-                  onValueChange={(value) => handleMeasurementChange(index, 'measurement_write', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('placeholders.select_measurement')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableMeasurements?.map(m => (
-                      <SelectItem key={m.id?.toString()} value={(m.id || 0).toString()}>
-                        {m.measurement_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex-1">
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border rounded-md"
-                  placeholder={t('placeholders.enter_quantity')}
-                  value={measurement.number || ''}
-                  onChange={(e) => handleMeasurementChange(index, 'number', e.target.value)}
-                />
-              </div>
-              <div className="flex-1">
-                <Select 
-                  value={measurement.for_sale.toString()} 
-                  onValueChange={(value) => handleMeasurementChange(index, 'for_sale', value === 'true')}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('placeholders.select_for_sale')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="false">{t('common.no')}</SelectItem>
-                    <SelectItem value="true">{t('common.yes')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {index > 0 && (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  onClick={() => handleRemoveMeasurement(index)}
-                >
-                  {t('common.delete')}
-                </Button>
-              )}
-            </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleAddMeasurement}
-          >
-            {t('common.add')} {t('table.measurement')}
-          </Button>
-        </div>
+        
+        {/* Dynamic Attribute Fields */}
+        {selectedCategory && attributes.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">{t('forms.attributes')}</h3>
+            {attributes.map((attribute) => {
+              const handleAttributeChange = (value: string | boolean) => {
+                setAttributeValues((prev) => {
+                  const existing = prev.find((v) => v.attribute_id === attribute.id);
+                  if (existing) {
+                    return prev.map((v) =>
+                      v.attribute_id === attribute.id ? { ...v, value } : v
+                    );
+                  }
+                  return [...prev, { attribute_id: attribute.id!, value }];
+                });
+              };
+
+              switch (attribute.field_type) {
+                case 'string':
+                  return (
+                    <div key={attribute.id} className="form-control">
+                      <label className="label">
+                        <span className="label-text">{attribute.translations.ru}</span>
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 border rounded-md"
+                        onChange={(e) => handleAttributeChange(e.target.value)}
+                      />
+                    </div>
+                  );
+                case 'number':
+                  return (
+                    <div key={attribute.id} className="form-control">
+                      <label className="label">
+                        <span className="label-text">{attribute.translations.ru}</span>
+                      </label>
+                      <input
+                        type="number"
+                        className="w-full px-3 py-2 border rounded-md"
+                        onChange={(e) => handleAttributeChange(e.target.value)}
+                      />
+                    </div>
+                  );
+                case 'boolean':
+                  return (
+                    <div key={attribute.id} className="form-control">
+                      <label className="label cursor-pointer">
+                        <span className="label-text">{attribute.translations.ru}</span>
+                        <input
+                          type="checkbox"
+                          className="checkbox"
+                          onChange={(e) => handleAttributeChange(e.target.checked)}
+                        />
+                      </label>
+                    </div>
+                  );
+                case 'choice':
+                  return attribute.choices ? (
+                    <div key={attribute.id} className="form-control">
+                      <label className="label">
+                        <span className="label-text">{attribute.translations.ru}</span>
+                      </label>
+                      <select
+                        className="w-full px-3 py-2 border rounded-md"
+                        onChange={(e) => handleAttributeChange(e.target.value)}
+                      >
+                        <option value="">{t('placeholders.select_option')}</option>
+                        {attribute.choices.map((choice) => (
+                          <option key={choice} value={choice}>
+                            {choice}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null;
+                case 'date':
+                  return (
+                    <div key={attribute.id} className="form-control">
+                      <label className="label">
+                        <span className="label-text">{attribute.translations.ru}</span>
+                      </label>
+                      <input
+                        type="date"
+                        className="w-full px-3 py-2 border rounded-md"
+                        onChange={(e) => handleAttributeChange(e.target.value)}
+                      />
+                    </div>
+                  );
+                default:
+                  return null;
+              }
+            })}
+          </div>
+        )}
+
       </ResourceForm>
     </div>
   );

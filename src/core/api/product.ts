@@ -27,6 +27,12 @@ export interface Product {
     category_name: string;
     store_write: number;
   };
+  min_price?: number;
+  selling_price?: number;
+  attribute_values?: Array<{
+    attribute_id: number;
+    value: string | number | boolean;
+  }>;
   has_kub?: boolean;
   kub?: number;
   has_recycling?: boolean;

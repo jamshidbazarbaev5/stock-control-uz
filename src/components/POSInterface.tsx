@@ -36,6 +36,7 @@ import { useCurrentUser } from "@/core/hooks/useCurrentUser";
 import { useGetUsers } from "@/core/api/user";
 import { useGetClients } from "@/core/api/client";
 import type { User } from "@/core/api/user";
+import { OpenShiftForm } from "./OpenShiftForm";
 
 interface ProductInCart {
   id: number;
@@ -78,6 +79,12 @@ interface SessionState {
 }
 
 const POSInterface = () => {
+  const { data: userData } = useCurrentUser();
+  
+  if (!userData?.has_active_shift) {
+    return <OpenShiftForm />;
+  }
+  
   // Session management
   const [sessions, setSessions] = useState<SessionState[]>([
     {

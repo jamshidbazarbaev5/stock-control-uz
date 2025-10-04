@@ -20,6 +20,8 @@ import StocksPage from "./core/pages/StocksPage";
 import CreateStock from "./core/pages/create-stock";
 import Layout from "./core/layout/Layout";
 import MeasurementsPage from "./core/pages/MeasurementsPage";
+import ShiftsPage from "./core/pages/ShiftsPage";
+import EditShiftPage from "./core/pages/edit-shift";
 import CreateMeasurement from "./core/pages/create-measurement";
 import SuppliersPage from "./core/pages/SuppliersPage";
 import CreateSupplier from "./core/pages/create-supplier";
@@ -73,6 +75,8 @@ import ProtectedRoute from "@/components/ProtectedRoute.tsx";
 import CassasPage from "@/core/pages/Cassa.tsx";
 import RevaluationHistoryPage from "@/pages/RevaluationHistoryPage";
 import CreateCassaPage from "@/core/pages/CreateCassa.tsx";
+import AttributesPage from "@/pages/AttributesPage";
+import AttributeFormPage from "@/pages/AttributeFormPage";
 // import CreateSalePos from "./core/pages/create-sale-2";
 
 const queryClient = new QueryClient();
@@ -142,6 +146,30 @@ function App() {
                 element={
                   <PrivateRoute allowedRoles={["Администратор"]}>
                     <CategoriesPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/attributes"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <AttributesPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/attributes/new"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <AttributeFormPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/attributes/:id/edit"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <AttributeFormPage />
                   </PrivateRoute>
                 }
               />
@@ -585,6 +613,22 @@ function App() {
                       element={
                           <PrivateRoute allowedRoles={["Администратор"]}>
                               <CreateCassaPage />
+                          </PrivateRoute>
+                      }
+                  />
+                  <Route
+                      path="/shifts"
+                      element={
+                          <PrivateRoute allowedRoles={["Администратор"]}>
+                              <ShiftsPage />
+                          </PrivateRoute>
+                      }
+                  />
+                  <Route
+                      path="/shifts/:id/edit"
+                      element={
+                          <PrivateRoute allowedRoles={["Администратор"]}>
+                              <EditShiftPage />
                           </PrivateRoute>
                       }
                   />
