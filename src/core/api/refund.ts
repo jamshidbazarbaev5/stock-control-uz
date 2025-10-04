@@ -38,7 +38,7 @@ export interface Refund {
 }
 
 // API endpoints
-const REFUND_URL = 'refunds/';
+const REFUND_URL = 'refunds/create/';
 
 // Create refund API hooks using the factory function
 export const {

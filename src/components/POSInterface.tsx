@@ -143,6 +143,12 @@ const POSInterface = () => {
   const [debugMode, setDebugMode] = useState(false); // Toggle with Ctrl+D
   const [lastScannedBarcode, setLastScannedBarcode] = useState("");
 
+  // Quantity modal state
+  const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false);
+  const [selectedProductForQuantity, setSelectedProductForQuantity] = useState<ProductInCart | null>(null);
+  const [isManualQuantityMode, setIsManualQuantityMode] = useState(false);
+  const [manualQuantityInput, setManualQuantityInput] = useState("");
+
   // Product selection state
   const [selectedProducts, setSelectedProducts] = useState<Set<number>>(
     new Set(),
@@ -150,6 +156,9 @@ const POSInterface = () => {
 
   // User selection modal state
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+
+  // Calculator visibility state
+  const [isCalculatorVisible, setIsCalculatorVisible] = useState(true);
 
   // User data
   const { data: currentUser } = useCurrentUser();
@@ -740,6 +749,42 @@ const POSInterface = () => {
     setCartProducts((prev) => prev.filter((p) => p.id !== productId));
   }, []);
 
+  // Handle quantity modal
+  const handleQuantityClick = (product: ProductInCart) => {
+    setSelectedProductForQuantity(product);
+    setIsQuantityModalOpen(true);
+    setIsManualQuantityMode(false);
+    setManualQuantityInput("");
+  };
+
+  const handleQuantitySelect = (quantity: number) => {
+    if (selectedProductForQuantity) {
+      updateProductQuantity(selectedProductForQuantity.id, quantity);
+    }
+    setIsQuantityModalOpen(false);
+    setSelectedProductForQuantity(null);
+    setIsManualQuantityMode(false);
+    setManualQuantityInput("");
+  };
+
+  const handleManualQuantityMode = () => {
+    setIsManualQuantityMode(true);
+    if (selectedProductForQuantity) {
+      setManualQuantityInput(selectedProductForQuantity.quantity.toString());
+    }
+  };
+
+  const handleManualQuantitySubmit = () => {
+    const quantity = parseFloat(manualQuantityInput);
+    if (quantity > 0 && selectedProductForQuantity) {
+      updateProductQuantity(selectedProductForQuantity.id, quantity);
+      setIsQuantityModalOpen(false);
+      setSelectedProductForQuantity(null);
+      setIsManualQuantityMode(false);
+      setManualQuantityInput("");
+    }
+  };
+
   const clearCart = () => {
     setCartProducts([]);
     setFocusedProductIndex(-1);
@@ -884,13 +929,13 @@ const POSInterface = () => {
                 {sessions.length > 1 && (
                   <button
                     onClick={(e) => closeSession(index, e)}
-                    className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity ${
+                    className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center opacity-100 transition-all ${
                       index === currentSessionIndex
-                        ? "bg-red-500 text-white hover:bg-red-600"
-                        : "bg-gray-500 text-white hover:bg-gray-600"
+                        ? "bg-red-500 text-white hover:bg-red-600 shadow-lg"
+                        : "bg-gray-500 text-white hover:bg-gray-600 shadow-md"
                     }`}
                   >
-                    <CloseIcon className="w-3 h-3" />
+                    <CloseIcon className="w-4 h-4" />
                   </button>
                 )}
               </div>
@@ -917,49 +962,60 @@ const POSInterface = () => {
             <div className="flex items-center space-x-2">
               <button
                 onClick={handleSearchClick}
-                className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
+                className="bg-blue-500 text-white p-4 rounded-xl hover:bg-blue-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
                 title="Поиск товаров"
               >
-                <Search className="w-5 h-5" />
+                <Search className="w-6 h-6" />
               </button>
               <button
                 onClick={handleUserClick}
-                className={`p-2 rounded-lg transition-colors flex items-center justify-center relative ${
+                className={`p-4 rounded-xl transition-colors flex items-center justify-center relative min-w-[60px] min-h-[60px] ${
                   selectedSeller || selectedClient
                     ? "bg-blue-500 text-white hover:bg-blue-600"
                     : "bg-green-500 text-white hover:bg-green-600"
                 }`}
                 title="Выбор пользователя"
               >
-                <UserIcon className="w-5 h-5" />
+                <UserIcon className="w-6 h-6" />
                 {(selectedSeller || selectedClient) && (
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
                 )}
               </button>
 
               <button
                 onClick={createNewSession}
-                className="bg-purple-500 text-white p-2 rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center"
+                className="bg-purple-500 text-white p-4 rounded-xl hover:bg-purple-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
                 title="Новая сессия"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-6 h-6" />
               </button>
+
+              {/* Calculator Toggle Button - Only show when calculator is hidden */}
+              {!isCalculatorVisible && (
+                <button
+                  onClick={() => setIsCalculatorVisible(true)}
+                  className="bg-gray-500 text-white p-4 rounded-xl hover:bg-gray-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
+                  title="Показать калькулятор"
+                >
+                  <span className="text-xl font-bold">=</span>
+                </button>
+              )}
 
               <button
                 onClick={handleBottomDownClick}
                 disabled={cartProducts.length === 0}
-                className="bg-indigo-500 text-white p-2 rounded-lg hover:bg-indigo-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="bg-indigo-500 text-white p-4 rounded-xl hover:bg-indigo-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed min-w-[60px] min-h-[60px]"
                 title="Вниз по списку"
               >
-                <ChevronDown className="w-5 h-5" />
+                <ChevronDown className="w-6 h-6" />
               </button>
               <button
                 onClick={handleBottomUpClick}
                 disabled={cartProducts.length === 0}
-                className="bg-teal-500 text-white p-2 rounded-lg hover:bg-teal-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="bg-teal-500 text-white p-4 rounded-xl hover:bg-teal-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed min-w-[60px] min-h-[60px]"
                 title="Вверх по списку"
               >
-                <ChevronUp className="w-5 h-5" />
+                <ChevronUp className="w-6 h-6" />
               </button>
               <Menu className="w-6 h-6 text-gray-700" />
               <ExternalLink className="w-6 h-6 text-gray-700" />
@@ -1246,7 +1302,7 @@ const POSInterface = () => {
                               }
                             }}
                             disabled={product.quantity <= 1}
-                            className={`w-6 h-6 rounded-full ${
+                            className={`w-10 h-10 rounded-full ${
                               index === focusedProductIndex
                                 ? "bg-blue-200 hover:bg-blue-300 text-blue-800"
                                 : "bg-gray-200 hover:bg-gray-300"
@@ -1254,29 +1310,16 @@ const POSInterface = () => {
                           >
                             −
                           </button>
-                          <input
-                            type="text"
-                            value={product.quantity.toFixed(2)}
-                            onChange={(e) => {
-                              const newValue = parseFloat(e.target.value);
-                              if (newValue > 0) {
-                                updateProductQuantity(product.id, newValue);
-                              }
-                            }}
-                            onBlur={(e) => {
-                              const newValue = parseFloat(e.target.value);
-                              if (!newValue || newValue <= 0) {
-                                // Reset to minimum quantity of 1 if invalid
-                                updateProductQuantity(product.id, 1);
-                              }
-                            }}
-                            className={`min-w-[50px] text-center bg-transparent border rounded px-1 py-1 text-sm ${
+                          <button
+                            onClick={() => handleQuantityClick(product)}
+                            className={`min-w-[80px] min-h-[50px] text-center border rounded-lg px-3 py-2 text-lg font-semibold transition-all ${
                               index === focusedProductIndex
-                                ? "border-blue-500 bg-white focus:ring-2 focus:ring-blue-200"
-                                : "border-transparent hover:border-gray-300"
-                            } focus:outline-none transition-all`}
-                            onFocus={() => setFocusedProductIndex(index)}
-                          />
+                                ? "border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                : "border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50"
+                            } focus:outline-none focus:ring-2 focus:ring-blue-200`}
+                          >
+                            {product.quantity.toFixed(0)}
+                          </button>
                           <button
                             onClick={() =>
                               updateProductQuantity(
@@ -1284,7 +1327,7 @@ const POSInterface = () => {
                                 product.quantity + 1,
                               )
                             }
-                            className={`w-6 h-6 rounded-full ${
+                            className={`w-10 h-10 rounded-full ${
                               index === focusedProductIndex
                                 ? "bg-blue-200 hover:bg-blue-300 text-blue-800"
                                 : "bg-gray-200 hover:bg-gray-300"
@@ -1348,19 +1391,31 @@ const POSInterface = () => {
             <button
               onClick={handleBottomXClick}
               disabled={focusedProductIndex === -1}
-              className="flex-1 bg-red-500 text-white py-4 rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="flex-1 bg-red-500 text-white py-6 rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[70px] text-xl font-semibold"
               title="Удалить выбранный товар"
             >
-              <X className="w-6 h-6" />
+              <X className="w-8 h-8" />
             </button>
           </div>
         </div>
       </div>
 
       {/* Right Panel - Calculator */}
-      <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
+      {isCalculatorVisible && (
+        <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
         {/* Calculator Display */}
         <div className="p-6 border-b border-gray-200">
+          {/* Calculator Header with Close Button */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Калькулятор</h3>
+            <button
+              onClick={() => setIsCalculatorVisible(false)}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Закрыть калькулятор"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
           <div className="bg-gray-100 p-4 rounded-xl mb-4">
             {operation && previousInput && (
               <div className="text-right text-lg text-gray-600 font-mono">
@@ -1379,19 +1434,19 @@ const POSInterface = () => {
             {/* Row 1 */}
             <button
               onClick={handleClearInput}
-              className="bg-orange-100 hover:bg-orange-200 rounded-2xl transition-colors h-16 flex items-center justify-center col-span-2"
+              className="bg-orange-100 hover:bg-orange-200 rounded-2xl transition-colors h-20 flex items-center justify-center col-span-2"
             >
-              <span className="text-lg font-bold text-orange-600">CLEAR</span>
+              <span className="text-xl font-bold text-orange-600">CLEAR</span>
             </button>
             <button
               onClick={handleBackspace}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
             >
-              <X className="w-6 h-6" />
+              <X className="w-7 h-7" />
             </button>
             <button
               onClick={() => handleOperation("/")}
-              className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-blue-600"
+              className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
             >
               ÷
             </button>
@@ -1399,25 +1454,25 @@ const POSInterface = () => {
             {/* Row 2 */}
             <button
               onClick={() => handleNumberClick("7")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
             >
               7
             </button>
             <button
               onClick={() => handleNumberClick("8")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
             >
               8
             </button>
             <button
               onClick={() => handleNumberClick("9")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
             >
               9
             </button>
             <button
               onClick={() => handleOperation("*")}
-              className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-blue-600"
+              className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
             >
               ×
             </button>
@@ -1425,25 +1480,25 @@ const POSInterface = () => {
             {/* Row 3 */}
             <button
               onClick={() => handleNumberClick("4")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
             >
               4
             </button>
             <button
               onClick={() => handleNumberClick("5")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
             >
               5
             </button>
             <button
               onClick={() => handleNumberClick("6")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
             >
               6
             </button>
             <button
               onClick={() => handleOperation("-")}
-              className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-blue-600"
+              className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
             >
               −
             </button>
@@ -1451,25 +1506,25 @@ const POSInterface = () => {
             {/* Row 4 */}
             <button
               onClick={() => handleNumberClick("1")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
             >
               1
             </button>
             <button
               onClick={() => handleNumberClick("2")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
             >
               2
             </button>
             <button
               onClick={() => handleNumberClick("3")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
             >
               3
             </button>
             <button
               onClick={() => handleOperation("+")}
-              className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-blue-600"
+              className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
             >
               +
             </button>
@@ -1477,21 +1532,21 @@ const POSInterface = () => {
             {/* Row 5 */}
             <button
               onClick={() => handleNumberClick("0")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900 col-span-2"
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900 col-span-2"
             >
               0
             </button>
             <button
               onClick={() => handleNumberClick(",")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-16 flex items-center justify-center text-gray-900"
+              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
             >
               ,
             </button>
             <button
               onClick={handleEquals}
-              className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-16 flex items-center justify-center"
+              className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-20 flex items-center justify-center"
             >
-              <span className="text-2xl font-bold text-green-600">=</span>
+              <span className="text-3xl font-bold text-green-600">=</span>
             </button>
 
             {/* Row 6 - PAY button */}
@@ -1500,9 +1555,9 @@ const POSInterface = () => {
                 /* TODO: Implement payment logic */
               }}
               disabled={cartProducts.length === 0}
-              className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-16 flex items-center justify-center disabled:bg-gray-200 disabled:cursor-not-allowed col-span-4"
+              className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-20 flex items-center justify-center disabled:bg-gray-200 disabled:cursor-not-allowed col-span-4"
             >
-              <span className="text-lg font-bold text-green-600">
+              <span className="text-xl font-bold text-green-600">
                 PAY - {total.toLocaleString()} сум
               </span>
             </button>
@@ -1513,7 +1568,7 @@ const POSInterface = () => {
         <div className="p-6 border-t border-gray-200">
           <button
             disabled={cartProducts.length === 0}
-            className={`w-full py-5 rounded-2xl text-lg font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed ${
+            className={`w-full py-8 rounded-2xl text-xl font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[80px] ${
               onCredit
                 ? "bg-amber-600 text-white hover:bg-amber-700"
                 : "bg-blue-600 text-white hover:bg-blue-700"
@@ -1527,6 +1582,7 @@ const POSInterface = () => {
           </button>
         </div>
       </div>
+      )}
 
       {/* Product Search Modal */}
       <WideDialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
@@ -1901,6 +1957,106 @@ const POSInterface = () => {
                 Готово
               </Button>
             </div>
+          </div>
+        </WideDialogContent>
+      </WideDialog>
+
+      {/* Quantity Selection Modal */}
+      <WideDialog open={isQuantityModalOpen} onOpenChange={setIsQuantityModalOpen}>
+        <WideDialogContent className="max-w-md p-0">
+          <WideDialogHeader className="p-6 pb-4">
+            <WideDialogTitle className="text-xl font-bold text-center">
+              Выберите количество
+            </WideDialogTitle>
+            {selectedProductForQuantity && (
+              <p className="text-sm text-gray-600 text-center mt-2">
+                {selectedProductForQuantity.name}
+              </p>
+            )}
+          </WideDialogHeader>
+
+          <div className="p-6 pt-2">
+            {!isManualQuantityMode ? (
+              <>
+                {/* Preset Quantity Cards */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  {[5, 10, 15, 20, 25,30].map((qty) => (
+                    <button
+                      key={qty}
+                      onClick={() => handleQuantitySelect(qty)}
+                      className="bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 hover:border-blue-400 rounded-2xl p-6 transition-all duration-200 transform hover:scale-105 active:scale-95 min-h-[100px] touch-manipulation"
+                    >
+                      <div className="text-3xl font-bold text-blue-700 mb-2">{qty}</div>
+                      <div className="text-sm text-blue-600">штук</div>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Current Quantity Display */}
+                {selectedProductForQuantity && (
+                  <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                    <div className="text-center">
+                      <div className="text-sm text-gray-600 mb-1">Текущее количество</div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {selectedProductForQuantity.quantity.toFixed(0)} штук
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setIsQuantityModalOpen(false)}
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    onClick={handleManualQuantityMode}
+                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
+                  >
+                    Ввести вручную
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Manual Input Mode */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Введите количество
+                  </label>
+                  <input
+                    type="number"
+                    value={manualQuantityInput}
+                    onChange={(e) => setManualQuantityInput(e.target.value)}
+                    className="w-full px-4 py-4 text-2xl text-center border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none"
+                    placeholder="0"
+                    autoFocus
+                    min="1"
+                    step="1"
+                  />
+                </div>
+
+                {/* Manual Input Action Buttons */}
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setIsManualQuantityMode(false)}
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
+                  >
+                    Назад
+                  </button>
+                  <button
+                    onClick={handleManualQuantitySubmit}
+                    disabled={!manualQuantityInput || parseFloat(manualQuantityInput) <= 0}
+                    className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
+                  >
+                    Применить
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </WideDialogContent>
       </WideDialog>

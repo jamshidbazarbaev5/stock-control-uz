@@ -7,7 +7,7 @@ const RevaluationHistoryPage: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6">
-      <h1 className="text-2xl font-bold mb-6">{t("revaluation_history")}</h1>
+      <h1 className="text-2xl font-bold mb-6">{t("common.revaluation_history")}</h1>
       <RevaluationHistory />
     </div>
   );

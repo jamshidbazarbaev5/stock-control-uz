@@ -64,7 +64,7 @@ export function AttributeForm({ initialData, onSubmit, isLoading }: AttributeFor
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("Name")}</FormLabel>
+              <FormLabel>{t("forms.name")}</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -78,14 +78,14 @@ export function AttributeForm({ initialData, onSubmit, isLoading }: AttributeFor
           name="category"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("Category")}</FormLabel>
+              <FormLabel>{t("forms.category")}</FormLabel>
               <Select
                 onValueChange={(value) => field.onChange(Number(value))}
                 value={field.value?.toString()}
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder={t("Select category")} />
+                    <SelectValue placeholder={t("placeholders.select_category")} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -109,23 +109,23 @@ export function AttributeForm({ initialData, onSubmit, isLoading }: AttributeFor
           name="field_type"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("Field Type")}</FormLabel>
+              <FormLabel>{t("forms.field_type")}</FormLabel>
               <Select
                 onValueChange={field.onChange}
                 defaultValue={field.value}
               >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder={t("Select field type")} />
+                    <SelectValue placeholder={t("placeholders.select_field_type")} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="string">{t("String")}</SelectItem>
-                  <SelectItem value="number">{t("Number")}</SelectItem>
-                  <SelectItem value="date">{t("Date")}</SelectItem>
-                  <SelectItem value="boolean">{t("Boolean")}</SelectItem>
-                  <SelectItem value="choice">{t("Choice")}</SelectItem>
-                  <SelectItem value="many2many">{t("Many to Many")}</SelectItem>
+                  <SelectItem value="string">{t("forms.field_types.string")}</SelectItem>
+                  <SelectItem value="number">{t("forms.field_types.number")}</SelectItem>
+                  <SelectItem value="date">{t("forms.field_types.date")}</SelectItem>
+                  <SelectItem value="boolean">{t("forms.field_types.boolean")}</SelectItem>
+                  <SelectItem value="choice">{t("forms.field_types.choice")}</SelectItem>
+                  <SelectItem value="many2many">{t("forms.field_types.many_to_many")}</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -139,7 +139,7 @@ export function AttributeForm({ initialData, onSubmit, isLoading }: AttributeFor
             name="formula"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("Formula")}</FormLabel>
+                <FormLabel>{t("forms.formula")}</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
@@ -155,7 +155,7 @@ export function AttributeForm({ initialData, onSubmit, isLoading }: AttributeFor
             name="choices"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("Choices")}</FormLabel>
+                <FormLabel>{t("forms.choices")}</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
@@ -165,11 +165,11 @@ export function AttributeForm({ initialData, onSubmit, isLoading }: AttributeFor
                         e.target.value.split(",").map((choice) => choice.trim())
                       )
                     }
-                    placeholder={t("Enter choices separated by commas")}
+                    placeholder={t("placeholders.enter_choices_separated_by_commas")}
                   />
                 </FormControl>
                 <p className="text-sm text-muted-foreground">
-                  {t("Enter each choice separated by commas (e.g., Red, Blue, Green)")}
+                  {t("forms.choices_help_text")}
                 </p>
                 <FormMessage />
               </FormItem>
@@ -183,7 +183,7 @@ export function AttributeForm({ initialData, onSubmit, isLoading }: AttributeFor
             name="related_model"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t("Related Model")}</FormLabel>
+                <FormLabel>{t("forms.related_model")}</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
@@ -198,7 +198,7 @@ export function AttributeForm({ initialData, onSubmit, isLoading }: AttributeFor
           name="translations.ru"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("Russian Translation")}</FormLabel>
+              <FormLabel>{t("forms.russian_translation")}</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -208,7 +208,7 @@ export function AttributeForm({ initialData, onSubmit, isLoading }: AttributeFor
         />
 
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? t("Saving...") : t("Save")}
+          {isLoading ? t("common.saving") : t("common.save")}
         </Button>
       </form>
     </Form>

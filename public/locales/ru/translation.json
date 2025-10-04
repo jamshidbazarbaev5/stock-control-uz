@@ -241,10 +241,49 @@
     "updating": "Обновление...",
     "paid": "Долг погашен",
     "paid2": "Продано",
-    "close": "Закрыть",
-    "unpaid": "Неоплачено"
+    "closed": "Закрыто",
+    "Save": "Сохранить",
+    "Saving...": "Сохранение...",
+    "Name": "Название",
+    "Category": "Категория",
+    "Select category": "Выберите категорию",
+    "Field Type": "Тип поля",
+    "Select field type": "Выберите тип поля",
+    "String": "Строка",
+    "Number": "Число",
+    "Date": "Дата",
+    "Boolean": "Логический",
+    "Choice": "Выбор",
+    "Many to Many": "Многие ко многим",
+    "Formula": "Формула",
+    "Choices": "Варианты",
+    "Enter choices separated by commas": "Введите варианты через запятую",
+    "Enter each choice separated by commas (e.g., Red, Blue, Green)": "Введите каждый вариант через запятую (например, Красный, Синий, Зеленый)",
+    "Related Model": "Связанная модель",
+    "Russian Translation": "Русский перевод",
+    "Edit Attribute": "Редактировать атрибут",
+    "Create New Attribute": "Создать новый атрибут",
+    "Back to List": "Назад к списку",
+    "Failed to load attribute": "Не удалось загрузить атрибут",
+    "Attribute updated successfully": "Атрибут успешно обновлен",
+    "Attribute created successfully": "Атрибут успешно создан",
+    "Failed to save attribute": "Не удалось сохранить атрибут",
+    "Attributes": "Атрибуты",
+    "Manage custom attributes for your items": "Управление пользовательскими атрибутами для ваших товаров",
+    "Add Attribute": "Добавить атрибут",
+    "Failed to load attributes": "Не удалось загрузить атрибуты",
+    "Are you sure you want to delete this attribute?": "Вы уверены, что хотите удалить этот атрибут?",
+    "Attribute deleted successfully": "Атрибут успешно удален",
+    "Failed to delete attribute": "Не удалось удалить атрибут",
+    "revaluation_history": "История переоценки",
+    "unpaid": "Неоплачено",
+    "add_attribute": "Добавить атрибут",
+    "back_to_list": "Назад к списку",
+    "saving": "Сохранение..."
   },
   "navigation": {
+    "shifts": "Смены",
+    "revaluation":"",
     "dashobard": "Дашбоард",
     "labelSizes": "Размеры",
     "payments": "Платежи",
@@ -279,7 +318,22 @@
     "recyclings": "Переработка",
     "sale": "Продажи",
     "clients": "Клиенты",
-    "stock_balance": "Остаток товаров"
+    "stock_balance": "Остаток товаров",
+    "attributes": "Атрибуты"
+  },
+  "shifts": {
+    "shifts": "Смены",
+    "shift": "Смена",
+    "open_shift": "Открыть смену",
+    "close_shift": "Закрыть смену",
+    "shift_opened": "Смена открыта",
+    "shift_closed": "Смена закрыта",
+    "opening_cash": "Начальная касса",
+    "closing_cash": "Конечная касса",
+    "opened_at": "Открыто в",
+    "closed_at": "Закрыто в",
+    "cashier": "Кассир",
+    "register": "Касса"
   },
   "client": {
     "individual": "Физическое лицо",
@@ -451,7 +505,23 @@
     "debt_info": "Информация о долге",
     "store_info": "Информация о магазине",
     "sale_items": "Позиции продажи",
-    "subtotal": "Сумма"
+    "subtotal": "Сумма",
+    "name": "Название",
+    "category": "Категория",
+    "field_type": "Тип поля",
+    "formula": "Формула",
+    "choices": "Варианты",
+    "related_model": "Связанная модель",
+    "russian_translation": "Русский перевод",
+    "choices_help_text": "Введите каждый вариант через запятую (например, Красный, Синий, Зеленый)",
+    "field_types": {
+      "string": "Строка",
+      "number": "Число",
+      "date": "Дата",
+      "boolean": "Логический",
+      "choice": "Выбор",
+      "many_to_many": "Многие ко многим"
+    }
   },
   "roles": {
     "owner": "Владелец",
@@ -491,6 +561,7 @@
     "edit": "Изменить"
   },
   "placeholders": {
+    "search_shifts": "Поиск смен",
     "select_sponsor": "Выберите спонсора",
     "quantity_of_parts": "Введите количество частей",
     "search_loansponsor": "Пишите спонсора",
@@ -543,7 +614,9 @@
     "enter_balance": "Введите баланс",
     "enter_payment_method": "Введите способ оплаты",
     "enter_amount": "Введите сумму",
-    "select_user": "Выберите пользователя"
+    "select_user": "Выберите пользователя",
+    "select_field_type": "Выберите тип поля",
+    "enter_choices_separated_by_commas": "Введите варианты через запятую"
   },
   "payment_methods": {
     "cash": "Наличные",
@@ -553,7 +626,13 @@
   },
   "table": {
     "select":"Выбрать",
+    "products":"Товары",
+    "old_selling_price":"Предыдущая цена продажи",
     "id": "ИД",
+    "old_min_price":"Предыдущая мин цена",
+    "comment":"Комментарий",
+    "new_selling_price":"Новая цена продажи",
+    "new_min_price":"Новая мин цена",
     "revenue_details": "Прибыль",
     "sale_info": "Информация о продаже",
     "quantity_of_parts": "Количество частей",
@@ -607,7 +686,13 @@
     "date": "Дата",
     "purchase_price_uz": "Цена покупки (UZS)",
     "purchase_price_us": "Цена покупки (USD)",
-    "history_value": "Предыдущее значение"
+    "history_value": "Предыдущее значение",
+    "opened_at": "Открыто в",
+    "closed_at": "Закрыто в",
+    "opening_cash": "Начальная касса",
+    "closing_cash": "Конечная касса",
+    "cashier": "Кассир",
+    "register": "Касса"
   },
   "stock": {
     "price_history": "Детальная информация:"
@@ -623,7 +708,10 @@
       "updated": " успешно обновлен",
       "deleted": " успешно удален",
       "payment_created": "Платеж успешно создан",
-      "refund_created": "Возврат успешно создан"
+      "refund_created": "Возврат успешно создан",
+      "attribute_deleted": "Атрибут успешно удален",
+      "attribute_updated": "Атрибут успешно обновлен",
+      "attribute_created": "Атрибут успешно создан"
     },
     "error": {
       "negative": "Невозможно создать: прибыль не может быть отрицательной.",
@@ -638,7 +726,11 @@
       "insufficient_payment": "Недостаточно средств для оплаты",
       "same_store_transfer": "Невозможно перевести между складами в одном магазине",
       "payment_create": "Ошибка при создании платежа",
-      "refund_failed": "Не удалось создать возврат"
+      "refund_failed": "Не удалось создать возврат",
+      "failed_to_load_attributes": "Не удалось загрузить атрибуты",
+      "failed_to_delete_attribute": "Не удалось удалить атрибут",
+      "failed_to_load_attribute": "Не удалось загрузить атрибут",
+      "failed_to_save_attribute": "Не удалось сохранить атрибут"
     },
     "confirmation": {
       "delete": "Вы уверены, что хотите удалить это?"

@@ -28,7 +28,7 @@ export default function AttributeFormPage() {
       const data = await attributeApi.getById(attributeId);
       setAttribute(data);
     } catch (error) {
-      toast.error(t("Failed to load attribute"));
+      toast.error(t("messages.error.failed_to_load_attribute"));
       console.error(error);
     } finally {
       setIsLoadingAttribute(false);
@@ -40,14 +40,14 @@ export default function AttributeFormPage() {
     try {
       if (id) {
         await attributeApi.update(parseInt(id), data);
-        toast.success(t("Attribute updated successfully"));
+        toast.success(t("messages.success.attribute_updated"));
       } else {
         await attributeApi.create(data);
-        toast.success(t("Attribute created successfully"));
+        toast.success(t("messages.success.attribute_created"));
       }
       navigate("/attributes");
     } catch (error) {
-      toast.error(t("Failed to save attribute"));
+      toast.error(t("messages.error.failed_to_save_attribute"));
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -59,13 +59,13 @@ export default function AttributeFormPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>
-            {id ? t("Edit Attribute") : t("Create New Attribute")}
+            {id ? t("pages.attributes.edit_attribute") : t("pages.attributes.create_new_attribute")}
           </CardTitle>
           <Button
             variant="outline"
             onClick={() => navigate("/attributes")}
           >
-            {t("Back to List")}
+            {t("common.back_to_list")}
           </Button>
         </CardHeader>
         <CardContent>

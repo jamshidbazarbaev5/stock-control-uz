@@ -32,7 +32,7 @@ export default function AttributesPage() {
       const data = await attributeApi.getAll();
       setAttributes(data);
     } catch (error) {
-      toast.error(t("Failed to load attributes"));
+      toast.error(t("messages.error.failed_to_load_attributes"));
       console.error(error);
     }
   };
@@ -44,16 +44,16 @@ export default function AttributesPage() {
 
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm(t("Are you sure you want to delete this attribute?"))) {
+    if (!window.confirm(t("messages.confirmation.delete_attribute"))) {
       return;
     }
 
     try {
       await attributeApi.delete(id);
-      toast.success(t("Attribute deleted successfully"));
+      toast.success(t("messages.success.attribute_deleted"));
       await loadAttributes();
     } catch (error) {
-      toast.error(t("Failed to delete attribute"));
+      toast.error(t("messages.error.failed_to_delete_attribute"));
       console.error(error);
     }
   };
@@ -62,26 +62,26 @@ export default function AttributesPage() {
     <div className="container mx-auto py-6">
       <Card>
         <CardHeader>
-          <CardTitle>{t("Attributes")}</CardTitle>
+          <CardTitle>{t("navigation.attributes")}</CardTitle>
           <CardDescription>
-            {t("Manage custom attributes for your items")}
+            {t("pages.attributes.description")}
           </CardDescription>
           <Button
             onClick={() => {
               navigate("/attributes/new");
             }}
           >
-            {t("Add Attribute")}
+            {t("common.add_attribute")}
           </Button>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{t("Name")}</TableHead>
-                <TableHead>{t("Field Type")}</TableHead>
-                <TableHead>{t("Russian Translation")}</TableHead>
-                <TableHead>{t("Actions")}</TableHead>
+                <TableHead>{t("table.name")}</TableHead>
+                <TableHead>{t("table.field_type")}</TableHead>
+                <TableHead>{t("table.russian_translation")}</TableHead>
+                <TableHead>{t("table.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -99,14 +99,14 @@ export default function AttributesPage() {
                           navigate(`/attributes/${attribute.id}/edit`);
                         }}
                       >
-                        {t("Edit")}
+                        {t("common.edit")}
                       </Button>
                       <Button
                         variant="destructive"
                         size="sm"
                         onClick={() => handleDelete(attribute.id!)}
                       >
-                        {t("Delete")}
+                        {t("common.delete")}
                       </Button>
                     </div>
                   </TableCell>

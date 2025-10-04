@@ -29,15 +29,15 @@ export default function ShiftsPage() {
     },
     {
       header: t('table.store'),
-      accessorKey: 'store',
+      accessorKey: (row:any)=>row.store?.name
     },
     {
       header: t('table.register'),
-      accessorKey: 'register.name',
+      accessorKey: (row:any)=>row.register.store?.name
     },
     {
       header: t('table.cashier'),
-      accessorKey: 'cashier',
+      accessorKey: (row:any)=>row.cashier?.name
     },
     {
       header: t('table.opened_at'),
