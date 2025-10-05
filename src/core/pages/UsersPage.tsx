@@ -24,6 +24,7 @@ interface ExtendedUser extends User {
     owner: number;
   };
   displayId?: number;
+  is_mobile_user:boolean;
 }
 
 const userFields = (t: any, stores: any[] = []) => [
@@ -75,6 +76,18 @@ const userFields = (t: any, stores: any[] = []) => [
     ],
   },
   {
+    name: 'is_mobile_user',
+    label: t('forms.is_mobile_user'),
+    type: 'select',
+    placeholder: t('placeholders.select_device'),
+    required: true,
+    defaultValue: true,
+    options: [
+      { value: true, label: t('common.mobile') },
+      { value: false, label: t('common.desktop') },
+    ],
+  },
+  {
     name: 'password',
     label: t('forms.password'),
     type: 'password',
@@ -120,6 +133,7 @@ export default function UsersPage() {
       role: data.role || '',
       is_active: Boolean(data.is_active),
       store_write: Number(data.store_write),
+      is_mobile_user:data.is_mobile_user
     };
 
     // Only include password if it's provided
@@ -279,6 +293,7 @@ export default function UsersPage() {
               ...editingUser,
               store_write: editingUser?.store_read?.id,
               is_active: editingUser?.is_active,
+              is_mobile_user:editingUser?.is_mobile_user
             }}
             isSubmitting={isUpdating}
             title={t('common.edit')}

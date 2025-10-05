@@ -2,16 +2,14 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import {
   ChevronDown,
   ChevronUp,
-  Menu,
-  ExternalLink,
-  LogOut,
   X,
-  BarChart3,
   Search,
   User as UserIcon,
   Plus,
   X as CloseIcon,
+  LogOut,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import {
   WideDialog,
   WideDialogContent,
@@ -80,6 +78,7 @@ interface SessionState {
 
 const POSInterface = () => {
   const { data: userData } = useCurrentUser();
+  const navigate = useNavigate();
   
   if (!userData?.has_active_shift) {
     return <OpenShiftForm />;
@@ -555,6 +554,14 @@ const POSInterface = () => {
     }
   };
 
+  const handleCloseShift = async () => {
+    if (userData?.has_active_shift) {
+      // Navigate to close shift page - we'll get the shift ID from the API
+      // For now, we'll use a placeholder ID and the CloseShift page will fetch the active shift
+      navigate(`/close-shift/active`);
+    }
+  };
+
   // Session management functions
   const createNewSession = () => {
     const newSessionId = (sessions.length + 1).toString();
@@ -860,15 +867,15 @@ const POSInterface = () => {
 
   // Handle bottom button actions
 
-  const handleBottomXClick = () => {
-    if (focusedProductIndex >= 0) {
-      const product = cartProducts[focusedProductIndex];
-      removeProduct(product.id);
-      setFocusedProductIndex((prev) =>
-        prev >= cartProducts.length - 1 ? cartProducts.length - 2 : prev,
-      );
-    }
-  };
+  // const handleBottomXClick = () => {
+  //   if (focusedProductIndex >= 0) {
+  //     const product = cartProducts[focusedProductIndex];
+  //     removeProduct(product.id);
+  //     setFocusedProductIndex((prev) =>
+  //       prev >= cartProducts.length - 1 ? cartProducts.length - 2 : prev,
+  //     );
+  //   }
+  // };
 
   const handleBottomUpClick = () => {
     if (cartProducts.length === 0) return;
@@ -947,17 +954,7 @@ const POSInterface = () => {
         <div className="bg-white p-6 border-b border-gray-200">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 border-2 border-gray-500 rounded-sm transform rotate-45 flex items-center justify-center">
-                  <div className="w-2 h-2 bg-gray-500 rounded-full transform -rotate-45"></div>
-                </div>
-                <span className="font-bold text-lg">123</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <BarChart3 className="w-5 h-5 text-gray-600" />
-                <span className="text-lg">11</span>
-              </div>
-              <div className="text-gray-600 text-lg">%</div>
+
             </div>
             <div className="flex items-center space-x-2">
               <button
@@ -990,6 +987,14 @@ const POSInterface = () => {
                 <Plus className="w-6 h-6" />
               </button>
 
+              <button
+                onClick={handleCloseShift}
+                className="bg-red-500 text-white p-4 rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
+                title="Закрыть смену"
+              >
+                <LogOut className="w-6 h-6" />
+              </button>
+
               {/* Calculator Toggle Button - Only show when calculator is hidden */}
               {!isCalculatorVisible && (
                 <button
@@ -1017,9 +1022,7 @@ const POSInterface = () => {
               >
                 <ChevronUp className="w-6 h-6" />
               </button>
-              <Menu className="w-6 h-6 text-gray-700" />
-              <ExternalLink className="w-6 h-6 text-gray-700" />
-              <LogOut className="w-6 h-6 text-gray-700" />
+              {/**/}
             </div>
           </div>
 
@@ -1386,18 +1389,7 @@ const POSInterface = () => {
         </div>
 
         {/* Bottom Action Bar */}
-        <div className="p-6 border-t border-gray-200">
-          <div className="flex space-x-4">
-            <button
-              onClick={handleBottomXClick}
-              disabled={focusedProductIndex === -1}
-              className="flex-1 bg-red-500 text-white py-6 rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[70px] text-xl font-semibold"
-              title="Удалить выбранный товар"
-            >
-              <X className="w-8 h-8" />
-            </button>
-          </div>
-        </div>
+
       </div>
 
       {/* Right Panel - Calculator */}

@@ -15,6 +15,7 @@ const categoryFields = (t: any) => [
         placeholder: t('placeholders.enter_name'),
         required: true,
     },
+
 ];
 
 const columns = (t:any) => [
@@ -25,6 +26,10 @@ const columns = (t:any) => [
     {
         header: t('forms.cassa_name'),
         accessorKey: 'name',
+    },
+    {
+        header: t('forms.store'),
+        accessorKey: (row:any) => row.store?.name,
     },
 ];
 
@@ -45,7 +50,7 @@ export default function CassasPage() {
 
 
     // @ts-ignore
-    const enhancedCassas = casassData?.map((cassa: Cassa, index: number) => ({
+    const enhancedCassas = casassData?.results.map((cassa: Cassa, index: number) => ({
         ...cassa,
         displayId: index + 1
     }));

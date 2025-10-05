@@ -142,6 +142,8 @@
     "create_expense": "Создать расход"
   },
   "common": {
+    "mobile": "Мобильный",
+    "desktop": "Десктоп",
     "refund": "Возврат",
     "notes": "Примечания",
     "confirm_refund": "Подтвердить возврат",
@@ -283,7 +285,11 @@
   },
   "navigation": {
     "shifts": "Смены",
-    "revaluation":"",
+    "revaluations":"Переоценка",
+    "check": "Чек",
+    "cassa": "Касса",
+    "smena": "Смена",
+    "cassas": "Касса",
     "dashobard": "Дашбоард",
     "labelSizes": "Размеры",
     "payments": "Платежи",
@@ -361,7 +367,14 @@
   },
 
   "forms": {
+    "is_mobile_user": "Телефонная версия",
+    "shift": "Смена",
+    "open_shift": "Открыть смену",
+    "register": "Касса",
+    "opening_cash": "Начальная сумма",
+    "cassa_name": "Название кассы",
     "id": "ИД",
+    "pos": "Пос",
     "width": "Ширина",
     "height": "Высота",
 
@@ -561,6 +574,8 @@
     "edit": "Изменить"
   },
   "placeholders": {
+    "select_device": "Телефонная версия",
+    "search_cassa": "Пойск кассу",
     "search_shifts": "Поиск смен",
     "select_sponsor": "Выберите спонсора",
     "quantity_of_parts": "Введите количество частей",
@@ -627,6 +642,8 @@
   "table": {
     "select":"Выбрать",
     "products":"Товары",
+    "field_type": "Тип",
+    "russian_translation": "Перевод",
     "old_selling_price":"Предыдущая цена продажи",
     "id": "ИД",
     "old_min_price":"Предыдущая мин цена",
@@ -692,7 +709,8 @@
     "opening_cash": "Начальная касса",
     "closing_cash": "Конечная касса",
     "cashier": "Кассир",
-    "register": "Касса"
+    "register": "Касса",
+    "opening_comment": "Комментарий открытия"
   },
   "stock": {
     "price_history": "Детальная информация:"

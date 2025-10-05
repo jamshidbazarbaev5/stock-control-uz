@@ -77,6 +77,7 @@ import RevaluationHistoryPage from "@/pages/RevaluationHistoryPage";
 import CreateCassaPage from "@/core/pages/CreateCassa.tsx";
 import AttributesPage from "@/pages/AttributesPage";
 import AttributeFormPage from "@/pages/AttributeFormPage";
+import CloseShiftPage from "./core/pages/CloseShiftPage";
 // import CreateSalePos from "./core/pages/create-sale-2";
 
 const queryClient = new QueryClient();
@@ -629,6 +630,14 @@ function App() {
                       element={
                           <PrivateRoute allowedRoles={["Администратор"]}>
                               <EditShiftPage />
+                          </PrivateRoute>
+                      }
+                  />
+                  <Route
+                      path="/close-shift/:shiftId"
+                      element={
+                          <PrivateRoute allowedRoles={["Администратор"]}>
+                              <CloseShiftPage />
                           </PrivateRoute>
                       }
                   />

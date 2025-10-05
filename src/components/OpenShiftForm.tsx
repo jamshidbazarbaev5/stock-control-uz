@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
 import type { Register } from '../core/api/shift';
 import { cashRegisterApi } from '../core/api/cash-register';
 import { shiftsApi } from '../core/api/shift';
+import { useAuth } from '../core/context/AuthContext';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import {
@@ -33,10 +33,10 @@ interface FormData {
 
 export function OpenShiftForm() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [registers, setRegisters] = useState<Register[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-
+  console.log('registers', registers);
   const form = useForm<FormData>({
     defaultValues: {
       register_id: '',
@@ -48,8 +48,8 @@ export function OpenShiftForm() {
   useEffect(() => {
     const fetchRegisters = async () => {
       try {
-        const response = await cashRegisterApi.getAll();
-        setRegisters(response.data);
+        const response:any = await cashRegisterApi.getAll();
+        setRegisters(response.data?.results);
       } catch (error) {
         console.error('Failed to fetch registers:', error);
       }
@@ -65,9 +65,13 @@ export function OpenShiftForm() {
         store: 1, // TODO: Get from context/config
         register_id: parseInt(data.register_id),
         opening_cash: data.opening_cash,
-        comment: data.comment,
+        opening_comment: data.comment,
       });
-      navigate('/pos'); // Refresh will show POS interface due to active shift
+      
+      // Refresh user data to update has_active_shift status
+      await refreshUser();
+      
+      // No need to navigate - the component will re-render and show POS interface
     } catch (error) {
       console.error('Failed to open shift:', error);
     } finally {
@@ -78,7 +82,7 @@ export function OpenShiftForm() {
   return (
     <div className="container mx-auto max-w-md p-4">
       <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-6">{t('Open New Shift')}</h2>
+        <h2 className="text-2xl font-bold mb-6">{t('forms.shift')}</h2>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -86,14 +90,14 @@ export function OpenShiftForm() {
               name="register_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('Register')}</FormLabel>
+                  <FormLabel>{t('forms.shift')}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={t('Select a register')} />
+                        <SelectValue placeholder={t('forms.register')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -117,7 +121,7 @@ export function OpenShiftForm() {
               name="opening_cash"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('Opening Cash')}</FormLabel>
+                  <FormLabel>{t('forms.opening_cash')}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -136,9 +140,9 @@ export function OpenShiftForm() {
               name="comment"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('Comment')}</FormLabel>
+                  <FormLabel>{t('forms.comment')}</FormLabel>
                   <FormControl>
-                    <Textarea placeholder={t('Add a comment')} {...field} />
+                    <Textarea placeholder={t('forms.comment')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -146,7 +150,7 @@ export function OpenShiftForm() {
             />
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? t('Opening...') : t('Open Shift')}
+              {isLoading ? t('Opening...') : t('forms.open_shift')}
             </Button>
           </form>
         </Form>

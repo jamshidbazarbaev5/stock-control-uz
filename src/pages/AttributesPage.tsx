@@ -6,7 +6,6 @@ import { attributeApi } from "@/core/api/attribute";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -63,9 +62,7 @@ export default function AttributesPage() {
       <Card>
         <CardHeader>
           <CardTitle>{t("navigation.attributes")}</CardTitle>
-          <CardDescription>
-            {t("pages.attributes.description")}
-          </CardDescription>
+
           <Button
             onClick={() => {
               navigate("/attributes/new");

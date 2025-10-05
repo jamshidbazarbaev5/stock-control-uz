@@ -12,6 +12,7 @@ interface UserFormData {
   password: string;
   store: number;
   is_active: boolean;
+  is_mobile_user:boolean;
 }
 
 export default function CreateUser() {
@@ -89,6 +90,18 @@ export default function CreateUser() {
         { value: true, label: t('common.active') },
         { value: false, label: t('common.inactive') },
       ],
+    },
+    {
+      name: 'is_mobile_user',
+      label: t('forms.is_mobile_user'),
+      type: 'select',
+      placeholder: t('placeholders.select_device'),
+      required: true,
+      defaultValue: true,
+      options: [
+        { value: true, label: t('common.mobile') },
+        { value: false, label: t('common.desktop') },
+      ],
     }
   ];
 
@@ -101,9 +114,10 @@ export default function CreateUser() {
           phone_number: data.phone_number,
           role: data.role,
           password: data.password,
+          is_mobile_user:data.is_mobile_user,
 
-        store_write: Number(data.store),
-        is_active: Boolean(data.is_active)
+          store_write: Number(data.store),
+          is_active: Boolean(data.is_active)
       };
 
       await createStaff.mutateAsync(staffData as any);

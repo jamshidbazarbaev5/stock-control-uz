@@ -10,6 +10,7 @@ export interface User {
   role: string;
   password?: string;
   is_active: boolean;
+  is_mobile_user:boolean;
   store_write?: number | null;
 }
 

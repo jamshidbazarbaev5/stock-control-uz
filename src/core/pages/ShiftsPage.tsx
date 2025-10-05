@@ -1,4 +1,4 @@
-import { useState } from 'react';
+ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -22,6 +22,8 @@ export default function ShiftsPage() {
     queryFn: () => shiftsApi.getAll(),
   });
 
+  const shifts = response?.data?.results || [];
+  const totalCount = response?.data?.count || 0;
   const columns = [
     {
       header: t('table.id'),
@@ -33,7 +35,7 @@ export default function ShiftsPage() {
     },
     {
       header: t('table.register'),
-      accessorKey: (row:any)=>row.register.store?.name
+      accessorKey: (row:any)=>row.register?.name
     },
     {
       header: t('table.cashier'),
@@ -64,8 +66,9 @@ export default function ShiftsPage() {
       cell: (row: Shift) => row.is_active ? t('common.active') : t('common.closed'),
     },
     {
-      header: t('table.comment'),
-      accessorKey: 'comment',
+      header: t('table.opening_comment'),
+      accessorKey: 'opening_comment',
+      cell: (row: Shift) => row.opening_comment || '-',
     },
   ];
 
@@ -89,12 +92,12 @@ export default function ShiftsPage() {
         />
       </div>
 
-      <ResourceTable<Shift>
-        data={response?.data || []}
+      <ResourceTable<any>
+        data={shifts}
         columns={columns}
         isLoading={isLoading}
         onEdit={currentUser?.is_superuser ? handleEdit : undefined}
-        totalCount={response?.data.length || 0}
+        totalCount={totalCount}
         currentPage={page}
         onPageChange={setPage}
         pageSize={30}
