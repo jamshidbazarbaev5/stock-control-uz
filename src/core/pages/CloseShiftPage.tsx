@@ -3,10 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Save, Calculator } from 'lucide-react';
+import { ArrowLeft, Save, Calculator, Printer } from 'lucide-react';
 import { shiftsApi, type ShiftSummary, type CloseShiftData, type CloseShiftPayment } from '@/core/api/shift';
 import { useCurrentUser } from '@/core/hooks/useCurrentUser';
 import { useAuth } from '@/core/context/AuthContext';
+import { shiftClosureReceiptService, type ShiftClosureData } from '@/services/shiftClosureReceiptService';
 
 const CloseShiftPage = () => {
   const navigate = useNavigate();
@@ -23,6 +24,10 @@ const CloseShiftPage = () => {
   const [payments, setPayments] = useState<CloseShiftPayment[]>([]);
   const [closingCash, setClosingCash] = useState<number>(0);
   const [closingComment, setClosingComment] = useState<string>('');
+  
+  // Printer state
+  const [printerStatus, setPrinterStatus] = useState<'checking' | 'ready' | 'not-ready' | 'unknown'>('unknown');
+  const [printing, setPrinting] = useState(false);
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -81,6 +86,22 @@ const CloseShiftPage = () => {
     fetchSummary();
   }, [shiftId, userData]);
 
+  // Check printer status on component mount
+  useEffect(() => {
+    const checkPrinter = async () => {
+      setPrinterStatus('checking');
+      try {
+        const status = await shiftClosureReceiptService.checkPrinterStatus();
+        setPrinterStatus(status.printer_ready ? 'ready' : 'not-ready');
+      } catch (error) {
+        console.warn('Printer service not available:', error);
+        setPrinterStatus('not-ready');
+      }
+    };
+
+    checkPrinter();
+  }, []);
+
   const handlePaymentChange = (index: number, value: number) => {
     const updatedPayments = [...payments];
     updatedPayments[index].actual = value;
@@ -119,7 +140,88 @@ const CloseShiftPage = () => {
         closing_comment: closingComment
       };
 
-      await shiftsApi.closeShift(actualShiftId, closeData);
+      // Close the shift first
+      const closeResponse = await shiftsApi.closeShift(actualShiftId, closeData);
+      console.log('✅ Shift closed successfully:', closeResponse);
+      
+      // Prepare data for printing (transform to match ShiftClosureData interface)
+      const printData: ShiftClosureData = {
+        id: actualShiftId,
+        store: {
+          id: 1,
+          name: summary.store || 'Unknown Store',
+          address: 'Store Address', // You may need to get this from API
+          phone_number: 'Store Phone', // You may need to get this from API
+          budget: '0.00',
+          created_at: new Date().toISOString(),
+          is_main: true,
+          color: '',
+          parent_store: null
+        },
+        register: {
+          id: 1,
+          store: {
+            id: 1,
+            name: summary.store || 'Unknown Store',
+            address: 'Store Address',
+            phone_number: 'Store Phone',
+            budget: '0.00',
+            created_at: new Date().toISOString(),
+            is_main: true,
+            color: '',
+            parent_store: null
+          },
+          name: 'Main Register',
+          is_active: false,
+          last_opened_at: summary.opened_at,
+          last_closing_cash: closingCash
+        },
+        cashier: {
+          id: userData?.id || 1,
+          name: userData?.name || 'Unknown Cashier',
+          phone_number: userData?.phone_number || '',
+          role: userData?.role || ''
+        },
+        total_expected: summary.total_expected.toString(),
+        total_actual: getTotalActual().toString(),
+        opened_at: summary.opened_at,
+        closed_at: new Date().toISOString(),
+        opening_cash: '0.00', // Default value since not available in summary
+        closing_cash: closingCash.toString(),
+        opening_comment: '', // Default value since not available in summary
+        closing_comment: closingComment,
+        approval_comment: null,
+        is_active: false,
+        is_awaiting_approval: true,
+        is_approved: false,
+        approved_by: null,
+        payments: payments.map((payment, index) => ({
+          id: index + 1,
+          payment_method: summary.payments[index]?.payment_method_display || payment.payment_method,
+          income: summary.payments[index]?.income?.toString() || '0.00',
+          expense: summary.payments[index]?.expense?.toString() || '0.00',
+          expected: summary.payments[index]?.expected?.toString() || '0.00',
+          actual: payment.actual.toString()
+        }))
+      };
+
+      // Attempt automatic printing
+      setPrinting(true);
+      try {
+        const printResult = await shiftClosureReceiptService.printWithFallback(printData);
+        shiftClosureReceiptService.showPrintNotification(printResult);
+        console.log('🖨️ Print result:', printResult);
+      } catch (printError) {
+        console.error('❌ Printing failed:', printError);
+        shiftClosureReceiptService.showPrintNotification({
+          success: false,
+          method: 'failed',
+          message: 'Не удалось напечатать чек',
+          error: printError instanceof Error ? printError.message : 'Unknown error'
+        });
+      } finally {
+        setPrinting(false);
+      }
       
       // Refresh user data to update has_active_shift status
       await refreshUser();
@@ -131,6 +233,28 @@ const CloseShiftPage = () => {
       console.error('Error closing shift:', err);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleTestPrint = async () => {
+    try {
+      setPrinting(true);
+      await shiftClosureReceiptService.printTestReceipt();
+      shiftClosureReceiptService.showPrintNotification({
+        success: true,
+        method: 'thermal',
+        message: 'Тестовый чек напечатан успешно'
+      });
+    } catch (error) {
+      console.error('Test print failed:', error);
+      shiftClosureReceiptService.showPrintNotification({
+        success: false,
+        method: 'failed',
+        message: 'Ошибка печати тестового чека',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    } finally {
+      setPrinting(false);
     }
   };
 
@@ -186,14 +310,40 @@ const CloseShiftPage = () => {
                 </div>
               </div>
             </div>
-            <Button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-            >
-              <Save className="w-5 h-5 mr-2" />
-              {submitting ? 'Закрытие...' : 'Закрыть кассу'}
-            </Button>
+            <div className="flex items-center space-x-4">
+              {/* Printer Status Indicator */}
+              <div className="flex items-center space-x-2 px-3 py-2 rounded-full bg-gray-100">
+                <Printer className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {printerStatus === 'checking' && '🔄 Проверка...'}
+                  {printerStatus === 'ready' && '✅ Готов'}
+                  {printerStatus === 'not-ready' && '❌ Не готов'}
+                  {printerStatus === 'unknown' && '❓ Неизвестно'}
+                </span>
+              </div>
+
+              {/* Test Print Button */}
+              <Button
+                onClick={handleTestPrint}
+                disabled={printing || printerStatus !== 'ready'}
+                variant="outline"
+                size="sm"
+                className="rounded-full"
+              >
+                <Printer className="w-4 h-4 mr-2" />
+                {printing ? 'Печать...' : 'Тест'}
+              </Button>
+
+              {/* Close Shift Button */}
+              <Button
+                onClick={handleSubmit}
+                disabled={submitting || printing}
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                <Save className="w-5 h-5 mr-2" />
+                {submitting ? 'Закрытие...' : printing ? 'Печать чека...' : 'Закрыть кассу'}
+              </Button>
+            </div>
           </div>
         </div>
 

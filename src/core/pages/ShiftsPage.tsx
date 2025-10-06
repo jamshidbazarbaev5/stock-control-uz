@@ -9,6 +9,8 @@ import { shiftsApi } from '../api/shift';
 import type { Shift } from '../api/shift';
 import { formatDate } from '../helpers/formatDate';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { Printer } from 'lucide-react';
+import { shiftClosureReceiptService, type ShiftClosureData } from '@/services/shiftClosureReceiptService';
 
 export default function ShiftsPage() {
   const { t } = useTranslation();
@@ -16,6 +18,7 @@ export default function ShiftsPage() {
   const { data: currentUser } = useCurrentUser();
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
+  const [printingShiftId, setPrintingShiftId] = useState<number | null>(null);
 
   const { data: response, isLoading } = useQuery({
     queryKey: ['shifts', page, searchTerm],
@@ -70,10 +73,85 @@ export default function ShiftsPage() {
       accessorKey: 'opening_comment',
       cell: (row: Shift) => row.opening_comment || '-',
     },
+    {
+      header: 'Печать',
+      accessorKey: 'print',
+      cell: (row: Shift) => (
+        <Button
+          onClick={() => handlePrint(row)}
+          disabled={printingShiftId === row.id || row.is_active}
+          variant="outline"
+          size="sm"
+          className="rounded-full"
+        >
+          <Printer className="w-4 h-4 mr-1" />
+          {printingShiftId === row.id ? 'Печать...' : 'Печать'}
+        </Button>
+      ),
+    },
   ];
 
   const handleEdit = (shift: Shift) => {
     navigate(`/shifts/${shift.id}/edit`);
+  };
+
+  const handlePrint = async (shift: Shift) => {
+    if (shift.is_active) {
+      // Don't allow printing for active shifts
+      shiftClosureReceiptService.showPrintNotification({
+        success: false,
+        method: 'failed',
+        message: 'Нельзя печатать чек для активной смены',
+        error: 'Shift is still active'
+      });
+      return;
+    }
+
+    try {
+      setPrintingShiftId(shift.id);
+      console.log(`🖨️ Printing receipt for shift ${shift.id}...`);
+      
+      // Fetch full shift details from API
+      const response = await shiftsApi.getById(shift.id);
+      const shiftData = response.data;
+      
+      // Transform the API response to match ShiftClosureData interface
+      const printData: ShiftClosureData = {
+        id: shiftData.id,
+        store: shiftData.store,
+        register: shiftData.register,
+        cashier: shiftData.cashier,
+        total_expected: shiftData.total_expected,
+        total_actual: shiftData.total_actual,
+        opened_at: shiftData.opened_at,
+        closed_at: shiftData.closed_at || new Date().toISOString(),
+        opening_cash: shiftData.opening_cash,
+        closing_cash: shiftData.closing_cash || '0.00',
+        opening_comment: shiftData.opening_comment || '',
+        closing_comment: shiftData.closing_comment || '',
+        approval_comment: shiftData.approval_comment,
+        is_active: shiftData.is_active,
+        is_awaiting_approval: shiftData.is_awaiting_approval,
+        is_approved: shiftData.is_approved,
+        approved_by: shiftData.approved_by,
+        payments: shiftData.payments
+      };
+
+      // Print the receipt
+      const printResult = await shiftClosureReceiptService.printWithFallback(printData);
+      shiftClosureReceiptService.showPrintNotification(printResult);
+      console.log('✅ Print completed:', printResult);
+    } catch (error) {
+      console.error('❌ Print failed:', error);
+      shiftClosureReceiptService.showPrintNotification({
+        success: false,
+        method: 'failed',
+        message: 'Ошибка при печати чека',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    } finally {
+      setPrintingShiftId(null);
+    }
   };
 
   return (
