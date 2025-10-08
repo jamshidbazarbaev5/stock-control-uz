@@ -19,6 +19,10 @@ const columns = (t: any) => [
     header: t('forms.measurement_name'),
     accessorKey: 'measurement_name',
   },
+  {
+    header: t('forms.short_name'),
+    accessorKey: 'short_name',
+  },
   
 ];
 
@@ -28,6 +32,13 @@ const measurementFields = (t: any) => [
     label: t('forms.measurement_name'),
     type: 'text',
     placeholder: t('placeholders.enter_measurement_name'),
+    required: true,
+  },
+  {
+    name: 'short_name',
+    label: t('forms.short_name'),
+    type: 'text',
+    placeholder: t('placeholders.enter_short_name'),
     required: true,
   },
   

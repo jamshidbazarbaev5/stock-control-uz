@@ -249,6 +249,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             href: "/measurements",
           },
           {
+            icon: BanknoteIcon,
+            label: t("navigation.currencies"),
+            href: "/currencies",
+          },
+          {
             icon: ShoppingBag,
             label: t("navigation.products"),
             href: "/products",

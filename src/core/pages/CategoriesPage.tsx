@@ -1,56 +1,95 @@
-import { useState,  } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
 import { type Category, useGetCategories, useUpdateCategory } from '../api/category';
+import { useGetAttributes } from '../api/attribute';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
-const categoryFields = (t: any) => [
-  {
-    name: 'category_name',
-    label: t('forms.category_name'),
-    type: 'text',
-    placeholder: t('placeholders.enter_name'),
-    required: true,
-  },
-];
 
-const columns = (t:any) => [
-  // {
-  //   header: 'table.number',
-  //   accessorKey: 'displayId',
-  // },
+const columns = (t: any) => [
   {
     header: t('forms.category_name'),
     accessorKey: 'category_name',
   },
+  {
+    header: t('forms.attributes'),
+    accessorKey: 'attributes_read',
+    cell: (row: any) => {
+      const category = row;
+      const attributesRead = category?.attributes_read || [];
+      
+      // Debug logging
+      console.log('Category:', category?.category_name, 'Attributes:', attributesRead);
+      
+      if (!attributesRead || attributesRead.length === 0) {
+        return <span className="text-gray-400">-</span>;
+      }
+      
+      return (
+        <div className="space-y-1">
+          {attributesRead.map((attr: any, index: number) => (
+            <div key={attr.id || index} className="text-sm">
+              <span className="font-medium">
+                {attr.translations?.ru || attr.name || 'Unknown'}
+              </span>
+              <span className="text-gray-500 ml-1">
+                ({attr.field_type || 'unknown'})
+              </span>
+              {attr.field_type === 'choice' && attr.choices && attr.choices.length > 0 && (
+                <div className="text-xs text-gray-400 ml-2">
+                  [{attr.choices.join(', ')}]
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      );
+    },
+  },
 ];
 
-type CategoryResponse = {
-  results: Category[];
-  count: number;
-  total_pages: number;
-  current_page: number;
-}
+// Removed CategoryResponse type as we handle response dynamically
 
 export default function CategoriesPage() {
   const navigate = useNavigate();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [editCategoryName, setEditCategoryName] = useState('');
+  const [editSelectedAttributes, setEditSelectedAttributes] = useState<number[]>([]);
+  
   const { t } = useTranslation();
   const { data: categoriesData, isLoading } = useGetCategories({
     params: {
       category_name: searchTerm
     }
   });
+  const { data: attributes = [], isLoading: attributesLoading } = useGetAttributes();
 
-  const fields = categoryFields(t);
+    // Debug the raw API response
+  console.log('Raw categoriesData:', categoriesData);
 
   // Get the categories array from the paginated response
-  const categories = (categoriesData as CategoryResponse)?.results || [];
+  // Handle both direct array and paginated response formats
+  let categories: Category[] = [];
+  if (categoriesData) {
+    if (Array.isArray(categoriesData)) {
+      categories = categoriesData;
+    } else if ((categoriesData as any).results) {
+      categories = (categoriesData as any).results;
+    } else {
+      categories = [];
+    }
+  }
+  
+  // Debug the extracted categories
+  console.log('Extracted categories:', categories);
 
   // Enhance categories with display ID
   const enhancedCategories = categories.map((category: Category, index: number) => ({
@@ -63,23 +102,41 @@ export default function CategoriesPage() {
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
+    setEditCategoryName(category.category_name);
+    // Extract attribute IDs from attributes_read for editing
+    const attributeIds = category.attributes_read?.map(attr => attr.id!).filter(id => id !== undefined) || [];
+    setEditSelectedAttributes(attributeIds);
     setIsFormOpen(true);
   };
 
-  const handleUpdateSubmit = (data: Partial<Category>) => {
+  const handleAttributeChange = (attributeId: number, checked: boolean) => {
+    if (checked) {
+      setEditSelectedAttributes(prev => [...prev, attributeId]);
+    } else {
+      setEditSelectedAttributes(prev => prev.filter(id => id !== attributeId));
+    }
+  };
+
+  const handleUpdateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!editingCategory?.id) return;
 
-    updateCategory(
-      { ...data, id: editingCategory.id } as Category,
-      {
-        onSuccess: () => {
-          toast.success(t('messages.success.updated', { item: t('navigation.categories') }));
-          setIsFormOpen(false);
-          setEditingCategory(null);
-        },
-        onError: () => toast.error(t('messages.error.update', { item: t('navigation.categories') })),
-      }
-    );
+    const updateData: Category = {
+      ...editingCategory,
+      category_name: editCategoryName,
+      attributes: editSelectedAttributes.length > 0 ? editSelectedAttributes : undefined,
+    };
+
+    updateCategory(updateData, {
+      onSuccess: () => {
+        toast.success(t('messages.success.updated', { item: t('navigation.categories') }));
+        setIsFormOpen(false);
+        setEditingCategory(null);
+        setEditCategoryName('');
+        setEditSelectedAttributes([]);
+      },
+      onError: () => toast.error(t('messages.error.update', { item: t('navigation.categories') })),
+    });
   };
 
   // const handleDelete = (id: number) => {
@@ -121,18 +178,77 @@ export default function CategoriesPage() {
       />
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent>
-          <ResourceForm
-            fields={fields.map(field => ({
-              ...field,
-              // label: t(field.label),
-              // placeholder: t(field.placeholder)
-            }))}
-            onSubmit={handleUpdateSubmit}
-            defaultValues={editingCategory || {}}
-            isSubmitting={isUpdating}
-            title={t('messages.edit',)}
-          />
+        <DialogContent className="max-w-2xl">
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">{t('messages.edit')} {t('navigation.categories')}</h2>
+            
+            <form onSubmit={handleUpdateSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="edit_category_name">{t('forms.category_name')} *</Label>
+                <Input
+                  id="edit_category_name"
+                  type="text"
+                  value={editCategoryName}
+                  onChange={(e) => setEditCategoryName(e.target.value)}
+                  placeholder={t('placeholders.enter_name')}
+                  required
+                />
+              </div>
+
+              <div className="space-y-4">
+                <Label className="text-base font-medium">{t('forms.attributes')}</Label>
+                {attributesLoading ? (
+                  <div className="text-sm text-gray-500">{t('common.loading')}...</div>
+                ) : attributes && attributes.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                    {attributes.map((attribute) => (
+                      <div key={attribute.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`edit-attribute-${attribute.id}`}
+                          checked={editSelectedAttributes.includes(attribute.id!)}
+                          onCheckedChange={(checked) => 
+                            handleAttributeChange(attribute.id!, checked as boolean)
+                          }
+                        />
+                        <Label 
+                          htmlFor={`edit-attribute-${attribute.id}`}
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {attribute.translations?.ru || attribute.name} 
+                          <span className="text-gray-500 ml-1">({attribute.field_type})</span>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500">{t('messages.no_data')}</div>
+                )}
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <Button 
+                  type="submit" 
+                  disabled={isUpdating}
+                  className="flex-1"
+                >
+                  {isUpdating ? t('common.updating') : t('common.update')}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsFormOpen(false);
+                    setEditingCategory(null);
+                    setEditCategoryName('');
+                    setEditSelectedAttributes([]);
+                  }}
+                  className="flex-1"
+                >
+                  {t('common.cancel')}
+                </Button>
+              </div>
+            </form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

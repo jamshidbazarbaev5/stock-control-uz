@@ -5,6 +5,7 @@ import { useCreateMeasurement } from '../api/measurement';
 import { toast } from 'sonner';
 import { useGetStores } from '../api/store';
 import { useTranslation } from 'react-i18next';
+import {t} from "i18next";
 
 const measurementFields = [
   {
@@ -12,6 +13,13 @@ const measurementFields = [
     label: 'Measurement Name',
     type: 'text',
     placeholder: 'Enter measurement name',
+    required: true,
+  },
+  {
+    name: 'short_name',
+    label: 'Short  Name',
+    type: 'text',
+    placeholder: (t('forms.short_name') as string),
     required: true,
   },
 ];

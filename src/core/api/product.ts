@@ -42,6 +42,8 @@ export interface Product {
   static_weight?: number;
   has_metr?: boolean;
   has_shtuk?: boolean;
+  base_unit?: number;
+  ikpu?: string;
 }
 
 // API endpoints

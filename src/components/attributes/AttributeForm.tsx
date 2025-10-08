@@ -3,7 +3,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useTranslation } from "react-i18next";
 import type { Attribute } from "@/types/attribute";
-import { useGetCategories, type Category } from "@/core/api/category";
 import {
   Form,
   FormControl,
@@ -38,12 +37,12 @@ interface AttributeFormProps {
 
 export function AttributeForm({ initialData, onSubmit, isLoading }: AttributeFormProps) {
   const { t } = useTranslation();
-  const { data: categoriesData } = useGetCategories();
+  // const { data: categoriesData } = useGetCategories();
   const form = useForm<AttributeFormData>({
     resolver: zodResolver(attributeFormSchema),
     defaultValues: {
       name: initialData?.name || "",
-      category: initialData?.category || 1,
+      // category: initialData?.category || 1,
       field_type: initialData?.field_type || "string",
       formula: initialData?.formula || "",
       choices: initialData?.choices || [],
@@ -73,36 +72,36 @@ export function AttributeForm({ initialData, onSubmit, isLoading }: AttributeFor
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="category"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t("forms.category")}</FormLabel>
-              <Select
-                onValueChange={(value) => field.onChange(Number(value))}
-                value={field.value?.toString()}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("placeholders.select_category")} />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {(Array.isArray(categoriesData) ? categoriesData : categoriesData?.results || []).map((category: Category) => (
-                    <SelectItem
-                      key={category.id}
-                      value={category.id!.toString()}
-                    >
-                      {category.category_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/*<FormField*/}
+        {/*  control={form.control}*/}
+        {/*  name="category"*/}
+        {/*  render={({ field }) => (*/}
+        {/*    <FormItem>*/}
+        {/*      <FormLabel>{t("forms.category")}</FormLabel>*/}
+        {/*      <Select*/}
+        {/*        onValueChange={(value) => field.onChange(Number(value))}*/}
+        {/*        value={field.value?.toString()}*/}
+        {/*      >*/}
+        {/*        <FormControl>*/}
+        {/*          <SelectTrigger>*/}
+        {/*            <SelectValue placeholder={t("placeholders.select_category")} />*/}
+        {/*          </SelectTrigger>*/}
+        {/*        </FormControl>*/}
+        {/*        <SelectContent>*/}
+        {/*          {(Array.isArray(categoriesData) ? categoriesData : categoriesData?.results || []).map((category: Category) => (*/}
+        {/*            <SelectItem*/}
+        {/*              key={category.id}*/}
+        {/*              value={category.id!.toString()}*/}
+        {/*            >*/}
+        {/*              {category.category_name}*/}
+        {/*            </SelectItem>*/}
+        {/*          ))}*/}
+        {/*        </SelectContent>*/}
+        {/*      </Select>*/}
+        {/*      <FormMessage />*/}
+        {/*    </FormItem>*/}
+        {/*  )}*/}
+        {/*/>*/}
 
         <FormField
           control={form.control}

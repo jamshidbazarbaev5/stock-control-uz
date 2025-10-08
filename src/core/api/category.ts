@@ -1,9 +1,13 @@
 import { createResourceApiHooks } from '../helpers/createResourceApi'
 
+import type { Attribute } from '@/types/attribute';
+
 // Types
 export interface Category {
   id?: number;
   category_name: string;
+  attributes?: number[];
+  attributes_read?: Attribute[];
   store_write?: number;
   store_read?: {
     id: number;

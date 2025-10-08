@@ -23,6 +23,8 @@ import MeasurementsPage from "./core/pages/MeasurementsPage";
 import ShiftsPage from "./core/pages/ShiftsPage";
 import EditShiftPage from "./core/pages/edit-shift";
 import CreateMeasurement from "./core/pages/create-measurement";
+import CurrenciesPage from "./core/pages/CurrenciesPage";
+import CreateCurrency from "./core/pages/create-currency";
 import SuppliersPage from "./core/pages/SuppliersPage";
 import CreateSupplier from "./core/pages/create-supplier";
 import TransfersPage from "./core/pages/TransfersPage";
@@ -187,6 +189,22 @@ function App() {
                 element={
                   <PrivateRoute allowedRoles={["Администратор"]}>
                     <MeasurementsPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/currencies/create"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <CreateCurrency />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/currencies"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <CurrenciesPage />
                   </PrivateRoute>
                 }
               />

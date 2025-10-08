@@ -4,6 +4,7 @@ import { createResourceApiHooks } from '../helpers/createResourceApi';
 export interface Measurement {
   id?: number;
   measurement_name: string;
+  short_name?: string;
   store_write: number;
   store_read?: {
     id: number;

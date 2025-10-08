@@ -8,12 +8,12 @@ export interface AttributeTranslations {
 export interface Attribute {
   id?: number;
   name: string;
-  category: number;
   field_type: AttributeFieldType;
-  formula?: string;
   choices?: string[];
-  related_model?: string;
+  formula?: string;
   translations: AttributeTranslations;
+  related_model?: string;
+  related_objects?: any;
 }
 
 export interface CreateAttributeDto extends Omit<Attribute, 'id'> {}
