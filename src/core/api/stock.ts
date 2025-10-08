@@ -64,7 +64,7 @@ export interface Stock {
     short_name: string;
   };
   // New price fields
-  quantity?: string;
+  quantity?: string | number;
   purchase_unit_quantity?: string;
   price_per_unit_currency?: string;
   total_price_in_currency?: string;
@@ -73,6 +73,12 @@ export interface Stock {
   base_unit_in_currency?: string;
   base_unit_in_uzs?: string;
   date_of_arrived?: string;
+  // Additional fields used in various pages
+  exchange_rate?: number | string;
+  selling_price?: number | string;
+  min_price?: number | string;
+  purchase_price_in_us?: number | string;
+  purchase_price_in_uz?: number | string;
   // Legacy fields for backward compatibility
   product_read?: {
     id: number;

@@ -81,7 +81,7 @@ export default function StockPriceHistoryPage() {
 
         {renderValueCard(
           t('table.quantity'),
-          stock.quantity.toString(),
+          stock.quantity?.toString() || '0',
           stock.quantity_for_history?.toString() || '0',
         )}
        
@@ -89,7 +89,7 @@ export default function StockPriceHistoryPage() {
         {renderValueCard(
           t('table.exchange_rate'),
           typeof stock.exchange_rate === 'number' && stock.exchange_rate !== 0 ? Number(stock.exchange_rate).toLocaleString() + ' UZS' : '',
-          typeof stock.history_of_prices.exchange_rate === 'number' && stock.history_of_prices.exchange_rate !== 0 ? Number(stock.history_of_prices.exchange_rate).toLocaleString() + ' UZS' : '',
+          typeof stock.history_of_prices?.exchange_rate === 'number' && stock.history_of_prices.exchange_rate !== 0 ? Number(stock.history_of_prices.exchange_rate).toLocaleString() + ' UZS' : '',
           'text-blue-600'
         )}
       </div>
@@ -97,29 +97,29 @@ export default function StockPriceHistoryPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {renderValueCard(
           t('table.selling_price'),
-          `${stock.selling_price?.toLocaleString()} UZS`,
-          `${stock.history_of_prices.selling_price?.toLocaleString()} UZS`,
+          typeof stock.selling_price === 'number' ? `${stock.selling_price.toLocaleString()} UZS` : '',
+          typeof stock.history_of_prices?.selling_price === 'number' ? `${stock.history_of_prices.selling_price.toLocaleString()} UZS` : '',
           'text-green-600'
         )}
 
         {renderValueCard(
           t('table.min_price'),
-          `${stock.min_price?.toLocaleString()} UZS`,
-          `${stock.history_of_prices.min_price?.toLocaleString()} UZS`,
+          typeof stock.min_price === 'number' ? `${stock.min_price.toLocaleString()} UZS` : '',
+          typeof stock.history_of_prices?.min_price === 'number' ? `${stock.history_of_prices.min_price.toLocaleString()} UZS` : '',
           'text-yellow-600'
         )}
 
         {renderValueCard(
           t('table.purchase_price_us'),
           typeof stock.purchase_price_in_us === 'number' && stock.purchase_price_in_us !== 0 ? `$${Number(stock.purchase_price_in_us).toLocaleString()}` : '',
-          typeof stock.history_of_prices.purchase_price_in_us === 'number' && stock.history_of_prices.purchase_price_in_us !== 0 ? `$${Number(stock.history_of_prices.purchase_price_in_us).toLocaleString()}` : '',
+          typeof stock.history_of_prices?.purchase_price_in_us === 'number' && stock.history_of_prices.purchase_price_in_us !== 0 ? `$${Number(stock.history_of_prices.purchase_price_in_us).toLocaleString()}` : '',
           'text-indigo-600'
         )}
 
         {renderValueCard(
           t('table.purchase_price_uz'),
-          `${stock.purchase_price_in_uz?.toLocaleString()} UZS`,
-          `${stock.history_of_prices.purchase_price_in_uz?.toLocaleString()} UZS`,
+          typeof stock.purchase_price_in_uz === 'number' ? `${stock.purchase_price_in_uz.toLocaleString()} UZS` : '',
+          typeof stock.history_of_prices?.purchase_price_in_uz === 'number' ? `${stock.history_of_prices.purchase_price_in_uz.toLocaleString()} UZS` : '',
           'text-purple-600'
         )}
       </div>

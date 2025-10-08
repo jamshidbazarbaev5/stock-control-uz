@@ -103,7 +103,8 @@ export default function CreateTransfer() {
       // If we have a product ID but no specific stock, try to find a stock with that product
       else if (fromProductId) {
         const stockWithProduct = mergedStocks?.find(
-          (stock: Stock) => stock.product_read?.id === Number(fromProductId) && stock.quantity > 0 &&
+          (stock: Stock) => stock.product_read?.id === Number(fromProductId) && 
+          stock.quantity != null && Number(stock.quantity) > 0 &&
           (currentUser?.role === 'Администратор' ? stock.store_read?.id === currentUser?.store_read?.id : true)
         );
         if (stockWithProduct) {
@@ -209,7 +210,7 @@ export default function CreateTransfer() {
                       matchingStock = mergedStocks.find((stock: Stock) => 
                         stock.product_read?.id === Number(fromProductId) && 
                         stock.store_read?.id === storeId && 
-                        stock.quantity > 0
+                        stock.quantity != null && Number(stock.quantity) > 0
                       );
                     }
                     
