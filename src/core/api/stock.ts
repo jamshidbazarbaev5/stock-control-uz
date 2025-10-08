@@ -8,30 +8,39 @@ export interface StockMeasurement {
 }
 
 export interface CreateStockDTO {
-  store_write: number;
-  product_write: number;
-  purchase_price: string;
-  selling_price: string;
+  // Required fields
+  store: number;
+  product: number;
+  currency: number;
+  purchase_unit: number;
+  supplier: number;
+  date_of_arrived: string;
+  
+  // Optional calculation fields
+  exchange_rate?: number;
+  purchase_unit_quantity?: number;
+  total_price_in_currency?: number;
+  price_per_unit_currency?: number;
+  quantity?: number;
+  total_price_in_uz?: number;
+  price_per_unit_uz?: number;
+  base_unit_in_currency?: number;
+  base_unit_in_uzs?: number;
+  
+  // Legacy fields for backward compatibility
+  store_write?: number;
+  product_write?: number;
+  purchase_price?: string;
+  selling_price?: string;
   selling_price_in_us?: string;
-  min_price: string;
-  quantity: number | string;
-  supplier_write: number;
+  min_price?: string;
+  supplier_write?: number;
   color?: string;
-  measurement_write: StockMeasurement[];
-  purchase_price_in_us: string;
-  exchange_rate: string;
-  purchase_price_in_uz: string;
-  date_of_arrived?: string;
+  measurement_write?: StockMeasurement[];
+  purchase_price_in_us?: string;
+  purchase_price_in_uz?: string;
   income_weight?: string;
   date?: string;
-  // New fields for backend calculation
-  currency?: number;
-  purchase_unit?: number;
-  purchase_unit_quantity?: number | string;
-  total_price_in_currency?: number | string;
-  price_per_unit_currency?: number | string;
-  base_unit_in_uzs?: number | string;
-  total_price_in_uz?: number | string;
 }
 
 export interface Stock {
@@ -172,16 +181,21 @@ export interface StockResponse {
 
 // Stock calculation types
 export interface StockCalculationRequest {
-  store?: number;
-  product?: number;
-  currency?: number;
-  purchase_unit?: number;
-  supplier?: number;
-  date_of_arrived?: string;
+  store: number;
+  product: number;
+  currency: number;
+  purchase_unit: number;
+  supplier: number;
+  date_of_arrived: string;
   exchange_rate?: number;
   purchase_unit_quantity?: number;
   total_price_in_currency?: number;
   price_per_unit_currency?: number;
+  quantity?: number;
+  total_price_in_uz?: number;
+  price_per_unit_uz?: number;
+  base_unit_in_currency?: number;
+  base_unit_in_uzs?: number;
 }
 
 export interface DynamicField {
