@@ -2,13 +2,32 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ResourceForm } from '../helpers/ResourceForm';
 import type { Product } from '../api/product';
 import { useUpdateProduct, useGetProduct } from '../api/product';
-import { useGetCategories } from '../api/category';
+import { useGetCategories, fetchCategoriesWithAttributes } from '../api/category';
 import { useGetMeasurements } from '../api/measurement';
 import type { Attribute } from '@/types/attribute';
-import { attributeApi } from '../api/attribute';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+
+// Utility function to parse numeric values from API
+const parseNumericValue = (value: any): string => {
+  if (value === null || value === undefined) return '';
+  
+  // Convert to string first
+  let stringValue = value.toString();
+  
+  // Replace comma with dot for proper decimal parsing
+  stringValue = stringValue.replace(',', '.');
+  
+  // Parse as float and return as string without trailing zeros
+  const numericValue = parseFloat(stringValue);
+  
+  // Return empty string if not a valid number
+  if (isNaN(numericValue)) return '';
+  
+  // Return formatted number without unnecessary trailing zeros
+  return numericValue.toString();
+};
 
 interface AttributeValue {
   attribute_id: number;
@@ -44,33 +63,48 @@ export default function EditProduct() {
     const fetchAttributes = async () => {
       try {
         if (selectedCategory) {
-          const allAttributes = await attributeApi.getAll();
-          // For now, show all attributes - category filtering can be added later
-          setAttributes(allAttributes);
+          // First check if we already have attributes from the product's category_read
+          if (product?.category_read?.attributes_read) {
+            setAttributes(product.category_read.attributes_read);
+            return;
+          }
+          
+          // Otherwise fetch from API
+          const selectedCategoryData = categories.find(cat => cat.id === selectedCategory);
+          if (selectedCategoryData) {
+            const response = await fetchCategoriesWithAttributes(selectedCategoryData.category_name);
+            const categoryWithAttributes = response.results.find(cat => cat.id === selectedCategory);
+            if (categoryWithAttributes?.attributes_read) {
+              setAttributes(categoryWithAttributes.attributes_read);
+            } else {
+              setAttributes([]);
+            }
+          }
         } else {
           setAttributes([]);
         }
       } catch (error) {
         console.error('Failed to fetch attributes:', error);
+        setAttributes([]);
       }
     };
     
     fetchAttributes();
-  }, [selectedCategory]);
+  }, [selectedCategory, categories, product]);
 
   useEffect(() => {
     if (product) {
       // Set initial values from product data
       setBarcode(product.barcode || '');
-      setMinPrice(product.min_price?.toString() || '');
-      setSellingPrice(product.selling_price?.toString() || '');
+      setMinPrice(parseNumericValue(product.min_price));
+      setSellingPrice(parseNumericValue(product.selling_price));
       setBaseUnit(product.base_unit?.toString() || '');
       
       // Set measurements
       if (product.measurement) {
         setMeasurements(product.measurement.map((m: any) => ({
           measurement_write: m.measurement_read?.id || m.measurement_write,
-          number: m.number?.toString() || ''
+          number: parseNumericValue(m.number)
         })));
       }
       
@@ -79,9 +113,21 @@ export default function EditProduct() {
         setSelectedCategory(product.category_read?.id || product.category_write);
       }
       
-      // Set attribute values if they exist
+      // Set attribute values if they exist - convert from API format to form format
       if (product.attribute_values) {
-        setAttributeValues(product.attribute_values);
+        const formattedAttributeValues = product.attribute_values.map((av: any) => {
+          // Handle both API response format (with nested attribute) and form format
+          if (av.attribute && av.attribute.id) {
+            return {
+              attribute_id: av.attribute.id,
+              value: av.value
+            };
+          } else {
+            // Already in form format
+            return av;
+          }
+        });
+        setAttributeValues(formattedAttributeValues);
       }
     }
   }, [product]);
@@ -103,7 +149,7 @@ export default function EditProduct() {
         selling_price: typeof data.selling_price === 'string' ? parseFloat(data.selling_price) : data.selling_price,
         measurement: measurements.filter(m => m.measurement_write && m.number).map(m => ({
           measurement_write: m.measurement_write,
-          number: m.number,
+          number: parseFloat(m.number.replace(',', '.')).toString(),
           for_sale: false
         })),
         attribute_values: attributeValues.map(av => ({
@@ -197,8 +243,8 @@ export default function EditProduct() {
           category_write: product.category_read?.id || product.category_write,
           base_unit: product.base_unit?.toString() || '',
           barcode: product.barcode || '',
-          min_price: product.min_price?.toString() || '',
-          selling_price: product.selling_price?.toString() || '',
+          min_price: parseNumericValue(product.min_price),
+          selling_price: parseNumericValue(product.selling_price),
         } as any}
       >
         {/* Measurements Section */}
@@ -277,6 +323,8 @@ export default function EditProduct() {
           <div className="space-y-4">
             <h3 className="text-lg font-medium">{t('forms.attributes')}</h3>
             {attributes.map((attribute) => {
+              const existingValue = attributeValues.find(v => v.attribute_id === attribute.id)?.value;
+              
               const handleAttributeChange = (value: string | boolean) => {
                 setAttributeValues((prev) => {
                   const existing = prev.find((v) => v.attribute_id === attribute.id);
@@ -299,6 +347,7 @@ export default function EditProduct() {
                       <input
                         type="text"
                         className="w-full px-3 py-2 border rounded-md"
+                        value={existingValue?.toString() || ''}
                         onChange={(e) => handleAttributeChange(e.target.value)}
                       />
                     </div>
@@ -312,6 +361,7 @@ export default function EditProduct() {
                       <input
                         type="number"
                         className="w-full px-3 py-2 border rounded-md"
+                        value={existingValue?.toString() || ''}
                         onChange={(e) => handleAttributeChange(e.target.value)}
                       />
                     </div>
@@ -324,6 +374,7 @@ export default function EditProduct() {
                         <input
                           type="checkbox"
                           className="checkbox"
+                          checked={!!existingValue}
                           onChange={(e) => handleAttributeChange(e.target.checked)}
                         />
                       </label>
@@ -337,6 +388,7 @@ export default function EditProduct() {
                       </label>
                       <select
                         className="w-full px-3 py-2 border rounded-md"
+                        value={existingValue?.toString() || ''}
                         onChange={(e) => handleAttributeChange(e.target.value)}
                       >
                         <option value="">{t('placeholders.select_option')}</option>
@@ -357,6 +409,7 @@ export default function EditProduct() {
                       <input
                         type="date"
                         className="w-full px-3 py-2 border rounded-md"
+                        value={existingValue?.toString() || ''}
                         onChange={(e) => handleAttributeChange(e.target.value)}
                       />
                     </div>

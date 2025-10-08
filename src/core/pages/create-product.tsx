@@ -1,10 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { type Product, useCreateProduct } from '../api/product';
-import { useGetCategories } from '../api/category';
+import { useGetCategories, fetchCategoriesWithAttributes } from '../api/category';
 import { useGetMeasurements } from '../api/measurement';
 import type { Attribute } from '@/types/attribute';
-import { attributeApi } from '../api/attribute';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -41,19 +40,28 @@ export default function CreateProduct() {
     const fetchAttributes = async () => {
       try {
         if (selectedCategory) {
-          const allAttributes = await attributeApi.getAll();
-          // For now, show all attributes - category filtering can be added later
-          setAttributes(allAttributes);
+          // Find the selected category name
+          const selectedCategoryData = categories.find(cat => cat.id === selectedCategory);
+          if (selectedCategoryData) {
+            const response = await fetchCategoriesWithAttributes(selectedCategoryData.category_name);
+            const categoryWithAttributes = response.results.find(cat => cat.id === selectedCategory);
+            if (categoryWithAttributes?.attributes_read) {
+              setAttributes(categoryWithAttributes.attributes_read);
+            } else {
+              setAttributes([]);
+            }
+          }
         } else {
           setAttributes([]);
         }
       } catch (error) {
         console.error('Failed to fetch attributes:', error);
+        setAttributes([]);
       }
     };
     
     fetchAttributes();
-  }, [selectedCategory]);
+  }, [selectedCategory, categories]);
 
   const handleSubmit = async (data: any) => {
     console.log('Form data received:', data);
@@ -231,6 +239,8 @@ export default function CreateProduct() {
           <div className="space-y-4">
             <h3 className="text-lg font-medium">{t('forms.attributes')}</h3>
             {attributes.map((attribute) => {
+              const existingValue = attributeValues.find(v => v.attribute_id === attribute.id)?.value;
+              
               const handleAttributeChange = (value: string | boolean) => {
                 setAttributeValues((prev) => {
                   const existing = prev.find((v) => v.attribute_id === attribute.id);
@@ -253,6 +263,7 @@ export default function CreateProduct() {
                       <input
                         type="text"
                         className="w-full px-3 py-2 border rounded-md"
+                        value={existingValue?.toString() || ''}
                         onChange={(e) => handleAttributeChange(e.target.value)}
                       />
                     </div>
@@ -266,6 +277,7 @@ export default function CreateProduct() {
                       <input
                         type="number"
                         className="w-full px-3 py-2 border rounded-md"
+                        value={existingValue?.toString() || ''}
                         onChange={(e) => handleAttributeChange(e.target.value)}
                       />
                     </div>
@@ -278,6 +290,7 @@ export default function CreateProduct() {
                         <input
                           type="checkbox"
                           className="checkbox"
+                          checked={!!existingValue}
                           onChange={(e) => handleAttributeChange(e.target.checked)}
                         />
                       </label>
@@ -291,6 +304,7 @@ export default function CreateProduct() {
                       </label>
                       <select
                         className="w-full px-3 py-2 border rounded-md"
+                        value={existingValue?.toString() || ''}
                         onChange={(e) => handleAttributeChange(e.target.value)}
                       >
                         <option value="">{t('placeholders.select_option')}</option>
@@ -311,6 +325,7 @@ export default function CreateProduct() {
                       <input
                         type="date"
                         className="w-full px-3 py-2 border rounded-md"
+                        value={existingValue?.toString() || ''}
                         onChange={(e) => handleAttributeChange(e.target.value)}
                       />
                     </div>

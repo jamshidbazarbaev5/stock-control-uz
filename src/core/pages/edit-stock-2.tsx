@@ -204,10 +204,8 @@ export default function EditStock() {
         return; // Don't calculate if required fields are missing
       }
 
-      // Only calculate if at least one calculation trigger field has a value
-      if (!formData.purchase_unit_quantity && !formData.total_price_in_currency && !formData.price_per_unit_currency) {
-        return;
-      }
+      // Always call calculation API when all required fields are filled
+      // The API will determine which fields to show/hide
 
       setIsCalculating(true);
       try {
@@ -274,8 +272,38 @@ export default function EditStock() {
     [form, initialDataLoaded]
   );
 
-  // Watch only calculation trigger fields and trigger calculation when they change
+  // State to track if initial calculation has been done
+  const [initialCalculationDone, setInitialCalculationDone] = useState(false);
+  
+  // Watch only required fields for initial calculation
+  const requiredFields = form.watch(['store', 'product', 'currency', 'purchase_unit', 'supplier', 'date_of_arrived']);
+  
+  useEffect(() => {
+    if (!initialDataLoaded) return;
+    
+    const [store, product, currency, purchase_unit, supplier, date_of_arrived] = requiredFields;
+    
+    // Trigger calculation only once when all required fields are filled and calculation hasn't been done yet
+    if (!initialCalculationDone && store && product && currency && purchase_unit && supplier && date_of_arrived) {
+      const timeoutId = setTimeout(() => {
+        const formData = form.getValues();
+        debouncedCalculate(formData as FormValues);
+        setInitialCalculationDone(true);
+      }, 500); // 500ms debounce
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [requiredFields, debouncedCalculate, initialDataLoaded, initialCalculationDone, form]);
+
+  // Watch calculation trigger fields for updates after initial load
   const watchedFields = form.watch(['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency']);
+  
+  // State to track previous values for change detection
+  const [previousValues, setPreviousValues] = useState<{
+    purchase_unit_quantity?: string | number;
+    total_price_in_currency?: string | number;
+    price_per_unit_currency?: string | number;
+  }>({});
   
   useEffect(() => {
     if (!initialDataLoaded) return;
@@ -289,17 +317,30 @@ export default function EditStock() {
       initialDataLoaded
     });
     
-    // Only trigger calculation if at least one calculation field has a value
-    if (purchaseUnitQuantity || totalPriceInCurrency || pricePerUnitCurrency) {
+    // Check if values have actually changed
+    const hasChanged = 
+      purchaseUnitQuantity !== previousValues.purchase_unit_quantity ||
+      totalPriceInCurrency !== previousValues.total_price_in_currency ||
+      pricePerUnitCurrency !== previousValues.price_per_unit_currency;
+    
+    // Only trigger calculation if values have changed and initial calculation was done
+    if (hasChanged && initialCalculationDone) {
       console.log('Triggering calculation...');
       const timeoutId = setTimeout(() => {
         const formData = form.getValues();
         debouncedCalculate(formData as FormValues);
+        
+        // Update previous values after calculation
+        setPreviousValues({
+          purchase_unit_quantity: purchaseUnitQuantity,
+          total_price_in_currency: totalPriceInCurrency,
+          price_per_unit_currency: pricePerUnitCurrency
+        });
       }, 500); // 500ms debounce
 
       return () => clearTimeout(timeoutId);
     }
-  }, [watchedFields, form, debouncedCalculate, initialDataLoaded]);
+  }, [watchedFields, form, debouncedCalculate, initialDataLoaded, initialCalculationDone, previousValues]);
 
   // Define base stock fields
   const baseStockFields = [
@@ -402,34 +443,27 @@ export default function EditStock() {
     }
   ];
 
-  // Add dynamic calculation fields
-  const calculationFields = [
-    {
-      name: 'purchase_unit_quantity',
-      label: t('common.purchase_unit_quantity') || 'Purchase Unit Quantity',
+  // Dynamic calculation fields - only show fields that are marked as 'show: true' in API response
+  const calculationFields = Object.entries(dynamicFields)
+    .filter(([fieldName, fieldData]) => 
+      ['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency'].includes(fieldName) && 
+      fieldData.show
+    )
+    .map(([fieldName, fieldData]) => ({
+      name: fieldName,
+      label: fieldData.label,
       type: 'number',
-      placeholder: t('common.enter_purchase_unit_quantity') || 'Enter purchase unit quantity',
-      required: false
-    },
-    {
-      name: 'total_price_in_currency',
-      label: t('common.total_price_in_currency') || 'Total Price in Currency',
-      type: 'number',
-      placeholder: t('common.enter_total_price') || 'Enter total price',
-      required: false
-    },
-    {
-      name: 'price_per_unit_currency',
-      label: t('common.price_per_unit_currency') || 'Price per Unit in Currency',
-      type: 'number',
-      placeholder: t('common.enter_price_per_unit') || 'Enter price per unit',
-      required: false
-    }
-  ];
+      placeholder: fieldData.label,
+      required: false,
+      readOnly: !fieldData.editable
+    }));
 
-  // Add dynamic backend-calculated fields based on API response (filter out duplicates)
+  // Add dynamic backend-calculated fields based on API response (filter out input fields and only show visible fields)
   const dynamicCalculatedFields = Object.entries(dynamicFields)
-    .filter(([fieldName]) => !['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency'].includes(fieldName))
+    .filter(([fieldName, fieldData]) => 
+      !['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency'].includes(fieldName) &&
+      fieldData.show
+    )
     .map(([fieldName, fieldData]) => ({
       name: fieldName,
       label: fieldData.label,
@@ -437,7 +471,6 @@ export default function EditStock() {
       placeholder: fieldData.label,
       required: false,
       readOnly: !fieldData.editable,
-      hidden: !fieldData.show,
       value: fieldData.value?.toString() || ''
     }));
 
@@ -476,10 +509,20 @@ export default function EditStock() {
         ...(data.total_price_in_currency && { total_price_in_currency: Number(data.total_price_in_currency) }),
         ...(data.price_per_unit_currency && { price_per_unit_currency: Number(data.price_per_unit_currency) }),
         
-        // Include all dynamic calculated fields
+        // Include all dynamic calculated fields with proper value extraction
         ...Object.entries(dynamicFields).reduce((acc, [fieldName, fieldData]) => {
           if (fieldData.value !== null && fieldData.value !== undefined) {
-            acc[fieldName] = fieldData.value;
+            // Handle special cases where backend expects different format
+            if (fieldName === 'exchange_rate' && typeof fieldData.value === 'object' && (fieldData.value as any).id) {
+              // Extract ID for exchange_rate since backend expects pk value
+              acc[fieldName] = (fieldData.value as any).id;
+            } else if (typeof fieldData.value === 'object' && (fieldData.value as any).id !== undefined) {
+              // For other objects with ID, extract the ID
+              acc[fieldName] = (fieldData.value as any).id;
+            } else {
+              // For primitive values, use as-is
+              acc[fieldName] = fieldData.value;
+            }
           }
           return acc;
         }, {} as any)

@@ -136,10 +136,8 @@ export default function CreateStock() {
         return; // Don't calculate if required fields are missing
       }
 
-      // Only calculate if at least one calculation trigger field has a value
-      if (!formData.purchase_unit_quantity && !formData.total_price_in_currency && !formData.price_per_unit_currency) {
-        return;
-      }
+      // Always call calculation API when all required fields are filled
+      // The API will determine which fields to show/hide
 
       setIsCalculating(true);
       try {
@@ -213,7 +211,28 @@ export default function CreateStock() {
     price_per_unit_currency?: string | number;
   }>({});
 
-  // Watch only calculation trigger fields and trigger calculation when they change
+  // State to track if initial calculation has been done
+  const [initialCalculationDone, setInitialCalculationDone] = useState(false);
+  
+  // Watch only required fields for initial calculation
+  const requiredFields = form.watch(['store', 'product', 'currency', 'purchase_unit', 'supplier', 'date_of_arrived']);
+  
+  useEffect(() => {
+    const [store, product, currency, purchase_unit, supplier, date_of_arrived] = requiredFields;
+    
+    // Trigger calculation only once when all required fields are filled and calculation hasn't been done yet
+    if (!initialCalculationDone && store && product && currency && purchase_unit && supplier && date_of_arrived) {
+      const timeoutId = setTimeout(() => {
+        const formData = form.getValues();
+        debouncedCalculate(formData as FormValues);
+        setInitialCalculationDone(true);
+      }, 500); // 500ms debounce
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [requiredFields, debouncedCalculate, initialCalculationDone, form]);
+
+  // Watch calculation trigger fields for updates after initial load
   const watchedFields = form.watch(['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency']);
   
   useEffect(() => {
@@ -225,8 +244,8 @@ export default function CreateStock() {
       totalPriceInCurrency !== previousValues.total_price_in_currency ||
       pricePerUnitCurrency !== previousValues.price_per_unit_currency;
     
-    // Only trigger calculation if values have changed and at least one calculation field has a value
-    if (hasChanged && (purchaseUnitQuantity || totalPriceInCurrency || pricePerUnitCurrency)) {
+    // Only trigger calculation if values have changed and initial calculation was done
+    if (hasChanged && initialCalculationDone) {
       const timeoutId = setTimeout(() => {
         const formData = form.getValues();
         debouncedCalculate(formData as FormValues);
@@ -241,7 +260,7 @@ export default function CreateStock() {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [watchedFields, previousValues, form, debouncedCalculate]);
+  }, [watchedFields, previousValues, form, debouncedCalculate, initialCalculationDone]);
 
   // Define base stock fields
   const baseStockFields = [
@@ -319,30 +338,20 @@ export default function CreateStock() {
     }
   ];
 
-  // Add dynamic calculation fields
-  const calculationFields = [
-    {
-      name: 'purchase_unit_quantity',
-      label: t('common.purchase_unit_quantity') || 'Purchase Unit Quantity',
+  // Dynamic calculation fields - only show fields that are marked as 'show: true' in API response
+  const calculationFields = Object.entries(dynamicFields)
+    .filter(([fieldName, fieldData]) => 
+      ['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency'].includes(fieldName) && 
+      fieldData.show
+    )
+    .map(([fieldName, fieldData]) => ({
+      name: fieldName,
+      label: fieldData.label,
       type: 'number',
-      placeholder: t('common.enter_purchase_unit_quantity') || 'Enter purchase unit quantity',
-      required: false
-    },
-    {
-      name: 'total_price_in_currency',
-      label: t('common.total_price_in_currency') || 'Total Price in Currency',
-      type: 'number',
-      placeholder: t('common.enter_total_price') || 'Enter total price',
-      required: false
-    },
-    {
-      name: 'price_per_unit_currency',
-      label: t('common.price_per_unit_currency') || 'Price per Unit in Currency',
-      type: 'number',
-      placeholder: t('common.enter_price_per_unit') || 'Enter price per unit',
-      required: false
-    }
-  ];
+      placeholder: fieldData.label,
+      required: false,
+      readOnly: !fieldData.editable
+    }));
 
   // Helper function to safely convert value to string
   const formatFieldValue = (value: any): string => {
@@ -352,21 +361,55 @@ export default function CreateStock() {
     
     // If it's an object, try to extract meaningful value
     if (typeof value === 'object') {
-      // If it has a 'value' property, use that
-      if (value.value !== undefined) {
-        return String(value.value);
-      }
-      // If it has a 'rate' property (for exchange rate), use that
+      // Handle direct exchange rate object like { id: 1, rate: 13000.0 }
       if (value.rate !== undefined) {
         return String(value.rate);
       }
+      
+      // Handle nested object structure like exchange_rate: { value: { id: 1, rate: 13000.0 } }
+      if (value.value !== undefined && typeof value.value === 'object') {
+        // Check if the nested value object has a rate property
+        if (value.value.rate !== undefined) {
+          return String(value.value.rate);
+        }
+        // Check if the nested value object has an amount property
+        if (value.value.amount !== undefined) {
+          return String(value.value.amount);
+        }
+        // If nested value is a simple value, use it
+        if (typeof value.value !== 'object') {
+          return String(value.value);
+        }
+        // If it's still an object, try to find any numeric property
+        const numericKeys = ['rate', 'amount', 'price', 'value', 'id'];
+        for (const key of numericKeys) {
+          if (value.value[key] !== undefined) {
+            return String(value.value[key]);
+          }
+        }
+      }
+      // If it has a direct 'value' property that's not an object, use that
+      else if (value.value !== undefined) {
+        return String(value.value);
+      }
+      
       // If it has an 'amount' property, use that
       if (value.amount !== undefined) {
         return String(value.amount);
       }
-      // Try to JSON stringify if it's a simple object
+      
+      // For exchange rate objects with id but no rate, show the id
+      if (value.id !== undefined) {
+        return String(value.id);
+      }
+      
+      // Try to JSON stringify if it's a simple object, but avoid showing [object Object]
       try {
-        return JSON.stringify(value);
+        const stringified = JSON.stringify(value);
+        if (stringified === '{}' || stringified === '[]') {
+          return '';
+        }
+        return stringified;
       } catch {
         return String(value);
       }
@@ -375,9 +418,12 @@ export default function CreateStock() {
     return String(value);
   };
 
-  // Add dynamic backend-calculated fields based on API response (filter out duplicates)
+  // Add dynamic backend-calculated fields based on API response (filter out input fields and only show visible fields)
   const dynamicCalculatedFields = Object.entries(dynamicFields)
-    .filter(([fieldName]) => !['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency'].includes(fieldName))
+    .filter(([fieldName, fieldData]) => 
+      !['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency'].includes(fieldName) &&
+      fieldData.show
+    )
     .map(([fieldName, fieldData]) => ({
       name: fieldName,
       label: fieldData.label,
@@ -385,7 +431,6 @@ export default function CreateStock() {
       placeholder: fieldData.label,
       required: false,
       readOnly: !fieldData.editable,
-      hidden: !fieldData.show,
       value: formatFieldValue(fieldData.value)
     }));
 
@@ -409,11 +454,11 @@ export default function CreateStock() {
 
       // Build the final payload combining user input and calculated values
       const payload: any = {
-        store_write: Number(data.store),
-        product_write: Number(data.product),
+        store: Number(data.store),
+        product: Number(data.product),
         currency: Number(data.currency),
         purchase_unit: Number(data.purchase_unit),
-        supplier_write: Number(data.supplier),
+        supplier: Number(data.supplier),
         date_of_arrived: data.date_of_arrived,
         measurement_write: [],
         
@@ -422,10 +467,20 @@ export default function CreateStock() {
         ...(data.total_price_in_currency && { total_price_in_currency: Number(data.total_price_in_currency) }),
         ...(data.price_per_unit_currency && { price_per_unit_currency: Number(data.price_per_unit_currency) }),
         
-        // Include all dynamic calculated fields
+        // Include all dynamic calculated fields with proper value extraction
         ...Object.entries(dynamicFields).reduce((acc, [fieldName, fieldData]) => {
           if (fieldData.value !== null && fieldData.value !== undefined) {
-            acc[fieldName] = fieldData.value;
+            // Handle special cases where backend expects different format
+            if (fieldName === 'exchange_rate' && typeof fieldData.value === 'object' && (fieldData.value as any).id) {
+              // Extract ID for exchange_rate since backend expects pk value
+              acc[fieldName] = (fieldData.value as any).id;
+            } else if (typeof fieldData.value === 'object' && (fieldData.value as any).id !== undefined) {
+              // For other objects with ID, extract the ID
+              acc[fieldName] = (fieldData.value as any).id;
+            } else {
+              // For primitive values, use as-is
+              acc[fieldName] = fieldData.value;
+            }
           }
           return acc;
         }, {} as any)

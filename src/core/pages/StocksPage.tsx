@@ -2,22 +2,16 @@
   import { WriteOffDialog } from '../components/dialogs/WriteOffDialog';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { DeleteConfirmationModal } from '../components/modals/DeleteConfirmationModal';
-import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
 import type { Stock } from '../api/stock';
-import type { Product } from '../api/product';
 import type { Store } from '../api/store';
-import type { Measurement } from '../api/measurement';
 import type { Supplier } from '../api/supplier';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
-import { useGetStocks, useDeleteStock, useUpdateStock } from '../api/stock';
-import { useGetProducts } from '../api/product';
+import { useGetStocks, useDeleteStock } from '../api/stock';
 import { useGetStores } from '../api/store';
-import { useGetMeasurements } from '../api/measurement';
 import { useGetSuppliers } from '../api/supplier';
 import { ResourceTable } from '../helpers/ResourseTable';
 import { useTranslation } from 'react-i18next';
@@ -30,7 +24,7 @@ export default function StocksPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: currentUser } = useCurrentUser();
-  const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
+  // Removed selectedStock state - using dedicated edit page instead
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [stockToDelete, setStockToDelete] = useState<Stock | null>(null);
   const [writeOffDialogOpen, setWriteOffDialogOpen] = useState(false);
@@ -92,21 +86,48 @@ export default function StocksPage() {
     },
     {
       header: t('table.product'),
-      accessorKey: 'product_read',
-      cell: (row: Stock) => row.product_read?.product_name || '-',
+      accessorKey: 'product',
+      cell: (row: Stock) => row.product?.product_name || row.product_read?.product_name || '-',
     },
     {
       header: t('table.store'),
-      accessorKey: 'product_read',
-      cell: (row: any) => row.store_read?.name || '-',
+      accessorKey: 'store',
+      cell: (row: any) => row.store?.name || row.store_read?.name || '-',
     },
     {
-      header: t('table.purchase_price'),
-      accessorKey: 'purchase_price_in_uz',
+      header: 'Поставщик',
+      accessorKey: 'supplier',
+      cell: (row: Stock) => row.supplier?.name || row.supplier_read?.name || '-',
     },
     {
-      header: t('table.selling_price'),
-      accessorKey: 'selling_price',
+      header: 'Валюта',
+      accessorKey: 'currency',
+      cell: (row: Stock) => row.currency ? `${row.currency.short_name}` : 'UZS',
+    },
+    {
+      header: 'Единица закупки',
+      accessorKey: 'purchase_unit',
+      cell: (row: Stock) => row.purchase_unit?.short_name || '-',
+    },
+    {
+      header: 'Цена за единицу (валюта)',
+      accessorKey: 'price_per_unit_currency',
+      cell: (row: Stock) => row.price_per_unit_currency ? `${row.price_per_unit_currency} ${row.currency?.short_name || 'UZS'}` : '-',
+    },
+    {
+      header: 'Общая цена (валюта)',
+      accessorKey: 'total_price_in_currency',
+      cell: (row: Stock) => row.total_price_in_currency ? `${row.total_price_in_currency} ${row.currency?.short_name || 'UZS'}` : '-',
+    },
+    {
+      header: 'Цена за единицу (UZS)',
+      accessorKey: 'price_per_unit_uz',
+      cell: (row: Stock) => row.price_per_unit_uz ? `${Number(row.price_per_unit_uz).toLocaleString()} UZS` : '-',
+    },
+    {
+      header: 'Общая цена (UZS)',
+      accessorKey: 'total_price_in_uz',
+      cell: (row: Stock) => row.total_price_in_uz ? `${Number(row.total_price_in_uz).toLocaleString()} UZS` : '-',
     },
     {
       header: t('table.date_of_arrived'),
@@ -118,9 +139,14 @@ export default function StocksPage() {
       )
     },
     {
-      header: t('table.quantity'),
+      header: 'Количество (базовая единица)',
       accessorKey: 'quantity',
-      cell: (row: any) => (row.quantity !== undefined && row.quantity !== null ? Number(row.quantity).toFixed(2) : '-')
+      cell: (row: any) => (row.quantity !== undefined && row.quantity !== null ? `${Number(row.quantity).toFixed(2)}` : '-')
+    },
+    {
+      header: 'Количество (единица закупки)',
+      accessorKey: 'purchase_unit_quantity',
+      cell: (row: Stock) => row.purchase_unit_quantity ? `${Number(row.purchase_unit_quantity).toFixed(2)} ${row.purchase_unit?.short_name || ''}` : '-',
     },
     {
       header: t('table.actions'),
@@ -166,20 +192,20 @@ export default function StocksPage() {
                   </DropdownMenuItem>
               ) : null}
               <DropdownMenuItem
-                  onClick={() => navigate(`/create-sale?productId=${row.product_read?.id}&stockId=${row.id}`)}
+                  onClick={() => navigate(`/create-sale?productId=${row.product?.id || row.product_read?.id}&stockId=${row.id}`)}
               >
                 {t('common.create')} {t('navigation.sale')}
               </DropdownMenuItem>
               {currentUser?.role?.toLowerCase() !== 'продавец' && (
                   <>
                     <DropdownMenuItem
-                        onClick={() => navigate(`/create-transfer?fromProductId=${row.product_read?.id}&fromStockId=${row.id}`)}
+                        onClick={() => navigate(`/create-transfer?fromProductId=${row.product?.id || row.product_read?.id}&fromStockId=${row.id}`)}
                     >
                       {t('common.create')} {t('navigation.transfer')}
                     </DropdownMenuItem>
-                    {row.product_read?.has_recycling && (
+                    {(row.product_read?.has_recycling || row.product?.has_recycling) && (
                         <DropdownMenuItem
-                            onClick={() => navigate(`/create-recycling?fromProductId=${row.product_read?.id}&fromStockId=${row.id}&storeId=${row.store_read?.id}`)}
+                            onClick={() => navigate(`/create-recycling?fromProductId=${row.product?.id || row.product_read?.id}&fromStockId=${row.id}&storeId=${row.store?.id || row.store_read?.id}`)}
                         >
                           {t('common.create')} {t('navigation.recycling')}
                         </DropdownMenuItem>
@@ -192,89 +218,7 @@ export default function StocksPage() {
     },
   ];
 
-  const stockFields = [
-    {
-      name: 'store_write',
-      label: 'Store',
-      type: 'select',
-      placeholder: 'Select store',
-      required: true,
-      options: [], // Will be populated with stores
-    },
-    {
-      name: 'product_write',
-      label: 'Product',
-      type: 'select',
-      placeholder: 'Select product',
-      required: true,
-      options: [], // Will be populated with products
-    },
-    {
-      name: 'purchase_price_in_us',
-      label: 'Purchase Price (USD)',
-      type: 'text',
-      placeholder: 'Enter purchase price in USD',
-      required: true,
-    },
-    {
-      name: 'exchange_rate',
-      label: 'Exchange Rate',
-      type: 'text',
-      placeholder: 'Enter exchange rate',
-      required: true,
-    },
-    {
-      name: 'purchase_price_in_uz',
-      label: 'Purchase Price (UZS)',
-      type: 'text',
-      placeholder: 'Calculated purchase price in UZS',
-      readOnly: true,
-    },
-    {
-      name: 'selling_price',
-      label: 'Selling Price',
-      type: 'text',
-      placeholder: 'Enter selling price',
-      required: true,
-    },
-    {
-      name: 'min_price',
-      label: 'Minimum Price',
-      type: 'text',
-      placeholder: 'Enter minimum price',
-      required: true,
-    },
-    {
-      name: 'quantity',
-      label: 'Quantity',
-      type: 'text',
-      placeholder: 'Enter quantity',
-      required: true,
-    },
-    {
-      name: 'supplier_write',
-      label: 'Supplier',
-      type: 'select',
-      placeholder: 'Select supplier',
-      required: true,
-      options: [], // Will be populated with suppliers
-    },
-    {
-      name: 'color',
-      label: 'Color',
-      type: 'text',
-      placeholder: 'Enter color',
-      required: true,
-    },
-    {
-      name: 'measurement_write',
-      label: 'Measurement',
-      type: 'select',
-      placeholder: 'Select measurement',
-      required: true,
-      options: [], // Will be populated with measurements
-    },
-  ];
+  // Removed stockFields - using dedicated create/edit pages instead
 
   const { data: stocksData, isLoading } = useGetStocks({
     params: {
@@ -292,10 +236,8 @@ export default function StocksPage() {
   // Get the stocks array from the paginated response
   const stocks = stocksData?.results || [];
 
-  // Fetch products, stores, measurements and suppliers for the select dropdowns
-  const { data: productsData } = useGetProducts({});
+  // Fetch stores and suppliers for the filter dropdowns
   const { data: storesData } = useGetStores({});
-  const { data: measurementsData } = useGetMeasurements({});
   const { data: suppliersData } = useGetSuppliers({});
 
   // Extract data from paginated responses
@@ -304,101 +246,20 @@ export default function StocksPage() {
     return Array.isArray(data) ? data : data.results;
   };
 
-  const products = getPaginatedData<Product>(productsData);
   const stores = getPaginatedData<Store>(storesData);
-  const measurements = getPaginatedData<Measurement>(measurementsData);
   const suppliers = getPaginatedData<Supplier>(suppliersData);
 
   // Mutations
-  const updateStock = useUpdateStock();
   const deleteStock = useDeleteStock();
 
-  // Update fields with product, store, measurement and supplier options
-  const fields = stockFields.map(field => {
-    if (field.name === 'product_write') {
-      return {
-        ...field,
-        options: products.map((product: Product) => ({
-          value: product.id,
-          label: product.product_name
-        }))
-      };
-    }
-    if (field.name === 'store_write') {
-      return {
-        ...field,
-        options: stores.map((store: Store) => ({
-          value: store.id,
-          label: store.name
-        }))
-      };
-    }
-    if (field.name === 'measurement_write') {
-      return {
-        ...field,
-        options: measurements.map((measurement: Measurement) => ({
-          value: measurement.id,
-          label: measurement.measurement_name
-        }))
-      };
-    }
-    if (field.name === 'supplier_write') {
-      return {
-        ...field,
-        options: suppliers.map((supplier: Supplier) => ({
-          value: supplier.id,
-          label: supplier.name
-        }))
-      };
-    }
-    return field;
-  });
+  // Removed fields configuration - using dedicated edit page instead
 
   // Handlers
   const handleEdit = (stock: Stock) => {
     navigate(`/edit-stock/${stock.id}`);
   };
 
-  const handleUpdate = async (data: Partial<Stock>) => {
-    if (!selectedStock?.id) return;
-
-    try {
-      const quantity = typeof data.quantity === 'string' ? parseInt(data.quantity, 10) : data.quantity!;
-      const measurement = typeof data.measurement_write === 'string' ? parseInt(data.measurement_write, 10) : data.measurement_write!;
-
-      // Calculate the UZS price from USD and exchange rate
-      const priceInUSD = parseFloat(data.purchase_price_in_us || '0');
-      const exchangeRate = parseFloat(data.exchange_rate || '0');
-      const priceInUZS = (priceInUSD * exchangeRate).toString();
-
-      // Format the data for the API
-      const formattedData: Stock = {
-        id: selectedStock.id,
-        store_write: typeof data.store_write === 'string' ? parseInt(data.store_write, 10) : data.store_write!,
-        product_write: typeof data.product_write === 'string' ? parseInt(data.product_write, 10) : data.product_write!,
-        purchase_price: priceInUZS,
-        selling_price: data.selling_price!,
-        min_price: data.min_price!,
-        quantity: quantity,
-        supplier_write: typeof data.supplier_write === 'string' ? parseInt(data.supplier_write, 10) : data.supplier_write!,
-        color: data.color!,
-        measurement_write: [{
-          measurement_write: typeof measurement === 'number' ? measurement : measurement[0].measurement_write,
-          number: quantity
-        }],
-        purchase_price_in_us: data.purchase_price_in_us || '0',
-        exchange_rate: data.exchange_rate || '0',
-        purchase_price_in_uz: priceInUZS
-      };
-
-      await updateStock.mutateAsync(formattedData);
-      toast.success('Stock updated successfully');
-      setSelectedStock(null);
-    } catch (error) {
-      toast.error('Failed to update stock');
-      console.error('Failed to update stock:', error);
-    }
-  };
+  // Removed inline edit functionality - use dedicated edit page instead
 
   const handleDelete = async (id: number) => {
     try {
@@ -500,19 +361,7 @@ export default function StocksPage() {
             onPageChange={setCurrentPage}
         />
 
-        <Dialog open={!!selectedStock} onOpenChange={() => setSelectedStock(null)}>
-          <DialogContent>
-            {selectedStock && (
-                <ResourceForm<Stock>
-                    fields={fields}
-                    onSubmit={handleUpdate}
-                    defaultValues={selectedStock}
-                    isSubmitting={updateStock.isPending}
-                    title={t('common.edit') + ' ' + t('table.product')}
-                />
-            )}
-          </DialogContent>
-        </Dialog>
+        {/* Inline edit dialog removed - use dedicated edit page instead */}
 
         <DeleteConfirmationModal
             isOpen={deleteModalOpen}

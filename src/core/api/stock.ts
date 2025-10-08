@@ -14,7 +14,7 @@ export interface CreateStockDTO {
   selling_price: string;
   selling_price_in_us?: string;
   min_price: string;
-  quantity: number;
+  quantity: number | string;
   supplier_write: number;
   color?: string;
   measurement_write: StockMeasurement[];
@@ -27,17 +27,53 @@ export interface CreateStockDTO {
   // New fields for backend calculation
   currency?: number;
   purchase_unit?: number;
-  purchase_unit_quantity?: number;
-  total_price_in_currency?: number;
-  price_per_unit_currency?: number;
-  base_unit_in_uzs?: number;
-  total_price_in_uz?: number;
+  purchase_unit_quantity?: number | string;
+  total_price_in_currency?: number | string;
+  price_per_unit_currency?: number | string;
+  base_unit_in_uzs?: number | string;
+  total_price_in_uz?: number | string;
 }
 
-export interface Stock extends CreateStockDTO {
+export interface Stock {
   id?: number;
   total_amount?:number;
   total_pure_revenue?:number;
+  // New nested object structure from API
+  store?: {
+    id: number;
+    name: string;
+  };
+  product?: {
+    id: number;
+    product_name: string;
+    base_unit: number;
+  };
+  currency?: {
+    id: number;
+    name: string;
+    short_name: string;
+    is_base: boolean;
+  } | null;
+  supplier?: {
+    id: number;
+    name: string;
+  };
+  purchase_unit?: {
+    id: number;
+    measurement_name: string;
+    short_name: string;
+  };
+  // New price fields
+  quantity?: string;
+  purchase_unit_quantity?: string;
+  price_per_unit_currency?: string;
+  total_price_in_currency?: string;
+  price_per_unit_uz?: string;
+  total_price_in_uz?: string;
+  base_unit_in_currency?: string;
+  base_unit_in_uzs?: string;
+  date_of_arrived?: string;
+  // Legacy fields for backward compatibility
   product_read?: {
     id: number;
     product_name: string;
@@ -114,6 +150,16 @@ export interface Stock extends CreateStockDTO {
 
 // API response type
 export interface StockResponse {
+  links: {
+    first: string | null;
+    last: string | null;
+    next: string | null;
+    previous: string | null;
+  };
+  total_pages: number;
+  current_page: number;
+  page_range: number[];
+  page_size: number;
   results: Stock[];
   count: number;
 }

@@ -1,4 +1,5 @@
 import { createResourceApiHooks } from '../helpers/createResourceApi'
+import api from './api'
 
 import type { Attribute } from '@/types/attribute';
 
@@ -21,6 +22,21 @@ export interface Category {
   };
 }
 
+export interface CategoryWithAttributesResponse {
+  links: {
+    first: string | null;
+    last: string | null;
+    next: string | null;
+    previous: string | null;
+  };
+  total_pages: number;
+  current_page: number;
+  page_range: number[];
+  page_size: number;
+  results: Category[];
+  count: number;
+}
+
 // API endpoints
 const CATEGORY_URL = 'items/category/';
 
@@ -32,3 +48,10 @@ export const {
   useUpdateResource: useUpdateCategory,
   useDeleteResource: useDeleteCategory,
 } = createResourceApiHooks<Category>(CATEGORY_URL, 'categories');
+
+// Function to fetch categories with attributes
+export const fetchCategoriesWithAttributes = async (categoryName?: string): Promise<CategoryWithAttributesResponse> => {
+  const params = categoryName ? { category_name: categoryName } : {};
+  const response = await api.get<CategoryWithAttributesResponse>(CATEGORY_URL, { params });
+  return response.data;
+};
