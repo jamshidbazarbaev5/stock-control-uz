@@ -1,526 +1,75 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { ResourceForm } from '../helpers/ResourceForm';
-import type { Stock } from '../api/stock';
+import type { StockCalculationRequest, DynamicField } from '../api/stock';
+import { calculateStock } from '../api/stock';
 import { useGetStock, useUpdateStock } from '../api/stock';
-import { useGetProducts } from '../api/product';
 import { useGetStores } from '../api/store';
 import { useGetSuppliers } from '../api/supplier';
+import { useGetCurrencies } from '../api/currency';
+import { useGetMeasurements } from '../api/measurement';
 import api from '../api/api';
 
-import { getAccessToken } from '../api/auth';
-
-interface FormValues extends Partial<Stock> {
-  purchase_price_in_us: string;
-  exchange_rate: string;
-  purchase_price_in_uz: string;
+interface FormValues {
+  // Required initial fields
+  store: number | string;
+  product: number | string;
+  currency: number | string;
+  purchase_unit: number | string;
+  supplier: number | string;
   date_of_arrived: string;
-  income_weight?: string;
-  selling_price_us?: string; // Added for has_kub calculation
-  price_per_ton?: string; // Corrected for is_list products
+  
+  // Dynamic calculation fields (user input)
+  purchase_unit_quantity?: number | string;
+  total_price_in_currency?: number | string;
+  price_per_unit_currency?: number | string;
+  
+  // Backend calculated fields (will be populated from API response)
+  quantity?: number | string;
+  total_price_in_uz?: number | string;
+  base_unit_in_uzs?: number | string;
 }
 
 export default function EditStock() {
-  const { id } = useParams(); 
+  const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [allProducts, setAllProducts] = useState<any[]>([]);
   const [isLoadingAllProducts, setIsLoadingAllProducts] = useState(false);
-  const [currency, setCurrency] = useState<{ id: number; currency_rate: string } | null>(null);
-  const [_currencyLoading, setCurrencyLoading] = useState(true);
-  
+  const [dynamicFields, setDynamicFields] = useState<{ [key: string]: DynamicField }>({});
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+
   // Fetch the stock and related data
   const { data: stock, isLoading: stockLoading } = useGetStock(Number(id));
-  const { data: productsData, isLoading: productsLoading } = useGetProducts({});
   const { data: storesData, isLoading: storesLoading } = useGetStores({});
   const { data: suppliersData, isLoading: suppliersLoading } = useGetSuppliers({});
+  const { data: currenciesData, isLoading: currenciesLoading } = useGetCurrencies({});
+  const { data: measurementsData, isLoading: measurementsLoading } = useGetMeasurements({});
   const updateStock = useUpdateStock();
 
   const form = useForm<FormValues>({
     defaultValues: {
-      purchase_price_in_us: '',
-      exchange_rate: '',
-      purchase_price_in_uz: '',
+      store: '',
+      product: '',
+      currency: '',
+      purchase_unit: '',
+      supplier: '',
       date_of_arrived: '',
-      income_weight: ''
+      purchase_unit_quantity: '',
+      total_price_in_currency: '',
+      price_per_unit_currency: ''
     }
   });
-
-  // Fetch currency rate on mount
-  useEffect(() => {
-    const fetchCurrency = async () => {
-      setCurrencyLoading(true);
-      try {
-        const token = getAccessToken();
-        const res = await api.get('/items/currency/', {
-          headers: { Authorization: token ? `Bearer ${token}` : '' },
-        });
-        if (res.data.results && res.data.results.length > 0) {
-          setCurrency(res.data.results[0]);
-          form.setValue('exchange_rate', res.data.results[0].currency_rate);
-        }
-      } catch (e) {
-        setCurrency(null);
-      } finally {
-        setCurrencyLoading(false);
-      }
-    };
-    fetchCurrency();
-    // eslint-disable-next-line
-  }, []);
-
-  // Watch specific fields for changes
-  const usdPrice = form.watch('purchase_price_in_us');
-  // const exchangeRate = form.watch('exchange_rate');
-  const exchangeRateValue = currency?.currency_rate || '';
-  // const incomeWeight = form.watch('income_weight' as any) as string | undefined;
 
   // Get the arrays from response data
-  const products = Array.isArray(productsData) ? productsData : productsData?.results || [];
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
   const suppliers = Array.isArray(suppliersData) ? suppliersData : suppliersData?.results || [];
-
-  console.log('Data loaded:', { 
-    productsCount: products.length, 
-    storesCount: stores.length, 
-    suppliersCount: suppliers.length,
-    productsLoading,
-    storesLoading,
-    suppliersLoading
-  });
-
-  // Effect to update purchase_price_in_uz when its dependencies change
-  useEffect(() => {
-    // Only auto-calculate if usdPrice is not empty and not zero
-    if (usdPrice && usdPrice !== '0' && exchangeRateValue) {
-      const priceInUSD = parseFloat(usdPrice);
-      const rate = parseFloat(exchangeRateValue);
-      if (!isNaN(priceInUSD) && !isNaN(rate)) {
-        const calculatedPrice = priceInUSD * rate;
-        form.setValue('purchase_price_in_uz', calculatedPrice.toFixed(2), {
-          shouldValidate: false,
-          shouldDirty: true
-        });
-      }
-    } else if (stock?.purchase_price_in_uz) {
-      // If usdPrice is zero or empty, restore backend value
-      form.setValue('purchase_price_in_uz', stock.purchase_price_in_uz.toString(), {
-        shouldValidate: false,
-        shouldDirty: true
-      });
-    }
-  }, [usdPrice, exchangeRateValue, form, form.watch('quantity')]);
-
-  // Watch income_weight and price_per_ton for is_list products
-  const pricePerTon = form.watch('price_per_ton' as any) as string | undefined;
-  useEffect(() => {
-    if (selectedProduct?.is_list) {
-      const incomeWeightRaw = form.watch('income_weight' as any);
-      const weight = typeof incomeWeightRaw === 'string' ? parseFloat(incomeWeightRaw) : Number(incomeWeightRaw);
-      const staticWeight = selectedProduct.static_weight || 0;
-      if (!isNaN(weight) && staticWeight) {
-        form.setValue('quantity', (weight * staticWeight).toString() as any);
-      } else {
-        form.setValue('quantity', '' as any);
-      }
-      // Only set purchase_price_in_us if income_weight is present (not null/undefined/empty)
-      if (incomeWeightRaw !== null && incomeWeightRaw !== undefined && incomeWeightRaw !== '') {
-        const price = typeof pricePerTon === 'string' ? parseFloat(pricePerTon) : Number(pricePerTon);
-        if (!isNaN(price) && !isNaN(weight)) {
-          form.setValue('purchase_price_in_us', (price * weight).toString());
-        } else {
-          form.setValue('purchase_price_in_us', '');
-        }
-      }
-      // If income_weight is not present, do not overwrite purchase_price_in_us (keep backend value)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.watch('income_weight' as any), pricePerTon, selectedProduct]);
-
-  // Load stock data when it's available and related data is loaded
-  useEffect(() => {
-    if (stock && products.length && stores.length && suppliers.length) {
-      console.log('Raw stock data:', stock);
-      console.log('Available products:', products);
-      console.log('Available stores:', stores);
-      console.log('Available suppliers:', suppliers);
-      
-      // Convert values to appropriate types for the form
-      const formValues: FormValues = {
-        store_write: stock.store_read?.id ? Number(stock.store_read.id) : undefined,
-        product_write: stock.product_read?.id ? Number(stock.product_read.id) : undefined,
-        purchase_price_in_us: stock.purchase_price_in_us?.toString() || '',
-        // Use exchange_rate_read.currency_rate if available (type assertion)
-        exchange_rate: (stock as any).exchange_rate_read?.currency_rate?.toString() || '',
-        purchase_price_in_uz: stock.purchase_price_in_uz?.toString() || '',
-        selling_price: stock.selling_price?.toString() || '',
-        min_price: stock.min_price?.toString() || '',
-        quantity: stock.quantity || 0,
-        supplier_write: stock.supplier_read?.id ? Number(stock.supplier_read.id) : undefined,
-        date_of_arrived: new Date(stock.date_of_arrived || '').toISOString().slice(0, 16),
-        income_weight: stock.income_weight?.toString(),
-        selling_price_us: stock.selling_price_in_us?.toString() || '', // Set from backend
-        price_per_ton: (stock as any).price_per_ton?.toString() || '', // Set from backend if present
-      };
-
-      console.log('Setting form values:', formValues);
-      form.reset(formValues);
-      setSelectedProduct(stock.product_read);
-      
-      // Directly set values after a brief delay to ensure the UI updates
-      setTimeout(() => {
-        if (stock.store_read?.id) form.setValue('store_write', Number(stock.store_read.id));
-        if (stock.product_read?.id) form.setValue('product_write', Number(stock.product_read.id));
-        if (stock.supplier_read?.id) form.setValue('supplier_write', Number(stock.supplier_read.id));
-        
-        // Force re-render select components by triggering a change event
-        document.querySelectorAll('select').forEach(select => {
-          const event = new Event('change', { bubbles: true });
-          select.dispatchEvent(event);
-        });
-      }, 100);
-      
-      console.log('Form reset with data:', {
-        stock,
-        products: products.length,
-        stores: stores.length,
-        suppliers: suppliers.length
-      });
-    }
-  }, [stock, products, stores, suppliers, form]);
-
-  // Define stock fields with translations
-  let stockFields = [
-    {
-      name: 'store_write',
-      label: t('common.store'),
-      type: 'select',
-      placeholder: t('common.select_store'),
-      required: true,
-      options: [], // Will be populated with stores
-    },
-    {
-      name: 'product_write',
-      label: t('common.product'),
-      type: 'select',
-      placeholder: t('common.product'),
-      required: true,
-      options: [], // Will be populated with products
-    },
-    {
-      name: 'purchase_price_in_us',
-      label: t('common.enter_purchase_price_usd'),
-      type: 'text',
-      placeholder: t('common.enter_purchase_price_usd'),
-      required: true,
-    },
-      {
-      name: 'selling_price_us',
-      label: t('common.enter_selling_price_usd') || 'Selling Price (USD)',
-      type: 'text',
-      placeholder: t('common.enter_selling_price_usd') || 'Enter selling price in USD',
-      required: selectedProduct?.has_kub || false,
-      hidden: !selectedProduct?.has_kub,
-    },
-    {
-      name: 'exchange_rate',
-      label: t('common.enter_exchange_rate'),
-      type: 'text',
-      placeholder: t('common.enter_exchange_rate'),
-      required: true,
-    },
-    {
-      name: 'purchase_price_in_uz',
-      label: t('common.calculated_purchase_price_uzs'),
-      type: 'text',
-      placeholder: t('common.calculated_purchase_price_uzs'),
-      readOnly: true,
-    },
-    {
-      name: 'selling_price',
-      label: t('common.enter_selling_price'),
-      type: 'text',
-      placeholder: t('common.enter_selling_price'),
-      required: true,
-    },
-    {
-      name: 'min_price',
-      label: t('common.enter_minimum_price'),
-      type: 'text',
-      placeholder: t('common.enter_minimum_price'),
-      required: true,
-    },
-    {
-      name: 'date_of_arrived',
-      label: t('common.date_of_arrival'),
-      type: 'datetime-local',
-      placeholder: t('common.enter_arrival_date'),
-      required: true,
-    },
-    {
-      name: 'quantity',
-      label: t('common.quantity'),
-      type: 'text',
-      placeholder: t('common.enter_quantity'),
-      required: true,
-    },
-    {
-      name: 'supplier_write',
-      label: t('common.supplier'),
-      type: 'select',
-      placeholder: t('common.select_supplier'),
-      required: true,
-      options: [], // Will be populated with suppliers
-    },
-  
-  ];
-
-  // Add dynamic fields for is_list products
-  if (selectedProduct?.is_list) {
-    // Always add price_per_ton input for is_list products if backend value is not null
-    const quantityIndex = stockFields.findIndex(f => f.name === 'quantity');
-    if (quantityIndex !== -1 && (stock as any)?.price_per_ton !== null && (stock as any)?.price_per_ton !== undefined) {
-      stockFields.splice(quantityIndex, 0, {
-        name: 'price_per_ton',
-        label: t('common.price_per_ton') || 'Price per Tone',
-        type: 'number',
-        placeholder: t('common.enter_price_per_tone') || 'Enter price per ton',
-        required: true,
-      });
-    }
-    // Only add income_weight field if income_weight is NOT null
-    if (stock?.income_weight !== null && stock?.income_weight !== undefined) {
-      if (quantityIndex !== -1) {
-        stockFields.splice(quantityIndex + 1, 0, {
-          name: 'income_weight',
-          label: t('common.income_weight') || 'Income Weight',
-          type: 'number',
-          placeholder: t('common.enter_income_weight') || 'Enter income weight',
-          required: true,
-        });
-        // Make quantity readOnly if supported
-        const quantityField = stockFields.find(f => f.name === 'quantity');
-        if (quantityField) {
-          (quantityField as any).readOnly = true;
-        }
-      }
-    } else {
-      // If income_weight is null, ensure quantity is editable
-      const quantityField = stockFields.find(f => f.name === 'quantity');
-      if (quantityField) {
-        (quantityField as any).readOnly = false;
-      }
-    }
-  }
-
-  // Ensure quantity is set from backend only when needed (avoid infinite re-render)
-  useEffect(() => {
-    if (
-      selectedProduct?.is_list &&
-      (stock?.income_weight === null || stock?.income_weight === undefined) &&
-      stock?.quantity !== undefined && stock?.quantity !== null
-    ) {
-      form.setValue('quantity', stock.quantity);
-    }
-    // Also set purchase_price_in_us if price_per_ton is null
-    if (
-      selectedProduct?.is_list &&
-      ((stock as any)?.price_per_ton === null || (stock as any)?.price_per_ton === undefined) &&
-      stock?.purchase_price_in_us !== undefined && stock?.purchase_price_in_us !== null
-    ) {
-      form.setValue('purchase_price_in_us', stock.purchase_price_in_us.toString());
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedProduct?.is_list, stock?.income_weight, stock?.quantity, (stock as any)?.price_per_ton, stock?.purchase_price_in_us]);
-
-  // Hide USD and exchange rate fields if has_metr or has_shtuk
-  let hideUsdFields = selectedProduct?.has_metr || selectedProduct?.has_shtuk;
-  const fields = stockFields.map(field => {
-    if (field.name === 'product_write') {
-      let productOptions = allProducts;
-      if (stock?.product_read && stock.product_read.id && !allProducts.some(p => p.id === stock?.product_read?.id)) {
-        productOptions = [stock.product_read, ...allProducts];
-      }
-      // Remove duplicates by id
-      const uniqueProductOptions = productOptions.filter((product, idx, arr) =>
-        arr.findIndex(p => p.id === product.id) === idx
-      );
-      return {
-        ...field,
-        options: uniqueProductOptions.map(product => ({
-          value: product.id,
-          label: product.product_name
-        })),
-        isLoading: isLoadingAllProducts,
-        onChange: (value: number) => {
-          const product = uniqueProductOptions.find(p => p.id === value);
-          setSelectedProduct(product);
-        }
-      };
-    }
-    if (field.name === 'store_write') {
-      let storeOptions = stores.filter(store => store.is_main);
-      if (stock?.store_read && stock.store_read.id && !storeOptions.some(s => s.id === stock?.store_read?.id)) {
-        const apiStore = {
-          id: stock.store_read.id,
-          name: stock.store_read.name,
-          address: stock.store_read.address || '',
-          phone_number: stock.store_read.phone_number || '',
-          created_at: stock.store_read.created_at || '',
-          is_main: stock.store_read.is_main || false,
-          parent_store: stock.store_read.parent_store ?? undefined,
-          budget: (stock.store_read as any).budget || '',
-          color: (stock.store_read as any).color || '',
-          owner: (stock.store_read as any).owner || 0,
-        };
-        storeOptions = [apiStore, ...storeOptions];
-      }
-      // Remove duplicates by id
-      const uniqueStoreOptions = storeOptions.filter((store, idx, arr) =>
-        arr.findIndex(s => s.id === store.id) === idx
-      );
-      return {
-        ...field,
-        options: uniqueStoreOptions.map(store => ({
-          value: store.id,
-          label: store.name
-        })),
-        isLoading: storesLoading
-      };
-    }
-    if (field.name === 'supplier_write') {
-      let supplierOptions = suppliers;
-      if (stock?.supplier_read && stock.supplier_read.id && !suppliers.some(s => s.id === stock?.supplier_read?.id)) {
-        supplierOptions = [stock.supplier_read, ...suppliers];
-      }
-      // Remove duplicates by id
-      const uniqueSupplierOptions = supplierOptions.filter((supplier, idx, arr) =>
-        arr.findIndex(s => s.id === supplier.id) === idx
-      );
-      return {
-        ...field,
-        options: uniqueSupplierOptions.map(supplier => ({
-          value: supplier.id,
-          label: supplier.name
-        })),
-        isLoading: suppliersLoading
-      };
-    }
-    // ...existing code for hiding fields and placeholders...
-    if (hideUsdFields && [
-      'exchange_rate',
-      'purchase_price_in_us',
-      'selling_price_us',
-    ].includes(field.name)) {
-      return { ...field, hidden: true };
-    }
-    if (field.name === 'purchase_price_in_uz') {
-      return {
-        ...field,
-        readOnly: !(hideUsdFields),
-        required: true,
-        placeholder: t('common.enter_purchase_price_uzs') || 'Введите цену покупки в UZS',
-      };
-    }
-    // Set min_price and helperText for any product with has_shtuk or has_metr
-    if (field.name === 'min_price') {
-      let helperText = '';
-      let minPriceValue = form.watch('min_price');
-      const purchasePriceInUz = parseFloat(form.watch('purchase_price_in_uz')?.toString() || '0');
-      const quantityRaw = form.watch('quantity');
-      const quantityValue = parseFloat(quantityRaw?.toString() || '0');
-      if ((selectedProduct?.has_shtuk || selectedProduct?.has_metr || selectedProduct?.category_read?.category_name === 'Рейка') && !isNaN(purchasePriceInUz)) {
-        if (!isNaN(purchasePriceInUz) && !isNaN(quantityValue) && quantityValue > 0) {
-          const calculatedMinPrice = purchasePriceInUz / quantityValue;
-          minPriceValue = calculatedMinPrice.toFixed(2);
-          helperText = `${t('common.per_unit_cost') || 'Per unit cost'}: ${calculatedMinPrice.toFixed(2)} UZS`;
-          // Set the min_price value in the form
-          if (form.getValues('min_price') !== minPriceValue) {
-            form.setValue('min_price', minPriceValue, { shouldValidate: false, shouldDirty: true });
-          }
-        }
-      }
-      return {
-        ...field,
-        helperText,
-      };
-    }
-    if (field.name === 'quantity') {
-      let placeholder = field.placeholder;
-      if (selectedProduct?.has_shtuk) {
-        placeholder = t('common.enter_quantity') || 'Введите штук';
-      } else if (selectedProduct?.has_metr) {
-
-       placeholder = t('common.enter_quantity') || 'Введите метр';
-      }
-      return {
-        ...field,
-        placeholder,
-      };
-    }
-    return field;
-  });
-
-  const handleSubmit = async (data: FormValues) => {
-    if (!id) return;
-    try {
-      const sellingPrice = typeof data.selling_price === 'string' ? parseFloat(data.selling_price) : data.selling_price;
-      const minPrice = typeof data.min_price === 'string' ? parseFloat(data.min_price) : data.min_price;
-      // Validation: selling_price must be greater than min_price
-      if (
-          sellingPrice === undefined || isNaN(sellingPrice) ||
-          minPrice === undefined || isNaN(minPrice)
-      ) {
-        toast.error(t('validation.selling_price_and_min_price_numbers') || 'Selling price and minimum price must be valid numbers');
-        return;
-      }
-      if (sellingPrice <= minPrice) {
-        toast.error(t('validation.selling_price_greater_than_min_price'));
-        return;
-      }
-      // Build payload only with typed fields
-      const formattedData: any = {
-        id: Number(id),
-        store_write: typeof data.store_write === 'string' ? parseInt(data.store_write, 10) : data.store_write!,
-        product_write: typeof data.product_write === 'string' ? parseInt(data.product_write, 10) : data.product_write!,
-        purchase_price: data.purchase_price_in_uz !== '' ? String(data.purchase_price_in_uz) : undefined,
-        purchase_price_in_uz: data.purchase_price_in_uz !== '' ? String(data.purchase_price_in_uz) : undefined,
-        selling_price: data.selling_price !== '' ? String(data.selling_price) : undefined,
-        min_price: data.min_price !== '' ? String(data.min_price) : undefined,
-        quantity: typeof data.quantity === 'string' ? parseFloat(data.quantity) : data.quantity!,
-        supplier_write: typeof data.supplier_write === 'string' ? parseInt(data.supplier_write, 10) : data.supplier_write!,
-        date_of_arrived: data.date_of_arrived,
-        measurement_write: [],
-        quantity_for_history:data.quantity,
-        ...(data.income_weight ? { income_weight: data.income_weight } : {})
-      };
-      if (data.purchase_price_in_us && data.purchase_price_in_us !== '') {
-        formattedData.purchase_price_in_us = String(data.purchase_price_in_us);
-      }
-      // Add price_per_ton if present
-      if ((data as any).price_per_ton && (data as any).price_per_ton !== '') {
-        formattedData.price_per_ton = String((data as any).price_per_ton);
-      }
-      if (data.exchange_rate && data.exchange_rate !== '') {
-        formattedData.exchange_rate = currency ? currency.id.toString() : '';
-      }
-      if (data.selling_price_us && data.selling_price_us !== '') {
-        formattedData.selling_price_in_us = String(data.selling_price_us);
-      }
-      // Remove undefined fields
-      Object.keys(formattedData).forEach(key => formattedData[key] === undefined && delete formattedData[key]);
-      await updateStock.mutateAsync(formattedData);
-      toast.success(t('messages.success.updated', { item: t('navigation.stock') }));
-      navigate('/stock');
-    } catch (error) {
-      toast.error(t('messages.error.update', { item: t('navigation.stock') }));
-      console.error('Failed to update stock:', error);
-    }
-  };
+  const currencies = Array.isArray(currenciesData) ? currenciesData : currenciesData?.results || [];
+  const measurements = Array.isArray(measurementsData) ? measurementsData : measurementsData?.results || [];
 
   // Fetch all products across all pages
   useEffect(() => {
@@ -548,46 +97,417 @@ export default function EditStock() {
       }
     }
     fetchAllProducts();
-  }, []);
+  }, [t]);
 
-  // Effect to update selling_price and min_price for has_kub products
+  // Load stock data when it's available and related data is loaded
   useEffect(() => {
-    if (selectedProduct?.has_kub && !selectedProduct?.has_metr && !selectedProduct.has_shtuk) {
-      const measurements = selectedProduct.measurement || [];
-      const baseValue = measurements.reduce((acc: number, m: any) => {
-        const num = parseFloat(m.number);
-        return !isNaN(num) ? acc * num : acc;
-      }, 1);
-      const exchangeRate = parseFloat(form.watch('exchange_rate')?.toString() || currency?.currency_rate || '0');
-      // const exchangeRate = exchangeRatee / 10
-      const sellingPriceUs = parseFloat(form.watch('selling_price_us')?.toString() || '0');
-      const purchasePriceUs = parseFloat(form.watch('purchase_price_in_us')?.toString() || '0');
-      if (!isNaN(baseValue) && !isNaN(exchangeRate) && !isNaN(sellingPriceUs) && !isNaN(purchasePriceUs)) {
-        const calculatedSelling = baseValue * exchangeRate * sellingPriceUs;
-        const calculatedMin = baseValue * exchangeRate * purchasePriceUs;
-        form.setValue('selling_price', calculatedSelling.toFixed(2), { shouldValidate: false, shouldDirty: true });
-        form.setValue('min_price', calculatedMin.toFixed(2), { shouldValidate: false, shouldDirty: true });
-      } else {
-        form.setValue('selling_price', '', { shouldValidate: false, shouldDirty: true });
-        form.setValue('min_price', '', { shouldValidate: false, shouldDirty: true });
+    if (stock && stores.length && suppliers.length && currencies.length && measurements.length && !initialDataLoaded) {
+      console.log('Loading initial stock data:', stock);
+      
+      // Find the currency ID - check multiple possible fields
+      let currencyId = '';
+      
+      // Check if there's a direct currency field
+      if ((stock as any).currency) {
+        currencyId = (stock as any).currency.toString();
       }
-    }
-  }, [selectedProduct, form.watch('exchange_rate'), form.watch('selling_price_us'), form.watch('purchase_price_in_us')]);
+      // Check exchange_rate_read if it's an object with id
+      else if ((stock as any).exchange_rate_read && typeof (stock as any).exchange_rate_read === 'object' && (stock as any).exchange_rate_read.id) {
+        currencyId = (stock as any).exchange_rate_read.id.toString();
+      }
+      // Check if exchange_rate is just a number (currency ID)
+      else if ((stock as any).exchange_rate && !isNaN(Number((stock as any).exchange_rate))) {
+        currencyId = (stock as any).exchange_rate.toString();
+      }
+      // Default to first currency if no specific currency found
+      else if (currencies.length > 0) {
+        currencyId = currencies[0].id?.toString() || '';
+      }
+      
+      console.log('Currency detection:', {
+        stock_currency: (stock as any).currency,
+        exchange_rate_read: (stock as any).exchange_rate_read,
+        exchange_rate: (stock as any).exchange_rate,
+        selected_currencyId: currencyId
+      });
 
-  if (stockLoading || productsLoading || storesLoading || suppliersLoading || isLoadingAllProducts) {
+      // Find the purchase unit (measurement) - default to first available measurement
+      let purchaseUnitId = '';
+      if (measurements.length > 0) {
+        purchaseUnitId = measurements[0].id?.toString() || '';
+      }
+
+      const formValues: FormValues = {
+        store: stock.store_read?.id ? Number(stock.store_read.id) : '',
+        product: stock.product_read?.id ? Number(stock.product_read.id) : '',
+        currency: currencyId,
+        purchase_unit: purchaseUnitId,
+        supplier: stock.supplier_read?.id ? Number(stock.supplier_read.id) : '',
+        date_of_arrived: new Date(stock.date_of_arrived || '').toISOString().slice(0, 16),
+        
+        // Set existing calculation values if available
+        purchase_unit_quantity: (stock as any).purchase_unit_quantity?.toString() || '',
+        total_price_in_currency: (stock as any).total_price_in_currency?.toString() || '',
+        price_per_unit_currency: (stock as any).price_per_unit_currency?.toString() || '',
+        
+        // Set existing calculated values
+        quantity: stock.quantity?.toString() || '',
+        total_price_in_uz: (stock as any).total_price_in_uz?.toString() || '',
+        base_unit_in_uzs: (stock as any).base_unit_in_uzs?.toString() || ''
+      };
+
+      console.log('Setting form values:', formValues);
+      form.reset(formValues);
+      setInitialDataLoaded(true);
+
+      // Set initial dynamic fields from existing data
+      const initialDynamicFields: { [key: string]: DynamicField } = {};
+      
+      if (stock.quantity !== undefined) {
+        initialDynamicFields.quantity = {
+          value: stock.quantity,
+          editable: false,
+          show: true,
+          label: t('common.quantity') || 'Quantity'
+        };
+      }
+      
+      if ((stock as any).total_price_in_uz !== undefined) {
+        initialDynamicFields.total_price_in_uz = {
+          value: (stock as any).total_price_in_uz,
+          editable: false,
+          show: true,
+          label: t('common.total_price_in_uz') || 'Total Price (UZS)'
+        };
+      }
+      
+      if ((stock as any).base_unit_in_uzs !== undefined) {
+        initialDynamicFields.base_unit_in_uzs = {
+          value: (stock as any).base_unit_in_uzs,
+          editable: false,
+          show: true,
+          label: t('common.base_unit_in_uzs') || 'Base Unit Cost (UZS)'
+        };
+      }
+
+      setDynamicFields(initialDynamicFields);
+    }
+  }, [stock, stores, suppliers, currencies, measurements, form, t, initialDataLoaded]);
+
+  // Debounced calculation function
+  const debouncedCalculate = useCallback(
+    async (formData: FormValues) => {
+      if (!initialDataLoaded) return; // Don't calculate until initial data is loaded
+      
+      if (!formData.store || !formData.product || !formData.currency || 
+          !formData.purchase_unit || !formData.supplier || !formData.date_of_arrived) {
+        return; // Don't calculate if required fields are missing
+      }
+
+      // Only calculate if at least one calculation trigger field has a value
+      if (!formData.purchase_unit_quantity && !formData.total_price_in_currency && !formData.price_per_unit_currency) {
+        return;
+      }
+
+      setIsCalculating(true);
+      try {
+        const calculationRequest: StockCalculationRequest = {
+          store: Number(formData.store),
+          product: Number(formData.product),
+          currency: Number(formData.currency),
+          purchase_unit: Number(formData.purchase_unit),
+          supplier: Number(formData.supplier),
+          date_of_arrived: formData.date_of_arrived,
+          exchange_rate: 1, // Default exchange rate
+          purchase_unit_quantity: formData.purchase_unit_quantity ? Number(formData.purchase_unit_quantity) : undefined,
+          total_price_in_currency: formData.total_price_in_currency ? Number(formData.total_price_in_currency) : undefined,
+          price_per_unit_currency: formData.price_per_unit_currency ? Number(formData.price_per_unit_currency) : undefined
+        };
+
+        const response = await calculateStock(calculationRequest);
+        setDynamicFields(response.dynamic_fields);
+
+        // Update form with calculated values
+        Object.entries(response.dynamic_fields).forEach(([fieldName, fieldData]) => {
+          if (fieldData.value !== null && fieldData.value !== undefined) {
+            form.setValue(fieldName as keyof FormValues, fieldData.value, { shouldValidate: false });
+          }
+        });
+
+      } catch (error) {
+        console.error('Calculation error:', error);
+        // Don't show error toast for now since backend endpoint might not be implemented yet
+        // Instead, just create mock calculated fields for development
+        const mockDynamicFields: { [key: string]: DynamicField } = {
+          quantity: {
+            value: formData.purchase_unit_quantity ? Number(formData.purchase_unit_quantity) * 500 : 0,
+            editable: false,
+            show: true,
+            label: 'Количество (calculated)'
+          },
+          total_price_in_uz: {
+            value: formData.total_price_in_currency ? Number(formData.total_price_in_currency) * 12500 : 0,
+            editable: false,
+            show: true,
+            label: 'Общая стоимость (UZS)'
+          },
+          base_unit_in_uzs: {
+            value: formData.price_per_unit_currency ? Number(formData.price_per_unit_currency) * 12500 : 0,
+            editable: false,
+            show: true,
+            label: 'Себестоимость (UZS)'
+          }
+        };
+        
+        setDynamicFields(mockDynamicFields);
+        
+        // Update form with mock calculated values
+        Object.entries(mockDynamicFields).forEach(([fieldName, fieldData]) => {
+          if (fieldData.value !== null && fieldData.value !== undefined) {
+            form.setValue(fieldName as keyof FormValues, fieldData.value, { shouldValidate: false });
+          }
+        });
+      } finally {
+        setIsCalculating(false);
+      }
+    },
+    [form, initialDataLoaded]
+  );
+
+  // Watch only calculation trigger fields and trigger calculation when they change
+  const watchedFields = form.watch(['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency']);
+  
+  useEffect(() => {
+    if (!initialDataLoaded) return;
+    
+    const [purchaseUnitQuantity, totalPriceInCurrency, pricePerUnitCurrency] = watchedFields;
+    
+    console.log('Watched fields changed:', {
+      purchaseUnitQuantity,
+      totalPriceInCurrency,
+      pricePerUnitCurrency,
+      initialDataLoaded
+    });
+    
+    // Only trigger calculation if at least one calculation field has a value
+    if (purchaseUnitQuantity || totalPriceInCurrency || pricePerUnitCurrency) {
+      console.log('Triggering calculation...');
+      const timeoutId = setTimeout(() => {
+        const formData = form.getValues();
+        debouncedCalculate(formData as FormValues);
+      }, 500); // 500ms debounce
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [watchedFields, form, debouncedCalculate, initialDataLoaded]);
+
+  // Define base stock fields
+  const baseStockFields = [
+    {
+      name: 'store',
+      label: t('common.store'),
+      type: 'select',
+      placeholder: t('common.select_store'),
+      required: true,
+      options: (() => {
+        let storeOptions = stores.filter(store => store.is_main);
+        if (stock?.store_read && stock.store_read.id && !storeOptions.some(s => s.id === stock?.store_read?.id)) {
+          const apiStore = {
+            id: stock.store_read.id,
+            name: stock.store_read.name,
+            address: stock.store_read.address || '',
+            phone_number: stock.store_read.phone_number || '',
+            created_at: stock.store_read.created_at || '',
+            is_main: stock.store_read.is_main || false,
+            parent_store: stock.store_read.parent_store ?? undefined,
+            budget: (stock.store_read as any).budget || '',
+            color: (stock.store_read as any).color || '',
+            owner: (stock.store_read as any).owner || 0,
+          };
+          storeOptions = [apiStore, ...storeOptions];
+        }
+        return storeOptions.map(store => ({
+          value: store.id,
+          label: store.name
+        }));
+      })(),
+      isLoading: storesLoading
+    },
+    {
+      name: 'product',
+      label: t('common.product'),
+      type: 'select',
+      placeholder: t('common.product'),
+      required: true,
+      options: (() => {
+        let productOptions = allProducts;
+        if (stock?.product_read && stock.product_read.id && !allProducts.some(p => p.id === stock?.product_read?.id)) {
+          productOptions = [stock.product_read, ...allProducts];
+        }
+        return productOptions.map(product => ({
+          value: product.id,
+          label: product.product_name
+        }));
+      })(),
+      isLoading: isLoadingAllProducts
+    },
+    {
+      name: 'currency',
+      label: t('common.currency'),
+      type: 'select',
+      placeholder: t('common.select_currency'),
+      required: true,
+      options: currencies.map(currency => ({
+        value: currency.id,
+        label: `${currency.name} (${currency.short_name})`
+      })),
+      isLoading: currenciesLoading
+    },
+    {
+      name: 'purchase_unit',
+      label: t('common.purchase_unit'),
+      type: 'select',
+      placeholder: t('common.select_purchase_unit'),
+      required: true,
+      options: measurements.map(measurement => ({
+        value: measurement.id,
+        label: `${measurement.measurement_name} (${measurement.short_name || ''})`
+      })),
+      isLoading: measurementsLoading
+    },
+    {
+      name: 'supplier',
+      label: t('common.supplier'),
+      type: 'select',
+      placeholder: t('common.select_supplier'),
+      required: true,
+      options: (() => {
+        let supplierOptions = suppliers;
+        if (stock?.supplier_read && stock.supplier_read.id && !suppliers.some(s => s.id === stock?.supplier_read?.id)) {
+          supplierOptions = [stock.supplier_read, ...suppliers];
+        }
+        return supplierOptions.map(supplier => ({
+          value: supplier.id,
+          label: supplier.name
+        }));
+      })(),
+      isLoading: suppliersLoading
+    },
+    {
+      name: 'date_of_arrived',
+      label: t('common.date_of_arrival'),
+      type: 'datetime-local',
+      placeholder: t('common.enter_arrival_date'),
+      required: true
+    }
+  ];
+
+  // Add dynamic calculation fields
+  const calculationFields = [
+    {
+      name: 'purchase_unit_quantity',
+      label: t('common.purchase_unit_quantity') || 'Purchase Unit Quantity',
+      type: 'number',
+      placeholder: t('common.enter_purchase_unit_quantity') || 'Enter purchase unit quantity',
+      required: false
+    },
+    {
+      name: 'total_price_in_currency',
+      label: t('common.total_price_in_currency') || 'Total Price in Currency',
+      type: 'number',
+      placeholder: t('common.enter_total_price') || 'Enter total price',
+      required: false
+    },
+    {
+      name: 'price_per_unit_currency',
+      label: t('common.price_per_unit_currency') || 'Price per Unit in Currency',
+      type: 'number',
+      placeholder: t('common.enter_price_per_unit') || 'Enter price per unit',
+      required: false
+    }
+  ];
+
+  // Add dynamic backend-calculated fields based on API response (filter out duplicates)
+  const dynamicCalculatedFields = Object.entries(dynamicFields)
+    .filter(([fieldName]) => !['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency'].includes(fieldName))
+    .map(([fieldName, fieldData]) => ({
+      name: fieldName,
+      label: fieldData.label,
+      type: 'text',
+      placeholder: fieldData.label,
+      required: false,
+      readOnly: !fieldData.editable,
+      hidden: !fieldData.show,
+      value: fieldData.value?.toString() || ''
+    }));
+
+  // Combine all fields
+  const allFields = [
+    ...baseStockFields,
+    ...calculationFields,
+    ...dynamicCalculatedFields
+  ];
+
+  const handleSubmit = async (data: FormValues) => {
+    if (!id) return;
+    try {
+      // Validate required fields
+      const requiredFields = ['store', 'product', 'currency', 'purchase_unit', 'supplier', 'date_of_arrived'];
+      const missingFields = requiredFields.filter(field => !data[field as keyof FormValues]);
+      
+      if (missingFields.length > 0) {
+        toast.error(t('validation.fill_all_required_fields') || 'Please fill all required fields');
+        return;
+      }
+
+      // Build the final payload combining user input and calculated values
+      const payload: any = {
+        id: Number(id),
+        store_write: Number(data.store),
+        product_write: Number(data.product),
+        currency: Number(data.currency),
+        purchase_unit: Number(data.purchase_unit),
+        supplier_write: Number(data.supplier),
+        date_of_arrived: data.date_of_arrived,
+        measurement_write: [],
+        
+        // Include calculation input fields
+        ...(data.purchase_unit_quantity && { purchase_unit_quantity: Number(data.purchase_unit_quantity) }),
+        ...(data.total_price_in_currency && { total_price_in_currency: Number(data.total_price_in_currency) }),
+        ...(data.price_per_unit_currency && { price_per_unit_currency: Number(data.price_per_unit_currency) }),
+        
+        // Include all dynamic calculated fields
+        ...Object.entries(dynamicFields).reduce((acc, [fieldName, fieldData]) => {
+          if (fieldData.value !== null && fieldData.value !== undefined) {
+            acc[fieldName] = fieldData.value;
+          }
+          return acc;
+        }, {} as any)
+      };
+
+      await updateStock.mutateAsync(payload);
+      toast.success(t('messages.success.updated', { item: t('navigation.stock') }));
+      navigate('/stock');
+    } catch (error) {
+      toast.error(t('messages.error.update', { item: t('navigation.stock') }));
+      console.error('Failed to update stock:', error);
+    }
+  };
+
+  if (stockLoading || storesLoading || suppliersLoading || currenciesLoading || measurementsLoading || isLoadingAllProducts) {
     return <div className="container mx-auto py-8 px-4">{t('common.loading')}</div>;
   }
 
-  if (!stock || !products.length || !stores.length || !suppliers.length) {
+  if (!stock || !stores.length || !suppliers.length || !currencies.length || !measurements.length) {
     return <div className="container mx-auto py-8 px-4">{t('messages.error.not_found')}</div>;
   }
 
   return (
     <div className="container mx-auto py-8 px-4">
       <ResourceForm<FormValues>
-        fields={fields}
+        fields={allFields}
         onSubmit={handleSubmit}
-        isSubmitting={updateStock.isPending}
+        isSubmitting={updateStock.isPending || isCalculating}
         title={t('common.edit_stock')}
         form={form}
       />

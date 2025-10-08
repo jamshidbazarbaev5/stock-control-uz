@@ -1,4 +1,5 @@
 import { createResourceApiHooks } from '../helpers/createResourceApi';
+import api from './api';
 
 // Types
 export interface StockMeasurement {
@@ -22,7 +23,15 @@ export interface CreateStockDTO {
   purchase_price_in_uz: string;
   date_of_arrived?: string;
   income_weight?: string;
-  date?:string;
+  date?: string;
+  // New fields for backend calculation
+  currency?: number;
+  purchase_unit?: number;
+  purchase_unit_quantity?: number;
+  total_price_in_currency?: number;
+  price_per_unit_currency?: number;
+  base_unit_in_uzs?: number;
+  total_price_in_uz?: number;
 }
 
 export interface Stock extends CreateStockDTO {
@@ -109,8 +118,42 @@ export interface StockResponse {
   count: number;
 }
 
+// Stock calculation types
+export interface StockCalculationRequest {
+  store?: number;
+  product?: number;
+  currency?: number;
+  purchase_unit?: number;
+  supplier?: number;
+  date_of_arrived?: string;
+  exchange_rate?: number;
+  purchase_unit_quantity?: number;
+  total_price_in_currency?: number;
+  price_per_unit_currency?: number;
+}
+
+export interface DynamicField {
+  value: number | string | null;
+  editable: boolean;
+  show: boolean;
+  label: string;
+}
+
+export interface StockCalculationResponse {
+  dynamic_fields: {
+    [fieldName: string]: DynamicField;
+  };
+}
+
 // API endpoints
 const STOCK_URL = 'items/stock/';
+const STOCK_CALCULATE_URL = 'items/stock/calculate/';
+
+// Stock calculation API function
+export const calculateStock = async (data: StockCalculationRequest): Promise<StockCalculationResponse> => {
+  const response = await api.post(STOCK_CALCULATE_URL, data);
+  return response.data;
+};
 
 // Create stock API hooks using the factory function
 export const {
