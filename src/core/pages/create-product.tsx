@@ -1,12 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { ResourceForm } from '../helpers/ResourceForm';
-import { type Product, useCreateProduct } from '../api/product';
+import { type Product, useCreateProduct, searchProductByBarcode } from '../api/product';
 import { useGetCategories, fetchCategoriesWithAttributes } from '../api/category';
 import { useGetMeasurements } from '../api/measurement';
 import type { Attribute } from '@/types/attribute';
 import { toast } from 'sonner';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useForm } from 'react-hook-form';
 
 interface AttributeValue {
   attribute_id: number;
@@ -18,11 +19,24 @@ export default function CreateProduct() {
   const createProduct = useCreateProduct();
   const { t } = useTranslation();
   const [barcode, setBarcode] = useState('');
+  
+  // Create form instance to control the form programmatically
+  const form = useForm<Product>();
+  
+  // Debug barcode changes
+  useEffect(() => {
+    console.log('Barcode state changed:', barcode);
+  }, [barcode]);
   const [minPrice, setMinPrice] = useState('');
   const [sellingPrice, setSellingPrice] = useState('');
   const [attributeValues, setAttributeValues] = useState<AttributeValue[]>([]);
   const [measurements, setMeasurements] = useState([{ measurement_write: 0, number: '' }]);
   const [baseUnit, setBaseUnit] = useState('');
+  
+  // Barcode scanner state
+  const [scanBuffer, setScanBuffer] = useState('');
+  const [_isScanning, setIsScanning] = useState(false);
+  const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch categories and measurements for the select dropdowns
   const { data: categoriesData } = useGetCategories({});
@@ -63,6 +77,123 @@ export default function CreateProduct() {
     fetchAttributes();
   }, [selectedCategory, categories]);
 
+  // Function to populate form with found product data
+  const populateFormWithProduct = (product: Product) => {
+    // Set basic fields
+    form.setValue('product_name', product.product_name);
+    form.setValue('barcode', product.barcode || '');
+    
+    if (product.category_write) {
+      form.setValue('category_write', product.category_write);
+      setSelectedCategory(product.category_write);
+    }
+    
+    if (product.base_unit) {
+      setBaseUnit(product.base_unit.toString());
+    }
+    
+    if (product.min_price) {
+      setMinPrice(product.min_price.toString());
+    }
+    
+    if (product.selling_price) {
+      setSellingPrice(product.selling_price.toString());
+    }
+    
+    // Set measurements if available
+    if (product.measurement && product.measurement.length > 0) {
+      const formattedMeasurements = product.measurement.map(m => ({
+        measurement_write: m.measurement_write,
+        number: m.number.toString()
+      }));
+      setMeasurements(formattedMeasurements);
+    }
+    
+    // Set attribute values if available
+    if (product.attribute_values_response && product.attribute_values_response.length > 0) {
+      const formattedAttributes = product.attribute_values_response.map(av => ({
+        attribute_id: av.attribute.id!,
+        value: av.value
+      }));
+      setAttributeValues(formattedAttributes);
+    }
+    
+    setBarcode(product.barcode || '');
+  };
+
+  // Barcode scanner functionality
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // Ignore if user is typing in an input field
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
+        return;
+      }
+
+      // Clear any existing timeout
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+      }
+
+      // Start scanning mode
+      setIsScanning(true);
+
+      // Handle Enter key (end of barcode scan)
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        if (scanBuffer.trim()) {
+          console.log('Searching for product with barcode:', scanBuffer.trim());
+          
+          // Search for product by barcode
+          searchProductByBarcode(scanBuffer.trim())
+            .then((product) => {
+              if (product) {
+                populateFormWithProduct(product);
+                toast.success(`Product found: ${product.product_name}`);
+              } else {
+                // No product found, just set the barcode
+                setBarcode(scanBuffer.trim());
+                form.setValue('barcode', scanBuffer.trim());
+                toast.info(`No product found with barcode: ${scanBuffer.trim()}. You can create a new product.`);
+              }
+            })
+            .catch((error) => {
+              console.error('Error searching for product:', error);
+              // Fallback: just set the barcode
+              setBarcode(scanBuffer.trim());
+              form.setValue('barcode', scanBuffer.trim());
+              toast.error('Error searching for product. Barcode set for new product.');
+            });
+        }
+        setScanBuffer('');
+        setIsScanning(false);
+        return;
+      }
+
+      // Accumulate characters for barcode
+      if (event.key.length === 1) { // Only single characters, not special keys
+        setScanBuffer(prev => prev + event.key);
+        
+        // Set timeout to reset buffer if scanning stops
+        scanTimeoutRef.current = setTimeout(() => {
+          setScanBuffer('');
+          setIsScanning(false);
+        }, 100); // 100ms timeout between characters
+      }
+    };
+
+    // Add event listener
+    document.addEventListener('keydown', handleKeyPress);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+      }
+    };
+  }, [scanBuffer]);
+
   const handleSubmit = async (data: any) => {
     console.log('Form data received:', data);
     
@@ -99,6 +230,7 @@ export default function CreateProduct() {
   return (
     <div className="container mx-auto py-8 px-4">
       <ResourceForm<Product>
+        form={form}
         fields={[
           {
             name: 'product_name',
@@ -135,10 +267,8 @@ export default function CreateProduct() {
           {
             name: 'barcode',
             label: t('forms.barcode'),
-            type: 'number',
+            type: 'text',
             placeholder: t('placeholders.enter_barcode'),
-            value: barcode,
-            onChange: (value: string) => setBarcode(value)
           },
           {
             name: 'min_price',

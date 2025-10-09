@@ -3,14 +3,14 @@ import { ResourceForm } from '../helpers/ResourceForm';
 import type {  DynamicField } from '../api/stock';
 import { calculateStock } from '../api/stock';
 import { useCreateStock } from '../api/stock';
-import { useCreateProduct } from '../api/product';
+import { useCreateProduct, searchProductByBarcode } from '../api/product';
 import { useGetStores } from '../api/store';
 import { useGetSuppliers, useCreateSupplier } from '../api/supplier';
 import { useGetCategories } from '../api/category';
 import { useGetCurrencies } from '../api/currency';
 import { useGetMeasurements } from '../api/measurement';
 import { toast } from 'sonner';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { Dialog, DialogContent, DialogTitle } from '../../components/ui/dialog';
 import { useTranslation } from 'react-i18next';
@@ -59,6 +59,11 @@ export default function CreateStock() {
   const [productSearchTerm, setProductSearchTerm] = useState('');
   const [dynamicFields, setDynamicFields] = useState<{ [key: string]: DynamicField }>({});
   const [isCalculating, setIsCalculating] = useState(false);
+  
+  // Barcode scanner state
+  const [scanBuffer, setScanBuffer] = useState('');
+  const [isScanning, setIsScanning] = useState(false);
+  const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // API hooks
   const createStock = useCreateStock();
@@ -307,6 +312,81 @@ export default function CreateStock() {
       return () => clearTimeout(timeoutId);
     }
   }, [watchedFields, previousValues, form, debouncedCalculate, initialCalculationDone]);
+
+  // Barcode scanner functionality
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // Ignore if user is typing in an input field
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
+        return;
+      }
+
+      // Clear any existing timeout
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+      }
+
+      // Start scanning mode
+      setIsScanning(true);
+
+      // Handle Enter key (end of barcode scan)
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        if (scanBuffer.trim()) {
+          console.log('Searching for product with barcode:', scanBuffer.trim());
+          
+          // Search for product by barcode
+          searchProductByBarcode(scanBuffer.trim())
+            .then((product) => {
+              if (product) {
+                // Product found - select it in the form
+                form.setValue('product', product.id!);
+                toast.success(`Product found and selected: ${product.product_name}`);
+                
+                // Clear search term to show all products again
+                setProductSearchTerm('');
+              } else {
+                // No product found - use barcode as search term
+                setProductSearchTerm(scanBuffer.trim());
+                toast.info(`No product found with barcode: ${scanBuffer.trim()}. Showing search results.`);
+              }
+            })
+            .catch((error) => {
+              console.error('Error searching for product:', error);
+              // Fallback: use barcode as search term
+              setProductSearchTerm(scanBuffer.trim());
+              toast.error('Error searching for product. Showing search results.');
+            });
+        }
+        setScanBuffer('');
+        setIsScanning(false);
+        return;
+      }
+
+      // Accumulate characters for barcode
+      if (event.key.length === 1) { // Only single characters, not special keys
+        setScanBuffer(prev => prev + event.key);
+        
+        // Set timeout to reset buffer if scanning stops
+        scanTimeoutRef.current = setTimeout(() => {
+          setScanBuffer('');
+          setIsScanning(false);
+        }, 100); // 100ms timeout between characters
+      }
+    };
+
+    // Add event listener
+    document.addEventListener('keydown', handleKeyPress);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress);
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+      }
+    };
+  }, [scanBuffer]);
 
   // Define base stock fields
   const baseStockFields = [
@@ -571,6 +651,18 @@ export default function CreateStock() {
 
   return (
     <div className="container mx-auto py-8 px-4">
+      {/* Barcode Scanner Status */}
+      {isScanning && (
+        <div className="mb-4 p-3 bg-blue-100 border border-blue-300 rounded-md">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-blue-700 font-medium">
+              Scanning barcode to find product... ({scanBuffer})
+            </span>
+          </div>
+        </div>
+      )}
+      
       <ResourceForm<FormValues>
         fields={allFields}
         onSubmit={handleSubmit}

@@ -1,5 +1,6 @@
 import { createResourceApiHooks } from '../helpers/createResourceApi';
 import type { Attribute } from '@/types/attribute';
+import api from './api';
 
 // Types
 export interface ProductMeasurement {
@@ -71,3 +72,17 @@ export const {
   useUpdateResource: useUpdateProduct,
   useDeleteResource: useDeleteProduct,
 } = createResourceApiHooks<Product>(PRODUCT_URL, 'products');
+
+// Search products by barcode
+export const searchProductByBarcode = async (barcode: string): Promise<Product | null> => {
+  try {
+    const response = await api.get(`${PRODUCT_URL}?barcode=${barcode}`);
+    if (response.data.results && response.data.results.length > 0) {
+      return response.data.results[0]; // Return the first matching product
+    }
+    return null;
+  } catch (error) {
+    console.error('Error searching product by barcode:', error);
+    return null;
+  }
+};
