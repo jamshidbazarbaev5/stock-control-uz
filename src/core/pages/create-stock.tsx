@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ResourceForm } from '../helpers/ResourceForm';
-import type { StockCalculationRequest, DynamicField } from '../api/stock';
+import type {  DynamicField } from '../api/stock';
 import { calculateStock } from '../api/stock';
 import { useCreateStock } from '../api/stock';
 import { useCreateProduct } from '../api/product';
