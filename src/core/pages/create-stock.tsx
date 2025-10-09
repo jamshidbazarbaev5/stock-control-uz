@@ -33,6 +33,7 @@ interface FormValues {
   purchase_unit_quantity?: number | string;
   total_price_in_currency?: number | string;
   price_per_unit_currency?: number | string;
+  price_per_unit_uz?: number | string;
   
   // Backend calculated fields (will be populated from API response)
   quantity?: number | string;
@@ -91,7 +92,8 @@ export default function CreateStock() {
       })(),
       purchase_unit_quantity: '',
       total_price_in_currency: '',
-      price_per_unit_currency: ''
+      price_per_unit_currency: '',
+      price_per_unit_uz: ''
     }
   });
 
@@ -185,13 +187,20 @@ export default function CreateStock() {
           supplier: Number(formData.supplier),
           date_of_arrived: formData.date_of_arrived,
           
-          // User input calculation fields
+          // User input calculation fields - these should always come from form data, not cached values
           ...(formData.purchase_unit_quantity && { purchase_unit_quantity: Number(formData.purchase_unit_quantity) }),
           ...(formData.total_price_in_currency && { total_price_in_currency: Number(formData.total_price_in_currency) }),
           ...(formData.price_per_unit_currency && { price_per_unit_currency: Number(formData.price_per_unit_currency) }),
+          ...(formData.price_per_unit_uz && { price_per_unit_uz: Number(formData.price_per_unit_uz) }),
           
-          // Include all existing dynamic calculated fields from previous calculations
+          // Include only non-user-input dynamic calculated fields from previous calculations
+          // Exclude user input fields to prevent overriding form values
           ...Object.entries(dynamicFields).reduce((acc, [fieldName, fieldData]) => {
+            // Skip user input fields - they should come from form data above
+            if (['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency', 'price_per_unit_uz'].includes(fieldName)) {
+              return acc;
+            }
+            
             if (fieldData.value !== null && fieldData.value !== undefined) {
               // Handle special cases where backend expects different format
               if (fieldName === 'exchange_rate' && typeof fieldData.value === 'object' && (fieldData.value as any).id) {
@@ -214,7 +223,13 @@ export default function CreateStock() {
         setDynamicFields(response.dynamic_fields);
 
         // Update form with calculated values - handle object values properly
+        // BUT exclude user input fields to prevent feedback loops
         Object.entries(response.dynamic_fields).forEach(([fieldName, fieldData]) => {
+          // Skip user input fields to prevent overriding user's typing
+          if (['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency', 'price_per_unit_uz'].includes(fieldName)) {
+            return;
+          }
+          
           if (fieldData.value !== null && fieldData.value !== undefined) {
             // Only set primitive values in the form, skip objects
             if (typeof fieldData.value !== 'object') {
@@ -239,6 +254,7 @@ export default function CreateStock() {
     purchase_unit_quantity?: string | number;
     total_price_in_currency?: string | number;
     price_per_unit_currency?: string | number;
+    price_per_unit_uz?: string | number;
   }>({});
 
   
@@ -261,16 +277,17 @@ export default function CreateStock() {
   }, [requiredFields, debouncedCalculate, initialCalculationDone, form]);
 
   // Watch calculation trigger fields for updates after initial load
-  const watchedFields = form.watch(['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency']);
+  const watchedFields = form.watch(['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency', 'price_per_unit_uz']);
   
   useEffect(() => {
-    const [purchaseUnitQuantity, totalPriceInCurrency, pricePerUnitCurrency] = watchedFields;
+    const [purchaseUnitQuantity, totalPriceInCurrency, pricePerUnitCurrency, pricePerUnitUz] = watchedFields;
     
     // Check if values have actually changed
     const hasChanged = 
       purchaseUnitQuantity !== previousValues.purchase_unit_quantity ||
       totalPriceInCurrency !== previousValues.total_price_in_currency ||
-      pricePerUnitCurrency !== previousValues.price_per_unit_currency;
+      pricePerUnitCurrency !== previousValues.price_per_unit_currency ||
+      pricePerUnitUz !== previousValues.price_per_unit_uz;
     
     // Only trigger calculation if values have changed and initial calculation was done
     if (hasChanged && initialCalculationDone) {
@@ -282,7 +299,8 @@ export default function CreateStock() {
         setPreviousValues({
           purchase_unit_quantity: purchaseUnitQuantity,
           total_price_in_currency: totalPriceInCurrency,
-          price_per_unit_currency: pricePerUnitCurrency
+          price_per_unit_currency: pricePerUnitCurrency,
+          price_per_unit_uz: pricePerUnitUz
         });
       }, 500); // 500ms debounce
 
@@ -369,7 +387,7 @@ export default function CreateStock() {
   // Dynamic calculation fields - only show fields that are marked as 'show: true' in API response AND initial calculation is done
   const calculationFields = initialCalculationDone ? Object.entries(dynamicFields)
     .filter(([fieldName, fieldData]) => 
-      ['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency'].includes(fieldName) && 
+      ['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency', 'price_per_unit_uz'].includes(fieldName) && 
       fieldData.show
     )
     .map(([fieldName, fieldData]) => ({
@@ -449,7 +467,7 @@ export default function CreateStock() {
   // Add dynamic backend-calculated fields based on API response (filter out input fields and only show visible fields) AND initial calculation is done
   const dynamicCalculatedFields = initialCalculationDone ? Object.entries(dynamicFields)
     .filter(([fieldName, fieldData]) => 
-      !['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency'].includes(fieldName) &&
+      !['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency', 'price_per_unit_uz'].includes(fieldName) &&
       fieldData.show
     )
     .map(([fieldName, fieldData]) => ({
@@ -494,6 +512,7 @@ export default function CreateStock() {
         ...(data.purchase_unit_quantity && { purchase_unit_quantity: Number(data.purchase_unit_quantity) }),
         ...(data.total_price_in_currency && { total_price_in_currency: Number(data.total_price_in_currency) }),
         ...(data.price_per_unit_currency && { price_per_unit_currency: Number(data.price_per_unit_currency) }),
+        ...(data.price_per_unit_uz && { price_per_unit_uz: Number(data.price_per_unit_uz) }),
         
         // Include all dynamic calculated fields from API response
         ...Object.entries(dynamicFields).reduce((acc, [fieldName, fieldData]) => {
