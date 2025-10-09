@@ -182,16 +182,50 @@ export interface StockCalculationRequest {
   purchase_unit_quantity?: number;
   total_price_in_currency?: number;
   price_per_unit_currency?: number;
+  // Additional fields that might be calculated
+  quantity?: number;
+  total_price_in_uz?: number;
+  price_per_unit_uz?: number;
+  base_unit_in_currency?: number;
+  base_unit_in_uzs?: number;
 }
 
 export interface DynamicField {
-  value: number | string | null;
+  value: number | string | object | null;
   editable: boolean;
   show: boolean;
   label: string;
 }
 
 export interface StockCalculationResponse {
+  // Nested objects from API response
+  store?: {
+    id: number;
+    name: string;
+  };
+  product?: {
+    id: number;
+    product_name: string;
+    base_unit: number;
+  };
+  currency?: {
+    id: number;
+    name: string;
+    short_name: string;
+    is_base: boolean;
+  };
+  supplier?: {
+    id: number;
+    name: string;
+  };
+  purchase_unit?: {
+    id: number;
+    measurement_name: string;
+    short_name: string;
+    translations?: any;
+    related_model?: any;
+  };
+  // Dynamic fields containing calculated values
   dynamic_fields: {
     [fieldName: string]: DynamicField;
   };

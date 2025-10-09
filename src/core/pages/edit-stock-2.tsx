@@ -225,10 +225,13 @@ export default function EditStock() {
         const response = await calculateStock(calculationRequest);
         setDynamicFields(response.dynamic_fields);
 
-        // Update form with calculated values
+        // Update form with calculated values - handle object values properly
         Object.entries(response.dynamic_fields).forEach(([fieldName, fieldData]) => {
           if (fieldData.value !== null && fieldData.value !== undefined) {
-            form.setValue(fieldName as keyof FormValues, fieldData.value, { shouldValidate: false });
+            // Only set primitive values in the form, skip objects
+            if (typeof fieldData.value !== 'object') {
+              form.setValue(fieldName as keyof FormValues, fieldData.value, { shouldValidate: false });
+            }
           }
         });
 
@@ -262,7 +265,10 @@ export default function EditStock() {
         // Update form with mock calculated values
         Object.entries(mockDynamicFields).forEach(([fieldName, fieldData]) => {
           if (fieldData.value !== null && fieldData.value !== undefined) {
-            form.setValue(fieldName as keyof FormValues, fieldData.value, { shouldValidate: false });
+            // Only set primitive values in the form, skip objects
+            if (typeof fieldData.value !== 'object') {
+              form.setValue(fieldName as keyof FormValues, fieldData.value, { shouldValidate: false });
+            }
           }
         });
       } finally {
