@@ -685,6 +685,17 @@ function App() {
                 }
               />
             </Route>
+
+            {/* Fullscreen POS route - outside Layout wrapper for touch interface */}
+            <Route
+              path="/pos-fullscreen"
+              element={
+                <PrivateRoute allowedRoles={["Администратор"]}>
+                  <POSPage />
+                </PrivateRoute>
+              }
+            />
+
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
           <Toaster />
