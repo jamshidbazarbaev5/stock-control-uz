@@ -36,7 +36,7 @@ interface SaleItem {
       }>;
     };
   };
-  selling_method: 'Штук' | 'Ед.измерения';
+  selling_method?: 'Штук' | 'Ед.измерения';
   quantity: string;
   
   subtotal: string;
@@ -74,7 +74,7 @@ export interface Sale {
 }
 
 // API endpoints
-const SALE_URL = 'sales/';
+const SALE_URL = 'sales/create/';
 
 // Create sale API hooks using the factory function
 export const {

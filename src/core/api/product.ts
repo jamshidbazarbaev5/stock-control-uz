@@ -1,6 +1,6 @@
-import { createResourceApiHooks } from '../helpers/createResourceApi';
-import type { Attribute } from '@/types/attribute';
-import api from './api';
+import { createResourceApiHooks } from "../helpers/createResourceApi";
+import type { Attribute } from "@/types/attribute";
+import api from "./api";
 
 // Types
 export interface ProductMeasurement {
@@ -59,10 +59,18 @@ export interface Product {
   base_unit?: number;
   ikpu?: string;
   history?: any;
+  available_units?: Array<{
+    id: number;
+    short_name: string;
+    factor: number;
+    is_base: boolean;
+  }>;
+
+
 }
 
 // API endpoints
-const PRODUCT_URL = 'items/product/';
+const PRODUCT_URL = "items/product/";
 
 // Create product API hooks using the factory function
 export const {
@@ -71,10 +79,12 @@ export const {
   useCreateResource: useCreateProduct,
   useUpdateResource: useUpdateProduct,
   useDeleteResource: useDeleteProduct,
-} = createResourceApiHooks<Product>(PRODUCT_URL, 'products');
+} = createResourceApiHooks<Product>(PRODUCT_URL, "products");
 
 // Search products by barcode
-export const searchProductByBarcode = async (barcode: string): Promise<Product | null> => {
+export const searchProductByBarcode = async (
+  barcode: string,
+): Promise<Product | null> => {
   try {
     const response = await api.get(`${PRODUCT_URL}?barcode=${barcode}`);
     if (response.data.results && response.data.results.length > 0) {
@@ -82,7 +92,7 @@ export const searchProductByBarcode = async (barcode: string): Promise<Product |
     }
     return null;
   } catch (error) {
-    console.error('Error searching product by barcode:', error);
+    console.error("Error searching product by barcode:", error);
     return null;
   }
 };

@@ -9,7 +9,7 @@ import {
   X as CloseIcon,
   LogOut,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   WideDialog,
   WideDialogContent,
@@ -35,6 +35,7 @@ import { useGetUsers } from "@/core/api/user";
 import { useGetClients } from "@/core/api/client";
 import type { User } from "@/core/api/user";
 import { OpenShiftForm } from "./OpenShiftForm";
+import { useCreateSale, type Sale } from "@/core/api/sale";
 
 interface ProductInCart {
   id: number;
@@ -45,6 +46,12 @@ interface ProductInCart {
   total: number;
   product: Product;
   barcode?: string;
+  selectedUnit: {
+    id: number;
+    short_name: string;
+    factor: number;
+    is_base: boolean;
+  } | null;
 }
 
 interface ExtendedUser extends User {
@@ -76,14 +83,37 @@ interface SessionState {
   onCredit: boolean;
 }
 
+interface SalePayment {
+  amount: number;
+  payment_method: string;
+}
+
+interface SalePayload {
+  store: number;
+  sold_by: number;
+  on_credit: boolean;
+  sale_items: {
+    product_write: number;
+    quantity: number;
+    selling_unit: number;
+    price_per_unit: number;
+  }[];
+  sale_payments: SalePayment[];
+  sale_debt?: {
+    client: number;
+    deposit: number;
+    due_date: string;
+  };
+}
+
 const POSInterface = () => {
   const { data: userData } = useCurrentUser();
   const navigate = useNavigate();
-  
-  if (!userData?.has_active_shift) {
-    return <OpenShiftForm />;
-  }
-  
+  const location = useLocation();
+
+  // Determine if we're in fullscreen route
+  const isFullscreenRoute = location.pathname === "/pos-fullscreen";
+
   // Session management
   const [sessions, setSessions] = useState<SessionState[]>([
     {
@@ -144,9 +174,20 @@ const POSInterface = () => {
 
   // Quantity modal state
   const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false);
-  const [selectedProductForQuantity, setSelectedProductForQuantity] = useState<ProductInCart | null>(null);
+  const [selectedProductForQuantity, setSelectedProductForQuantity] =
+    useState<ProductInCart | null>(null);
   const [isManualQuantityMode, setIsManualQuantityMode] = useState(false);
   const [manualQuantityInput, setManualQuantityInput] = useState("");
+
+  // Payment modal state
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState<SalePayment[]>([
+    { amount: 0, payment_method: "Наличные" },
+  ]);
+
+  // Sale API
+  const createSaleMutation = useCreateSale();
+  const [isProcessingSale, setIsProcessingSale] = useState(false);
 
   // Product selection state
   const [selectedProducts, setSelectedProducts] = useState<Set<number>>(
@@ -158,6 +199,9 @@ const POSInterface = () => {
 
   // Calculator visibility state
   const [isCalculatorVisible, setIsCalculatorVisible] = useState(true);
+
+  // Fullscreen mode state - default based on route
+  const [isFullscreenMode, setIsFullscreenMode] = useState(isFullscreenRoute);
 
   // User data
   const { data: currentUser } = useCurrentUser();
@@ -174,6 +218,11 @@ const POSInterface = () => {
   // Check user roles
   const isAdmin = currentUser?.role === "Администратор";
   const isSuperUser = currentUser?.is_superuser === true;
+
+  // Early return after all hooks are declared
+  if (!userData?.has_active_shift) {
+    return <OpenShiftForm />;
+  }
 
   // Save current session state whenever it changes
   useEffect(() => {
@@ -210,6 +259,11 @@ const POSInterface = () => {
     onCredit,
   ]);
 
+  // Sync fullscreen mode with route
+  useEffect(() => {
+    setIsFullscreenMode(isFullscreenRoute);
+  }, [isFullscreenRoute]);
+
   // Initialize seller selection for non-admin users
   useEffect(() => {
     if (!isAdmin && !isSuperUser && currentUser?.id && !selectedSeller) {
@@ -241,8 +295,22 @@ const POSInterface = () => {
   const handleProductDirectAdd = useCallback(
     (product: Product) => {
       if (product.product_name && product.id) {
-        // For now, use a default price - you might want to fetch this from elsewhere
-        const price = 10000; // Default price, replace with actual price logic
+        // Get default unit (base unit or first available)
+        const defaultUnit = product.available_units?.find(
+          (unit) => unit.is_base,
+        ) ||
+          product.available_units?.[0] || {
+            id: product.base_unit || 1,
+            short_name: "шт",
+            factor: 1,
+            is_base: true,
+          };
+        // Use selling_price from product data, fallback to min_price
+        const price = product.selling_price
+          ? parseFloat(String(product.selling_price))
+          : product.min_price
+            ? parseFloat(String(product.min_price))
+            : 10000;
         const newProduct: ProductInCart = {
           id: Date.now(), // Unique ID for the cart item
           productId: product.id,
@@ -252,6 +320,7 @@ const POSInterface = () => {
           total: price,
           product: product,
           barcode: product.barcode,
+          selectedUnit: defaultUnit || null,
         };
 
         // Check if product already exists in cart
@@ -584,7 +653,7 @@ const POSInterface = () => {
     setSessions((prev) => [...prev, newSession]);
     const newIndex = sessions.length;
     setCurrentSessionIndex(newIndex);
-    
+
     // Clear all state for the new session
     setCurrentInput("");
     setPreviousInput("");
@@ -592,7 +661,9 @@ const POSInterface = () => {
     setWaitingForNewValue(false);
     setCartProducts([]);
     setFocusedProductIndex(-1);
-    setSelectedSeller(!isAdmin && !isSuperUser && currentUser?.id ? currentUser.id : null);
+    setSelectedSeller(
+      !isAdmin && !isSuperUser && currentUser?.id ? currentUser.id : null,
+    );
     setSelectedClient(null);
     setClientSearchTerm("");
     setOnCredit(false);
@@ -895,137 +966,226 @@ const POSInterface = () => {
     <div className="flex h-screen bg-gray-50">
       {/* Left Panel */}
       <div className="flex-1 flex flex-col bg-white">
-        {/* Session Tabs */}
-        <div className="bg-white px-6 pt-4 border-b border-gray-200">
-          <div
-            className="flex space-x-2 mb-4 overflow-x-auto"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
-            {sessions.map((session, index) => (
-              <div
-                key={session.id}
-                className={`relative group rounded-t-lg flex-shrink-0 min-w-max ${
-                  index === currentSessionIndex
-                    ? "bg-blue-500"
-                    : "bg-gray-100 hover:bg-gray-200"
-                }`}
-              >
-                <button
-                  onClick={() => switchToSession(index)}
-                  className={`px-4 py-2 rounded-t-lg text-sm font-medium transition-colors w-full text-left whitespace-nowrap ${
+        {/* Session Tabs - Hidden in fullscreen mode */}
+        {!isFullscreenMode && (
+          <div className="bg-white px-6 pt-4 border-b border-gray-200">
+            <div
+              className="flex space-x-2 mb-4 overflow-x-auto"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              {sessions.map((session, index) => (
+                <div
+                  key={session.id}
+                  className={`relative group rounded-t-lg flex-shrink-0 min-w-max ${
                     index === currentSessionIndex
-                      ? "text-white"
-                      : "text-gray-600"
+                      ? "bg-blue-500"
+                      : "bg-gray-100 hover:bg-gray-200"
                   }`}
                 >
-                  {session.name}
-                  {session.products.length > 0 && (
-                    <span className="ml-2 bg-white bg-opacity-30 text-xs px-1.5 py-0.5 rounded-full">
-                      {session.products.length}
-                    </span>
-                  )}
-                  {session.products.length > 0 && (
-                    <div className="text-xs opacity-75 mt-0.5">
-                      {session.products
-                        .reduce((sum, product) => sum + product.total, 0)
-                        .toLocaleString()}{" "}
-                      сум
-                    </div>
-                  )}
-                </button>
-                {sessions.length > 1 && (
                   <button
-                    onClick={(e) => closeSession(index, e)}
-                    className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center opacity-100 transition-all ${
+                    onClick={() => switchToSession(index)}
+                    className={`px-4 py-2 rounded-t-lg text-sm font-medium transition-colors w-full text-left whitespace-nowrap ${
                       index === currentSessionIndex
-                        ? "bg-red-500 text-white hover:bg-red-600 shadow-lg"
-                        : "bg-gray-500 text-white hover:bg-gray-600 shadow-md"
+                        ? "text-white"
+                        : "text-gray-600"
                     }`}
                   >
-                    <CloseIcon className="w-4 h-4" />
+                    {session.name}
+                    {session.products.length > 0 && (
+                      <span className="ml-2 bg-white bg-opacity-30 text-xs px-1.5 py-0.5 rounded-full">
+                        {session.products.length}
+                      </span>
+                    )}
+                    {session.products.length > 0 && (
+                      <div className="text-xs opacity-75 mt-0.5">
+                        {session.products
+                          .reduce((sum, product) => sum + product.total, 0)
+                          .toLocaleString()}{" "}
+                        сум
+                      </div>
+                    )}
+                  </button>
+                  {sessions.length > 1 && (
+                    <button
+                      onClick={(e) => closeSession(index, e)}
+                      className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center opacity-100 transition-all ${
+                        index === currentSessionIndex
+                          ? "bg-red-500 text-white hover:bg-red-600 shadow-lg"
+                          : "bg-gray-500 text-white hover:bg-gray-600 shadow-md"
+                      }`}
+                    >
+                      <CloseIcon className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Fullscreen Mode Header - Only show in fullscreen */}
+        {isFullscreenMode && (
+          <div className="bg-white p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-bold text-gray-900">POS Система</h1>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handleSearchClick}
+                  className="bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
+                  title="Поиск товаров"
+                >
+                  <Search className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={handleUserClick}
+                  className={`p-3 rounded-lg transition-colors flex items-center justify-center relative ${
+                    selectedSeller || selectedClient
+                      ? "bg-blue-500 text-white hover:bg-blue-600"
+                      : "bg-green-500 text-white hover:bg-green-600"
+                  }`}
+                  title="Выбор пользователя"
+                >
+                  <UserIcon className="w-5 h-5" />
+                  {(selectedSeller || selectedClient) && (
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-white"></div>
+                  )}
+                </button>
+                <button
+                  onClick={() => {
+                    if (isFullscreenRoute) {
+                      navigate("/pos");
+                    } else {
+                      setIsFullscreenMode(false);
+                    }
+                  }}
+                  className="bg-gray-500 text-white p-3 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center"
+                  title="Выйти из полноэкранного режима"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Header - Hidden in fullscreen mode */}
+        {!isFullscreenMode && (
+          <div className="bg-white p-6 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-6"></div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handleSearchClick}
+                  className="bg-blue-500 text-white p-4 rounded-xl hover:bg-blue-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
+                  title="Поиск товаров"
+                >
+                  <Search className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={handleUserClick}
+                  className={`p-4 rounded-xl transition-colors flex items-center justify-center relative min-w-[60px] min-h-[60px] ${
+                    selectedSeller || selectedClient
+                      ? "bg-blue-500 text-white hover:bg-blue-600"
+                      : "bg-green-500 text-white hover:bg-green-600"
+                  }`}
+                  title="Выбор пользователя"
+                >
+                  <UserIcon className="w-6 h-6" />
+                  {(selectedSeller || selectedClient) && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
+                  )}
+                </button>
+
+                <button
+                  onClick={createNewSession}
+                  className="bg-purple-500 text-white p-4 rounded-xl hover:bg-purple-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
+                  title="Новая сессия"
+                >
+                  <Plus className="w-6 h-6" />
+                </button>
+
+                <button
+                  onClick={handleCloseShift}
+                  className="bg-red-500 text-white p-4 rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
+                  title="Закрыть смену"
+                >
+                  <LogOut className="w-6 h-6" />
+                </button>
+
+                {/* Calculator Toggle Button - Only show when calculator is hidden */}
+                {!isCalculatorVisible && (
+                  <button
+                    onClick={() => setIsCalculatorVisible(true)}
+                    className="bg-gray-500 text-white p-4 rounded-xl hover:bg-gray-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
+                    title="Показать калькулятор"
+                  >
+                    <span className="text-xl font-bold">=</span>
                   </button>
                 )}
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Header */}
-        <div className="bg-white p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-6">
-
-            </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={handleSearchClick}
-                className="bg-blue-500 text-white p-4 rounded-xl hover:bg-blue-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                title="Поиск товаров"
-              >
-                <Search className="w-6 h-6" />
-              </button>
-              <button
-                onClick={handleUserClick}
-                className={`p-4 rounded-xl transition-colors flex items-center justify-center relative min-w-[60px] min-h-[60px] ${
-                  selectedSeller || selectedClient
-                    ? "bg-blue-500 text-white hover:bg-blue-600"
-                    : "bg-green-500 text-white hover:bg-green-600"
-                }`}
-                title="Выбор пользователя"
-              >
-                <UserIcon className="w-6 h-6" />
-                {(selectedSeller || selectedClient) && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
-                )}
-              </button>
-
-              <button
-                onClick={createNewSession}
-                className="bg-purple-500 text-white p-4 rounded-xl hover:bg-purple-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                title="Новая сессия"
-              >
-                <Plus className="w-6 h-6" />
-              </button>
-
-              <button
-                onClick={handleCloseShift}
-                className="bg-red-500 text-white p-4 rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                title="Закрыть смену"
-              >
-                <LogOut className="w-6 h-6" />
-              </button>
-
-              {/* Calculator Toggle Button - Only show when calculator is hidden */}
-              {!isCalculatorVisible && (
                 <button
-                  onClick={() => setIsCalculatorVisible(true)}
-                  className="bg-gray-500 text-white p-4 rounded-xl hover:bg-gray-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                  title="Показать калькулятор"
+                  onClick={handleBottomDownClick}
+                  disabled={cartProducts.length === 0}
+                  className="bg-indigo-500 text-white p-4 rounded-xl hover:bg-indigo-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed min-w-[60px] min-h-[60px]"
+                  title="Вниз по списку"
                 >
-                  <span className="text-xl font-bold">=</span>
+                  <ChevronDown className="w-6 h-6" />
                 </button>
-              )}
+                <button
+                  onClick={handleBottomUpClick}
+                  disabled={cartProducts.length === 0}
+                  className="bg-teal-500 text-white p-4 rounded-xl hover:bg-teal-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed min-w-[60px] min-h-[60px]"
+                  title="Вверх по списку"
+                >
+                  <ChevronUp className="w-6 h-6" />
+                </button>
 
-              <button
-                onClick={handleBottomDownClick}
-                disabled={cartProducts.length === 0}
-                className="bg-indigo-500 text-white p-4 rounded-xl hover:bg-indigo-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed min-w-[60px] min-h-[60px]"
-                title="Вниз по списку"
-              >
-                <ChevronDown className="w-6 h-6" />
-              </button>
-              <button
-                onClick={handleBottomUpClick}
-                disabled={cartProducts.length === 0}
-                className="bg-teal-500 text-white p-4 rounded-xl hover:bg-teal-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed min-w-[60px] min-h-[60px]"
-                title="Вверх по списку"
-              >
-                <ChevronUp className="w-6 h-6" />
-              </button>
-              {/**/}
+                {/* Fullscreen Toggle Button */}
+                <button
+                  onClick={() => {
+                    if (!isFullscreenRoute) {
+                      navigate("/pos-fullscreen");
+                    } else {
+                      setIsFullscreenMode(true);
+                    }
+                  }}
+                  className="bg-orange-500 text-white p-4 rounded-xl hover:bg-orange-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
+                  title="Полноэкранный режим"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                    />
+                  </svg>
+                </button>
+                {/**/}
+              </div>
             </div>
           </div>
+        )}
 
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col">
           {/* Product Header */}
           <div className="mb-6">
             <h2 className="text-3xl font-bold mb-2 text-gray-900">
@@ -1152,231 +1312,313 @@ const POSInterface = () => {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Product Table */}
-        <div className="flex-1 p-6">
-          {/* Barcode Scanner Input - Positioned off-screen but still focusable */}
-          <input
-            ref={barcodeInputRef}
-            type="text"
-            value={barcodeScanInput}
-            onChange={handleBarcodeInputChange}
-            onKeyPress={handleBarcodeKeyPress}
-            onKeyDown={(e) => {
-              if (debugMode) {
-                console.log("🔽 KeyDown in barcode input:", {
-                  key: e.key,
-                  code: e.code,
-                  keyCode: e.keyCode,
-                  isEnter: e.key === "Enter" || e.keyCode === 13,
-                  currentValue: barcodeScanInput,
-                });
-              }
-              // Also handle Enter in keydown as some scanners might not trigger keypress
-              if (e.key === "Enter" || e.keyCode === 13) {
-                e.preventDefault();
-                console.log(
-                  "✅ ENTER in KeyDown! Processing:",
-                  barcodeScanInput,
-                );
-                setLastScannedBarcode(barcodeScanInput);
-                processBarcodeInput(barcodeScanInput);
-              }
-            }}
-            onKeyUp={(e) => {
-              if (debugMode) {
-                console.log("🔼 KeyUp in barcode input:", {
-                  key: e.key,
-                  code: e.code,
-                  keyCode: e.keyCode,
-                });
-              }
-            }}
-            onInput={(e) => {
-              if (debugMode) {
-                console.log("📥 Input event:", {
-                  value: (e.target as HTMLInputElement).value,
-                  inputType: (e as any).inputType,
-                  data: (e as any).data,
-                });
-              }
-            }}
-            onBlur={(_e) => {
-              // Prevent losing focus
-              setTimeout(() => {
-                if (barcodeInputRef.current) {
-                  if (debugMode) {
-                    console.log("Input lost focus, refocusing...");
-                  }
-                  barcodeInputRef.current.focus();
+          {/* Product Table */}
+          <div className={`flex-1 ${isFullscreenMode ? "p-4" : "p-6"}`}>
+            {/* Barcode Scanner Input - Positioned off-screen but still focusable */}
+            <input
+              ref={barcodeInputRef}
+              type="text"
+              value={barcodeScanInput}
+              onChange={handleBarcodeInputChange}
+              onKeyPress={handleBarcodeKeyPress}
+              onKeyDown={(e) => {
+                if (debugMode) {
+                  console.log("🔽 KeyDown in barcode input:", {
+                    key: e.key,
+                    code: e.code,
+                    keyCode: e.keyCode,
+                    isEnter: e.key === "Enter" || e.keyCode === 13,
+                    currentValue: barcodeScanInput,
+                  });
                 }
-              }, 10);
-            }}
-            onFocus={() => {
-              if (debugMode) {
-                console.log("Barcode input gained focus");
-              }
-            }}
-            style={{
-              position: "absolute",
-              left: "-9999px",
-              width: "1px",
-              height: "1px",
-            }}
-            autoFocus
-            autoComplete="off"
-            placeholder="Barcode scanner input"
-          />
+                // Also handle Enter in keydown as some scanners might not trigger keypress
+                if (e.key === "Enter" || e.keyCode === 13) {
+                  e.preventDefault();
+                  console.log(
+                    "✅ ENTER in KeyDown! Processing:",
+                    barcodeScanInput,
+                  );
+                  setLastScannedBarcode(barcodeScanInput);
+                  processBarcodeInput(barcodeScanInput);
+                }
+              }}
+              onKeyUp={(e) => {
+                if (debugMode) {
+                  console.log("🔼 KeyUp in barcode input:", {
+                    key: e.key,
+                    code: e.code,
+                    keyCode: e.keyCode,
+                  });
+                }
+              }}
+              onInput={(e) => {
+                if (debugMode) {
+                  console.log("📥 Input event:", {
+                    value: (e.target as HTMLInputElement).value,
+                    inputType: (e as any).inputType,
+                    data: (e as any).data,
+                  });
+                }
+              }}
+              onBlur={(_e) => {
+                // Prevent losing focus
+                setTimeout(() => {
+                  if (barcodeInputRef.current) {
+                    if (debugMode) {
+                      console.log("Input lost focus, refocusing...");
+                    }
+                    barcodeInputRef.current.focus();
+                  }
+                }, 10);
+              }}
+              onFocus={() => {
+                if (debugMode) {
+                  console.log("Barcode input gained focus");
+                }
+              }}
+              style={{
+                position: "absolute",
+                left: "-9999px",
+                width: "1px",
+                height: "1px",
+              }}
+              autoFocus
+              autoComplete="off"
+              placeholder="Barcode scanner input"
+            />
 
-          <div
-            ref={tableRef}
-            className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm"
-          >
-            <table className="w-full">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="text-left p-4 font-semibold text-gray-700">
-                    №
-                  </th>
-                  <th className="text-left p-4 font-semibold text-gray-700">
-                    Товар
-                  </th>
-                  <th className="text-right p-4 font-semibold text-gray-700">
-                    Цена
-                  </th>
-                  <th className="text-right p-4 font-semibold text-gray-700">
-                    Кол-во
-                  </th>
-                  <th className="text-right p-4 font-semibold text-gray-700">
-                    Сумма
-                  </th>
-                  <th className="text-center p-4 font-semibold text-gray-700 w-20">
-                    Действия
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {cartProducts.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-gray-500">
-                      <div className="flex flex-col items-center space-y-2">
-                        <Search className="w-12 h-12 text-gray-300" />
-                        <span>Добавьте товары в корзину</span>
-                        <span className="text-sm">
-                          Нажмите на синюю кнопку поиска чтобы найти товары
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  cartProducts.map((product, index) => (
-                    <tr
-                      key={product.id}
-                      className={`${
-                        index === focusedProductIndex
-                          ? "bg-blue-100 border-l-4 border-blue-500"
-                          : index % 2 === 0
-                            ? "bg-gray-50"
-                            : "bg-white"
-                      } transition-all duration-200 hover:bg-gray-100`}
-                    >
-                      <td className="p-4 text-gray-900">{index + 1}</td>
-                      <td className="p-4 font-medium text-gray-900">
-                        <div>
-                          <div>{product.name}</div>
-                          {product.barcode && (
-                            <div className="text-xs text-gray-500">
-                              Штрихкод: {product.barcode}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-4 text-right text-gray-900">
-                        {product.price.toLocaleString()}
-                      </td>
-                      <td className="p-4 text-right text-gray-900">
-                        <div className="flex items-center justify-end space-x-2">
-                          <button
-                            onClick={() => {
-                              const newQuantity = product.quantity - 1;
-                              if (newQuantity > 0) {
-                                updateProductQuantity(product.id, newQuantity);
-                              }
-                            }}
-                            disabled={product.quantity <= 1}
-                            className={`w-10 h-10 rounded-full ${
-                              index === focusedProductIndex
-                                ? "bg-blue-200 hover:bg-blue-300 text-blue-800"
-                                : "bg-gray-200 hover:bg-gray-300"
-                            } ${product.quantity <= 1 ? "opacity-50 cursor-not-allowed" : ""} flex items-center justify-center text-sm font-bold transition-colors`}
-                          >
-                            −
-                          </button>
-                          <button
-                            onClick={() => handleQuantityClick(product)}
-                            className={`min-w-[80px] min-h-[50px] text-center border rounded-lg px-3 py-2 text-lg font-semibold transition-all ${
-                              index === focusedProductIndex
-                                ? "border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100"
-                                : "border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50"
-                            } focus:outline-none focus:ring-2 focus:ring-blue-200`}
-                          >
-                            {product.quantity.toFixed(0)}
-                          </button>
-                          <button
-                            onClick={() =>
-                              updateProductQuantity(
-                                product.id,
-                                product.quantity + 1,
-                              )
-                            }
-                            className={`w-10 h-10 rounded-full ${
-                              index === focusedProductIndex
-                                ? "bg-blue-200 hover:bg-blue-300 text-blue-800"
-                                : "bg-gray-200 hover:bg-gray-300"
-                            } flex items-center justify-center text-sm font-bold transition-colors`}
-                          >
-                            +
-                          </button>
-                        </div>
-                      </td>
-                      <td className="p-4 text-right font-semibold text-gray-900">
-                        {product.total.toLocaleString()}
-                      </td>
-                      <td className="p-4 text-center">
-                        <button
-                          onClick={() => {
-                            removeProduct(product.id);
-                            if (index === focusedProductIndex) {
-                              setFocusedProductIndex((prev) =>
-                                prev >= cartProducts.length - 1
-                                  ? cartProducts.length - 2
-                                  : prev,
-                              );
-                            }
-                          }}
-                          className={`w-8 h-8 rounded-full ${
-                            index === focusedProductIndex
-                              ? "bg-red-200 hover:bg-red-300 text-red-700 ring-2 ring-red-400"
-                              : "bg-red-100 hover:bg-red-200 text-red-600"
-                          } flex items-center justify-center transition-all`}
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </td>
+            <div
+              ref={tableRef}
+              className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex flex-col max-h-full"
+            >
+              {/* Table Header - Fixed */}
+              <div className="flex-shrink-0">
+                <table className="w-full">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="text-left p-4 font-semibold text-gray-700">
+                        №
+                      </th>
+                      <th className="text-left p-4 font-semibold text-gray-700">
+                        Товар
+                      </th>
+                      <th className="text-right p-4 font-semibold text-gray-700">
+                        Цена
+                      </th>
+                      <th className="text-center p-4 font-semibold text-gray-700">
+                        Ед. изм.
+                      </th>
+                      <th className="text-right p-4 font-semibold text-gray-700">
+                        Кол-во
+                      </th>
+                      <th className="text-right p-4 font-semibold text-gray-700">
+                        Сумма
+                      </th>
+                      <th className="text-center p-4 font-semibold text-gray-700 w-20">
+                        Действия
+                      </th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                </table>
+              </div>
 
-          {/* Page indicator */}
-          <div className="flex items-center justify-between mt-6">
-            <div className="flex items-center space-x-3">
-              <span className="text-gray-600">
-                Товаров в корзине: {cartProducts.length}
-              </span>
+              {/* Scrollable Table Body */}
+              <div className="flex-1 overflow-y-auto">
+                <table className="w-full">
+                  <tbody>
+                    {cartProducts.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={7}
+                          className="p-8 text-center text-gray-500"
+                        >
+                          <div className="flex flex-col items-center space-y-2">
+                            <Search className="w-12 h-12 text-gray-300" />
+                            <span>Добавьте товары в корзину</span>
+                            <span className="text-sm">
+                              Нажмите на синюю кнопку поиска чтобы найти товары
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      cartProducts.map((product, index) => (
+                        <tr
+                          key={product.id}
+                          className={`${
+                            index === focusedProductIndex
+                              ? "bg-blue-100 border-l-4 border-blue-500"
+                              : index % 2 === 0
+                                ? "bg-gray-50"
+                                : "bg-white"
+                          } transition-all duration-200 hover:bg-gray-100`}
+                        >
+                          <td className="p-4 text-gray-900">{index + 1}</td>
+                          <td className="p-4 font-medium text-gray-900">
+                            <div>
+                              <div>{product.name}</div>
+                              {product.barcode && (
+                                <div className="text-xs text-gray-500">
+                                  Штрихкод: {product.barcode}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-4 text-right text-gray-900">
+                            <Input
+                              type="number"
+                              value={product.price}
+                              onChange={(e) => {
+                                const newPrice = Number(e.target.value);
+                                if (newPrice >= 0) {
+                                  const updatedProducts = cartProducts.map(
+                                    (p) =>
+                                      p.id === product.id
+                                        ? {
+                                            ...p,
+                                            price: newPrice,
+                                            total: newPrice * p.quantity,
+                                          }
+                                        : p,
+                                  );
+                                  setCartProducts(updatedProducts);
+                                }
+                              }}
+                              className="w-24 text-right"
+                              min="0"
+                            />
+                          </td>
+                          <td className="p-4 text-center text-gray-900">
+                            {product.product.available_units &&
+                            product.product.available_units.length > 0 ? (
+                              <Select
+                                value={
+                                  product.selectedUnit?.id?.toString() || ""
+                                }
+                                onValueChange={(value) => {
+                                  const unitId = Number(value);
+                                  const selectedUnit =
+                                    product.product.available_units?.find(
+                                      (u) => u.id === unitId,
+                                    );
+                                  if (selectedUnit) {
+                                    const updatedProducts = cartProducts.map(
+                                      (p) =>
+                                        p.id === product.id
+                                          ? { ...p, selectedUnit }
+                                          : p,
+                                    );
+                                    setCartProducts(updatedProducts);
+                                  }
+                                }}
+                              >
+                                <SelectTrigger className="w-20 text-xs">
+                                  <SelectValue placeholder="Ед." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {product.product.available_units.map(
+                                    (unit) => (
+                                      <SelectItem
+                                        key={unit.id}
+                                        value={unit.id.toString()}
+                                      >
+                                        {unit.short_name}
+                                        {unit.is_base && " (осн.)"}
+                                      </SelectItem>
+                                    ),
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <span className="text-xs text-gray-500">
+                                {product.selectedUnit?.short_name || "шт"}
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-4 text-right text-gray-900">
+                            <div className="flex items-center justify-end space-x-2">
+                              <button
+                                onClick={() => {
+                                  const newQuantity = product.quantity - 1;
+                                  if (newQuantity > 0) {
+                                    updateProductQuantity(
+                                      product.id,
+                                      newQuantity,
+                                    );
+                                  }
+                                }}
+                                disabled={product.quantity <= 1}
+                                className={`w-10 h-10 rounded-full ${
+                                  index === focusedProductIndex
+                                    ? "bg-blue-200 hover:bg-blue-300 text-blue-800"
+                                    : "bg-gray-200 hover:bg-gray-300"
+                                } ${product.quantity <= 1 ? "opacity-50 cursor-not-allowed" : ""} flex items-center justify-center text-sm font-bold transition-colors`}
+                              >
+                                −
+                              </button>
+                              <button
+                                onClick={() => handleQuantityClick(product)}
+                                className={`min-w-[80px] min-h-[50px] text-center border rounded-lg px-3 py-2 text-lg font-semibold transition-all ${
+                                  index === focusedProductIndex
+                                    ? "border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                    : "border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50"
+                                } focus:outline-none focus:ring-2 focus:ring-blue-200`}
+                              >
+                                {product.quantity.toFixed(0)}
+                              </button>
+                              <button
+                                onClick={() =>
+                                  updateProductQuantity(
+                                    product.id,
+                                    product.quantity + 1,
+                                  )
+                                }
+                                className={`w-10 h-10 rounded-full ${
+                                  index === focusedProductIndex
+                                    ? "bg-blue-200 hover:bg-blue-300 text-blue-800"
+                                    : "bg-gray-200 hover:bg-gray-300"
+                                } flex items-center justify-center text-sm font-bold transition-colors`}
+                              >
+                                +
+                              </button>
+                            </div>
+                          </td>
+                          <td className="p-4 text-right font-semibold text-gray-900">
+                            {product.total.toLocaleString()}
+                          </td>
+                          <td className="p-4 text-center">
+                            <button
+                              onClick={() => {
+                                removeProduct(product.id);
+                                if (index === focusedProductIndex) {
+                                  setFocusedProductIndex((prev) =>
+                                    prev >= cartProducts.length - 1
+                                      ? cartProducts.length - 2
+                                      : prev,
+                                  );
+                                }
+                              }}
+                              className={`w-8 h-8 rounded-full ${
+                                index === focusedProductIndex
+                                  ? "bg-red-200 hover:bg-red-300 text-red-700 ring-2 ring-red-400"
+                                  : "bg-red-100 hover:bg-red-200 text-red-600"
+                              } flex items-center justify-center transition-all`}
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Page indicator */}
+            <div className="flex items-center justify-between text-sm text-gray-500 mt-4">
+              <span>Товаров в корзине: {cartProducts.length}</span>
               <button
                 onClick={clearCart}
                 className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg text-sm font-medium transition-colors"
@@ -1387,193 +1629,201 @@ const POSInterface = () => {
             </div>
           </div>
         </div>
-
-        {/* Bottom Action Bar */}
-
       </div>
 
-      {/* Right Panel - Calculator */}
-      {isCalculatorVisible && (
+      {/* Right Panel - Calculator - Hidden in fullscreen mode */}
+      {isCalculatorVisible && !isFullscreenMode && (
         <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
-        {/* Calculator Display */}
-        <div className="p-6 border-b border-gray-200">
-          {/* Calculator Header with Close Button */}
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Калькулятор</h3>
-            <button
-              onClick={() => setIsCalculatorVisible(false)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Закрыть калькулятор"
-            >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-          </div>
-          <div className="bg-gray-100 p-4 rounded-xl mb-4">
-            {operation && previousInput && (
-              <div className="text-right text-lg text-gray-600 font-mono">
-                {previousInput} {operation}
+          {/* Calculator Display */}
+          <div className="p-6 border-b border-gray-200">
+            {/* Calculator Header with Close Button */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Калькулятор
+              </h3>
+              <button
+                onClick={() => setIsCalculatorVisible(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Закрыть калькулятор"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="bg-gray-100 p-4 rounded-xl mb-4">
+              {operation && previousInput && (
+                <div className="text-right text-lg text-gray-600 font-mono">
+                  {previousInput} {operation}
+                </div>
+              )}
+              <div className="text-right text-3xl font-mono text-gray-900">
+                {currentInput || "0"}
               </div>
-            )}
-            <div className="text-right text-3xl font-mono text-gray-900">
-              {currentInput || "0"}
             </div>
           </div>
-        </div>
 
-        {/* Calculator Keypad */}
-        <div className="flex-1 p-6">
-          <div className="grid grid-cols-4 gap-4 h-full">
-            {/* Row 1 */}
-            <button
-              onClick={handleClearInput}
-              className="bg-orange-100 hover:bg-orange-200 rounded-2xl transition-colors h-20 flex items-center justify-center col-span-2"
-            >
-              <span className="text-xl font-bold text-orange-600">CLEAR</span>
-            </button>
-            <button
-              onClick={handleBackspace}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-            >
-              <X className="w-7 h-7" />
-            </button>
-            <button
-              onClick={() => handleOperation("/")}
-              className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
-            >
-              ÷
-            </button>
+          {/* Calculator Keypad */}
+          <div className="flex-1 p-6">
+            <div className="grid grid-cols-4 gap-4 h-full">
+              {/* Row 1 */}
+              <button
+                onClick={handleClearInput}
+                className="bg-orange-100 hover:bg-orange-200 rounded-2xl transition-colors h-20 flex items-center justify-center col-span-2"
+              >
+                <span className="text-xl font-bold text-orange-600">CLEAR</span>
+              </button>
+              <button
+                onClick={handleBackspace}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                <X className="w-7 h-7" />
+              </button>
+              <button
+                onClick={() => handleOperation("/")}
+                className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
+              >
+                ÷
+              </button>
 
-            {/* Row 2 */}
-            <button
-              onClick={() => handleNumberClick("7")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-            >
-              7
-            </button>
-            <button
-              onClick={() => handleNumberClick("8")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-            >
-              8
-            </button>
-            <button
-              onClick={() => handleNumberClick("9")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-            >
-              9
-            </button>
-            <button
-              onClick={() => handleOperation("*")}
-              className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
-            >
-              ×
-            </button>
+              {/* Row 2 */}
+              <button
+                onClick={() => handleNumberClick("7")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                7
+              </button>
+              <button
+                onClick={() => handleNumberClick("8")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                8
+              </button>
+              <button
+                onClick={() => handleNumberClick("9")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                9
+              </button>
+              <button
+                onClick={() => handleOperation("*")}
+                className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
+              >
+                ×
+              </button>
 
-            {/* Row 3 */}
-            <button
-              onClick={() => handleNumberClick("4")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-            >
-              4
-            </button>
-            <button
-              onClick={() => handleNumberClick("5")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-            >
-              5
-            </button>
-            <button
-              onClick={() => handleNumberClick("6")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-            >
-              6
-            </button>
-            <button
-              onClick={() => handleOperation("-")}
-              className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
-            >
-              −
-            </button>
+              {/* Row 3 */}
+              <button
+                onClick={() => handleNumberClick("4")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                4
+              </button>
+              <button
+                onClick={() => handleNumberClick("5")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                5
+              </button>
+              <button
+                onClick={() => handleNumberClick("6")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                6
+              </button>
+              <button
+                onClick={() => handleOperation("-")}
+                className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
+              >
+                −
+              </button>
 
-            {/* Row 4 */}
-            <button
-              onClick={() => handleNumberClick("1")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-            >
-              1
-            </button>
-            <button
-              onClick={() => handleNumberClick("2")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-            >
-              2
-            </button>
-            <button
-              onClick={() => handleNumberClick("3")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-            >
-              3
-            </button>
-            <button
-              onClick={() => handleOperation("+")}
-              className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
-            >
-              +
-            </button>
+              {/* Row 4 */}
+              <button
+                onClick={() => handleNumberClick("1")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                1
+              </button>
+              <button
+                onClick={() => handleNumberClick("2")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                2
+              </button>
+              <button
+                onClick={() => handleNumberClick("3")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                3
+              </button>
+              <button
+                onClick={() => handleOperation("+")}
+                className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
+              >
+                +
+              </button>
 
-            {/* Row 5 */}
-            <button
-              onClick={() => handleNumberClick("0")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900 col-span-2"
-            >
-              0
-            </button>
-            <button
-              onClick={() => handleNumberClick(",")}
-              className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-            >
-              ,
-            </button>
-            <button
-              onClick={handleEquals}
-              className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-20 flex items-center justify-center"
-            >
-              <span className="text-3xl font-bold text-green-600">=</span>
-            </button>
+              {/* Row 5 */}
+              <button
+                onClick={() => handleNumberClick("0")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900 col-span-2"
+              >
+                0
+              </button>
+              <button
+                onClick={() => handleNumberClick(",")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                ,
+              </button>
+              <button
+                onClick={handleEquals}
+                className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-20 flex items-center justify-center"
+              >
+                <span className="text-3xl font-bold text-green-600">=</span>
+              </button>
 
-            {/* Row 6 - PAY button */}
+              {/* Row 6 - PAY button */}
+              <button
+                onClick={() => {
+                  setPaymentMethods([
+                    { amount: total, payment_method: "Наличные" },
+                  ]);
+                  setIsPaymentModalOpen(true);
+                }}
+                disabled={cartProducts.length === 0}
+                className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-20 flex items-center justify-center disabled:bg-gray-200 disabled:cursor-not-allowed col-span-4"
+              >
+                <span className="text-xl font-bold text-green-600">
+                  PAY - {total.toLocaleString()} сум
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Payment Button */}
+          <div className="p-6 border-t border-gray-200">
             <button
               onClick={() => {
-                /* TODO: Implement payment logic */
+                setPaymentMethods([
+                  { amount: total, payment_method: "Наличные" },
+                ]);
+                setIsPaymentModalOpen(true);
               }}
               disabled={cartProducts.length === 0}
-              className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-20 flex items-center justify-center disabled:bg-gray-200 disabled:cursor-not-allowed col-span-4"
+              className={`w-full py-8 rounded-2xl text-xl font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[80px] ${
+                onCredit
+                  ? "bg-amber-600 text-white hover:bg-amber-700"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
             >
-              <span className="text-xl font-bold text-green-600">
-                PAY - {total.toLocaleString()} сум
-              </span>
+              {cartProducts.length === 0
+                ? "Добавьте товары"
+                : onCredit
+                  ? `В долг ${total.toLocaleString()} сум`
+                  : `Оплатить ${total.toLocaleString()} сум`}
             </button>
           </div>
         </div>
-
-        {/* Payment Button */}
-        <div className="p-6 border-t border-gray-200">
-          <button
-            disabled={cartProducts.length === 0}
-            className={`w-full py-8 rounded-2xl text-xl font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[80px] ${
-              onCredit
-                ? "bg-amber-600 text-white hover:bg-amber-700"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-            }`}
-          >
-            {cartProducts.length === 0
-              ? "Добавьте товары"
-              : onCredit
-                ? `В долг ${total.toLocaleString()} сум`
-                : `Оплатить ${total.toLocaleString()} сум`}
-          </button>
-        </div>
-      </div>
       )}
 
       {/* Product Search Modal */}
@@ -1954,7 +2204,10 @@ const POSInterface = () => {
       </WideDialog>
 
       {/* Quantity Selection Modal */}
-      <WideDialog open={isQuantityModalOpen} onOpenChange={setIsQuantityModalOpen}>
+      <WideDialog
+        open={isQuantityModalOpen}
+        onOpenChange={setIsQuantityModalOpen}
+      >
         <WideDialogContent className="max-w-md p-0">
           <WideDialogHeader className="p-6 pb-4">
             <WideDialogTitle className="text-xl font-bold text-center">
@@ -1972,13 +2225,15 @@ const POSInterface = () => {
               <>
                 {/* Preset Quantity Cards */}
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  {[5, 10, 15, 20, 25,30].map((qty) => (
+                  {[5, 10, 15, 20, 25, 30].map((qty) => (
                     <button
                       key={qty}
                       onClick={() => handleQuantitySelect(qty)}
                       className="bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 hover:border-blue-400 rounded-2xl p-6 transition-all duration-200 transform hover:scale-105 active:scale-95 min-h-[100px] touch-manipulation"
                     >
-                      <div className="text-3xl font-bold text-blue-700 mb-2">{qty}</div>
+                      <div className="text-3xl font-bold text-blue-700 mb-2">
+                        {qty}
+                      </div>
                       <div className="text-sm text-blue-600">штук</div>
                     </button>
                   ))}
@@ -1988,7 +2243,9 @@ const POSInterface = () => {
                 {selectedProductForQuantity && (
                   <div className="bg-gray-50 rounded-xl p-4 mb-4">
                     <div className="text-center">
-                      <div className="text-sm text-gray-600 mb-1">Текущее количество</div>
+                      <div className="text-sm text-gray-600 mb-1">
+                        Текущее количество
+                      </div>
                       <div className="text-2xl font-bold text-gray-900">
                         {selectedProductForQuantity.quantity.toFixed(0)} штук
                       </div>
@@ -2041,7 +2298,10 @@ const POSInterface = () => {
                   </button>
                   <button
                     onClick={handleManualQuantitySubmit}
-                    disabled={!manualQuantityInput || parseFloat(manualQuantityInput) <= 0}
+                    disabled={
+                      !manualQuantityInput ||
+                      parseFloat(manualQuantityInput) <= 0
+                    }
                     className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
                   >
                     Применить
@@ -2049,6 +2309,270 @@ const POSInterface = () => {
                 </div>
               </>
             )}
+          </div>
+        </WideDialogContent>
+      </WideDialog>
+
+      {/* Payment Modal */}
+      <WideDialog
+        open={isPaymentModalOpen}
+        onOpenChange={setIsPaymentModalOpen}
+      >
+        <WideDialogContent className="max-w-2xl">
+          <WideDialogHeader>
+            <WideDialogTitle>
+              Оплата - {total.toLocaleString()} сум
+            </WideDialogTitle>
+          </WideDialogHeader>
+          <div className="space-y-6 p-6">
+            {/* Payment Methods */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Способы оплаты</h3>
+              {paymentMethods.map((payment, index) => (
+                <div key={index} className="flex gap-4 items-end">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium mb-2">
+                      Способ оплаты
+                    </label>
+                    <Select
+                      value={payment.payment_method}
+                      onValueChange={(value) => {
+                        const updated = [...paymentMethods];
+                        updated[index].payment_method = value;
+                        setPaymentMethods(updated);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Наличные">Наличные</SelectItem>
+                        <SelectItem value="Click">Click</SelectItem>
+                        <SelectItem value="Карта">Карта</SelectItem>
+                        <SelectItem value="Перечисление">
+                          Перечисление
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium mb-2">
+                      Сумма
+                    </label>
+                    <Input
+                      type="number"
+                      value={payment.amount || ""}
+                      onChange={(e) => {
+                        const updated = [...paymentMethods];
+                        updated[index].amount = Number(e.target.value);
+                        setPaymentMethods(updated);
+                      }}
+                      placeholder="0"
+                    />
+                  </div>
+                  {paymentMethods.length > 1 && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        setPaymentMethods((prev) =>
+                          prev.filter((_, i) => i !== index),
+                        );
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const totalPaid = paymentMethods.reduce(
+                    (sum, p) => sum + (p.amount || 0),
+                    0,
+                  );
+                  const remaining = total - totalPaid;
+                  if (remaining > 0) {
+                    setPaymentMethods((prev) => [
+                      ...prev,
+                      { amount: remaining, payment_method: "Наличные" },
+                    ]);
+                  }
+                }}
+                className="w-full"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Добавить способ оплаты
+              </Button>
+            </div>
+
+            {/* Payment Summary */}
+            <div className="border-t pt-4">
+              <div className="flex justify-between text-lg font-semibold">
+                <span>Итого к оплате:</span>
+                <span>{total.toLocaleString()} сум</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Оплачено:</span>
+                <span>
+                  {paymentMethods
+                    .reduce((sum, p) => sum + (p.amount || 0), 0)
+                    .toLocaleString()}{" "}
+                  сум
+                </span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Остаток:</span>
+                <span>
+                  {Math.max(
+                    0,
+                    total -
+                      paymentMethods.reduce(
+                        (sum, p) => sum + (p.amount || 0),
+                        0,
+                      ),
+                  ).toLocaleString()}{" "}
+                  сум
+                </span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-4 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsPaymentModalOpen(false)}
+                className="flex-1"
+              >
+                Отмена
+              </Button>
+              <Button
+                onClick={async () => {
+                  // Validate payment total
+                  const totalPayment = paymentMethods.reduce(
+                    (sum, p) => sum + (p.amount || 0),
+                    0,
+                  );
+                  if (!onCredit && totalPayment < total) {
+                    alert("Сумма оплаты меньше общей суммы!");
+                    return;
+                  }
+
+                  try {
+                    setIsProcessingSale(true);
+
+                    // Create your custom payload structure as specified
+                    const customSalePayload: SalePayload = {
+                      store: currentUser?.store_read?.id || 1,
+                      sold_by: selectedSeller || currentUser?.id || 5,
+                      on_credit: onCredit,
+                      sale_items: cartProducts.map((item) => ({
+                        product_write: item.productId,
+                        quantity: item.quantity,
+                        selling_unit:
+                          item.selectedUnit?.id || item.product.base_unit || 1,
+                        price_per_unit: item.price,
+                      })),
+                      sale_payments: paymentMethods.filter((p) => p.amount > 0),
+                      ...(onCredit &&
+                        selectedClient && {
+                          sale_debt: {
+                            client: selectedClient,
+                            deposit: totalPayment,
+                            due_date: new Date(
+                              Date.now() + 30 * 24 * 60 * 60 * 1000,
+                            )
+                              .toISOString()
+                              .split("T")[0],
+                          },
+                        }),
+                    };
+
+                    // Also create API-compatible payload for backend
+                    const saleApiPayload: Sale = {
+                      store: currentUser?.store_read?.id || 1,
+                      ...(selectedSeller && { sold_by: selectedSeller }),
+                      payment_method:
+                        paymentMethods[0]?.payment_method || "Наличные",
+                      sale_items: cartProducts.map((item) => ({
+                        product_write: item.productId,
+                        selling_unit: item.selectedUnit.id,
+                        quantity: item.quantity.toString(),
+                        price_per_unit: item.total.toString(),
+                      })),
+                      on_credit: onCredit,
+                      total_amount: total.toString(),
+                      sale_payments: paymentMethods
+                        .filter((p) => p.amount > 0)
+                        .map((payment) => ({
+                          payment_method: payment.payment_method,
+                          amount: payment.amount.toString(),
+                        })),
+                      ...(onCredit &&
+                        selectedClient && {
+                          sale_debt: {
+                            client: selectedClient,
+                            deposit: totalPayment.toString(),
+                            due_date: new Date(
+                              Date.now() + 30 * 24 * 60 * 60 * 1000,
+                            )
+                              .toISOString()
+                              .split("T")[0],
+                          },
+                        }),
+                    };
+
+                    console.log(
+                      "Custom Sale Payload:",
+                      JSON.stringify(customSalePayload, null, 2),
+                    );
+                    console.log(
+                      "API Sale Payload:",
+                      JSON.stringify(saleApiPayload, null, 2),
+                    );
+
+                    // Send to API using the API-compatible payload
+                    await createSaleMutation.mutateAsync(saleApiPayload);
+
+                    // Clear cart and close modal
+                    setCartProducts([]);
+                    setIsPaymentModalOpen(false);
+                    setPaymentMethods([
+                      { amount: 0, payment_method: "Наличные" },
+                    ]);
+
+                    // Reset other states
+                    setSelectedClient(null);
+                    setSelectedSeller(null);
+                    setOnCredit(false);
+                    setFocusedProductIndex(-1);
+
+                    // Show success message
+                    alert("Продажа успешно оформлена!");
+                  } catch (error) {
+                    console.error("Error creating sale:", error);
+                    alert("Ошибка при оформлении продажи. Попробуйте еще раз.");
+                  } finally {
+                    setIsProcessingSale(false);
+                  }
+                }}
+                disabled={
+                  isProcessingSale ||
+                  (paymentMethods.reduce((sum, p) => sum + (p.amount || 0), 0) <
+                    total &&
+                    !onCredit)
+                }
+                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
+              >
+                {isProcessingSale
+                  ? "Обработка..."
+                  : onCredit
+                    ? "Оформить в долг"
+                    : "Оплатить"}
+              </Button>
+            </div>
           </div>
         </WideDialogContent>
       </WideDialog>

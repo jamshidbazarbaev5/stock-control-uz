@@ -284,7 +284,9 @@
     "saving": "Сохранение..."
   },
   "navigation": {
+    "writeoff":"Списание",
     "currencies": "Валюта",
+    "pos":"Пос",
     "shifts": "Смены",
     "revaluations":"Переоценка",
     "check": "Чек",
@@ -368,6 +370,7 @@
   },
 
   "forms": {
+    "reason":"Причина",
     "currency_name": "Название валюты",
     "short_name": "Короткое название",
     "attributes": "Атрибуты",

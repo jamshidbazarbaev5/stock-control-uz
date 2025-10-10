@@ -23,7 +23,15 @@ import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLogout } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import api from "../api/api";
 import { ThemeToggle } from "../components/ThemeToggle";
@@ -65,8 +73,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError("");
       setSuccess(false);
-      api.get("items/currency/")
-        .then(res => {
+      api
+        .get("items/currency/")
+        .then((res) => {
           const results = res.data.results || [];
           if (Array.isArray(results) && results.length > 0) {
             // Only keep the integer part of the currency rate
@@ -92,9 +101,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     setSuccess(false);
     try {
       if (currencyId) {
-        await api.patch(`items/currency/${currencyId}/`, { currency_rate: Number(currencyRate) });
+        await api.patch(`items/currency/${currencyId}/`, {
+          currency_rate: Number(currencyRate),
+        });
       } else {
-        await api.post("items/currency/", { currency_rate: Number(currencyRate) });
+        await api.post("items/currency/", {
+          currency_rate: Number(currencyRate),
+        });
       }
       setSuccess(true);
       setTimeout(() => setCurrencyModalOpen(false), 1000);
@@ -146,11 +159,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         label: t("navigation.pos"),
         href: "/pos",
       },
-      {
-        icon: ListView,
-        label: t("navigation.attributes"),
-        href: "/attributes",
-      },
+
       {
         icon: Package,
         label: t("navigation.revaluations"),
@@ -161,17 +170,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         label: t("navigation.transfers"),
         href: "/transfers",
       },
-       {
-        icon: ArrowLeftRight,
-        label: t("navigation.check"),
-        href: "/receipt-designer",
-      },
-       {
+
+      {
         icon: ArrowLeftRight,
         label: t("navigation.smena"),
         href: "/shifts",
       },
-      
+
       { icon: Package, label: t("navigation.stocks"), href: "/stock" },
       {
         icon: Package,
@@ -192,10 +197,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         href: "/income",
       },
       {
-            icon: ArrowLeftRight,
-            label: t("navigation.recyclings"),
-            href: "/recyclings",
-          },
+        icon: ArrowLeftRight,
+        label: t("navigation.recyclings"),
+        href: "/recyclings",
+      },
     ];
 
     // Add money to budget - only for superuser
@@ -239,6 +244,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             href: "/stores",
           },
           {
+            icon: ArrowLeftRight,
+            label: t("navigation.check"),
+            href: "/receipt-designer",
+          },
+          {
             icon: ListView,
             label: t("navigation.categories"),
             href: "/categories",
@@ -258,7 +268,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             label: t("navigation.products"),
             href: "/products",
           },
-          
+
           {
             icon: ListView,
             label: t("navigation.suppliers"),
@@ -281,6 +291,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             href: "/sponsors",
           },
           {
+            icon: ListView,
+            label: t("navigation.attributes"),
+            href: "/attributes",
+          },
+          {
             icon: Ruler,
             label: t("navigation.labelSizes"),
             href: "/label-sizes",
@@ -290,15 +305,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             label: t("navigation.cassas"),
             href: "/cassas",
           },
-           
-
-         
         ],
       });
     }
 
     return baseItems;
-
   })();
 
   return (
@@ -328,12 +339,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             {dropdownOpen && (
               <>
                 {/* Backdrop */}
-                <div 
+                <div
                   className="fixed inset-0 z-[998]"
                   onClick={() => setDropdownOpen(false)}
                 />
                 {/* Dropdown Content */}
-                <div 
+                <div
                   className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl border py-3 z-[999]"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -383,7 +394,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             navigate("/profile");
                           }}
                           className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors cursor-pointer"
-                          style={{ pointerEvents: 'auto' }}
+                          style={{ pointerEvents: "auto" }}
                         >
                           <User size={16} className="text-gray-500" />
                           {t("common.profile")}
@@ -400,7 +411,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                             handleLogout();
                           }}
                           className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors cursor-pointer"
-                          style={{ pointerEvents: 'auto' }}
+                          style={{ pointerEvents: "auto" }}
                         >
                           <LogOut size={16} className="text-red-500" />
                           {t("common.logout")}
@@ -479,7 +490,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       onClick={() => {
                         if (item.id) {
                           setActiveSubmenu(
-                            activeSubmenu === item.id ? null : item.id
+                            activeSubmenu === item.id ? null : item.id,
                           );
                         }
                       }}
@@ -592,7 +603,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 min-w-0 transition-all duration-300 overflow-x-auto ">
           <div className="h-full flex flex-col min-w-[320px]">
             <div className=" px-4 md:px-6 py-4 flex items-center justify-end gap-4 sticky top-0 z-30 border-b border-border">
-              {currentUser?.is_superuser && ( <Dialog open={currencyModalOpen} onOpenChange={setCurrencyModalOpen}>
+              {currentUser?.is_superuser && (
+                <Dialog
+                  open={currencyModalOpen}
+                  onOpenChange={setCurrencyModalOpen}
+                >
                   <DialogTrigger asChild>
                     <button
                       className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition mr-2"
@@ -603,18 +618,24 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>{t('currency.set')}</DialogTitle>
+                      <DialogTitle>{t("currency.set")}</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleCurrencySubmit} className="space-y-4">
                       <Input
                         type="number"
                         placeholder="12500"
                         value={currencyRate}
-                        onChange={e => setCurrencyRate(e.target.value)}
+                        onChange={(e) => setCurrencyRate(e.target.value)}
                         required
                       />
-                      {error && <div className="text-red-500 text-sm">{error}</div>}
-                      {success && <div className="text-green-600 text-sm">{t("Success!")}</div>}
+                      {error && (
+                        <div className="text-red-500 text-sm">{error}</div>
+                      )}
+                      {success && (
+                        <div className="text-green-600 text-sm">
+                          {t("Success!")}
+                        </div>
+                      )}
                       <DialogFooter>
                         <button
                           type="submit"
@@ -624,15 +645,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           {loading ? t("common.saving") : t("common.save")}
                         </button>
                         <DialogClose asChild>
-                          <button type="button" className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+                          <button
+                            type="button"
+                            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                          >
                             {t("common.cancel")}
                           </button>
                         </DialogClose>
                       </DialogFooter>
                     </form>
                   </DialogContent>
-                </Dialog>)}
-             
+                </Dialog>
+              )}
+
               <div className="hidden md:flex items-center gap-2">
                 <ThemeToggle />
                 <LanguageSwitcher />
@@ -659,7 +684,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 </button>
 
                 {dropdownOpen && (
-                  <div 
+                  <div
                     className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border py-3 z-[9999]"
                     style={{ zIndex: 9999 }}
                   >
@@ -719,7 +744,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
 
             <div className="flex-1 p-4 md:p-6 overflow-y-auto">
-              <div className="max-w-[1920px] mx-auto " style={{background:'l'}} >{children}</div>
+              <div
+                className="max-w-[1920px] mx-auto "
+                style={{ background: "l" }}
+              >
+                {children}
+              </div>
             </div>
           </div>
         </main>

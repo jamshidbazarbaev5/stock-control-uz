@@ -77,7 +77,7 @@ export default function CreateProduct() {
     fetchAttributes();
   }, [selectedCategory, categories]);
 
-  // Function to populate form with found product data
+
   const populateFormWithProduct = (product: Product) => {
     // Set basic fields
     form.setValue('product_name', product.product_name);

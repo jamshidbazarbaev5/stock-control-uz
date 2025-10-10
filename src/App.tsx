@@ -94,15 +94,15 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
 
             {/* Protected routes wrapped in Layout */}
-              <Route
-                  element={
-                      <ProtectedRoute>
-                          <Layout>
-                              <Outlet />
-                          </Layout>
-                      </ProtectedRoute>
-                  }
-              >
+            <Route
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Outlet />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            >
               {/* Routes accessible only by Администратор */}
               <Route
                 path="/create-user"
@@ -619,46 +619,46 @@ function App() {
                   </PrivateRoute>
                 }
               />
-                  <Route
-                      path="/cassas"
-                      element={
-                          <PrivateRoute allowedRoles={["Администратор"]}>
-                              <CassasPage />
-                          </PrivateRoute>
-                      }
-                  />
-                  <Route
-                      path="/create-cassa"
-                      element={
-                          <PrivateRoute allowedRoles={["Администратор"]}>
-                              <CreateCassaPage />
-                          </PrivateRoute>
-                      }
-                  />
-                  <Route
-                      path="/shifts"
-                      element={
-                          <PrivateRoute allowedRoles={["Администратор"]}>
-                              <ShiftsPage />
-                          </PrivateRoute>
-                      }
-                  />
-                  <Route
-                      path="/shifts/:id/edit"
-                      element={
-                          <PrivateRoute allowedRoles={["Администратор"]}>
-                              <EditShiftPage />
-                          </PrivateRoute>
-                      }
-                  />
-                  <Route
-                      path="/close-shift/:shiftId"
-                      element={
-                          <PrivateRoute allowedRoles={["Администратор"]}>
-                              <CloseShiftPage />
-                          </PrivateRoute>
-                      }
-                  />
+              <Route
+                path="/cassas"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <CassasPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/create-cassa"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <CreateCassaPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/shifts"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <ShiftsPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/shifts/:id/edit"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <EditShiftPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/close-shift/:shiftId"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <CloseShiftPage />
+                  </PrivateRoute>
+                }
+              />
               {/* <Route
                 path="/pos-create"
                 element={

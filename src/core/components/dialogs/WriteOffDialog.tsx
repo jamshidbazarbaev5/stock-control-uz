@@ -27,13 +27,17 @@ export function WriteOffDialog({ open, onClose, selectedStocks, stocksData }: Wr
   const stocks = stocksData?.results || [];
   interface StockWithRefs {
     id: number;
+    // New nested object structure
+    product?: { id: number; product_name: string; base_unit: number };
+    store?: { id: number; name: string };
+    // Legacy structure for backward compatibility
     product_read?: { product_name: string };
     store_read?: { id: number; name: string };
-    quantity: number;
+    quantity: string | number;
   }
 
   const selectedStockObjects = stocks.filter((stock: StockWithRefs) => selectedStocks.includes(stock.id));
-  const selectedStore = selectedStockObjects[0]?.store_read?.id;
+  const selectedStore = selectedStockObjects[0]?.store?.id || selectedStockObjects[0]?.store_read?.id;
 
   const handleSubmit = async () => {
     try {
@@ -100,22 +104,28 @@ export function WriteOffDialog({ open, onClose, selectedStocks, stocksData }: Wr
           <div className="border rounded p-4">
             <Label className="mb-2 block">{t('table.products')}</Label>
             <div className="space-y-2 max-h-60 overflow-y-auto">
-              {selectedStockObjects.map((stock: StockWithRefs) => (
-                <div key={stock.id} className="flex items-center gap-4">
-                  <Label htmlFor={`stock-${stock.id}`} className="flex-grow">
-                    {stock.product_read?.product_name} ({stock.store_read?.name})
-                  </Label>
-                  <Input
-                    type="number"
-                    value={quantities[stock.id!] || ''}
-                    onChange={e => setQuantities(prev => ({ ...prev, [stock.id!]: e.target.value }))}
-                    placeholder={t('forms.quantity')}
-                    className="w-24"
-                    min="0"
-                    max={stock.quantity}
-                  />
-                </div>
-              ))}
+              {selectedStockObjects.map((stock: StockWithRefs) => {
+                const productName = stock.product?.product_name || stock.product_read?.product_name || 'Unknown Product';
+                const storeName = stock.store?.name || stock.store_read?.name || 'Unknown Store';
+                const maxQuantity = typeof stock.quantity === 'string' ? parseFloat(stock.quantity) : stock.quantity;
+                
+                return (
+                  <div key={stock.id} className="flex items-center gap-4">
+                    <Label htmlFor={`stock-${stock.id}`} className="flex-grow">
+                      {productName} ({storeName})
+                    </Label>
+                    <Input
+                      type="number"
+                      value={quantities[stock.id!] || ''}
+                      onChange={e => setQuantities(prev => ({ ...prev, [stock.id!]: e.target.value }))}
+                      placeholder={t('forms.quantity')}
+                      className="w-24"
+                      min="0"
+                      max={maxQuantity}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

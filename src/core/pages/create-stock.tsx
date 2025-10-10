@@ -172,7 +172,7 @@ export default function CreateStock() {
     sendInitialEmptyRequest();
   }, [sendInitialEmptyRequest]);
 
-  // Debounced calculation function
+ // Debounced calculation function
   const debouncedCalculate = useCallback(
     async (formData: FormValues) => {
       if (!formData.store || !formData.product || !formData.currency || 
@@ -192,31 +192,21 @@ export default function CreateStock() {
           supplier: Number(formData.supplier),
           date_of_arrived: formData.date_of_arrived,
           
-          // User input calculation fields - these should always come from form data, not cached values
+          // User input calculation fields
           ...(formData.purchase_unit_quantity && { purchase_unit_quantity: Number(formData.purchase_unit_quantity) }),
           ...(formData.total_price_in_currency && { total_price_in_currency: Number(formData.total_price_in_currency) }),
           ...(formData.price_per_unit_currency && { price_per_unit_currency: Number(formData.price_per_unit_currency) }),
           ...(formData.price_per_unit_uz && { price_per_unit_uz: Number(formData.price_per_unit_uz) }),
           
-          // Include only non-user-input dynamic calculated fields from previous calculations
-          // Exclude user input fields to prevent overriding form values
+          // Include non-user-input dynamic calculated fields
           ...Object.entries(dynamicFields).reduce((acc, [fieldName, fieldData]) => {
-            // Skip user input fields - they should come from form data above
-            if (['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency', 'price_per_unit_uz'].includes(fieldName)) {
-              return acc;
-            }
-            
-            if (fieldData.value !== null && fieldData.value !== undefined) {
-              // Handle special cases where backend expects different format
-              if (fieldName === 'exchange_rate' && typeof fieldData.value === 'object' && (fieldData.value as any).id) {
-                acc[fieldName] = (fieldData.value as any).id;
-              } else if (fieldName === 'exchange_rate' && typeof fieldData.value === 'object' && (fieldData.value as any).rate) {
-                acc[fieldName] = (fieldData.value as any).rate;
-              } else if (typeof fieldData.value === 'object' && (fieldData.value as any).id !== undefined) {
-                acc[fieldName] = (fieldData.value as any).id;
-              } else {
-                // For primitive values, use as-is
-                acc[fieldName] = fieldData.value;
+            if (!['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency', 'price_per_unit_uz'].includes(fieldName)) {
+              if (fieldData.value !== null && fieldData.value !== undefined) {
+                if (typeof fieldData.value === 'object' && (fieldData.value as any).id !== undefined) {
+                  acc[fieldName] = (fieldData.value as any).id;
+                } else {
+                  acc[fieldName] = fieldData.value;
+                }
               }
             }
             return acc;
@@ -227,31 +217,24 @@ export default function CreateStock() {
         const response = await calculateStock(calculationRequest);
         setDynamicFields(response.dynamic_fields);
 
-        // Update form with calculated values - handle object values properly
-        // BUT exclude user input fields to prevent feedback loops
+        // **FIXED LOGIC STARTS HERE**
+        // Update form with ALL calculated values from the response
         Object.entries(response.dynamic_fields).forEach(([fieldName, fieldData]) => {
-          // Skip user input fields to prevent overriding user's typing
-          if (['purchase_unit_quantity', 'total_price_in_currency', 'price_per_unit_currency', 'price_per_unit_uz'].includes(fieldName)) {
-            return;
-          }
-          
           if (fieldData.value !== null && fieldData.value !== undefined) {
-            // Only set primitive values in the form, skip objects
-            if (typeof fieldData.value !== 'object') {
-              form.setValue(fieldName as keyof FormValues, fieldData.value, { shouldValidate: false });
-            }
+            // Use the existing formatFieldValue logic to get the correct display value
+            const displayValue = formatFieldValue(fieldData.value);
+            form.setValue(fieldName as keyof FormValues, displayValue, { shouldValidate: false });
           }
         });
+        // **FIXED LOGIC ENDS HERE**
 
       } catch (error) {
-        console.error('Calculation error:', error);
-        // Don't show error toast for now since backend endpoint might not be implemented yet
         console.error('Calculation error:', error);
       } finally {
         setIsCalculating(false);
       }
     },
-    [form, dynamicFields]
+    [form, dynamicFields] // Removed formatFieldValue from dependencies as it's defined outside
   );
 
   // State to track previous values for change detection
