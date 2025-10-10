@@ -40,6 +40,7 @@ export interface Product {
   };
   min_price?: number;
   selling_price?: number;
+  quantity?: number | string;
   // For form submission (create/update)
   attribute_values?: Array<{
     attribute_id: number;
@@ -65,8 +66,6 @@ export interface Product {
     factor: number;
     is_base: boolean;
   }>;
-
-
 }
 
 // API endpoints

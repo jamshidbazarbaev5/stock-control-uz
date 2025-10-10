@@ -295,6 +295,16 @@ const POSInterface = () => {
   const handleProductDirectAdd = useCallback(
     (product: Product) => {
       if (product.product_name && product.id) {
+        // Check if product has quantity available
+        const availableQuantity = product.quantity
+          ? parseFloat(String(product.quantity))
+          : 0;
+
+        if (availableQuantity <= 0) {
+          alert(`Товар "${product.product_name}" недоступен (количество: 0)`);
+          return;
+        }
+
         // Get default unit (base unit or first available)
         const defaultUnit = product.available_units?.find(
           (unit) => unit.is_base,
@@ -311,17 +321,6 @@ const POSInterface = () => {
           : product.min_price
             ? parseFloat(String(product.min_price))
             : 10000;
-        const newProduct: ProductInCart = {
-          id: Date.now(), // Unique ID for the cart item
-          productId: product.id,
-          name: product.product_name,
-          price: price,
-          quantity: 1,
-          total: price,
-          product: product,
-          barcode: product.barcode,
-          selectedUnit: defaultUnit || null,
-        };
 
         // Check if product already exists in cart
         const existingProductIndex = cartProducts.findIndex(
@@ -329,14 +328,25 @@ const POSInterface = () => {
         );
 
         if (existingProductIndex >= 0) {
-          // Update quantity of existing product
-          const updatedProducts = [...cartProducts];
-          updatedProducts[existingProductIndex].quantity += 1;
-          updatedProducts[existingProductIndex].total =
-            updatedProducts[existingProductIndex].quantity * price;
-          setCartProducts(updatedProducts);
+          // Product already in cart - open quantity modal instead of auto-incrementing
+          const existingProduct = cartProducts[existingProductIndex];
+          setSelectedProductForQuantity(existingProduct);
+          setIsQuantityModalOpen(true);
+          setIsManualQuantityMode(false);
+          setManualQuantityInput("");
         } else {
-          // Add new product to cart
+          // Add new product to cart with quantity 1
+          const newProduct: ProductInCart = {
+            id: Date.now(), // Unique ID for the cart item
+            productId: product.id,
+            name: product.product_name,
+            price: price,
+            quantity: 1,
+            total: price,
+            product: product,
+            barcode: product.barcode,
+            selectedUnit: defaultUnit || null,
+          };
           setCartProducts((prev) => [...prev, newProduct]);
         }
       }
@@ -813,11 +823,26 @@ const POSInterface = () => {
       }
 
       setCartProducts((prev) =>
-        prev.map((p) =>
-          p.id === productId
-            ? { ...p, quantity: newQuantity, total: p.price * newQuantity }
-            : p,
-        ),
+        prev.map((p) => {
+          if (p.id === productId) {
+            // Check available quantity
+            const availableQuantity = p.product.quantity
+              ? parseFloat(String(p.product.quantity))
+              : 0;
+            if (newQuantity > availableQuantity) {
+              alert(
+                `Недостаточно товара "${p.name}". Доступно: ${availableQuantity}`,
+              );
+              return p; // Don't update if exceeds available quantity
+            }
+            return {
+              ...p,
+              quantity: newQuantity,
+              total: p.price * newQuantity,
+            };
+          }
+          return p;
+        }),
       );
     },
     [],
@@ -1463,6 +1488,18 @@ const POSInterface = () => {
                                   Штрихкод: {product.barcode}
                                 </div>
                               )}
+                              {product.product.ikpu && (
+                                <div className="text-xs text-gray-500">
+                                  ИКПУ: {product.product.ikpu}
+                                </div>
+                              )}
+                              <div className="text-xs text-green-600 font-medium">
+                                В наличии:{" "}
+                                {parseFloat(
+                                  String(product.product.quantity),
+                                ).toFixed(2)}{" "}
+                                {product.selectedUnit?.short_name || "шт"}
+                              </div>
                             </div>
                           </td>
                           <td className="p-4 text-right text-gray-900">
@@ -1565,7 +1602,7 @@ const POSInterface = () => {
                                     : "border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50"
                                 } focus:outline-none focus:ring-2 focus:ring-blue-200`}
                               >
-                                {product.quantity.toFixed(0)}
+                                {product.quantity.toFixed(2)}
                               </button>
                               <button
                                 onClick={() =>
@@ -1574,11 +1611,15 @@ const POSInterface = () => {
                                     product.quantity + 1,
                                   )
                                 }
+                                disabled={
+                                  product.quantity >=
+                                  parseFloat(String(product.product.quantity))
+                                }
                                 className={`w-10 h-10 rounded-full ${
                                   index === focusedProductIndex
                                     ? "bg-blue-200 hover:bg-blue-300 text-blue-800"
                                     : "bg-gray-200 hover:bg-gray-300"
-                                } flex items-center justify-center text-sm font-bold transition-colors`}
+                                } ${product.quantity >= parseFloat(String(product.product.quantity)) ? "opacity-50 cursor-not-allowed" : ""} flex items-center justify-center text-sm font-bold transition-colors`}
                               >
                                 +
                               </button>
@@ -1930,6 +1971,9 @@ const POSInterface = () => {
                       Штрихкод
                     </th>
                     <th className="text-right p-4 font-semibold text-gray-700">
+                      Количество
+                    </th>
+                    <th className="text-right p-4 font-semibold text-gray-700">
                       Цена
                     </th>
                     <th className="text-center p-4 font-semibold text-gray-700 w-24">
@@ -1940,7 +1984,7 @@ const POSInterface = () => {
                 <tbody>
                   {loadingProducts ? (
                     <tr>
-                      <td colSpan={7} className="text-center p-8 text-gray-500">
+                      <td colSpan={8} className="text-center p-8 text-gray-500">
                         <div className="flex items-center justify-center space-x-2">
                           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                           <span>Загрузка товаров...</span>
@@ -1949,7 +1993,7 @@ const POSInterface = () => {
                     </tr>
                   ) : filteredProducts.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="text-center p-8 text-gray-500">
+                      <td colSpan={8} className="text-center p-8 text-gray-500">
                         {searchTerm
                           ? "Товары не найдены"
                           : "Начните ввод для поиска товаров"}
@@ -1961,7 +2005,7 @@ const POSInterface = () => {
                         key={product.id}
                         className={`${
                           index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                        } ${selectedProducts.has(product.id!) ? "bg-blue-100" : ""} hover:bg-blue-50 transition-colors border-b border-gray-100`}
+                        } ${selectedProducts.has(product.id!) ? "bg-blue-100" : ""} ${parseFloat(String(product.quantity || 0)) <= 0 ? "opacity-50" : ""} hover:bg-blue-50 transition-colors border-b border-gray-100`}
                       >
                         <td className="p-4 text-center">
                           <input
@@ -1986,21 +2030,43 @@ const POSInterface = () => {
                               {product.product_name || "N/A"}
                             </div>
                             <div className="text-xs text-gray-500 mt-1">
-                              {product.has_barcode && product.barcode && (
-                                <span>Штрихкод: {product.barcode}</span>
+                              {product.barcode && (
+                                <span>Штрихкод: {product.barcode} </span>
+                              )}
+                              {product.ikpu && (
+                                <span className="ml-2">
+                                  ИКПУ: {product.ikpu}
+                                </span>
                               )}
                             </div>
                           </div>
                         </td>
                         <td className="p-4 text-center text-gray-600 font-mono text-sm">
-                          {product.id?.toString().padStart(10, "0") || "N/A"}
+                          {product.ikpu || "—"}
                         </td>
                         <td className="p-4 text-center text-gray-600 font-mono text-sm">
                           {product.barcode || "—"}
                         </td>
                         <td className="p-4 text-right">
+                          <div
+                            className={`font-semibold ${parseFloat(String(product.quantity || 0)) <= 0 ? "text-red-500" : "text-gray-900"}`}
+                          >
+                            {parseFloat(
+                              String(product.quantity || 0),
+                            ).toLocaleString()}
+                          </div>
+                        </td>
+                        <td className="p-4 text-right">
                           <div className="text-gray-900 font-semibold">
-                            {"10,000"}
+                            {product.selling_price
+                              ? parseFloat(
+                                  String(product.selling_price),
+                                ).toLocaleString()
+                              : product.min_price
+                                ? parseFloat(
+                                    String(product.min_price),
+                                  ).toLocaleString()
+                                : "—"}
                           </div>
                         </td>
                         <td className="p-4 text-center">
@@ -2214,9 +2280,28 @@ const POSInterface = () => {
               Выберите количество
             </WideDialogTitle>
             {selectedProductForQuantity && (
-              <p className="text-sm text-gray-600 text-center mt-2">
-                {selectedProductForQuantity.name}
-              </p>
+              <div className="text-center mt-2">
+                <p className="text-sm text-gray-600">
+                  {selectedProductForQuantity.name}
+                </p>
+                <p className="text-xs text-green-600 font-medium mt-1">
+                  В наличии:{" "}
+                  {parseFloat(
+                    String(selectedProductForQuantity.product.quantity),
+                  ).toFixed(2)}{" "}
+                  {selectedProductForQuantity.selectedUnit?.short_name || "шт"}
+                </p>
+                {selectedProductForQuantity.product.barcode && (
+                  <p className="text-xs text-gray-500">
+                    Штрихкод: {selectedProductForQuantity.product.barcode}
+                  </p>
+                )}
+                {selectedProductForQuantity.product.ikpu && (
+                  <p className="text-xs text-gray-500">
+                    ИКПУ: {selectedProductForQuantity.product.ikpu}
+                  </p>
+                )}
+              </div>
             )}
           </WideDialogHeader>
 
@@ -2225,18 +2310,44 @@ const POSInterface = () => {
               <>
                 {/* Preset Quantity Cards */}
                 <div className="grid grid-cols-2 gap-4 mb-6">
-                  {[5, 10, 15, 20, 25, 30].map((qty) => (
-                    <button
-                      key={qty}
-                      onClick={() => handleQuantitySelect(qty)}
-                      className="bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 hover:border-blue-400 rounded-2xl p-6 transition-all duration-200 transform hover:scale-105 active:scale-95 min-h-[100px] touch-manipulation"
-                    >
-                      <div className="text-3xl font-bold text-blue-700 mb-2">
-                        {qty}
-                      </div>
-                      <div className="text-sm text-blue-600">штук</div>
-                    </button>
-                  ))}
+                  {[5, 10, 15, 20, 25, 30].map((qty) => {
+                    const availableQty = selectedProductForQuantity?.product
+                      .quantity
+                      ? parseFloat(
+                          String(selectedProductForQuantity.product.quantity),
+                        )
+                      : 0;
+                    const isDisabled = qty > availableQty;
+                    return (
+                      <button
+                        key={qty}
+                        onClick={() => !isDisabled && handleQuantitySelect(qty)}
+                        disabled={isDisabled}
+                        className={`border-2 rounded-2xl p-6 transition-all duration-200 min-h-[100px] touch-manipulation ${
+                          isDisabled
+                            ? "bg-gray-100 border-gray-300 opacity-40 cursor-not-allowed"
+                            : "bg-blue-50 hover:bg-blue-100 border-blue-200 hover:border-blue-400 transform hover:scale-105 active:scale-95"
+                        }`}
+                      >
+                        <div
+                          className={`text-3xl font-bold mb-2 ${isDisabled ? "text-gray-400" : "text-blue-700"}`}
+                        >
+                          {qty}
+                        </div>
+                        <div
+                          className={`text-sm ${isDisabled ? "text-gray-400" : "text-blue-600"}`}
+                        >
+                          {selectedProductForQuantity?.selectedUnit
+                            ?.short_name || "штук"}
+                        </div>
+                        {isDisabled && (
+                          <div className="text-xs text-red-500 mt-1">
+                            Нет в наличии
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* Current Quantity Display */}
@@ -2247,7 +2358,9 @@ const POSInterface = () => {
                         Текущее количество
                       </div>
                       <div className="text-2xl font-bold text-gray-900">
-                        {selectedProductForQuantity.quantity.toFixed(0)} штук
+                        {selectedProductForQuantity.quantity.toFixed(2)}{" "}
+                        {selectedProductForQuantity.selectedUnit?.short_name ||
+                          "штук"}
                       </div>
                     </div>
                   </div>
@@ -2280,12 +2393,43 @@ const POSInterface = () => {
                     type="number"
                     value={manualQuantityInput}
                     onChange={(e) => setManualQuantityInput(e.target.value)}
-                    className="w-full px-4 py-4 text-2xl text-center border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:outline-none"
+                    className={`w-full px-4 py-4 text-2xl text-center border-2 rounded-xl focus:outline-none ${
+                      manualQuantityInput &&
+                      parseFloat(manualQuantityInput) >
+                        parseFloat(
+                          String(
+                            selectedProductForQuantity?.product.quantity || 0,
+                          ),
+                        )
+                        ? "border-red-500 focus:border-red-600"
+                        : "border-gray-300 focus:border-blue-500"
+                    }`}
                     placeholder="0"
                     autoFocus
-                    min="1"
-                    step="1"
+                    min="0.01"
+                    step="0.1"
                   />
+                  {manualQuantityInput &&
+                    parseFloat(manualQuantityInput) >
+                      parseFloat(
+                        String(
+                          selectedProductForQuantity?.product.quantity || 0,
+                        ),
+                      ) && (
+                      <p className="text-red-500 text-sm mt-2 text-center">
+                        Превышает доступное количество
+                      </p>
+                    )}
+                  {selectedProductForQuantity && (
+                    <p className="text-gray-500 text-sm mt-2 text-center">
+                      Доступно:{" "}
+                      {parseFloat(
+                        String(selectedProductForQuantity.product.quantity),
+                      ).toFixed(2)}{" "}
+                      {selectedProductForQuantity.selectedUnit?.short_name ||
+                        "шт"}
+                    </p>
+                  )}
                 </div>
 
                 {/* Manual Input Action Buttons */}
@@ -2300,7 +2444,13 @@ const POSInterface = () => {
                     onClick={handleManualQuantitySubmit}
                     disabled={
                       !manualQuantityInput ||
-                      parseFloat(manualQuantityInput) <= 0
+                      parseFloat(manualQuantityInput) <= 0 ||
+                      parseFloat(manualQuantityInput) >
+                        parseFloat(
+                          String(
+                            selectedProductForQuantity?.product.quantity || 0,
+                          ),
+                        )
                     }
                     className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
                   >
