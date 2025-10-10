@@ -326,16 +326,14 @@ export class ThermalPrinterService {
   ): void {
     this.setBold(true);
     const totalsData = [
-      { label: "Subtotal:", value: this.formatCurrency(data.subtotal) },
-      ...(data.discount > 0
+      ...((data.discount ?? 0) > 0
         ? [
             {
               label: "Discount:",
-              value: `-${this.formatCurrency(data.discount)}`,
+              value: `-${this.formatCurrency(data.discount ?? 0)}`,
             },
           ]
         : []),
-      { label: "Tax:", value: this.formatCurrency(data.tax) },
     ];
 
     totalsData.forEach((total) => {
@@ -709,25 +707,14 @@ export class ThermalPrinterService {
         const printWidth = 32;
 
         // Use the justifyText helper to create each line with perfect alignment.
-        totalsHTML +=
-          this.justifyText(
-            "Subtotal:",
-            this.formatCurrency(data.subtotal),
-            printWidth,
-          ) + "\n";
-
-        if (data.discount > 0) {
+        if ((data.discount ?? 0) > 0) {
           totalsHTML +=
             this.justifyText(
               "Discount:",
-              `-${this.formatCurrency(data.discount)}`,
+              `-${this.formatCurrency(data.discount ?? 0)}`,
               printWidth,
             ) + "\n";
         }
-
-        totalsHTML +=
-          this.justifyText("Tax:", this.formatCurrency(data.tax), printWidth) +
-          "\n";
 
         // Add a separator line for clarity.
         totalsHTML += "=".repeat(printWidth) + "\n";
@@ -796,78 +783,3 @@ export class ThermalPrinterService {
 }
 
 export default new ThermalPrinterService();
-
-// Test function to verify font size handling
-export function testFontSizeHandling() {
-  const testTemplate: any = {
-    id: "test",
-    name: "Test Template",
-    style: {
-      styles: {
-        fontSize: "14px",
-        fontFamily: "Arial, sans-serif",
-      },
-      components: [
-        {
-          id: "test-header",
-          type: "header",
-          order: 0,
-          enabled: true,
-          data: { text: "Test Header" },
-          styles: {
-            fontSize: "18px",
-            fontWeight: "bold",
-            textAlign: "center",
-          },
-        },
-        {
-          id: "test-text",
-          type: "text",
-          order: 1,
-          enabled: true,
-          data: { text: "Test text with custom font size" },
-          styles: {
-            fontSize: "16px",
-            fontWeight: "normal",
-            textAlign: "left",
-          },
-        },
-      ],
-    },
-  };
-
-  const testData: ReceiptPreviewData = {
-    storeName: "Test Store",
-    storeAddress: "123 Test St",
-    storePhone: "555-0123",
-    cashierName: "Test Cashier",
-    receiptNumber: "TEST-001",
-    date: "2024-01-01",
-    time: "12:00",
-    items: [],
-    subtotal: 0,
-    discount: 0,
-    tax: 0,
-    total: 0,
-    paymentMethod: "Cash",
-    change: 0,
-    qrCodeData: "test",
-    footerText: "Thank you!",
-  };
-
-  const service = new ThermalPrinterService();
-  const html = service.generatePrintHTML(testTemplate, testData);
-
-  console.log("Generated HTML with font sizes:", html);
-
-  // Check if font sizes are applied
-  const hasHeaderFontSize = html.includes("font-size: 18px");
-  const hasTextFontSize = html.includes("font-size: 16px");
-  const hasGlobalFontSize = html.includes("font-size: 14px");
-
-  console.log("Header font size applied:", hasHeaderFontSize);
-  console.log("Text font size applied:", hasTextFontSize);
-  console.log("Global font size applied:", hasGlobalFontSize);
-
-  return { hasHeaderFontSize, hasTextFontSize, hasGlobalFontSize };
-}

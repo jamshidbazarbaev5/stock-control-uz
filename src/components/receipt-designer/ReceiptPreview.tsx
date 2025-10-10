@@ -33,6 +33,9 @@ const replaceTemplateVars = (
   text: string,
   data: ReceiptPreviewData,
 ): string => {
+  const paymentsText = data.payments
+    .map((p) => `${p.method}: ${p.amount} UZS`)
+    .join("\n");
   return text
     .replace(/\{\{storeName\}\}/g, data.storeName)
     .replace(/\{\{storeAddress\}\}/g, data.storeAddress)
@@ -41,9 +44,10 @@ const replaceTemplateVars = (
     .replace(/\{\{receiptNumber\}\}/g, data.receiptNumber)
     .replace(/\{\{date\}\}/g, data.date)
     .replace(/\{\{time\}\}/g, data.time)
-    .replace(/\{\{paymentMethod\}\}/g, data.paymentMethod)
-    .replace(/\{\{change\}\}/g, data.change.toFixed(2))
-    .replace(/\{\{footerText\}\}/g, data.footerText);
+    .replace(/\{\{change\}\}/g, data.change.toLocaleString("ru-RU"))
+    .replace(/\{\{footerText\}\}/g, data.footerText)
+    .replace(/\{\{payments\}\}/g, paymentsText)
+    .replace(/\{\{total\}\}/g, data.total.toLocaleString("ru-RU"));
 };
 
 // Props for our new ResizableImage component
@@ -430,35 +434,17 @@ const ComponentRenderer: React.FC<{
       return (
         <div style={style}>
           <div className="space-y-1">
-            <div
-              className="flex justify-between"
-              style={{ fontWeight: "bold" }}
-            >
-              <span style={{ fontWeight: "bold" }}>Subtotal:</span>
-              <span style={{ fontWeight: "bold" }}>
-                ${previewData.subtotal.toFixed(2)}
-              </span>
-            </div>
-            {previewData.discount > 0 && (
+            {(previewData.discount ?? 0) > 0 && (
               <div
                 className="flex justify-between"
                 style={{ fontWeight: "bold" }}
               >
                 <span style={{ fontWeight: "bold" }}>Discount:</span>
                 <span style={{ fontWeight: "bold" }}>
-                  -${previewData.discount.toFixed(2)}
+                  -${(previewData.discount ?? 0).toFixed(2)}
                 </span>
               </div>
             )}
-            <div
-              className="flex justify-between"
-              style={{ fontWeight: "bold" }}
-            >
-              <span style={{ fontWeight: "bold" }}>Tax:</span>
-              <span style={{ fontWeight: "bold" }}>
-                ${previewData.tax.toFixed(2)}
-              </span>
-            </div>
             <div
               className="flex justify-between border-t pt-1"
               style={{ fontWeight: "bold" }}

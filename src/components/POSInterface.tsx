@@ -36,6 +36,10 @@ import { useGetClients } from "@/core/api/client";
 import type { User } from "@/core/api/user";
 import { OpenShiftForm } from "./OpenShiftForm";
 import { useCreateSale, type Sale } from "@/core/api/sale";
+import {
+  saleReceiptService,
+  type SaleData,
+} from "@/services/saleReceiptService";
 
 interface ProductInCart {
   id: number;
@@ -1045,7 +1049,6 @@ const POSInterface = () => {
             ))}
           </div>
         </div>
-
         {/* Fullscreen Mode Header - Only show in fullscreen */}
         {isFullscreenMode && (
           <div className="bg-white p-6 border-b border-gray-200">
@@ -1134,8 +1137,7 @@ const POSInterface = () => {
               </div>
             </div>
           </div>
-        )}
-
+        )}{" "}
         {/* Header */}
         {!isFullscreenMode ? (
           <div className="bg-white p-6 border-b border-gray-200">
@@ -1238,8 +1240,7 @@ const POSInterface = () => {
               </div>
             </div>
           </div>
-        ) : null}
-
+        ) : null}{" "}
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col">
           {/* Product Header */}
@@ -1853,7 +1854,6 @@ const POSInterface = () => {
               >
                 <span className="text-3xl font-bold text-green-600">=</span>
               </button>
-
               {/* Row 6 - PAY button */}
               <button
                 onClick={() => {
@@ -2495,204 +2495,203 @@ const POSInterface = () => {
       </WideDialog>
 
       {isCalculatorVisible && !isFullscreenMode && (
-          <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
-            {/* Calculator Display */}
-            <div className="p-6 border-b border-gray-200">
-              {/* Calculator Header with Close Button */}
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Калькулятор
-                </h3>
-                <button
-                    onClick={() => setIsCalculatorVisible(false)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="Закрыть калькулятор"
-                >
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
-              </div>
-              <div className="bg-gray-100 p-4 rounded-xl mb-4">
-                {operation && previousInput && (
-                    <div className="text-right text-lg text-gray-600 font-mono">
-                      {previousInput} {operation}
-                    </div>
-                )}
-                <div className="text-right text-3xl font-mono text-gray-900">
-                  {currentInput || "0"}
+        <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
+          {/* Calculator Display */}
+          <div className="p-6 border-b border-gray-200">
+            {/* Calculator Header with Close Button */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Калькулятор
+              </h3>
+              <button
+                onClick={() => setIsCalculatorVisible(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Закрыть калькулятор"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="bg-gray-100 p-4 rounded-xl mb-4">
+              {operation && previousInput && (
+                <div className="text-right text-lg text-gray-600 font-mono">
+                  {previousInput} {operation}
                 </div>
+              )}
+              <div className="text-right text-3xl font-mono text-gray-900">
+                {currentInput || "0"}
               </div>
             </div>
+          </div>
 
-            {/* Calculator Keypad */}
-            <div className="flex-1 p-6">
-              <div className="grid grid-cols-4 gap-4 h-full">
-                {/* Row 1 */}
-                <button
-                    onClick={handleClearInput}
-                    className="bg-orange-100 hover:bg-orange-200 rounded-2xl transition-colors h-20 flex items-center justify-center col-span-2"
-                >
-                  <span className="text-xl font-bold text-orange-600">CLEAR</span>
-                </button>
-                <button
-                    onClick={handleBackspace}
-                    className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-                >
-                  <X className="w-7 h-7" />
-                </button>
-                <button
-                    onClick={() => handleOperation("/")}
-                    className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
-                >
-                  ÷
-                </button>
+          {/* Calculator Keypad */}
+          <div className="flex-1 p-6">
+            <div className="grid grid-cols-4 gap-4 h-full">
+              {/* Row 1 */}
+              <button
+                onClick={handleClearInput}
+                className="bg-orange-100 hover:bg-orange-200 rounded-2xl transition-colors h-20 flex items-center justify-center col-span-2"
+              >
+                <span className="text-xl font-bold text-orange-600">CLEAR</span>
+              </button>
+              <button
+                onClick={handleBackspace}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                <X className="w-7 h-7" />
+              </button>
+              <button
+                onClick={() => handleOperation("/")}
+                className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
+              >
+                ÷
+              </button>
 
-                {/* Row 2 */}
-                <button
-                    onClick={() => handleNumberClick("7")}
-                    className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-                >
-                  7
-                </button>
-                <button
-                    onClick={() => handleNumberClick("8")}
-                    className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-                >
-                  8
-                </button>
-                <button
-                    onClick={() => handleNumberClick("9")}
-                    className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-                >
-                  9
-                </button>
-                <button
-                    onClick={() => handleOperation("*")}
-                    className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
-                >
-                  ×
-                </button>
+              {/* Row 2 */}
+              <button
+                onClick={() => handleNumberClick("7")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                7
+              </button>
+              <button
+                onClick={() => handleNumberClick("8")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                8
+              </button>
+              <button
+                onClick={() => handleNumberClick("9")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                9
+              </button>
+              <button
+                onClick={() => handleOperation("*")}
+                className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
+              >
+                ×
+              </button>
 
-                {/* Row 3 */}
-                <button
-                    onClick={() => handleNumberClick("4")}
-                    className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-                >
-                  4
-                </button>
-                <button
-                    onClick={() => handleNumberClick("5")}
-                    className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-                >
-                  5
-                </button>
-                <button
-                    onClick={() => handleNumberClick("6")}
-                    className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-                >
-                  6
-                </button>
-                <button
-                    onClick={() => handleOperation("-")}
-                    className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
-                >
-                  −
-                </button>
+              {/* Row 3 */}
+              <button
+                onClick={() => handleNumberClick("4")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                4
+              </button>
+              <button
+                onClick={() => handleNumberClick("5")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                5
+              </button>
+              <button
+                onClick={() => handleNumberClick("6")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                6
+              </button>
+              <button
+                onClick={() => handleOperation("-")}
+                className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
+              >
+                −
+              </button>
 
-                {/* Row 4 */}
-                <button
-                    onClick={() => handleNumberClick("1")}
-                    className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-                >
-                  1
-                </button>
-                <button
-                    onClick={() => handleNumberClick("2")}
-                    className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-                >
-                  2
-                </button>
-                <button
-                    onClick={() => handleNumberClick("3")}
-                    className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-                >
-                  3
-                </button>
-                <button
-                    onClick={() => handleOperation("+")}
-                    className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
-                >
-                  +
-                </button>
+              {/* Row 4 */}
+              <button
+                onClick={() => handleNumberClick("1")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                1
+              </button>
+              <button
+                onClick={() => handleNumberClick("2")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                2
+              </button>
+              <button
+                onClick={() => handleNumberClick("3")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                3
+              </button>
+              <button
+                onClick={() => handleOperation("+")}
+                className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
+              >
+                +
+              </button>
 
-                {/* Row 5 */}
-                <button
-                    onClick={() => handleNumberClick("0")}
-                    className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900 col-span-2"
-                >
-                  0
-                </button>
-                <button
-                    onClick={() => handleNumberClick(",")}
-                    className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-                >
-                  ,
-                </button>
-                <button
-                    onClick={handleEquals}
-                    className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-20 flex items-center justify-center"
-                >
-                  <span className="text-3xl font-bold text-green-600">=</span>
-                </button>
-
-                {/* Row 6 - PAY button */}
-                <button
-                    onClick={() => {
-                      setPaymentMethods([
-                        { amount: total, payment_method: "Наличные" },
-                      ]);
-                      setIsPaymentModalOpen(true);
-                    }}
-                    disabled={cartProducts.length === 0}
-                    className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-20 flex items-center justify-center disabled:bg-gray-200 disabled:cursor-not-allowed col-span-4"
-                >
+              {/* Row 5 */}
+              <button
+                onClick={() => handleNumberClick("0")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900 col-span-2"
+              >
+                0
+              </button>
+              <button
+                onClick={() => handleNumberClick(",")}
+                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
+              >
+                ,
+              </button>
+              <button
+                onClick={handleEquals}
+                className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-20 flex items-center justify-center"
+              >
+                <span className="text-3xl font-bold text-green-600">=</span>
+              </button>
+              {/* Row 6 - PAY button */}
+              <button
+                onClick={() => {
+                  setPaymentMethods([
+                    { amount: total, payment_method: "Наличные" },
+                  ]);
+                  setIsPaymentModalOpen(true);
+                }}
+                disabled={cartProducts.length === 0}
+                className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-20 flex items-center justify-center disabled:bg-gray-200 disabled:cursor-not-allowed col-span-4"
+              >
                 <span className="text-xl font-bold text-green-600">
                   PAY - {total.toLocaleString()} сум
                 </span>
-                </button>
-              </div>
-            </div>
-
-            {/* Payment Button */}
-            <div className="p-6 border-t border-gray-200">
-              <button
-                  onClick={() => {
-                    setPaymentMethods([
-                      { amount: total, payment_method: "Наличные" },
-                    ]);
-                    setIsPaymentModalOpen(true);
-                  }}
-                  disabled={cartProducts.length === 0}
-                  className={`w-full py-8 rounded-2xl text-xl font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[80px] ${
-                      onCredit
-                          ? "bg-amber-600 text-white hover:bg-amber-700"
-                          : "bg-blue-600 text-white hover:bg-blue-700"
-                  }`}
-              >
-                {cartProducts.length === 0
-                    ? "Добавьте товары"
-                    : onCredit
-                        ? `В долг ${total.toLocaleString()} сум`
-                        : `Оплатить ${total.toLocaleString()} сум`}
               </button>
             </div>
           </div>
+
+          {/* Payment Button */}
+          <div className="p-6 border-t border-gray-200">
+            <button
+              onClick={() => {
+                setPaymentMethods([
+                  { amount: total, payment_method: "Наличные" },
+                ]);
+                setIsPaymentModalOpen(true);
+              }}
+              disabled={cartProducts.length === 0}
+              className={`w-full py-8 rounded-2xl text-xl font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[80px] ${
+                onCredit
+                  ? "bg-amber-600 text-white hover:bg-amber-700"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
+            >
+              {cartProducts.length === 0
+                ? "Добавьте товары"
+                : onCredit
+                  ? `В долг ${total.toLocaleString()} сум`
+                  : `Оплатить ${total.toLocaleString()} сум`}
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Product Search Modal */}
       <WideDialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
         <WideDialogContent
-            className="max-h-[90vh] overflow-hidden p-0"
-            width="extra-wide"
+          className="max-h-[90vh] overflow-hidden p-0"
+          width="extra-wide"
         >
           <WideDialogHeader className="p-6 pb-4">
             <WideDialogTitle className="text-xl font-bold">
@@ -2705,13 +2704,13 @@ const POSInterface = () => {
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <Input
-                  type="text"
-                  placeholder="Поиск по товарам..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 text-base border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
-                  autoComplete="off"
-                  autoFocus
+                type="text"
+                placeholder="Поиск по товарам..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 text-base border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                autoComplete="off"
+                autoFocus
               />
             </div>
 
@@ -2719,35 +2718,35 @@ const POSInterface = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 {selectedProducts.size > 0 && (
-                    <>
+                  <>
                     <span className="text-sm text-gray-600">
                       Выбрано: {selectedProducts.size} товар(ов)
                     </span>
-                      <button
-                          onClick={handleSaveSelectedProducts}
-                          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
-                      >
-                        Добавить выбранные
-                      </button>
-                    </>
+                    <button
+                      onClick={handleSaveSelectedProducts}
+                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Добавить выбранные
+                    </button>
+                  </>
                 )}
               </div>
 
               {selectedProducts.size > 0 && (
-                  <div className="flex space-x-2">
-                    <button
-                        onClick={() => setSelectedProducts(new Set())}
-                        className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
-                    >
-                      Очистить
-                    </button>
-                    <button
-                        onClick={handleSaveSelectedProducts}
-                        className="px-4 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-                    >
-                      Добавить в корзину ({selectedProducts.size})
-                    </button>
-                  </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => setSelectedProducts(new Set())}
+                    className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                  >
+                    Очистить
+                  </button>
+                  <button
+                    onClick={handleSaveSelectedProducts}
+                    className="px-4 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                  >
+                    Добавить в корзину ({selectedProducts.size})
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -2757,53 +2756,53 @@ const POSInterface = () => {
             <div className="border-t border-gray-200 bg-gray-50 max-h-[60vh] overflow-y-auto">
               <table className="w-full">
                 <thead className="bg-gray-100 sticky top-0 border-b border-gray-200">
-                <tr>
-                  <th className="text-center p-4 font-semibold text-gray-700 w-16">
-                    <input
+                  <tr>
+                    <th className="text-center p-4 font-semibold text-gray-700 w-16">
+                      <input
                         type="checkbox"
                         checked={
-                            filteredProducts.length > 0 &&
-                            filteredProducts.every((product) =>
-                                selectedProducts.has(product.id!),
-                            )
+                          filteredProducts.length > 0 &&
+                          filteredProducts.every((product) =>
+                            selectedProducts.has(product.id!),
+                          )
                         }
                         onChange={(e) => {
                           if (e.target.checked) {
                             setSelectedProducts(
-                                new Set(filteredProducts.map((p) => p.id!)),
+                              new Set(filteredProducts.map((p) => p.id!)),
                             );
                           } else {
                             setSelectedProducts(new Set());
                           }
                         }}
                         className="w-4 h-4 rounded border-gray-300"
-                    />
-                  </th>
-                  <th className="text-left p-4 font-semibold text-gray-700 w-16">
-                    №
-                  </th>
-                  <th className="text-left p-4 font-semibold text-gray-700">
-                    Наименование товара
-                  </th>
-                  <th className="text-center p-4 font-semibold text-gray-700">
-                    ИКПУ
-                  </th>
-                  <th className="text-center p-4 font-semibold text-gray-700">
-                    Штрихкод
-                  </th>
-                  <th className="text-right p-4 font-semibold text-gray-700">
-                    Количество
-                  </th>
-                  <th className="text-right p-4 font-semibold text-gray-700">
-                    Цена
-                  </th>
-                  <th className="text-center p-4 font-semibold text-gray-700 w-24">
-                    •••
-                  </th>
-                </tr>
+                      />
+                    </th>
+                    <th className="text-left p-4 font-semibold text-gray-700 w-16">
+                      №
+                    </th>
+                    <th className="text-left p-4 font-semibold text-gray-700">
+                      Наименование товара
+                    </th>
+                    <th className="text-center p-4 font-semibold text-gray-700">
+                      ИКПУ
+                    </th>
+                    <th className="text-center p-4 font-semibold text-gray-700">
+                      Штрихкод
+                    </th>
+                    <th className="text-right p-4 font-semibold text-gray-700">
+                      Количество
+                    </th>
+                    <th className="text-right p-4 font-semibold text-gray-700">
+                      Цена
+                    </th>
+                    <th className="text-center p-4 font-semibold text-gray-700 w-24">
+                      •••
+                    </th>
+                  </tr>
                 </thead>
                 <tbody>
-                {loadingProducts ? (
+                  {loadingProducts ? (
                     <tr>
                       <td colSpan={8} className="text-center p-8 text-gray-500">
                         <div className="flex items-center justify-center space-x-2">
@@ -2812,100 +2811,100 @@ const POSInterface = () => {
                         </div>
                       </td>
                     </tr>
-                ) : filteredProducts.length === 0 ? (
+                  ) : filteredProducts.length === 0 ? (
                     <tr>
                       <td colSpan={8} className="text-center p-8 text-gray-500">
                         {searchTerm
-                            ? "Товары не найдены"
-                            : "Начните ввод для поиска товаров"}
+                          ? "Товары не найдены"
+                          : "Начните ввод для поиска товаров"}
                       </td>
                     </tr>
-                ) : (
+                  ) : (
                     filteredProducts.map((product, index) => (
-                        <tr
-                            key={product.id}
-                            className={`${
-                                index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                            } ${selectedProducts.has(product.id!) ? "bg-blue-100" : ""} ${parseFloat(String(product.quantity || 0)) <= 0 ? "opacity-50" : ""} hover:bg-blue-50 transition-colors border-b border-gray-100`}
+                      <tr
+                        key={product.id}
+                        className={`${
+                          index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                        } ${selectedProducts.has(product.id!) ? "bg-blue-100" : ""} ${parseFloat(String(product.quantity || 0)) <= 0 ? "opacity-50" : ""} hover:bg-blue-50 transition-colors border-b border-gray-100`}
+                      >
+                        <td className="p-4 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selectedProducts.has(product.id!)}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              handleProductSelect(product);
+                            }}
+                            className="w-4 h-4 rounded border-gray-300"
+                          />
+                        </td>
+                        <td className="p-4 text-gray-900 font-medium">
+                          {index + 1}
+                        </td>
+                        <td
+                          className="p-4 cursor-pointer"
+                          onClick={() => handleProductSelect(product)}
                         >
-                          <td className="p-4 text-center">
-                            <input
-                                type="checkbox"
-                                checked={selectedProducts.has(product.id!)}
-                                onChange={(e) => {
-                                  e.stopPropagation();
-                                  handleProductSelect(product);
-                                }}
-                                className="w-4 h-4 rounded border-gray-300"
-                            />
-                          </td>
-                          <td className="p-4 text-gray-900 font-medium">
-                            {index + 1}
-                          </td>
-                          <td
-                              className="p-4 cursor-pointer"
-                              onClick={() => handleProductSelect(product)}
-                          >
-                            <div>
-                              <div className="font-medium text-gray-900 text-sm hover:text-blue-600 transition-colors">
-                                {product.product_name || "N/A"}
-                              </div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {product.barcode && (
-                                    <span>Штрихкод: {product.barcode} </span>
-                                )}
-                                {product.ikpu && (
-                                    <span className="ml-2">
+                          <div>
+                            <div className="font-medium text-gray-900 text-sm hover:text-blue-600 transition-colors">
+                              {product.product_name || "N/A"}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {product.barcode && (
+                                <span>Штрихкод: {product.barcode} </span>
+                              )}
+                              {product.ikpu && (
+                                <span className="ml-2">
                                   ИКПУ: {product.ikpu}
                                 </span>
-                                )}
-                              </div>
+                              )}
                             </div>
-                          </td>
-                          <td className="p-4 text-center text-gray-600 font-mono text-sm">
-                            {product.ikpu || "—"}
-                          </td>
-                          <td className="p-4 text-center text-gray-600 font-mono text-sm">
-                            {product.barcode || "—"}
-                          </td>
-                          <td className="p-4 text-right">
-                            <div
-                                className={`font-semibold ${parseFloat(String(product.quantity || 0)) <= 0 ? "text-red-500" : "text-gray-900"}`}
-                            >
-                              {parseFloat(
-                                  String(product.quantity || 0),
-                              ).toLocaleString()}
-                            </div>
-                          </td>
-                          <td className="p-4 text-right">
-                            <div className="text-gray-900 font-semibold">
-                              {product.selling_price
-                                  ? parseFloat(
-                                      String(product.selling_price),
+                          </div>
+                        </td>
+                        <td className="p-4 text-center text-gray-600 font-mono text-sm">
+                          {product.ikpu || "—"}
+                        </td>
+                        <td className="p-4 text-center text-gray-600 font-mono text-sm">
+                          {product.barcode || "—"}
+                        </td>
+                        <td className="p-4 text-right">
+                          <div
+                            className={`font-semibold ${parseFloat(String(product.quantity || 0)) <= 0 ? "text-red-500" : "text-gray-900"}`}
+                          >
+                            {parseFloat(
+                              String(product.quantity || 0),
+                            ).toLocaleString()}
+                          </div>
+                        </td>
+                        <td className="p-4 text-right">
+                          <div className="text-gray-900 font-semibold">
+                            {product.selling_price
+                              ? parseFloat(
+                                  String(product.selling_price),
+                                ).toLocaleString()
+                              : product.min_price
+                                ? parseFloat(
+                                    String(product.min_price),
                                   ).toLocaleString()
-                                  : product.min_price
-                                      ? parseFloat(
-                                          String(product.min_price),
-                                      ).toLocaleString()
-                                      : "—"}
-                            </div>
-                          </td>
-                          <td className="p-4 text-center">
-                            <Button
-                                size="sm"
-                                variant="ghost"
-                                className="text-gray-400 hover:text-gray-600"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleProductSelect(product);
-                                }}
-                            >
-                              •••
-                            </Button>
-                          </td>
-                        </tr>
+                                : "—"}
+                          </div>
+                        </td>
+                        <td className="p-4 text-center">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-gray-400 hover:text-gray-600"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleProductSelect(product);
+                            }}
+                          >
+                            •••
+                          </Button>
+                        </td>
+                      </tr>
                     ))
-                )}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -2925,40 +2924,40 @@ const POSInterface = () => {
           <div className="p-6 space-y-6">
             {/* Seller Selection - Only for admin/superuser */}
             {(isAdmin || isSuperUser) && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Продавец
-                  </label>
-                  <Select
-                      value={selectedSeller?.toString() || ""}
-                      onValueChange={(value) =>
-                          setSelectedSeller(parseInt(value, 10))
-                      }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Выберите продавца" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {users
-                          .filter((user) => {
-                            const extendedUser = user as ExtendedUser;
-                            return (
-                                (user.role === "Продавец" ||
-                                    user.role === "Администратор") &&
-                                extendedUser.store_read
-                            );
-                          })
-                          .map((user) => (
-                              <SelectItem
-                                  key={user.id}
-                                  value={user.id?.toString() || ""}
-                              >
-                                {user.name}
-                              </SelectItem>
-                          ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Продавец
+                </label>
+                <Select
+                  value={selectedSeller?.toString() || ""}
+                  onValueChange={(value) =>
+                    setSelectedSeller(parseInt(value, 10))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите продавца" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {users
+                      .filter((user) => {
+                        const extendedUser = user as ExtendedUser;
+                        return (
+                          (user.role === "Продавец" ||
+                            user.role === "Администратор") &&
+                          extendedUser.store_read
+                        );
+                      })
+                      .map((user) => (
+                        <SelectItem
+                          key={user.id}
+                          value={user.id?.toString() || ""}
+                        >
+                          {user.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
 
             {/* Credit Toggle */}
@@ -2967,14 +2966,14 @@ const POSInterface = () => {
                 В кредит
               </label>
               <Select
-                  value={onCredit ? "true" : "false"}
-                  onValueChange={(value) => {
-                    const isCredit = value === "true";
-                    setOnCredit(isCredit);
-                    if (!isCredit) {
-                      setSelectedClient(null);
-                    }
-                  }}
+                value={onCredit ? "true" : "false"}
+                onValueChange={(value) => {
+                  const isCredit = value === "true";
+                  setOnCredit(isCredit);
+                  if (!isCredit) {
+                    setSelectedClient(null);
+                  }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -2992,18 +2991,18 @@ const POSInterface = () => {
                 Клиент
               </label>
               <Input
-                  type="text"
-                  placeholder="Поиск клиентов..."
-                  value={clientSearchTerm}
-                  onChange={(e) => setClientSearchTerm(e.target.value)}
-                  className="mb-2"
-                  autoComplete="off"
+                type="text"
+                placeholder="Поиск клиентов..."
+                value={clientSearchTerm}
+                onChange={(e) => setClientSearchTerm(e.target.value)}
+                className="mb-2"
+                autoComplete="off"
               />
               <Select
-                  value={selectedClient?.toString() || ""}
-                  onValueChange={(value) =>
-                      setSelectedClient(parseInt(value, 10))
-                  }
+                value={selectedClient?.toString() || ""}
+                onValueChange={(value) =>
+                  setSelectedClient(parseInt(value, 10))
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Выберите клиента" />
@@ -3011,27 +3010,27 @@ const POSInterface = () => {
                 <SelectContent>
                   <div className="max-h-[200px] overflow-y-auto">
                     {clients && clients.length > 0 ? (
-                        clients
-                            .filter(
-                                (client) =>
-                                    (onCredit ? true : client.type === "Юр.лицо") &&
-                                    client.name
-                                        .toLowerCase()
-                                        .includes(clientSearchTerm.toLowerCase()),
-                            )
-                            .map((client) => (
-                                <SelectItem
-                                    key={client.id}
-                                    value={client.id?.toString() || ""}
-                                >
-                                  {client.name}{" "}
-                                  {client.type !== "Юр.лицо" && `(${client.type})`}
-                                </SelectItem>
-                            ))
+                      clients
+                        .filter(
+                          (client) =>
+                            (onCredit ? true : client.type === "Юр.лицо") &&
+                            client.name
+                              .toLowerCase()
+                              .includes(clientSearchTerm.toLowerCase()),
+                        )
+                        .map((client) => (
+                          <SelectItem
+                            key={client.id}
+                            value={client.id?.toString() || ""}
+                          >
+                            {client.name}{" "}
+                            {client.type !== "Юр.лицо" && `(${client.type})`}
+                          </SelectItem>
+                        ))
                     ) : (
-                        <div className="p-2 text-center text-gray-500 text-sm">
-                          Клиенты не найдены
-                        </div>
+                      <div className="p-2 text-center text-gray-500 text-sm">
+                        Клиенты не найдены
+                      </div>
                     )}
                   </div>
                 </SelectContent>
@@ -3040,48 +3039,48 @@ const POSInterface = () => {
 
             {/* Current Selection Display */}
             {(selectedSeller || selectedClient) && (
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <h4 className="font-medium text-blue-900 mb-2">
-                    Текущий выбор:
-                  </h4>
-                  {selectedSeller && (
-                      <p className="text-sm text-blue-700">
-                        <strong>Продавец:</strong>{" "}
-                        {users.find((u) => u.id === selectedSeller)?.name}
-                      </p>
-                  )}
-                  {selectedClient && (
-                      <p className="text-sm text-blue-700">
-                        <strong>Клиент:</strong>{" "}
-                        {clients.find((c) => c.id === selectedClient)?.name}
-                        {onCredit && (
-                            <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="font-medium text-blue-900 mb-2">
+                  Текущий выбор:
+                </h4>
+                {selectedSeller && (
+                  <p className="text-sm text-blue-700">
+                    <strong>Продавец:</strong>{" "}
+                    {users.find((u) => u.id === selectedSeller)?.name}
+                  </p>
+                )}
+                {selectedClient && (
+                  <p className="text-sm text-blue-700">
+                    <strong>Клиент:</strong>{" "}
+                    {clients.find((c) => c.id === selectedClient)?.name}
+                    {onCredit && (
+                      <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">
                         В кредит
                       </span>
-                        )}
-                      </p>
-                  )}
-                </div>
+                    )}
+                  </p>
+                )}
+              </div>
             )}
 
             {/* Action Buttons */}
             <div className="flex space-x-3 pt-4">
               <Button
-                  onClick={() => {
-                    // Reset selections
-                    setSelectedSeller(null);
-                    setSelectedClient(null);
-                    setOnCredit(false);
-                    setClientSearchTerm("");
-                  }}
-                  variant="outline"
-                  className="flex-1"
+                onClick={() => {
+                  // Reset selections
+                  setSelectedSeller(null);
+                  setSelectedClient(null);
+                  setOnCredit(false);
+                  setClientSearchTerm("");
+                }}
+                variant="outline"
+                className="flex-1"
               >
                 Очистить
               </Button>
               <Button
-                  onClick={() => setIsUserModalOpen(false)}
-                  className="flex-1"
+                onClick={() => setIsUserModalOpen(false)}
+                className="flex-1"
               >
                 Готово
               </Button>
@@ -3092,8 +3091,8 @@ const POSInterface = () => {
 
       {/* Quantity Selection Modal */}
       <WideDialog
-          open={isQuantityModalOpen}
-          onOpenChange={setIsQuantityModalOpen}
+        open={isQuantityModalOpen}
+        onOpenChange={setIsQuantityModalOpen}
       >
         <WideDialogContent className="max-w-md p-0">
           <WideDialogHeader className="p-6 pb-4">
@@ -3101,184 +3100,184 @@ const POSInterface = () => {
               Выберите количество
             </WideDialogTitle>
             {selectedProductForQuantity && (
-                <div className="text-center mt-2">
-                  <p className="text-sm text-gray-600">
-                    {selectedProductForQuantity.name}
+              <div className="text-center mt-2">
+                <p className="text-sm text-gray-600">
+                  {selectedProductForQuantity.name}
+                </p>
+                <p className="text-xs text-green-600 font-medium mt-1">
+                  В наличии:{" "}
+                  {parseFloat(
+                    String(selectedProductForQuantity.product.quantity),
+                  ).toFixed(2)}{" "}
+                  {selectedProductForQuantity.selectedUnit?.short_name || "шт"}
+                </p>
+                {selectedProductForQuantity.product.barcode && (
+                  <p className="text-xs text-gray-500">
+                    Штрихкод: {selectedProductForQuantity.product.barcode}
                   </p>
-                  <p className="text-xs text-green-600 font-medium mt-1">
-                    В наличии:{" "}
-                    {parseFloat(
-                        String(selectedProductForQuantity.product.quantity),
-                    ).toFixed(2)}{" "}
-                    {selectedProductForQuantity.selectedUnit?.short_name || "шт"}
+                )}
+                {selectedProductForQuantity.product.ikpu && (
+                  <p className="text-xs text-gray-500">
+                    ИКПУ: {selectedProductForQuantity.product.ikpu}
                   </p>
-                  {selectedProductForQuantity.product.barcode && (
-                      <p className="text-xs text-gray-500">
-                        Штрихкод: {selectedProductForQuantity.product.barcode}
-                      </p>
-                  )}
-                  {selectedProductForQuantity.product.ikpu && (
-                      <p className="text-xs text-gray-500">
-                        ИКПУ: {selectedProductForQuantity.product.ikpu}
-                      </p>
-                  )}
-                </div>
+                )}
+              </div>
             )}
           </WideDialogHeader>
 
           <div className="p-6 pt-2">
             {!isManualQuantityMode ? (
-                <>
-                  {/* Preset Quantity Cards */}
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    {[5, 10, 15, 20, 25, 30].map((qty) => {
-                      const availableQty = selectedProductForQuantity?.product
-                          .quantity
-                          ? parseFloat(
-                              String(selectedProductForQuantity.product.quantity),
-                          )
-                          : 0;
-                      const isDisabled = qty > availableQty;
-                      return (
-                          <button
-                              key={qty}
-                              onClick={() => !isDisabled && handleQuantitySelect(qty)}
-                              disabled={isDisabled}
-                              className={`border-2 rounded-2xl p-6 transition-all duration-200 min-h-[100px] touch-manipulation ${
-                                  isDisabled
-                                      ? "bg-gray-100 border-gray-300 opacity-40 cursor-not-allowed"
-                                      : "bg-blue-50 hover:bg-blue-100 border-blue-200 hover:border-blue-400 transform hover:scale-105 active:scale-95"
-                              }`}
-                          >
-                            <div
-                                className={`text-3xl font-bold mb-2 ${isDisabled ? "text-gray-400" : "text-blue-700"}`}
-                            >
-                              {qty}
-                            </div>
-                            <div
-                                className={`text-sm ${isDisabled ? "text-gray-400" : "text-blue-600"}`}
-                            >
-                              {selectedProductForQuantity?.selectedUnit
-                                  ?.short_name || "штук"}
-                            </div>
-                            {isDisabled && (
-                                <div className="text-xs text-red-500 mt-1">
-                                  Нет в наличии
-                                </div>
-                            )}
-                          </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Current Quantity Display */}
-                  {selectedProductForQuantity && (
-                      <div className="bg-gray-50 rounded-xl p-4 mb-4">
-                        <div className="text-center">
-                          <div className="text-sm text-gray-600 mb-1">
-                            Текущее количество
-                          </div>
-                          <div className="text-2xl font-bold text-gray-900">
-                            {selectedProductForQuantity.quantity.toFixed(2)}{" "}
-                            {selectedProductForQuantity.selectedUnit?.short_name ||
-                                "штук"}
-                          </div>
-                        </div>
-                      </div>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="flex space-x-3">
-                    <button
-                        onClick={() => setIsQuantityModalOpen(false)}
-                        className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
-                    >
-                      Отмена
-                    </button>
-                    <button
-                        onClick={handleManualQuantityMode}
-                        className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
-                    >
-                      Ввести вручную
-                    </button>
-                  </div>
-                </>
-            ) : (
-                <>
-                  {/* Manual Input Mode */}
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Введите количество
-                    </label>
-                    <input
-                        type="number"
-                        value={manualQuantityInput}
-                        onChange={(e) => setManualQuantityInput(e.target.value)}
-                        className={`w-full px-4 py-4 text-2xl text-center border-2 rounded-xl focus:outline-none ${
-                            manualQuantityInput &&
-                            parseFloat(manualQuantityInput) >
-                            parseFloat(
-                                String(
-                                    selectedProductForQuantity?.product.quantity || 0,
-                                ),
-                            )
-                                ? "border-red-500 focus:border-red-600"
-                                : "border-gray-300 focus:border-blue-500"
+              <>
+                {/* Preset Quantity Cards */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  {[5, 10, 15, 20, 25, 30].map((qty) => {
+                    const availableQty = selectedProductForQuantity?.product
+                      .quantity
+                      ? parseFloat(
+                          String(selectedProductForQuantity.product.quantity),
+                        )
+                      : 0;
+                    const isDisabled = qty > availableQty;
+                    return (
+                      <button
+                        key={qty}
+                        onClick={() => !isDisabled && handleQuantitySelect(qty)}
+                        disabled={isDisabled}
+                        className={`border-2 rounded-2xl p-6 transition-all duration-200 min-h-[100px] touch-manipulation ${
+                          isDisabled
+                            ? "bg-gray-100 border-gray-300 opacity-40 cursor-not-allowed"
+                            : "bg-blue-50 hover:bg-blue-100 border-blue-200 hover:border-blue-400 transform hover:scale-105 active:scale-95"
                         }`}
-                        placeholder="0"
-                        autoFocus
-                        min="0.01"
-                        step="0.1"
-                    />
-                    {manualQuantityInput &&
-                        parseFloat(manualQuantityInput) >
-                        parseFloat(
-                            String(
-                                selectedProductForQuantity?.product.quantity || 0,
-                            ),
-                        ) && (
-                            <p className="text-red-500 text-sm mt-2 text-center">
-                              Превышает доступное количество
-                            </p>
+                      >
+                        <div
+                          className={`text-3xl font-bold mb-2 ${isDisabled ? "text-gray-400" : "text-blue-700"}`}
+                        >
+                          {qty}
+                        </div>
+                        <div
+                          className={`text-sm ${isDisabled ? "text-gray-400" : "text-blue-600"}`}
+                        >
+                          {selectedProductForQuantity?.selectedUnit
+                            ?.short_name || "штук"}
+                        </div>
+                        {isDisabled && (
+                          <div className="text-xs text-red-500 mt-1">
+                            Нет в наличии
+                          </div>
                         )}
-                    {selectedProductForQuantity && (
-                        <p className="text-gray-500 text-sm mt-2 text-center">
-                          Доступно:{" "}
-                          {parseFloat(
-                              String(selectedProductForQuantity.product.quantity),
-                          ).toFixed(2)}{" "}
-                          {selectedProductForQuantity.selectedUnit?.short_name ||
-                              "шт"}
-                        </p>
-                    )}
-                  </div>
+                      </button>
+                    );
+                  })}
+                </div>
 
-                  {/* Manual Input Action Buttons */}
-                  <div className="flex space-x-3">
-                    <button
-                        onClick={() => setIsManualQuantityMode(false)}
-                        className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
-                    >
-                      Назад
-                    </button>
-                    <button
-                        onClick={handleManualQuantitySubmit}
-                        disabled={
-                            !manualQuantityInput ||
-                            parseFloat(manualQuantityInput) <= 0 ||
-                            parseFloat(manualQuantityInput) >
-                            parseFloat(
-                                String(
-                                    selectedProductForQuantity?.product.quantity || 0,
-                                ),
-                            )
-                        }
-                        className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
-                    >
-                      Применить
-                    </button>
+                {/* Current Quantity Display */}
+                {selectedProductForQuantity && (
+                  <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                    <div className="text-center">
+                      <div className="text-sm text-gray-600 mb-1">
+                        Текущее количество
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {selectedProductForQuantity.quantity.toFixed(2)}{" "}
+                        {selectedProductForQuantity.selectedUnit?.short_name ||
+                          "штук"}
+                      </div>
+                    </div>
                   </div>
-                </>
+                )}
+
+                {/* Action Buttons */}
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setIsQuantityModalOpen(false)}
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
+                  >
+                    Отмена
+                  </button>
+                  <button
+                    onClick={handleManualQuantityMode}
+                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
+                  >
+                    Ввести вручную
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Manual Input Mode */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Введите количество
+                  </label>
+                  <input
+                    type="number"
+                    value={manualQuantityInput}
+                    onChange={(e) => setManualQuantityInput(e.target.value)}
+                    className={`w-full px-4 py-4 text-2xl text-center border-2 rounded-xl focus:outline-none ${
+                      manualQuantityInput &&
+                      parseFloat(manualQuantityInput) >
+                        parseFloat(
+                          String(
+                            selectedProductForQuantity?.product.quantity || 0,
+                          ),
+                        )
+                        ? "border-red-500 focus:border-red-600"
+                        : "border-gray-300 focus:border-blue-500"
+                    }`}
+                    placeholder="0"
+                    autoFocus
+                    min="0.01"
+                    step="0.1"
+                  />
+                  {manualQuantityInput &&
+                    parseFloat(manualQuantityInput) >
+                      parseFloat(
+                        String(
+                          selectedProductForQuantity?.product.quantity || 0,
+                        ),
+                      ) && (
+                      <p className="text-red-500 text-sm mt-2 text-center">
+                        Превышает доступное количество
+                      </p>
+                    )}
+                  {selectedProductForQuantity && (
+                    <p className="text-gray-500 text-sm mt-2 text-center">
+                      Доступно:{" "}
+                      {parseFloat(
+                        String(selectedProductForQuantity.product.quantity),
+                      ).toFixed(2)}{" "}
+                      {selectedProductForQuantity.selectedUnit?.short_name ||
+                        "шт"}
+                    </p>
+                  )}
+                </div>
+
+                {/* Manual Input Action Buttons */}
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setIsManualQuantityMode(false)}
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
+                  >
+                    Назад
+                  </button>
+                  <button
+                    onClick={handleManualQuantitySubmit}
+                    disabled={
+                      !manualQuantityInput ||
+                      parseFloat(manualQuantityInput) <= 0 ||
+                      parseFloat(manualQuantityInput) >
+                        parseFloat(
+                          String(
+                            selectedProductForQuantity?.product.quantity || 0,
+                          ),
+                        )
+                    }
+                    className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
+                  >
+                    Применить
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </WideDialogContent>
@@ -3286,17 +3285,16 @@ const POSInterface = () => {
 
       {/* Payment Modal */}
       <WideDialog
-          open={isPaymentModalOpen}
-          onOpenChange={setIsPaymentModalOpen}
+        open={isPaymentModalOpen}
+        onOpenChange={setIsPaymentModalOpen}
       >
         <WideDialogContent className="max-w-4xl">
-
           <div className="p-8">
             {/* Header with Back Button and Pay Button */}
             <div className="flex items-center justify-between mb-8">
               <button
-                  onClick={() => setIsPaymentModalOpen(false)}
-                  className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors"
+                onClick={() => setIsPaymentModalOpen(false)}
+                className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors"
               >
                 <span className="text-2xl">←</span>
                 <span className="text-lg">Назад</span>
@@ -3306,122 +3304,152 @@ const POSInterface = () => {
               </button>
 
               <button
-                  onClick={async () => {
-                    // Validate payment total
-                    const totalPayment = paymentMethods.reduce(
-                        (sum, p) => sum + (p.amount || 0),
-                        0,
+                onClick={async () => {
+                  // Validate payment total
+                  const totalPayment = paymentMethods.reduce(
+                    (sum, p) => sum + (p.amount || 0),
+                    0,
+                  );
+                  if (!onCredit && totalPayment < total) {
+                    alert("Сумма оплаты меньше общей суммы!");
+                    return;
+                  }
+
+                  try {
+                    setIsProcessingSale(true);
+
+                    // Create your custom payload structure as specified
+                    const customSalePayload: SalePayload = {
+                      store: currentUser?.store_read?.id || 1,
+                      sold_by: selectedSeller || currentUser?.id || 5,
+                      on_credit: onCredit,
+                      sale_items: cartProducts.map((item) => ({
+                        product_write: item.productId,
+                        quantity: item.quantity,
+                        selling_unit:
+                          item.selectedUnit?.id || item.product.base_unit || 1,
+                        price_per_unit: item.price,
+                      })),
+                      sale_payments: paymentMethods.filter((p) => p.amount > 0),
+                      ...(onCredit &&
+                        selectedClient && {
+                          sale_debt: {
+                            client: selectedClient,
+                            deposit: totalPayment,
+                            due_date: new Date(
+                              Date.now() + 30 * 24 * 60 * 60 * 1000,
+                            )
+                              .toISOString()
+                              .split("T")[0],
+                          },
+                        }),
+                    };
+
+                    // Also create API-compatible payload for backend
+                    const saleApiPayload: Sale = {
+                      store: currentUser?.store_read?.id || 1,
+                      ...(selectedSeller && { sold_by: selectedSeller }),
+                      payment_method:
+                        paymentMethods[0]?.payment_method || "Наличные",
+                      sale_items: cartProducts.map((item) => ({
+                        product_write: item.productId,
+                        selling_unit: item?.selectedUnit?.id,
+                        quantity: item.quantity.toString(),
+                        price_per_unit: item.total.toString(),
+                      })),
+                      on_credit: onCredit,
+                      total_amount: total.toString(),
+                      sale_payments: paymentMethods
+                        .filter((p) => p.amount > 0)
+                        .map((payment) => ({
+                          payment_method: payment.payment_method,
+                          amount: payment.amount.toString(),
+                        })),
+                      ...(onCredit &&
+                        selectedClient && {
+                          sale_debt: {
+                            client: selectedClient,
+                            deposit: totalPayment.toString(),
+                            due_date: new Date(
+                              Date.now() + 30 * 24 * 60 * 60 * 1000,
+                            )
+                              .toISOString()
+                              .split("T")[0],
+                          },
+                        }),
+                    };
+
+                    console.log(
+                      "Custom Sale Payload:",
+                      JSON.stringify(customSalePayload, null, 2),
                     );
-                    if (!onCredit && totalPayment < total) {
-                      alert("Сумма оплаты меньше общей суммы!");
-                      return;
-                    }
+                    console.log(
+                      "API Sale Payload:",
+                      JSON.stringify(saleApiPayload, null, 2),
+                    );
 
-                    try {
-                      setIsProcessingSale(true);
-
-                      // Create your custom payload structure as specified
-                      const customSalePayload: SalePayload = {
-                        store: currentUser?.store_read?.id || 1,
-                        sold_by: selectedSeller || currentUser?.id || 5,
-                        on_credit: onCredit,
-                        sale_items: cartProducts.map((item) => ({
-                          product_write: item.productId,
-                          quantity: item.quantity,
-                          selling_unit:
-                              item.selectedUnit?.id || item.product.base_unit || 1,
-                          price_per_unit: item.price,
-                        })),
-                        sale_payments: paymentMethods.filter((p) => p.amount > 0),
-                        ...(onCredit &&
-                            selectedClient && {
-                              sale_debt: {
-                                client: selectedClient,
-                                deposit: totalPayment,
-                                due_date: new Date(
-                                    Date.now() + 30 * 24 * 60 * 60 * 1000,
-                                )
-                                    .toISOString()
-                                    .split("T")[0],
-                              },
-                            }),
-                      };
-
-                      // Also create API-compatible payload for backend
-                      const saleApiPayload: Sale = {
-                        store: currentUser?.store_read?.id || 1,
-                        ...(selectedSeller && { sold_by: selectedSeller }),
-                        payment_method:
-                            paymentMethods[0]?.payment_method || "Наличные",
-                        sale_items: cartProducts.map((item) => ({
-                          product_write: item.productId,
-                          selling_unit: item?.selectedUnit?.id,
-                          quantity: item.quantity.toString(),
-                          price_per_unit: item.total.toString(),
-                        })),
-                        on_credit: onCredit,
-                        total_amount: total.toString(),
-                        sale_payments: paymentMethods
-                            .filter((p) => p.amount > 0)
-                            .map((payment) => ({
-                              payment_method: payment.payment_method,
-                              amount: payment.amount.toString(),
-                            })),
-                        ...(onCredit &&
-                            selectedClient && {
-                              sale_debt: {
-                                client: selectedClient,
-                                deposit: totalPayment.toString(),
-                                due_date: new Date(
-                                    Date.now() + 30 * 24 * 60 * 60 * 1000,
-                                )
-                                    .toISOString()
-                                    .split("T")[0],
-                              },
-                            }),
-                      };
-
-                      console.log(
-                          "Custom Sale Payload:",
-                          JSON.stringify(customSalePayload, null, 2),
-                      );
-                      console.log(
-                          "API Sale Payload:",
-                          JSON.stringify(saleApiPayload, null, 2),
-                      );
-
-                      // Send to API using the API-compatible payload
+                    // Send to API using the API-compatible payload
+                    const saleResponse =
                       await createSaleMutation.mutateAsync(saleApiPayload);
 
-                      // Clear cart and close modal
-                      setCartProducts([]);
-                      setIsPaymentModalOpen(false);
-                      setPaymentMethods([
-                        { amount: 0, payment_method: "Наличные" },
-                      ]);
+                    console.log("✅ Sale created successfully:", saleResponse);
 
-                      // Reset other states
-                      setSelectedClient(null);
-                      setSelectedSeller(null);
-                      setOnCredit(false);
-                      setFocusedProductIndex(-1);
-
-                      // Show success message
-                      alert("Продажа успешно оформлена!");
-                    } catch (error) {
-                      console.error("Error creating sale:", error);
-                      alert("Ошибка при оформлении продажи. Попробуйте еще раз.");
-                    } finally {
-                      setIsProcessingSale(false);
+                    // Automatically print receipt after successful sale
+                    if (saleResponse) {
+                      try {
+                        const printResult =
+                          await saleReceiptService.printWithFallback(
+                            saleResponse as unknown as SaleData,
+                          );
+                        saleReceiptService.showPrintNotification(printResult);
+                        console.log("🖨️ Receipt print result:", printResult);
+                      } catch (printError) {
+                        console.error(
+                          "❌ Receipt printing failed:",
+                          printError,
+                        );
+                        // Don't block the sale completion if printing fails
+                        saleReceiptService.showPrintNotification({
+                          success: false,
+                          method: "failed",
+                          message: "Не удалось напечатать чек",
+                          error:
+                            printError instanceof Error
+                              ? printError.message
+                              : "Unknown error",
+                        });
+                      }
                     }
-                  }}
-                  disabled={
-                      isProcessingSale ||
-                      (paymentMethods.reduce((sum, p) => sum + (p.amount || 0), 0) <
-                          total &&
-                          !onCredit)
+
+                    // Clear cart and close modal
+                    setCartProducts([]);
+                    setIsPaymentModalOpen(false);
+                    setPaymentMethods([
+                      { amount: 0, payment_method: "Наличные" },
+                    ]);
+
+                    // Reset other states
+                    setSelectedClient(null);
+                    setSelectedSeller(null);
+                    setOnCredit(false);
+                    setFocusedProductIndex(-1);
+
+                    // Show success message
+                    alert("Продажа успешно оформлена!");
+                  } catch (error) {
+                    console.error("Error creating sale:", error);
+                    alert("Ошибка при оформлении продажи. Попробуйте еще раз.");
+                  } finally {
+                    setIsProcessingSale(false);
                   }
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-4 rounded-xl text-lg font-semibold flex items-center gap-2 transition-colors"
+                }}
+                disabled={
+                  isProcessingSale ||
+                  (paymentMethods.reduce((sum, p) => sum + (p.amount || 0), 0) <
+                    total &&
+                    !onCredit)
+                }
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-4 rounded-xl text-lg font-semibold flex items-center gap-2 transition-colors"
               >
                 {isProcessingSale ? "Обработка..." : "Оплатить"}
                 <span className="text-sm bg-blue-500 px-2 py-1 rounded">L</span>
@@ -3440,11 +3468,11 @@ const POSInterface = () => {
                 <div className="text-green-500 text-lg mb-2">К оплате:</div>
                 <div className="text-5xl font-bold text-green-500">
                   {Math.max(
-                      0,
-                      total -
+                    0,
+                    total -
                       paymentMethods.reduce(
-                          (sum, p) => sum + (p.amount || 0),
-                          0,
+                        (sum, p) => sum + (p.amount || 0),
+                        0,
                       ),
                   ).toLocaleString()}{" "}
                   UZS
@@ -3455,38 +3483,38 @@ const POSInterface = () => {
             {/* Payment Method Buttons */}
             <div className="flex gap-4 mb-8">
               <button
-                  onClick={() => {
-                    const hasNalichnye = paymentMethods.some(
-                        (p) => p.payment_method === "Наличные",
+                onClick={() => {
+                  const hasNalichnye = paymentMethods.some(
+                    (p) => p.payment_method === "Наличные",
+                  );
+                  if (!hasNalichnye) {
+                    const totalPaid = paymentMethods.reduce(
+                      (sum, p) => sum + (p.amount || 0),
+                      0,
                     );
-                    if (!hasNalichnye) {
-                      const totalPaid = paymentMethods.reduce(
-                          (sum, p) => sum + (p.amount || 0),
-                          0,
-                      );
-                      const remaining = total - totalPaid;
-                      setPaymentMethods((prev) => [
-                        ...prev,
-                        {
-                          amount: remaining > 0 ? remaining : 0,
-                          payment_method: "Наличные",
-                        },
-                      ]);
-                    }
-                  }}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors"
+                    const remaining = total - totalPaid;
+                    setPaymentMethods((prev) => [
+                      ...prev,
+                      {
+                        amount: remaining > 0 ? remaining : 0,
+                        payment_method: "Наличные",
+                      },
+                    ]);
+                  }
+                }}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors"
               >
                 <svg
-                    className="w-6 h-6 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  className="w-6 h-6 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
                   <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
                   />
                 </svg>
                 <span className="text-gray-700 font-medium">Наличные</span>
@@ -3496,38 +3524,38 @@ const POSInterface = () => {
               </button>
 
               <button
-                  onClick={() => {
-                    const hasClick = paymentMethods.some(
-                        (p) => p.payment_method === "Click",
+                onClick={() => {
+                  const hasClick = paymentMethods.some(
+                    (p) => p.payment_method === "Click",
+                  );
+                  if (!hasClick) {
+                    const totalPaid = paymentMethods.reduce(
+                      (sum, p) => sum + (p.amount || 0),
+                      0,
                     );
-                    if (!hasClick) {
-                      const totalPaid = paymentMethods.reduce(
-                          (sum, p) => sum + (p.amount || 0),
-                          0,
-                      );
-                      const remaining = total - totalPaid;
-                      setPaymentMethods((prev) => [
-                        ...prev,
-                        {
-                          amount: remaining > 0 ? remaining : 0,
-                          payment_method: "Click",
-                        },
-                      ]);
-                    }
-                  }}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors"
+                    const remaining = total - totalPaid;
+                    setPaymentMethods((prev) => [
+                      ...prev,
+                      {
+                        amount: remaining > 0 ? remaining : 0,
+                        payment_method: "Click",
+                      },
+                    ]);
+                  }
+                }}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors"
               >
                 <svg
-                    className="w-6 h-6 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  className="w-6 h-6 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
                   <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
                   />
                 </svg>
                 <span className="text-gray-700 font-medium">Click</span>
@@ -3537,38 +3565,38 @@ const POSInterface = () => {
               </button>
 
               <button
-                  onClick={() => {
-                    const hasKarta = paymentMethods.some(
-                        (p) => p.payment_method === "Карта",
+                onClick={() => {
+                  const hasKarta = paymentMethods.some(
+                    (p) => p.payment_method === "Карта",
+                  );
+                  if (!hasKarta) {
+                    const totalPaid = paymentMethods.reduce(
+                      (sum, p) => sum + (p.amount || 0),
+                      0,
                     );
-                    if (!hasKarta) {
-                      const totalPaid = paymentMethods.reduce(
-                          (sum, p) => sum + (p.amount || 0),
-                          0,
-                      );
-                      const remaining = total - totalPaid;
-                      setPaymentMethods((prev) => [
-                        ...prev,
-                        {
-                          amount: remaining > 0 ? remaining : 0,
-                          payment_method: "Карта",
-                        },
-                      ]);
-                    }
-                  }}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors"
+                    const remaining = total - totalPaid;
+                    setPaymentMethods((prev) => [
+                      ...prev,
+                      {
+                        amount: remaining > 0 ? remaining : 0,
+                        payment_method: "Карта",
+                      },
+                    ]);
+                  }
+                }}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors"
               >
                 <svg
-                    className="w-6 h-6 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  className="w-6 h-6 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
                   <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
                   />
                 </svg>
                 <span className="text-gray-700 font-medium">Карта</span>
@@ -3578,38 +3606,38 @@ const POSInterface = () => {
               </button>
 
               <button
-                  onClick={() => {
-                    const hasPerechislenie = paymentMethods.some(
-                        (p) => p.payment_method === "Перечисление",
+                onClick={() => {
+                  const hasPerechislenie = paymentMethods.some(
+                    (p) => p.payment_method === "Перечисление",
+                  );
+                  if (!hasPerechislenie) {
+                    const totalPaid = paymentMethods.reduce(
+                      (sum, p) => sum + (p.amount || 0),
+                      0,
                     );
-                    if (!hasPerechislenie) {
-                      const totalPaid = paymentMethods.reduce(
-                          (sum, p) => sum + (p.amount || 0),
-                          0,
-                      );
-                      const remaining = total - totalPaid;
-                      setPaymentMethods((prev) => [
-                        ...prev,
-                        {
-                          amount: remaining > 0 ? remaining : 0,
-                          payment_method: "Перечисление",
-                        },
-                      ]);
-                    }
-                  }}
-                  className="flex-1 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors"
+                    const remaining = total - totalPaid;
+                    setPaymentMethods((prev) => [
+                      ...prev,
+                      {
+                        amount: remaining > 0 ? remaining : 0,
+                        payment_method: "Перечисление",
+                      },
+                    ]);
+                  }
+                }}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors"
               >
                 <svg
-                    className="w-6 h-6 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  className="w-6 h-6 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
                   <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
                   />
                 </svg>
                 <span className="text-gray-700 font-medium">Перечисление</span>
@@ -3619,20 +3647,20 @@ const POSInterface = () => {
               </button>
 
               <button
-                  onClick={() => {
-                    const totalPaid = paymentMethods.reduce(
-                        (sum, p) => sum + (p.amount || 0),
-                        0,
-                    );
-                    const remaining = total - totalPaid;
-                    if (remaining > 0) {
-                      setPaymentMethods((prev) => [
-                        ...prev,
-                        { amount: remaining, payment_method: "Наличные" },
-                      ]);
-                    }
-                  }}
-                  className="bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl px-6 flex items-center justify-center transition-colors"
+                onClick={() => {
+                  const totalPaid = paymentMethods.reduce(
+                    (sum, p) => sum + (p.amount || 0),
+                    0,
+                  );
+                  const remaining = total - totalPaid;
+                  if (remaining > 0) {
+                    setPaymentMethods((prev) => [
+                      ...prev,
+                      { amount: remaining, payment_method: "Наличные" },
+                    ]);
+                  }
+                }}
+                className="bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl px-6 flex items-center justify-center transition-colors"
               >
                 <Plus className="w-6 h-6 text-gray-600" />
               </button>
@@ -3641,39 +3669,39 @@ const POSInterface = () => {
             {/* Payment Method Cards */}
             <div className="grid grid-cols-3 gap-6">
               {paymentMethods.map((payment, index) => (
-                  <div
-                      key={index}
-                      className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200 relative"
+                <div
+                  key={index}
+                  className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200 relative"
+                >
+                  <button
+                    onClick={() => {
+                      if (paymentMethods.length > 1) {
+                        setPaymentMethods((prev) =>
+                          prev.filter((_, i) => i !== index),
+                        );
+                      }
+                    }}
+                    className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white hover:bg-red-50 rounded-lg text-red-500 transition-colors"
                   >
-                    <button
-                        onClick={() => {
-                          if (paymentMethods.length > 1) {
-                            setPaymentMethods((prev) =>
-                                prev.filter((_, i) => i !== index),
-                            );
-                          }
-                        }}
-                        className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white hover:bg-red-50 rounded-lg text-red-500 transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
+                    <X className="w-5 h-5" />
+                  </button>
 
-                    <div className="text-gray-700 font-semibold text-lg mb-4">
-                      {payment.payment_method}
-                    </div>
-
-                    <input
-                        type="number"
-                        value={payment.amount || ""}
-                        onChange={(e) => {
-                          const updated = [...paymentMethods];
-                          updated[index].amount = Number(e.target.value);
-                          setPaymentMethods(updated);
-                        }}
-                        placeholder="0"
-                        className="w-full text-4xl font-bold text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-0 p-0"
-                    />
+                  <div className="text-gray-700 font-semibold text-lg mb-4">
+                    {payment.payment_method}
                   </div>
+
+                  <input
+                    type="number"
+                    value={payment.amount || ""}
+                    onChange={(e) => {
+                      const updated = [...paymentMethods];
+                      updated[index].amount = Number(e.target.value);
+                      setPaymentMethods(updated);
+                    }}
+                    placeholder="0"
+                    className="w-full text-4xl font-bold text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-0 p-0"
+                  />
+                </div>
               ))}
             </div>
           </div>
@@ -3682,6 +3710,5 @@ const POSInterface = () => {
     </div>
   );
 };
-
 
 export default POSInterface;

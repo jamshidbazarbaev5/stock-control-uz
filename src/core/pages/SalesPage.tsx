@@ -761,11 +761,21 @@ export default function SalesPage() {
   // Transform sale data to receipt format
   const transformSaleToReceiptData = (sale: Sale): ReceiptPreviewData => {
     const totalAmount = Number(sale.total_amount || 0);
+
+    // Calculate subtotal from individual items
+    const calculatedSubtotal =
+      sale.sale_items?.reduce((sum, item) => {
+        return sum + Number(item.subtotal || 0);
+      }, 0) || 0;
+
+    // Calculate tax as 12% of subtotal
+    const calculatedTax = calculatedSubtotal * 0.12;
+
     return {
       storeName: sale.store_read?.name || "",
       storeAddress: sale.store_read?.address || "",
       storePhone: sale.store_read?.phone_number || "",
-      cashierName: "Cashier", // Add proper cashier name if available
+      cashierName: sale.worker_read?.username || "Cashier",
       receiptNumber: `#${sale.id}`,
       date: sale.sold_date
         ? new Date(sale.sold_date).toLocaleDateString("ru-RU")
@@ -775,23 +785,27 @@ export default function SalesPage() {
         : "-",
       paymentMethod:
         sale.sale_payments?.map((p) => p.payment_method).join(", ") || "",
-      subtotal: Number(sale.total_amount),
+      payments:
+        sale.sale_payments?.map((p) => ({
+          method: p.payment_method,
+          amount: p.amount?.toString() || "0",
+        })) || [],
+      subtotal: calculatedSubtotal,
       discount: 0, // Add if you have discount data
-      tax: 0, // Add if you have tax data
-      total: Number(sale.total_amount),
+      tax: calculatedTax,
+      total: totalAmount,
       change: 0, // Add if you track change amount
       items:
         sale.sale_items?.map((item) => {
-          // Calculate price per unit based on total amount divided by quantity
           const quantity = Number(item.quantity || 0);
-          const total = totalAmount / (sale.sale_items?.length || 1); // Distribute total evenly if no individual prices
-          const price = quantity > 0 ? total / quantity : 0;
+          const itemSubtotal = Number(item.subtotal || 0);
+          const price = quantity > 0 ? itemSubtotal / quantity : 0;
 
           return {
             name: item.stock_read?.product_read?.product_name || "",
             quantity: quantity,
             price: price,
-            total: total,
+            total: itemSubtotal,
           };
         }) || [],
       footerText: "СПАСИБО ЗА ПОКУПКУ!",
