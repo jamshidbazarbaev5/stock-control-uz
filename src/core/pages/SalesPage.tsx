@@ -315,7 +315,7 @@ export default function SalesPage() {
     console.groupEnd();
   };
 
-  const formatCurrency = (amount: string | number) => {
+  const formatCurrency = (amount: string | undefined) => {
     return new Intl.NumberFormat("ru-RU").format(Number(amount));
   };
 
@@ -521,7 +521,7 @@ export default function SalesPage() {
                     {t("forms.amount4")}
                   </span>
                   <span className="font-medium text-emerald-600">
-                    {formatCurrency(item.subtotal)} UZS
+                    {formatCurrency(item?.subtotal)} UZS
                   </span>
                 </div>
                 <div className="hover:underline cursor-pointer">
@@ -1206,8 +1206,10 @@ export default function SalesPage() {
                               </div>
                               <div className="font-medium">
                                 {formatCurrency(
-                                  parseFloat(item.subtotal) /
-                                    parseFloat(item.quantity),
+                                  (
+                                    parseFloat(item?.subtotal || "0") /
+                                    parseFloat(item.quantity.toString())
+                                  ).toString(),
                                 )}{" "}
                                 UZS
                               </div>

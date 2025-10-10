@@ -2498,7 +2498,7 @@ const POSInterface = () => {
                         paymentMethods[0]?.payment_method || "Наличные",
                       sale_items: cartProducts.map((item) => ({
                         product_write: item.productId,
-                        selling_unit: item.selectedUnit.id,
+                        selling_unit: item?.selectedUnit?.id,
                         quantity: item.quantity.toString(),
                         price_per_unit: item.total.toString(),
                       })),
