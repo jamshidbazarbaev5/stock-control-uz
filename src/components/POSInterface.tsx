@@ -2318,137 +2318,22 @@ const POSInterface = () => {
         open={isPaymentModalOpen}
         onOpenChange={setIsPaymentModalOpen}
       >
-        <WideDialogContent className="max-w-2xl">
-          <WideDialogHeader>
-            <WideDialogTitle>
-              Оплата - {total.toLocaleString()} сум
-            </WideDialogTitle>
-          </WideDialogHeader>
-          <div className="space-y-6 p-6">
-            {/* Payment Methods */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Способы оплаты</h3>
-              {paymentMethods.map((payment, index) => (
-                <div key={index} className="flex gap-4 items-end">
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium mb-2">
-                      Способ оплаты
-                    </label>
-                    <Select
-                      value={payment.payment_method}
-                      onValueChange={(value) => {
-                        const updated = [...paymentMethods];
-                        updated[index].payment_method = value;
-                        setPaymentMethods(updated);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Наличные">Наличные</SelectItem>
-                        <SelectItem value="Click">Click</SelectItem>
-                        <SelectItem value="Карта">Карта</SelectItem>
-                        <SelectItem value="Перечисление">
-                          Перечисление
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium mb-2">
-                      Сумма
-                    </label>
-                    <Input
-                      type="number"
-                      value={payment.amount || ""}
-                      onChange={(e) => {
-                        const updated = [...paymentMethods];
-                        updated[index].amount = Number(e.target.value);
-                        setPaymentMethods(updated);
-                      }}
-                      placeholder="0"
-                    />
-                  </div>
-                  {paymentMethods.length > 1 && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => {
-                        setPaymentMethods((prev) =>
-                          prev.filter((_, i) => i !== index),
-                        );
-                      }}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const totalPaid = paymentMethods.reduce(
-                    (sum, p) => sum + (p.amount || 0),
-                    0,
-                  );
-                  const remaining = total - totalPaid;
-                  if (remaining > 0) {
-                    setPaymentMethods((prev) => [
-                      ...prev,
-                      { amount: remaining, payment_method: "Наличные" },
-                    ]);
-                  }
-                }}
-                className="w-full"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Добавить способ оплаты
-              </Button>
-            </div>
-
-            {/* Payment Summary */}
-            <div className="border-t pt-4">
-              <div className="flex justify-between text-lg font-semibold">
-                <span>Итого к оплате:</span>
-                <span>{total.toLocaleString()} сум</span>
-              </div>
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Оплачено:</span>
-                <span>
-                  {paymentMethods
-                    .reduce((sum, p) => sum + (p.amount || 0), 0)
-                    .toLocaleString()}{" "}
-                  сум
-                </span>
-              </div>
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Остаток:</span>
-                <span>
-                  {Math.max(
-                    0,
-                    total -
-                      paymentMethods.reduce(
-                        (sum, p) => sum + (p.amount || 0),
-                        0,
-                      ),
-                  ).toLocaleString()}{" "}
-                  сум
-                </span>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-4 pt-4">
-              <Button
-                variant="outline"
+        <WideDialogContent className="max-w-4xl">
+          <div className="p-8">
+            {/* Header with Back Button and Pay Button */}
+            <div className="flex items-center justify-between mb-8">
+              <button
                 onClick={() => setIsPaymentModalOpen(false)}
-                className="flex-1"
+                className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors"
               >
-                Отмена
-              </Button>
-              <Button
+                <span className="text-2xl">←</span>
+                <span className="text-lg">Назад</span>
+                <span className="text-sm bg-gray-200 text-gray-600 px-2 py-1 rounded">
+                  B
+                </span>
+              </button>
+
+              <button
                 onClick={async () => {
                   // Validate payment total
                   const totalPayment = paymentMethods.reduce(
@@ -2564,14 +2449,260 @@ const POSInterface = () => {
                     total &&
                     !onCredit)
                 }
-                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-4 rounded-xl text-lg font-semibold flex items-center gap-2 transition-colors"
               >
-                {isProcessingSale
-                  ? "Обработка..."
-                  : onCredit
-                    ? "Оформить в долг"
-                    : "Оплатить"}
-              </Button>
+                {isProcessingSale ? "Обработка..." : "Оплатить"}
+                <span className="text-sm bg-blue-500 px-2 py-1 rounded">L</span>
+              </button>
+            </div>
+
+            {/* Payment Summary */}
+            <div className="grid grid-cols-2 gap-8 mb-8">
+              <div>
+                <div className="text-gray-500 text-lg mb-2">Итого:</div>
+                <div className="text-5xl font-bold text-gray-900">
+                  {total.toLocaleString()} UZS
+                </div>
+              </div>
+              <div>
+                <div className="text-green-500 text-lg mb-2">К оплате:</div>
+                <div className="text-5xl font-bold text-green-500">
+                  {Math.max(
+                    0,
+                    total -
+                      paymentMethods.reduce(
+                        (sum, p) => sum + (p.amount || 0),
+                        0,
+                      ),
+                  ).toLocaleString()}{" "}
+                  UZS
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Method Buttons */}
+            <div className="flex gap-4 mb-8">
+              <button
+                onClick={() => {
+                  const hasNalichnye = paymentMethods.some(
+                    (p) => p.payment_method === "Наличные",
+                  );
+                  if (!hasNalichnye) {
+                    const totalPaid = paymentMethods.reduce(
+                      (sum, p) => sum + (p.amount || 0),
+                      0,
+                    );
+                    const remaining = total - totalPaid;
+                    setPaymentMethods((prev) => [
+                      ...prev,
+                      {
+                        amount: remaining > 0 ? remaining : 0,
+                        payment_method: "Наличные",
+                      },
+                    ]);
+                  }
+                }}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors"
+              >
+                <svg
+                  className="w-6 h-6 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+                <span className="text-gray-700 font-medium">Наличные</span>
+                <span className="text-sm bg-gray-300 text-gray-600 px-2 py-1 rounded ml-auto">
+                  F1
+                </span>
+              </button>
+
+              <button
+                onClick={() => {
+                  const hasClick = paymentMethods.some(
+                    (p) => p.payment_method === "Click",
+                  );
+                  if (!hasClick) {
+                    const totalPaid = paymentMethods.reduce(
+                      (sum, p) => sum + (p.amount || 0),
+                      0,
+                    );
+                    const remaining = total - totalPaid;
+                    setPaymentMethods((prev) => [
+                      ...prev,
+                      {
+                        amount: remaining > 0 ? remaining : 0,
+                        payment_method: "Click",
+                      },
+                    ]);
+                  }
+                }}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors"
+              >
+                <svg
+                  className="w-6 h-6 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+                  />
+                </svg>
+                <span className="text-gray-700 font-medium">Click</span>
+                <span className="text-sm bg-gray-300 text-gray-600 px-2 py-1 rounded ml-auto">
+                  F2
+                </span>
+              </button>
+
+              <button
+                onClick={() => {
+                  const hasKarta = paymentMethods.some(
+                    (p) => p.payment_method === "Карта",
+                  );
+                  if (!hasKarta) {
+                    const totalPaid = paymentMethods.reduce(
+                      (sum, p) => sum + (p.amount || 0),
+                      0,
+                    );
+                    const remaining = total - totalPaid;
+                    setPaymentMethods((prev) => [
+                      ...prev,
+                      {
+                        amount: remaining > 0 ? remaining : 0,
+                        payment_method: "Карта",
+                      },
+                    ]);
+                  }
+                }}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors"
+              >
+                <svg
+                  className="w-6 h-6 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                  />
+                </svg>
+                <span className="text-gray-700 font-medium">Карта</span>
+                <span className="text-sm bg-gray-300 text-gray-600 px-2 py-1 rounded ml-auto">
+                  F3
+                </span>
+              </button>
+
+              <button
+                onClick={() => {
+                  const hasPerechislenie = paymentMethods.some(
+                    (p) => p.payment_method === "Перечисление",
+                  );
+                  if (!hasPerechislenie) {
+                    const totalPaid = paymentMethods.reduce(
+                      (sum, p) => sum + (p.amount || 0),
+                      0,
+                    );
+                    const remaining = total - totalPaid;
+                    setPaymentMethods((prev) => [
+                      ...prev,
+                      {
+                        amount: remaining > 0 ? remaining : 0,
+                        payment_method: "Перечисление",
+                      },
+                    ]);
+                  }
+                }}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors"
+              >
+                <svg
+                  className="w-6 h-6 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                  />
+                </svg>
+                <span className="text-gray-700 font-medium">Перечисление</span>
+                <span className="text-sm bg-gray-300 text-gray-600 px-2 py-1 rounded ml-auto">
+                  F4
+                </span>
+              </button>
+
+              <button
+                onClick={() => {
+                  const totalPaid = paymentMethods.reduce(
+                    (sum, p) => sum + (p.amount || 0),
+                    0,
+                  );
+                  const remaining = total - totalPaid;
+                  if (remaining > 0) {
+                    setPaymentMethods((prev) => [
+                      ...prev,
+                      { amount: remaining, payment_method: "Наличные" },
+                    ]);
+                  }
+                }}
+                className="bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl px-6 flex items-center justify-center transition-colors"
+              >
+                <Plus className="w-6 h-6 text-gray-600" />
+              </button>
+            </div>
+
+            {/* Payment Method Cards */}
+            <div className="grid grid-cols-3 gap-6">
+              {paymentMethods.map((payment, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-50 rounded-xl p-6 border-2 border-gray-200 relative"
+                >
+                  <button
+                    onClick={() => {
+                      if (paymentMethods.length > 1) {
+                        setPaymentMethods((prev) =>
+                          prev.filter((_, i) => i !== index),
+                        );
+                      }
+                    }}
+                    className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white hover:bg-red-50 rounded-lg text-red-500 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+
+                  <div className="text-gray-700 font-semibold text-lg mb-4">
+                    {payment.payment_method}
+                  </div>
+
+                  <input
+                    type="number"
+                    value={payment.amount || ""}
+                    onChange={(e) => {
+                      const updated = [...paymentMethods];
+                      updated[index].amount = Number(e.target.value);
+                      setPaymentMethods(updated);
+                    }}
+                    placeholder="0"
+                    className="w-full text-4xl font-bold text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-0 p-0"
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </WideDialogContent>
