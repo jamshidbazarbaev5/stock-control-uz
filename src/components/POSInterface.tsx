@@ -1873,28 +1873,28 @@ const POSInterface = () => {
           </div>
 
           {/* Payment Button */}
-          <div className="p-6 border-t border-gray-200">
-            <button
-              onClick={() => {
-                setPaymentMethods([
-                  { amount: total, payment_method: "Наличные" },
-                ]);
-                setIsPaymentModalOpen(true);
-              }}
-              disabled={cartProducts.length === 0}
-              className={`w-full py-8 rounded-2xl text-xl font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[80px] ${
-                onCredit
-                  ? "bg-amber-600 text-white hover:bg-amber-700"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
-              }`}
-            >
-              {cartProducts.length === 0
-                ? "Добавьте товары"
-                : onCredit
-                  ? `В долг ${total.toLocaleString()} сум`
-                  : `Оплатить ${total.toLocaleString()} сум`}
-            </button>
-          </div>
+          {/*<div className="p-6 border-t border-gray-200">*/}
+          {/*  <button*/}
+          {/*    onClick={() => {*/}
+          {/*      setPaymentMethods([*/}
+          {/*        { amount: total, payment_method: "Наличные" },*/}
+          {/*      ]);*/}
+          {/*      setIsPaymentModalOpen(true);*/}
+          {/*    }}*/}
+          {/*    disabled={cartProducts.length === 0}*/}
+          {/*    className={`w-full py-8 rounded-2xl text-xl font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[80px] ${*/}
+          {/*      onCredit*/}
+          {/*        ? "bg-amber-600 text-white hover:bg-amber-700"*/}
+          {/*        : "bg-blue-600 text-white hover:bg-blue-700"*/}
+          {/*    }`}*/}
+          {/*  >*/}
+          {/*    {cartProducts.length === 0*/}
+          {/*      ? "Добавьте товары"*/}
+          {/*      : onCredit*/}
+          {/*        ? `В долг ${total.toLocaleString()} сум`*/}
+          {/*        : `Оплатить ${total.toLocaleString()} сум`}*/}
+          {/*  </button>*/}
+          {/*</div>*/}
         </div>
       )}
 
@@ -3290,6 +3290,7 @@ const POSInterface = () => {
           onOpenChange={setIsPaymentModalOpen}
       >
         <WideDialogContent className="max-w-4xl">
+
           <div className="p-8">
             {/* Header with Back Button and Pay Button */}
             <div className="flex items-center justify-between mb-8">
