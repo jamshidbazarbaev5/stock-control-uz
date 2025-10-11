@@ -157,7 +157,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {
         icon: Ruler,
         label: t("navigation.pos"),
-        href: "/pos",
+        href: "/pos-fullscreen",
       },
 
       {

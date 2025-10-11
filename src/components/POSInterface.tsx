@@ -205,7 +205,7 @@ const POSInterface = () => {
   const [isCalculatorVisible, setIsCalculatorVisible] = useState(true);
 
   // Fullscreen mode state - default based on route
-  const [isFullscreenMode, setIsFullscreenMode] = useState(isFullscreenRoute);
+  const [isFullscreenMode, setIsFullscreenMode] = useState(true);
 
   // User data
   const { data: currentUser } = useCurrentUser();
@@ -265,7 +265,7 @@ const POSInterface = () => {
 
   // Sync fullscreen mode with route
   useEffect(() => {
-    setIsFullscreenMode(isFullscreenRoute);
+    setIsFullscreenMode(true);
   }, [isFullscreenRoute]);
 
   // Initialize seller selection for non-admin users
@@ -332,12 +332,17 @@ const POSInterface = () => {
         );
 
         if (existingProductIndex >= 0) {
-          // Product already in cart - open quantity modal instead of auto-incrementing
-          const existingProduct = cartProducts[existingProductIndex];
-          setSelectedProductForQuantity(existingProduct);
-          setIsQuantityModalOpen(true);
-          setIsManualQuantityMode(false);
-          setManualQuantityInput("");
+          // Product already in cart - increment quantity by 1 without showing modal
+          const updatedProducts = cartProducts.map((p, idx) =>
+            idx === existingProductIndex
+              ? {
+                  ...p,
+                  quantity: p.quantity + 1,
+                  total: p.price * (p.quantity + 1),
+                }
+              : p,
+          );
+          setCartProducts(updatedProducts);
         } else {
           // Add new product to cart with quantity 1
           const newProduct: ProductInCart = {
@@ -1049,202 +1054,11 @@ const POSInterface = () => {
             ))}
           </div>
         </div>
-        {/* Fullscreen Mode Header - Only show in fullscreen */}
-        {isFullscreenMode && (
-          <div className="bg-white p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-6"></div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={handleSearchClick}
-                  className="bg-blue-500 text-white p-4 rounded-xl hover:bg-blue-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                  title="Поиск товаров"
-                >
-                  <Search className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={handleUserClick}
-                  className={`p-4 rounded-xl transition-colors flex items-center justify-center relative min-w-[60px] min-h-[60px] ${
-                    selectedSeller || selectedClient
-                      ? "bg-blue-500 text-white hover:bg-blue-600"
-                      : "bg-green-500 text-white hover:bg-green-600"
-                  }`}
-                  title="Выбор пользователя"
-                >
-                  <UserIcon className="w-6 h-6" />
-                  {(selectedSeller || selectedClient) && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
-                  )}
-                </button>
 
-                <button
-                  onClick={createNewSession}
-                  className="bg-purple-500 text-white p-4 rounded-xl hover:bg-purple-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                  title="Новая сессия"
-                >
-                  <Plus className="w-6 h-6" />
-                </button>
-
-                <button
-                  onClick={handleCloseShift}
-                  className="bg-red-500 text-white p-4 rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                  title="Закрыть смену"
-                >
-                  <LogOut className="w-6 h-6" />
-                </button>
-
-                {/* Calculator Toggle Button - Only show when calculator is hidden */}
-                {!isCalculatorVisible && (
-                  <button
-                    onClick={() => setIsCalculatorVisible(true)}
-                    className="bg-gray-500 text-white p-4 rounded-xl hover:bg-gray-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                    title="Показать калькулятор"
-                  >
-                    <span className="text-xl font-bold">=</span>
-                  </button>
-                )}
-
-                <button
-                  onClick={handleBottomDownClick}
-                  disabled={cartProducts.length === 0}
-                  className="bg-indigo-500 text-white p-4 rounded-xl hover:bg-indigo-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed min-w-[60px] min-h-[60px]"
-                  title="Вниз по списку"
-                >
-                  <ChevronDown className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={handleBottomUpClick}
-                  disabled={cartProducts.length === 0}
-                  className="bg-teal-500 text-white p-4 rounded-xl hover:bg-teal-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed min-w-[60px] min-h-[60px]"
-                  title="Вверх по списку"
-                >
-                  <ChevronUp className="w-6 h-6" />
-                </button>
-
-                <button
-                  onClick={() => {
-                    if (isFullscreenRoute) {
-                      navigate("/pos");
-                    } else {
-                      setIsFullscreenMode(false);
-                    }
-                  }}
-                  className="bg-orange-500 text-white p-4 rounded-xl hover:bg-orange-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                  title="Выйти из полноэкранного режима"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-          </div>
-        )}{" "}
-        {/* Header */}
-        {!isFullscreenMode ? (
-          <div className="bg-white p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-6"></div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={handleSearchClick}
-                  className="bg-blue-500 text-white p-4 rounded-xl hover:bg-blue-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                  title="Поиск товаров"
-                >
-                  <Search className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={handleUserClick}
-                  className={`p-4 rounded-xl transition-colors flex items-center justify-center relative min-w-[60px] min-h-[60px] ${
-                    selectedSeller || selectedClient
-                      ? "bg-blue-500 text-white hover:bg-blue-600"
-                      : "bg-green-500 text-white hover:bg-green-600"
-                  }`}
-                  title="Выбор пользователя"
-                >
-                  <UserIcon className="w-6 h-6" />
-                  {(selectedSeller || selectedClient) && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
-                  )}
-                </button>
-
-                <button
-                  onClick={createNewSession}
-                  className="bg-purple-500 text-white p-4 rounded-xl hover:bg-purple-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                  title="Новая сессия"
-                >
-                  <Plus className="w-6 h-6" />
-                </button>
-
-                <button
-                  onClick={handleCloseShift}
-                  className="bg-red-500 text-white p-4 rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                  title="Закрыть смену"
-                >
-                  <LogOut className="w-6 h-6" />
-                </button>
-
-                {/* Calculator Toggle Button - Only show when calculator is hidden */}
-                {!isCalculatorVisible && (
-                  <button
-                    onClick={() => setIsCalculatorVisible(true)}
-                    className="bg-gray-500 text-white p-4 rounded-xl hover:bg-gray-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                    title="Показать калькулятор"
-                  >
-                    <span className="text-xl font-bold">=</span>
-                  </button>
-                )}
-
-                <button
-                  onClick={handleBottomDownClick}
-                  disabled={cartProducts.length === 0}
-                  className="bg-indigo-500 text-white p-4 rounded-xl hover:bg-indigo-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed min-w-[60px] min-h-[60px]"
-                  title="Вниз по списку"
-                >
-                  <ChevronDown className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={handleBottomUpClick}
-                  disabled={cartProducts.length === 0}
-                  className="bg-teal-500 text-white p-4 rounded-xl hover:bg-teal-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed min-w-[60px] min-h-[60px]"
-                  title="Вверх по списку"
-                >
-                  <ChevronUp className="w-6 h-6" />
-                </button>
-
-                {/* Fullscreen Toggle Button */}
-                <button
-                  onClick={() => {
-                    if (!isFullscreenRoute) {
-                      navigate("/pos-fullscreen");
-                    } else {
-                      setIsFullscreenMode(true);
-                    }
-                  }}
-                  className="bg-orange-500 text-white p-4 rounded-xl hover:bg-orange-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                  title="Полноэкранный режим"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
-                    />
-                  </svg>
-                </button>
-                {/**/}
-              </div>
-            </div>
-          </div>
-        ) : null}{" "}
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-hidden">
           {/* Product Header */}
-          <div className="mb-6">
+          <div className="mb-6 px-6 pt-6">
             <h2 className="text-3xl font-bold mb-2 text-gray-900">
               {cartProducts.length > 0
                 ? `${cartProducts.length} товар(ов) в корзине`
@@ -1341,7 +1155,9 @@ const POSInterface = () => {
           )}
 
           {/* Summary Cards */}
-          <div className="flex space-x-4">
+          <div
+            className={`flex space-x-4 ${isFullscreenMode ? "px-4 mb-4" : "px-6 mb-6"}`}
+          >
             <div className="flex-1 bg-gray-100 rounded-xl p-6">
               <div className="flex justify-between items-center">
                 <div className="text-left">
@@ -1371,7 +1187,9 @@ const POSInterface = () => {
           </div>
 
           {/* Product Table */}
-          <div className={`flex-1 ${isFullscreenMode ? "p-4" : "p-6"} min-h-0`}>
+          <div
+            className={`flex flex-col flex-1 ${isFullscreenMode ? "p-4" : "p-6"} min-h-0`}
+          >
             {/* Barcode Scanner Input - Positioned off-screen but still focusable */}
             <input
               ref={barcodeInputRef}
@@ -1445,260 +1263,377 @@ const POSInterface = () => {
               placeholder="Barcode scanner input"
             />
 
-            <div
-              ref={tableRef}
-              className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex flex-col h-full"
-            >
-              {/* Table Header - Fixed */}
-              <div className="flex-shrink-0">
-                <table className="w-full">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="text-left p-4 font-semibold text-gray-700">
-                        №
-                      </th>
-                      <th className="text-left p-4 font-semibold text-gray-700">
-                        Товар
-                      </th>
-                      <th className="text-right p-4 font-semibold text-gray-700">
-                        Цена
-                      </th>
-                      <th className="text-center p-4 font-semibold text-gray-700">
-                        Ед. изм.
-                      </th>
-                      <th className="text-right p-4 font-semibold text-gray-700">
-                        Кол-во
-                      </th>
-                      <th className="text-right p-4 font-semibold text-gray-700">
-                        Сумма
-                      </th>
-                      <th className="text-center p-4 font-semibold text-gray-700 w-20">
-                        Действия
-                      </th>
-                    </tr>
-                  </thead>
-                </table>
-              </div>
-
-              {/* Scrollable Table Body */}
-              <div className="flex-1 overflow-y-auto min-h-0">
-                <table className="w-full">
-                  <tbody>
-                    {cartProducts.length === 0 ? (
+            <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+              <div
+                ref={tableRef}
+                className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm flex flex-col flex-1 min-h-0"
+              >
+                {/* Table Header - Fixed */}
+                <div className="flex-shrink-0">
+                  <table className="w-full">
+                    <thead className="bg-gray-100">
                       <tr>
-                        <td
-                          colSpan={7}
-                          className="p-8 text-center text-gray-500"
-                        >
-                          <div className="flex flex-col items-center space-y-2">
-                            <Search className="w-12 h-12 text-gray-300" />
-                            <span>Добавьте товары в корзину</span>
-                            <span className="text-sm">
-                              Нажмите на синюю кнопку поиска чтобы найти товары
-                            </span>
-                          </div>
-                        </td>
+                        <th className="text-left p-4 font-semibold text-gray-700">
+                          №
+                        </th>
+                        <th className="text-left p-4 font-semibold text-gray-700">
+                          Товар
+                        </th>
+                        <th className="text-right p-4 font-semibold text-gray-700">
+                          Цена
+                        </th>
+                        <th className="text-center p-4 font-semibold text-gray-700">
+                          Ед. изм.
+                        </th>
+                        <th className="text-right p-4 font-semibold text-gray-700">
+                          Кол-во
+                        </th>
+                        <th className="text-right p-4 font-semibold text-gray-700">
+                          Сумма
+                        </th>
+                        <th className="text-center p-4 font-semibold text-gray-700 w-20">
+                          Действия
+                        </th>
                       </tr>
-                    ) : (
-                      cartProducts.map((product, index) => (
-                        <tr
-                          key={product.id}
-                          className={`${
-                            index === focusedProductIndex
-                              ? "bg-blue-100 border-l-4 border-blue-500"
-                              : index % 2 === 0
-                                ? "bg-gray-50"
-                                : "bg-white"
-                          } transition-all duration-200 hover:bg-gray-100`}
-                        >
-                          <td className="p-4 text-gray-900">{index + 1}</td>
-                          <td className="p-4 font-medium text-gray-900">
-                            <div>
-                              <div>{product.name}</div>
-                              {product.barcode && (
-                                <div className="text-xs text-gray-500">
-                                  Штрихкод: {product.barcode}
-                                </div>
-                              )}
-                              {product.product.ikpu && (
-                                <div className="text-xs text-gray-500">
-                                  ИКПУ: {product.product.ikpu}
-                                </div>
-                              )}
-                              <div className="text-xs text-green-600 font-medium">
-                                В наличии:{" "}
-                                {parseFloat(
-                                  String(product.product.quantity),
-                                ).toFixed(2)}{" "}
-                                {product.selectedUnit?.short_name || "шт"}
-                              </div>
+                    </thead>
+                  </table>
+                </div>
+
+                {/* Scrollable Table Body */}
+                <div className="overflow-y-auto overflow-x-hidden flex-1">
+                  <table className="w-full">
+                    <tbody>
+                      {cartProducts.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={7}
+                            className="p-8 text-center text-gray-500"
+                          >
+                            <div className="flex flex-col items-center space-y-2">
+                              <Search className="w-12 h-12 text-gray-300" />
+                              <span>Добавьте товары в корзину</span>
+                              <span className="text-sm">
+                                Нажмите на синюю кнопку поиска чтобы найти
+                                товары
+                              </span>
                             </div>
                           </td>
-                          <td className="p-4 text-right text-gray-900">
-                            <Input
-                              type="number"
-                              value={product.price}
-                              onChange={(e) => {
-                                const newPrice = Number(e.target.value);
-                                if (newPrice >= 0) {
-                                  const updatedProducts = cartProducts.map(
-                                    (p) =>
-                                      p.id === product.id
-                                        ? {
-                                            ...p,
-                                            price: newPrice,
-                                            total: newPrice * p.quantity,
-                                          }
-                                        : p,
-                                  );
-                                  setCartProducts(updatedProducts);
-                                }
-                              }}
-                              className="w-24 text-right"
-                              min="0"
-                            />
-                          </td>
-                          <td className="p-4 text-center text-gray-900">
-                            {product.product.available_units &&
-                            product.product.available_units.length > 0 ? (
-                              <Select
-                                value={
-                                  product.selectedUnit?.id?.toString() || ""
-                                }
-                                onValueChange={(value) => {
-                                  const unitId = Number(value);
-                                  const selectedUnit =
-                                    product.product.available_units?.find(
-                                      (u) => u.id === unitId,
-                                    );
-                                  if (selectedUnit) {
+                        </tr>
+                      ) : (
+                        cartProducts.map((product, index) => (
+                          <tr
+                            key={product.id}
+                            className={`${
+                              index === focusedProductIndex
+                                ? "bg-blue-100 border-l-4 border-blue-500"
+                                : index % 2 === 0
+                                  ? "bg-gray-50"
+                                  : "bg-white"
+                            } transition-all duration-200 hover:bg-gray-100`}
+                          >
+                            <td className="p-4 text-gray-900">{index + 1}</td>
+                            <td className="p-4 font-medium text-gray-900">
+                              <div>
+                                <div>{product.name}</div>
+                                {product.barcode && (
+                                  <div className="text-xs text-gray-500">
+                                    Штрихкод: {product.barcode}
+                                  </div>
+                                )}
+                                {product.product.ikpu && (
+                                  <div className="text-xs text-gray-500">
+                                    ИКПУ: {product.product.ikpu}
+                                  </div>
+                                )}
+                                <div className="text-xs text-green-600 font-medium">
+                                  В наличии:{" "}
+                                  {parseFloat(
+                                    String(product.product.quantity),
+                                  ).toFixed(2)}{" "}
+                                  {product.selectedUnit?.short_name || "шт"}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-4 text-right text-gray-900">
+                              <Input
+                                type="number"
+                                value={product.price}
+                                onChange={(e) => {
+                                  const newPrice = Number(e.target.value);
+                                  if (newPrice >= 0) {
                                     const updatedProducts = cartProducts.map(
                                       (p) =>
                                         p.id === product.id
-                                          ? { ...p, selectedUnit }
+                                          ? {
+                                              ...p,
+                                              price: newPrice,
+                                              total: newPrice * p.quantity,
+                                            }
                                           : p,
                                     );
                                     setCartProducts(updatedProducts);
                                   }
                                 }}
-                              >
-                                <SelectTrigger className="w-20 text-xs">
-                                  <SelectValue placeholder="Ед." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {product.product.available_units.map(
-                                    (unit) => (
-                                      <SelectItem
-                                        key={unit.id}
-                                        value={unit.id.toString()}
-                                      >
-                                        {unit.short_name}
-                                        {unit.is_base && " (осн.)"}
-                                      </SelectItem>
-                                    ),
-                                  )}
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <span className="text-xs text-gray-500">
-                                {product.selectedUnit?.short_name || "шт"}
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-4 text-right text-gray-900">
-                            <div className="flex items-center justify-end space-x-2">
-                              <button
-                                onClick={() => {
-                                  const newQuantity = product.quantity - 1;
-                                  if (newQuantity > 0) {
+                                className="w-24 text-right"
+                                min="0"
+                              />
+                            </td>
+                            <td className="p-4 text-center text-gray-900">
+                              {product.product.available_units &&
+                              product.product.available_units.length > 0 ? (
+                                <Select
+                                  value={
+                                    product.selectedUnit?.id?.toString() || ""
+                                  }
+                                  onValueChange={(value) => {
+                                    const unitId = Number(value);
+                                    const selectedUnit =
+                                      product.product.available_units?.find(
+                                        (u) => u.id === unitId,
+                                      );
+                                    if (selectedUnit) {
+                                      const updatedProducts = cartProducts.map(
+                                        (p) =>
+                                          p.id === product.id
+                                            ? { ...p, selectedUnit }
+                                            : p,
+                                      );
+                                      setCartProducts(updatedProducts);
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger className="w-20 text-xs">
+                                    <SelectValue placeholder="Ед." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {product.product.available_units.map(
+                                      (unit) => (
+                                        <SelectItem
+                                          key={unit.id}
+                                          value={unit.id.toString()}
+                                        >
+                                          {unit.short_name}
+                                          {unit.is_base && " (осн.)"}
+                                        </SelectItem>
+                                      ),
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <span className="text-xs text-gray-500">
+                                  {product.selectedUnit?.short_name || "шт"}
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-4 text-right text-gray-900">
+                              <div className="flex items-center justify-end space-x-2">
+                                <button
+                                  onClick={() => {
+                                    const newQuantity = product.quantity - 1;
+                                    if (newQuantity > 0) {
+                                      updateProductQuantity(
+                                        product.id,
+                                        newQuantity,
+                                      );
+                                    }
+                                  }}
+                                  disabled={product.quantity <= 1}
+                                  className={`w-10 h-10 rounded-full ${
+                                    index === focusedProductIndex
+                                      ? "bg-blue-200 hover:bg-blue-300 text-blue-800"
+                                      : "bg-gray-200 hover:bg-gray-300"
+                                  } ${product.quantity <= 1 ? "opacity-50 cursor-not-allowed" : ""} flex items-center justify-center text-sm font-bold transition-colors`}
+                                >
+                                  −
+                                </button>
+                                <button
+                                  onClick={() => handleQuantityClick(product)}
+                                  className={`min-w-[80px] min-h-[50px] text-center border rounded-lg px-3 py-2 text-lg font-semibold transition-all ${
+                                    index === focusedProductIndex
+                                      ? "border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                      : "border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50"
+                                  } focus:outline-none focus:ring-2 focus:ring-blue-200`}
+                                >
+                                  {product.quantity.toFixed(2)}
+                                </button>
+                                <button
+                                  onClick={() =>
                                     updateProductQuantity(
                                       product.id,
-                                      newQuantity,
+                                      product.quantity + 1,
+                                    )
+                                  }
+                                  disabled={
+                                    product.quantity >=
+                                    parseFloat(String(product.product.quantity))
+                                  }
+                                  className={`w-10 h-10 rounded-full ${
+                                    index === focusedProductIndex
+                                      ? "bg-blue-200 hover:bg-blue-300 text-blue-800"
+                                      : "bg-gray-200 hover:bg-gray-300"
+                                  } ${product.quantity >= parseFloat(String(product.product.quantity)) ? "opacity-50 cursor-not-allowed" : ""} flex items-center justify-center text-sm font-bold transition-colors`}
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </td>
+                            <td className="p-4 text-right font-semibold text-gray-900">
+                              {product.total.toLocaleString()}
+                            </td>
+                            <td className="p-4 text-center">
+                              <button
+                                onClick={() => {
+                                  removeProduct(product.id);
+                                  if (index === focusedProductIndex) {
+                                    setFocusedProductIndex((prev) =>
+                                      prev >= cartProducts.length - 1
+                                        ? cartProducts.length - 2
+                                        : prev,
                                     );
                                   }
                                 }}
-                                disabled={product.quantity <= 1}
-                                className={`w-10 h-10 rounded-full ${
+                                className={`w-8 h-8 rounded-full ${
                                   index === focusedProductIndex
-                                    ? "bg-blue-200 hover:bg-blue-300 text-blue-800"
-                                    : "bg-gray-200 hover:bg-gray-300"
-                                } ${product.quantity <= 1 ? "opacity-50 cursor-not-allowed" : ""} flex items-center justify-center text-sm font-bold transition-colors`}
+                                    ? "bg-red-200 hover:bg-red-300 text-red-700 ring-2 ring-red-400"
+                                    : "bg-red-100 hover:bg-red-200 text-red-600"
+                                } flex items-center justify-center transition-all`}
                               >
-                                −
+                                <X className="w-4 h-4" />
                               </button>
-                              <button
-                                onClick={() => handleQuantityClick(product)}
-                                className={`min-w-[80px] min-h-[50px] text-center border rounded-lg px-3 py-2 text-lg font-semibold transition-all ${
-                                  index === focusedProductIndex
-                                    ? "border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100"
-                                    : "border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50"
-                                } focus:outline-none focus:ring-2 focus:ring-blue-200`}
-                              >
-                                {product.quantity.toFixed(2)}
-                              </button>
-                              <button
-                                onClick={() =>
-                                  updateProductQuantity(
-                                    product.id,
-                                    product.quantity + 1,
-                                  )
-                                }
-                                disabled={
-                                  product.quantity >=
-                                  parseFloat(String(product.product.quantity))
-                                }
-                                className={`w-10 h-10 rounded-full ${
-                                  index === focusedProductIndex
-                                    ? "bg-blue-200 hover:bg-blue-300 text-blue-800"
-                                    : "bg-gray-200 hover:bg-gray-300"
-                                } ${product.quantity >= parseFloat(String(product.product.quantity)) ? "opacity-50 cursor-not-allowed" : ""} flex items-center justify-center text-sm font-bold transition-colors`}
-                              >
-                                +
-                              </button>
-                            </div>
-                          </td>
-                          <td className="p-4 text-right font-semibold text-gray-900">
-                            {product.total.toLocaleString()}
-                          </td>
-                          <td className="p-4 text-center">
-                            <button
-                              onClick={() => {
-                                removeProduct(product.id);
-                                if (index === focusedProductIndex) {
-                                  setFocusedProductIndex((prev) =>
-                                    prev >= cartProducts.length - 1
-                                      ? cartProducts.length - 2
-                                      : prev,
-                                  );
-                                }
-                              }}
-                              className={`w-8 h-8 rounded-full ${
-                                index === focusedProductIndex
-                                  ? "bg-red-200 hover:bg-red-300 text-red-700 ring-2 ring-red-400"
-                                  : "bg-red-100 hover:bg-red-200 text-red-600"
-                              } flex items-center justify-center transition-all`}
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Page indicator */}
+              <div className="flex items-center justify-between text-sm text-gray-500 mt-4 flex-shrink-0">
+                <span>Товаров в корзине: {cartProducts.length}</span>
+                <button
+                  onClick={clearCart}
+                  className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg text-sm font-medium transition-colors"
+                  disabled={cartProducts.length === 0}
+                >
+                  Очистить корзину
+                </button>
               </div>
             </div>
+          </div>
 
-            {/* Page indicator */}
-            <div className="flex items-center justify-between text-sm text-gray-500 mt-4">
-              <span>Товаров в корзине: {cartProducts.length}</span>
+          {/* Action Buttons at Bottom */}
+          <div className="bg-white p-6 border-t border-gray-200">
+            <div className="flex items-center space-x-2 justify-center">
               <button
-                onClick={clearCart}
-                className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg text-sm font-medium transition-colors"
-                disabled={cartProducts.length === 0}
+                onClick={handleSearchClick}
+                className="bg-blue-500 text-white p-4 rounded-xl hover:bg-blue-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
+                title="Поиск товаров"
               >
-                Очистить корзину
+                <Search className="w-6 h-6" />
               </button>
+              <button
+                onClick={handleUserClick}
+                className={`p-4 rounded-xl transition-colors flex items-center justify-center relative min-w-[60px] min-h-[60px] ${
+                  selectedSeller || selectedClient
+                    ? "bg-blue-500 text-white hover:bg-blue-600"
+                    : "bg-green-500 text-white hover:bg-green-600"
+                }`}
+                title="Выбор пользователя"
+              >
+                <UserIcon className="w-6 h-6" />
+                {(selectedSeller || selectedClient) && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
+                )}
+              </button>
+
+              <button
+                onClick={createNewSession}
+                className="bg-purple-500 text-white p-4 rounded-xl hover:bg-purple-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
+                title="Новая сессия"
+              >
+                <Plus className="w-6 h-6" />
+              </button>
+
+              <button
+                onClick={handleCloseShift}
+                className="bg-red-500 text-white p-4 rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
+                title="Закрыть смену"
+              >
+                <LogOut className="w-6 h-6" />
+              </button>
+
+              {/* Calculator Toggle Button - Only show when calculator is hidden */}
+              {!isCalculatorVisible && (
+                <button
+                  onClick={() => setIsCalculatorVisible(true)}
+                  className="bg-gray-500 text-white p-4 rounded-xl hover:bg-gray-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
+                  title="Показать калькулятор"
+                >
+                  <span className="text-xl font-bold">=</span>
+                </button>
+              )}
+
+              <button
+                onClick={handleBottomDownClick}
+                disabled={cartProducts.length === 0}
+                className="bg-indigo-500 text-white p-4 rounded-xl hover:bg-indigo-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed min-w-[60px] min-h-[60px]"
+                title="Вниз по списку"
+              >
+                <ChevronDown className="w-6 h-6" />
+              </button>
+              <button
+                onClick={handleBottomUpClick}
+                disabled={cartProducts.length === 0}
+                className="bg-teal-500 text-white p-4 rounded-xl hover:bg-teal-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed min-w-[60px] min-h-[60px]"
+                title="Вверх по списку"
+              >
+                <ChevronUp className="w-6 h-6" />
+              </button>
+
+              {/* Fullscreen Toggle Button */}
+              {!isFullscreenMode ? (
+                <button
+                  onClick={() => {
+                    if (!isFullscreenRoute) {
+                      navigate("/pos-fullscreen");
+                    } else {
+                      setIsFullscreenMode(true);
+                    }
+                  }}
+                  className="bg-orange-500 text-white p-4 rounded-xl hover:bg-orange-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
+                  title="Полноэкранный режим"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                    />
+                  </svg>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (isFullscreenRoute) {
+                      navigate("/pos");
+                    } else {
+                      setIsFullscreenMode(false);
+                    }
+                  }}
+                  className="bg-orange-500 text-white p-4 rounded-xl hover:bg-orange-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
+                  title="Выйти из полноэкранного режима"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1852,811 +1787,7 @@ const POSInterface = () => {
                 onClick={handleEquals}
                 className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-20 flex items-center justify-center"
               >
-                <span className="text-3xl font-bold text-green-600">=</span>
-              </button>
-              {/* Row 6 - PAY button */}
-              <button
-                onClick={() => {
-                  setPaymentMethods([
-                    { amount: total, payment_method: "Наличные" },
-                  ]);
-                  setIsPaymentModalOpen(true);
-                }}
-                disabled={cartProducts.length === 0}
-                className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-20 flex items-center justify-center disabled:bg-gray-200 disabled:cursor-not-allowed col-span-4"
-              >
-                <span className="text-xl font-bold text-green-600">
-                  PAY - {total.toLocaleString()} сум
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Payment Button */}
-          {/*<div className="p-6 border-t border-gray-200">*/}
-          {/*  <button*/}
-          {/*    onClick={() => {*/}
-          {/*      setPaymentMethods([*/}
-          {/*        { amount: total, payment_method: "Наличные" },*/}
-          {/*      ]);*/}
-          {/*      setIsPaymentModalOpen(true);*/}
-          {/*    }}*/}
-          {/*    disabled={cartProducts.length === 0}*/}
-          {/*    className={`w-full py-8 rounded-2xl text-xl font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed min-h-[80px] ${*/}
-          {/*      onCredit*/}
-          {/*        ? "bg-amber-600 text-white hover:bg-amber-700"*/}
-          {/*        : "bg-blue-600 text-white hover:bg-blue-700"*/}
-          {/*    }`}*/}
-          {/*  >*/}
-          {/*    {cartProducts.length === 0*/}
-          {/*      ? "Добавьте товары"*/}
-          {/*      : onCredit*/}
-          {/*        ? `В долг ${total.toLocaleString()} сум`*/}
-          {/*        : `Оплатить ${total.toLocaleString()} сум`}*/}
-          {/*  </button>*/}
-          {/*</div>*/}
-        </div>
-      )}
-
-      {/* Product Search Modal */}
-      <WideDialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
-        <WideDialogContent
-          className="max-h-[90vh] overflow-hidden p-0"
-          width="extra-wide"
-        >
-          <WideDialogHeader className="p-6 pb-4">
-            <WideDialogTitle className="text-xl font-bold">
-              Поиск товаров
-            </WideDialogTitle>
-          </WideDialogHeader>
-
-          <div className="px-6 pb-4 space-y-4">
-            {/* Search Input */}
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Поиск по товарам..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 text-base border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
-                autoComplete="off"
-                autoFocus
-              />
-            </div>
-
-            {/* Selection info and controls */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                {selectedProducts.size > 0 && (
-                  <>
-                    <span className="text-sm text-gray-600">
-                      Выбрано: {selectedProducts.size} товар(ов)
-                    </span>
-                    <button
-                      onClick={handleSaveSelectedProducts}
-                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
-                    >
-                      Добавить выбранные
-                    </button>
-                  </>
-                )}
-              </div>
-
-              {selectedProducts.size > 0 && (
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setSelectedProducts(new Set())}
-                    className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
-                  >
-                    Очистить
-                  </button>
-                  <button
-                    onClick={handleSaveSelectedProducts}
-                    className="px-4 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-                  >
-                    Добавить в корзину ({selectedProducts.size})
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Products Table */}
-          <div className="flex-1 overflow-hidden">
-            <div className="border-t border-gray-200 bg-gray-50 max-h-[60vh] overflow-y-auto">
-              <table className="w-full">
-                <thead className="bg-gray-100 sticky top-0 border-b border-gray-200">
-                  <tr>
-                    <th className="text-center p-4 font-semibold text-gray-700 w-16">
-                      <input
-                        type="checkbox"
-                        checked={
-                          filteredProducts.length > 0 &&
-                          filteredProducts.every((product) =>
-                            selectedProducts.has(product.id!),
-                          )
-                        }
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedProducts(
-                              new Set(filteredProducts.map((p) => p.id!)),
-                            );
-                          } else {
-                            setSelectedProducts(new Set());
-                          }
-                        }}
-                        className="w-4 h-4 rounded border-gray-300"
-                      />
-                    </th>
-                    <th className="text-left p-4 font-semibold text-gray-700 w-16">
-                      №
-                    </th>
-                    <th className="text-left p-4 font-semibold text-gray-700">
-                      Наименование товара
-                    </th>
-                    <th className="text-center p-4 font-semibold text-gray-700">
-                      ИКПУ
-                    </th>
-                    <th className="text-center p-4 font-semibold text-gray-700">
-                      Штрихкод
-                    </th>
-                    <th className="text-right p-4 font-semibold text-gray-700">
-                      Количество
-                    </th>
-                    <th className="text-right p-4 font-semibold text-gray-700">
-                      Цена
-                    </th>
-                    <th className="text-center p-4 font-semibold text-gray-700 w-24">
-                      •••
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loadingProducts ? (
-                    <tr>
-                      <td colSpan={8} className="text-center p-8 text-gray-500">
-                        <div className="flex items-center justify-center space-x-2">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                          <span>Загрузка товаров...</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : filteredProducts.length === 0 ? (
-                    <tr>
-                      <td colSpan={8} className="text-center p-8 text-gray-500">
-                        {searchTerm
-                          ? "Товары не найдены"
-                          : "Начните ввод для поиска товаров"}
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredProducts.map((product, index) => (
-                      <tr
-                        key={product.id}
-                        className={`${
-                          index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                        } ${selectedProducts.has(product.id!) ? "bg-blue-100" : ""} ${parseFloat(String(product.quantity || 0)) <= 0 ? "opacity-50" : ""} hover:bg-blue-50 transition-colors border-b border-gray-100`}
-                      >
-                        <td className="p-4 text-center">
-                          <input
-                            type="checkbox"
-                            checked={selectedProducts.has(product.id!)}
-                            onChange={(e) => {
-                              e.stopPropagation();
-                              handleProductSelect(product);
-                            }}
-                            className="w-4 h-4 rounded border-gray-300"
-                          />
-                        </td>
-                        <td className="p-4 text-gray-900 font-medium">
-                          {index + 1}
-                        </td>
-                        <td
-                          className="p-4 cursor-pointer"
-                          onClick={() => handleProductSelect(product)}
-                        >
-                          <div>
-                            <div className="font-medium text-gray-900 text-sm hover:text-blue-600 transition-colors">
-                              {product.product_name || "N/A"}
-                            </div>
-                            <div className="text-xs text-gray-500 mt-1">
-                              {product.barcode && (
-                                <span>Штрихкод: {product.barcode} </span>
-                              )}
-                              {product.ikpu && (
-                                <span className="ml-2">
-                                  ИКПУ: {product.ikpu}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-4 text-center text-gray-600 font-mono text-sm">
-                          {product.ikpu || "—"}
-                        </td>
-                        <td className="p-4 text-center text-gray-600 font-mono text-sm">
-                          {product.barcode || "—"}
-                        </td>
-                        <td className="p-4 text-right">
-                          <div
-                            className={`font-semibold ${parseFloat(String(product.quantity || 0)) <= 0 ? "text-red-500" : "text-gray-900"}`}
-                          >
-                            {parseFloat(
-                              String(product.quantity || 0),
-                            ).toLocaleString()}
-                          </div>
-                        </td>
-                        <td className="p-4 text-right">
-                          <div className="text-gray-900 font-semibold">
-                            {product.selling_price
-                              ? parseFloat(
-                                  String(product.selling_price),
-                                ).toLocaleString()
-                              : product.min_price
-                                ? parseFloat(
-                                    String(product.min_price),
-                                  ).toLocaleString()
-                                : "—"}
-                          </div>
-                        </td>
-                        <td className="p-4 text-center">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-gray-400 hover:text-gray-600"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleProductSelect(product);
-                            }}
-                          >
-                            •••
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </WideDialogContent>
-      </WideDialog>
-
-      {/* User Selection Modal */}
-      <WideDialog open={isUserModalOpen} onOpenChange={setIsUserModalOpen}>
-        <WideDialogContent className="max-h-[90vh] overflow-hidden p-0">
-          <WideDialogHeader className="p-6 pb-4">
-            <WideDialogTitle className="text-xl font-bold">
-              Выбор пользователя для долга
-            </WideDialogTitle>
-          </WideDialogHeader>
-
-          <div className="p-6 space-y-6">
-            {/* Seller Selection - Only for admin/superuser */}
-            {(isAdmin || isSuperUser) && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Продавец
-                </label>
-                <Select
-                  value={selectedSeller?.toString() || ""}
-                  onValueChange={(value) =>
-                    setSelectedSeller(parseInt(value, 10))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите продавца" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users
-                      .filter((user) => {
-                        const extendedUser = user as ExtendedUser;
-                        return (
-                          (user.role === "Продавец" ||
-                            user.role === "Администратор") &&
-                          extendedUser.store_read
-                        );
-                      })
-                      .map((user) => (
-                        <SelectItem
-                          key={user.id}
-                          value={user.id?.toString() || ""}
-                        >
-                          {user.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Credit Toggle */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                В кредит
-              </label>
-              <Select
-                value={onCredit ? "true" : "false"}
-                onValueChange={(value) => {
-                  const isCredit = value === "true";
-                  setOnCredit(isCredit);
-                  if (!isCredit) {
-                    setSelectedClient(null);
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="true">Да</SelectItem>
-                  <SelectItem value="false">Нет</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Client Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Клиент
-              </label>
-              <Input
-                type="text"
-                placeholder="Поиск клиентов..."
-                value={clientSearchTerm}
-                onChange={(e) => setClientSearchTerm(e.target.value)}
-                className="mb-2"
-                autoComplete="off"
-              />
-              <Select
-                value={selectedClient?.toString() || ""}
-                onValueChange={(value) =>
-                  setSelectedClient(parseInt(value, 10))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите клиента" />
-                </SelectTrigger>
-                <SelectContent>
-                  <div className="max-h-[200px] overflow-y-auto">
-                    {clients && clients.length > 0 ? (
-                      clients
-                        .filter(
-                          (client) =>
-                            (onCredit ? true : client.type === "Юр.лицо") &&
-                            client.name
-                              .toLowerCase()
-                              .includes(clientSearchTerm.toLowerCase()),
-                        )
-                        .map((client) => (
-                          <SelectItem
-                            key={client.id}
-                            value={client.id?.toString() || ""}
-                          >
-                            {client.name}{" "}
-                            {client.type !== "Юр.лицо" && `(${client.type})`}
-                          </SelectItem>
-                        ))
-                    ) : (
-                      <div className="p-2 text-center text-gray-500 text-sm">
-                        Клиенты не найдены
-                      </div>
-                    )}
-                  </div>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Current Selection Display */}
-            {(selectedSeller || selectedClient) && (
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <h4 className="font-medium text-blue-900 mb-2">
-                  Текущий выбор:
-                </h4>
-                {selectedSeller && (
-                  <p className="text-sm text-blue-700">
-                    <strong>Продавец:</strong>{" "}
-                    {users.find((u) => u.id === selectedSeller)?.name}
-                  </p>
-                )}
-                {selectedClient && (
-                  <p className="text-sm text-blue-700">
-                    <strong>Клиент:</strong>{" "}
-                    {clients.find((c) => c.id === selectedClient)?.name}
-                    {onCredit && (
-                      <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">
-                        В кредит
-                      </span>
-                    )}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex space-x-3 pt-4">
-              <Button
-                onClick={() => {
-                  // Reset selections
-                  setSelectedSeller(null);
-                  setSelectedClient(null);
-                  setOnCredit(false);
-                  setClientSearchTerm("");
-                }}
-                variant="outline"
-                className="flex-1"
-              >
-                Очистить
-              </Button>
-              <Button
-                onClick={() => setIsUserModalOpen(false)}
-                className="flex-1"
-              >
-                Готово
-              </Button>
-            </div>
-          </div>
-        </WideDialogContent>
-      </WideDialog>
-
-      {/* Quantity Selection Modal */}
-      <WideDialog
-        open={isQuantityModalOpen}
-        onOpenChange={setIsQuantityModalOpen}
-      >
-        <WideDialogContent className="max-w-md p-0">
-          <WideDialogHeader className="p-6 pb-4">
-            <WideDialogTitle className="text-xl font-bold text-center">
-              Выберите количество
-            </WideDialogTitle>
-            {selectedProductForQuantity && (
-              <div className="text-center mt-2">
-                <p className="text-sm text-gray-600">
-                  {selectedProductForQuantity.name}
-                </p>
-                <p className="text-xs text-green-600 font-medium mt-1">
-                  В наличии:{" "}
-                  {parseFloat(
-                    String(selectedProductForQuantity.product.quantity),
-                  ).toFixed(2)}{" "}
-                  {selectedProductForQuantity.selectedUnit?.short_name || "шт"}
-                </p>
-                {selectedProductForQuantity.product.barcode && (
-                  <p className="text-xs text-gray-500">
-                    Штрихкод: {selectedProductForQuantity.product.barcode}
-                  </p>
-                )}
-                {selectedProductForQuantity.product.ikpu && (
-                  <p className="text-xs text-gray-500">
-                    ИКПУ: {selectedProductForQuantity.product.ikpu}
-                  </p>
-                )}
-              </div>
-            )}
-          </WideDialogHeader>
-
-          <div className="p-6 pt-2">
-            {!isManualQuantityMode ? (
-              <>
-                {/* Preset Quantity Cards */}
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  {[5, 10, 15, 20, 25, 30].map((qty) => {
-                    const availableQty = selectedProductForQuantity?.product
-                      .quantity
-                      ? parseFloat(
-                          String(selectedProductForQuantity.product.quantity),
-                        )
-                      : 0;
-                    const isDisabled = qty > availableQty;
-                    return (
-                      <button
-                        key={qty}
-                        onClick={() => !isDisabled && handleQuantitySelect(qty)}
-                        disabled={isDisabled}
-                        className={`border-2 rounded-2xl p-6 transition-all duration-200 min-h-[100px] touch-manipulation ${
-                          isDisabled
-                            ? "bg-gray-100 border-gray-300 opacity-40 cursor-not-allowed"
-                            : "bg-blue-50 hover:bg-blue-100 border-blue-200 hover:border-blue-400 transform hover:scale-105 active:scale-95"
-                        }`}
-                      >
-                        <div
-                          className={`text-3xl font-bold mb-2 ${isDisabled ? "text-gray-400" : "text-blue-700"}`}
-                        >
-                          {qty}
-                        </div>
-                        <div
-                          className={`text-sm ${isDisabled ? "text-gray-400" : "text-blue-600"}`}
-                        >
-                          {selectedProductForQuantity?.selectedUnit
-                            ?.short_name || "штук"}
-                        </div>
-                        {isDisabled && (
-                          <div className="text-xs text-red-500 mt-1">
-                            Нет в наличии
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Current Quantity Display */}
-                {selectedProductForQuantity && (
-                  <div className="bg-gray-50 rounded-xl p-4 mb-4">
-                    <div className="text-center">
-                      <div className="text-sm text-gray-600 mb-1">
-                        Текущее количество
-                      </div>
-                      <div className="text-2xl font-bold text-gray-900">
-                        {selectedProductForQuantity.quantity.toFixed(2)}{" "}
-                        {selectedProductForQuantity.selectedUnit?.short_name ||
-                          "штук"}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex space-x-3">
-                  <button
-                    onClick={() => setIsQuantityModalOpen(false)}
-                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
-                  >
-                    Отмена
-                  </button>
-                  <button
-                    onClick={handleManualQuantityMode}
-                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
-                  >
-                    Ввести вручную
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Manual Input Mode */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Введите количество
-                  </label>
-                  <input
-                    type="number"
-                    value={manualQuantityInput}
-                    onChange={(e) => setManualQuantityInput(e.target.value)}
-                    className={`w-full px-4 py-4 text-2xl text-center border-2 rounded-xl focus:outline-none ${
-                      manualQuantityInput &&
-                      parseFloat(manualQuantityInput) >
-                        parseFloat(
-                          String(
-                            selectedProductForQuantity?.product.quantity || 0,
-                          ),
-                        )
-                        ? "border-red-500 focus:border-red-600"
-                        : "border-gray-300 focus:border-blue-500"
-                    }`}
-                    placeholder="0"
-                    autoFocus
-                    min="0.01"
-                    step="0.1"
-                  />
-                  {manualQuantityInput &&
-                    parseFloat(manualQuantityInput) >
-                      parseFloat(
-                        String(
-                          selectedProductForQuantity?.product.quantity || 0,
-                        ),
-                      ) && (
-                      <p className="text-red-500 text-sm mt-2 text-center">
-                        Превышает доступное количество
-                      </p>
-                    )}
-                  {selectedProductForQuantity && (
-                    <p className="text-gray-500 text-sm mt-2 text-center">
-                      Доступно:{" "}
-                      {parseFloat(
-                        String(selectedProductForQuantity.product.quantity),
-                      ).toFixed(2)}{" "}
-                      {selectedProductForQuantity.selectedUnit?.short_name ||
-                        "шт"}
-                    </p>
-                  )}
-                </div>
-
-                {/* Manual Input Action Buttons */}
-                <div className="flex space-x-3">
-                  <button
-                    onClick={() => setIsManualQuantityMode(false)}
-                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
-                  >
-                    Назад
-                  </button>
-                  <button
-                    onClick={handleManualQuantitySubmit}
-                    disabled={
-                      !manualQuantityInput ||
-                      parseFloat(manualQuantityInput) <= 0 ||
-                      parseFloat(manualQuantityInput) >
-                        parseFloat(
-                          String(
-                            selectedProductForQuantity?.product.quantity || 0,
-                          ),
-                        )
-                    }
-                    className="flex-1 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-4 rounded-xl font-semibold transition-colors min-h-[60px]"
-                  >
-                    Применить
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </WideDialogContent>
-      </WideDialog>
-
-      {isCalculatorVisible && !isFullscreenMode && (
-        <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
-          {/* Calculator Display */}
-          <div className="p-6 border-b border-gray-200">
-            {/* Calculator Header with Close Button */}
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Калькулятор
-              </h3>
-              <button
-                onClick={() => setIsCalculatorVisible(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                title="Закрыть калькулятор"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-            <div className="bg-gray-100 p-4 rounded-xl mb-4">
-              {operation && previousInput && (
-                <div className="text-right text-lg text-gray-600 font-mono">
-                  {previousInput} {operation}
-                </div>
-              )}
-              <div className="text-right text-3xl font-mono text-gray-900">
-                {currentInput || "0"}
-              </div>
-            </div>
-          </div>
-
-          {/* Calculator Keypad */}
-          <div className="flex-1 p-6">
-            <div className="grid grid-cols-4 gap-4 h-full">
-              {/* Row 1 */}
-              <button
-                onClick={handleClearInput}
-                className="bg-orange-100 hover:bg-orange-200 rounded-2xl transition-colors h-20 flex items-center justify-center col-span-2"
-              >
-                <span className="text-xl font-bold text-orange-600">CLEAR</span>
-              </button>
-              <button
-                onClick={handleBackspace}
-                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-2xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-              >
-                <X className="w-7 h-7" />
-              </button>
-              <button
-                onClick={() => handleOperation("/")}
-                className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
-              >
-                ÷
-              </button>
-
-              {/* Row 2 */}
-              <button
-                onClick={() => handleNumberClick("7")}
-                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-              >
-                7
-              </button>
-              <button
-                onClick={() => handleNumberClick("8")}
-                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-              >
-                8
-              </button>
-              <button
-                onClick={() => handleNumberClick("9")}
-                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-              >
-                9
-              </button>
-              <button
-                onClick={() => handleOperation("*")}
-                className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
-              >
-                ×
-              </button>
-
-              {/* Row 3 */}
-              <button
-                onClick={() => handleNumberClick("4")}
-                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-              >
-                4
-              </button>
-              <button
-                onClick={() => handleNumberClick("5")}
-                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-              >
-                5
-              </button>
-              <button
-                onClick={() => handleNumberClick("6")}
-                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-              >
-                6
-              </button>
-              <button
-                onClick={() => handleOperation("-")}
-                className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
-              >
-                −
-              </button>
-
-              {/* Row 4 */}
-              <button
-                onClick={() => handleNumberClick("1")}
-                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-              >
-                1
-              </button>
-              <button
-                onClick={() => handleNumberClick("2")}
-                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-              >
-                2
-              </button>
-              <button
-                onClick={() => handleNumberClick("3")}
-                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-              >
-                3
-              </button>
-              <button
-                onClick={() => handleOperation("+")}
-                className="bg-blue-100 hover:bg-blue-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-blue-600"
-              >
-                +
-              </button>
-
-              {/* Row 5 */}
-              <button
-                onClick={() => handleNumberClick("0")}
-                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900 col-span-2"
-              >
-                0
-              </button>
-              <button
-                onClick={() => handleNumberClick(",")}
-                className="bg-gray-100 hover:bg-gray-200 rounded-2xl text-3xl font-semibold transition-colors h-20 flex items-center justify-center text-gray-900"
-              >
-                ,
-              </button>
-              <button
-                onClick={handleEquals}
-                className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-20 flex items-center justify-center"
-              >
-                <span className="text-3xl font-bold text-green-600">=</span>
-              </button>
-              {/* Row 6 - PAY button */}
-              <button
-                onClick={() => {
-                  setPaymentMethods([
-                    { amount: total, payment_method: "Наличные" },
-                  ]);
-                  setIsPaymentModalOpen(true);
-                }}
-                disabled={cartProducts.length === 0}
-                className="bg-green-100 hover:bg-green-200 rounded-2xl transition-colors h-20 flex items-center justify-center disabled:bg-gray-200 disabled:cursor-not-allowed col-span-4"
-              >
-                <span className="text-xl font-bold text-green-600">
-                  PAY - {total.toLocaleString()} сум
-                </span>
+                <span className="text-xl font-bold text-green-600">=</span>
               </button>
             </div>
           </div>
@@ -3346,6 +2477,8 @@ const POSInterface = () => {
                     };
 
                     // Also create API-compatible payload for backend
+                    // @ts-ignore
+                    // @ts-ignore
                     const saleApiPayload: Sale = {
                       store: currentUser?.store_read?.id || 1,
                       ...(selectedSeller && { sold_by: selectedSeller }),

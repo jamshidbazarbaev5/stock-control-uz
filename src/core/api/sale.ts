@@ -1,7 +1,9 @@
-import { createResourceApiHooks } from '../helpers/createResourceApi';
+import { createResourceApiHooks } from "../helpers/createResourceApi";
+import { useQuery } from "@tanstack/react-query";
+import api from "./api";
 
 // Types
-interface SaleDebt {
+export interface SaleDebt {
   client: number;
   due_date: string;
   deposit?: string;
@@ -13,32 +15,45 @@ interface SaleDebt {
   };
 }
 
-interface SaleItem {
+export interface SaleItem {
+  stock_read?: any;
+  price_per_unit?: string;
   id?: number;
   stock_write?: number;
-  stock_read?: {
+  product_read?: {
     id: number;
-    product_read?: {
+    product_name: string;
+    barcode: string;
+    ikpu: string;
+    category_read?: {
       id: number;
-      product_name: string;
-      category_read?: {
-        id: number;
-        category_name: string;
-      };
-      measurement?: Array<{
-        id: number;
-        measurement_read?: {
-          id: number;
-          measurement_name: string;
-        };
-        number: string;
-        for_sale: boolean;
-      }>;
+      category_name: string;
     };
+    base_unit?: number;
+    measurement?: Array<{
+      id: number;
+      from_unit?: {
+        id: number;
+        measurement_name: string;
+        short_name: string;
+      };
+      to_unit?: {
+        id: number;
+        measurement_name: string;
+        short_name: string;
+      };
+      number: string;
+    }>;
+    available_units?: Array<{
+      id: number;
+      short_name: string;
+      factor: number;
+      is_base: boolean;
+    }>;
   };
-  selling_method?: 'Штук' | 'Ед.измерения';
+  selling_unit?: number;
+  selling_method?: "Штук" | "Ед.измерения";
   quantity: string;
-  
   subtotal?: string;
 }
 
@@ -63,24 +78,51 @@ export interface Sale {
   sale_debt?: SaleDebt;
   total_amount: string;
   total_pure_revenue?: string;
-  sale_payments?: {
-    payment_method: string;
-    amount: string;
-  }[] | undefined;
+  sale_payments?:
+    | {
+        payment_method: string;
+        amount: string;
+      }[]
+    | undefined;
   client?: number;
   created_at?: string;
   sold_date?: string;
-  worker_read?:any
+  worker_read?: any;
 }
 
 // API endpoints
-const SALE_URL = 'sales/create/';
+const SALE_CREATE_URL = "sales/create/";
+const SALE_LIST_URL = "sales/";
 
-// Create sale API hooks using the factory function
-export const {
-  useGetResources: useGetSales,
-  useGetResource: useGetSale,
+// Create hooks for write operations (create, update, delete)
+const {
   useCreateResource: useCreateSale,
   useUpdateResource: useUpdateSale,
   useDeleteResource: useDeleteSale,
-} = createResourceApiHooks<Sale>(SALE_URL, 'sales');
+} = createResourceApiHooks<Sale>(SALE_CREATE_URL, "sales");
+
+// Custom GET hooks using the correct /sales/ endpoint
+export const useGetSales = (options?: { params?: Record<string, any> }) => {
+  return useQuery({
+    queryKey: ["sales", options?.params],
+    queryFn: async () => {
+      const response = await api.get<
+        Sale[] | { results: Sale[]; count: number }
+      >(SALE_LIST_URL, { params: options?.params });
+      return response.data;
+    },
+  });
+};
+
+export const useGetSale = (id: number) => {
+  return useQuery({
+    queryKey: ["sales", id],
+    queryFn: async () => {
+      const response = await api.get<Sale>(`${SALE_LIST_URL}${id}/`);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+};
+
+export { useCreateSale, useUpdateSale, useDeleteSale };
