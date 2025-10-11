@@ -23,6 +23,7 @@ import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useLogout } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
+import { useCurrentUser } from "../hooks/useCurrentUser";
 import {
   Dialog,
   DialogTrigger,
@@ -61,10 +62,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const { currentUser } = useAuth();
   const { mutate: logout } = useLogout();
+  const { data: userData } = useCurrentUser();
 
   const handleLogout = () => {
     logout();
     navigate("/login");
+  };
+
+  const handleCloseShift = async () => {
+    if (userData?.has_active_shift) {
+      // Navigate to close shift page - we'll get the shift ID from the API
+      // For now, we'll use a placeholder ID and the CloseShift page will fetch the active shift
+      navigate(`/close-shift/active`);
+    }
   };
 
   // Fetch current currency rate when modal opens
@@ -419,6 +429,25 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           <User size={16} className="text-gray-500" />
                           {t("common.profile")}
                         </button>
+                        {userData?.has_active_shift && (
+                          <button
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setDropdownOpen(false);
+                              handleCloseShift();
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-3 transition-colors cursor-pointer"
+                            style={{ pointerEvents: "auto" }}
+                          >
+                            <LogOut size={16} className="text-orange-500" />
+                            Закрыть смену
+                          </button>
+                        )}
                         <button
                           onMouseDown={(e) => {
                             e.preventDefault();
@@ -742,6 +771,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                               {t("common.profile")}
                             </span>
                           </button>
+                          {userData?.has_active_shift && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDropdownOpen(false);
+                                handleCloseShift();
+                              }}
+                              className="w-full px-4 py-3 text-left text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-3 transition-colors"
+                            >
+                              <LogOut size={16} className="text-orange-500" />
+                              <span className="font-medium">Закрыть смену</span>
+                            </button>
+                          )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();

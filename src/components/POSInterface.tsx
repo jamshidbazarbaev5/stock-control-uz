@@ -7,7 +7,6 @@ import {
   User as UserIcon,
   Plus,
   X as CloseIcon,
-  LogOut,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -40,6 +39,7 @@ import {
   saleReceiptService,
   type SaleData,
 } from "@/services/saleReceiptService";
+import { toast } from "sonner";
 
 interface ProductInCart {
   id: number;
@@ -287,7 +287,10 @@ const POSInterface = () => {
           product_name: searchTerm.length > 0 ? searchTerm : undefined,
         })
           .then((data) => setFetchedProducts(data))
-          .catch((error) => console.error("Error fetching products:", error))
+          .catch((error) => {
+            console.error("Error fetching products:", error);
+            toast.error("Ошибка при загрузке товаров");
+          })
           .finally(() => setLoadingProducts(false));
       }, 300);
 
@@ -305,7 +308,6 @@ const POSInterface = () => {
           : 0;
 
         if (availableQuantity <= 0) {
-          alert(`Товар "${product.product_name}" недоступен (количество: 0)`);
           return;
         }
 
@@ -388,10 +390,11 @@ const POSInterface = () => {
               // Always log when product not found
               console.warn("❌ Product not found for barcode:", cleanBarcode);
             }
-            alert(`Product not found for barcode: ${cleanBarcode}`);
+            toast.error(`Товар не найден по штрих-коду: ${cleanBarcode}`);
           }
         } catch (error) {
           console.error("Error fetching product by barcode:", error);
+          toast.error("Ошибка при поиске товара по штрих-коду");
         } finally {
           setLoadingProducts(false);
           setIsProcessingBarcode(false);
@@ -497,8 +500,18 @@ const POSInterface = () => {
   // Keep barcode input always focused
   useEffect(() => {
     const focusInput = () => {
+      // Don't refocus if user is actively typing in an input field
+      const activeElement = document.activeElement;
+      const isInputFocused =
+        activeElement &&
+        (activeElement.tagName === "INPUT" ||
+          activeElement.tagName === "TEXTAREA" ||
+          activeElement.tagName === "SELECT" ||
+          (activeElement as any).contentEditable === "true");
+
       if (
         barcodeInputRef.current &&
+        !isInputFocused &&
         document.activeElement !== barcodeInputRef.current
       ) {
         if (debugMode) {
@@ -511,8 +524,21 @@ const POSInterface = () => {
     // Initial focus
     focusInput();
 
-    // Refocus when clicking anywhere on the document
-    const handleClick = () => {
+    // Refocus when clicking anywhere on the document (but respect input focus)
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      // Don't refocus if clicking on an input element or its container
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.closest("input") ||
+          target.closest("textarea") ||
+          target.closest("select"))
+      ) {
+        return;
+      }
       setTimeout(focusInput, 100);
     };
 
@@ -629,24 +655,16 @@ const POSInterface = () => {
     setWaitingForNewValue(false);
   };
 
-  const handleSearchClick = () => {
+  const handleSearchClick = useCallback(() => {
     setIsSearchModalOpen(true);
     setSearchTerm("");
-  };
+  }, []);
 
   const handleUserClick = () => {
     setIsUserModalOpen(true);
     // Initialize seller selection based on user role
     if (!isAdmin && !isSuperUser && currentUser?.id) {
       setSelectedSeller(currentUser.id);
-    }
-  };
-
-  const handleCloseShift = async () => {
-    if (userData?.has_active_shift) {
-      // Navigate to close shift page - we'll get the shift ID from the API
-      // For now, we'll use a placeholder ID and the CloseShift page will fetch the active shift
-      navigate(`/close-shift/active`);
     }
   };
 
@@ -839,7 +857,7 @@ const POSInterface = () => {
               ? parseFloat(String(p.product.quantity))
               : 0;
             if (newQuantity > availableQuantity) {
-              alert(
+              toast.error(
                 `Недостаточно товара "${p.name}". Доступно: ${availableQuantity}`,
               );
               return p; // Don't update if exceeds available quantity
@@ -905,6 +923,112 @@ const POSInterface = () => {
   // Keyboard navigation handlers
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+      // Handle global shortcuts that work regardless of cart state
+      switch (e.key) {
+        case "b":
+        case "B":
+          e.preventDefault();
+          handleSearchClick();
+          return;
+        case "l":
+        case "L":
+          e.preventDefault();
+          if (cartProducts.length > 0) {
+            setPaymentMethods([{ amount: total, payment_method: "Наличные" }]);
+            setIsPaymentModalOpen(true);
+          }
+          return;
+        case "F1":
+          e.preventDefault();
+          if (isPaymentModalOpen) {
+            const hasNalichnye = paymentMethods.some(
+              (p) => p.payment_method === "Наличные",
+            );
+            if (!hasNalichnye) {
+              const totalPaid = paymentMethods.reduce(
+                (sum, p) => sum + (p.amount || 0),
+                0,
+              );
+              const remaining = total - totalPaid;
+              setPaymentMethods((prev) => [
+                ...prev,
+                {
+                  amount: remaining > 0 ? remaining : 0,
+                  payment_method: "Наличные",
+                },
+              ]);
+            }
+          }
+          return;
+        case "F2":
+          e.preventDefault();
+          if (isPaymentModalOpen) {
+            const hasClick = paymentMethods.some(
+              (p) => p.payment_method === "Click",
+            );
+            if (!hasClick) {
+              const totalPaid = paymentMethods.reduce(
+                (sum, p) => sum + (p.amount || 0),
+                0,
+              );
+              const remaining = total - totalPaid;
+              setPaymentMethods((prev) => [
+                ...prev,
+                {
+                  amount: remaining > 0 ? remaining : 0,
+                  payment_method: "Click",
+                },
+              ]);
+            }
+          }
+          return;
+        case "F3":
+          e.preventDefault();
+          if (isPaymentModalOpen) {
+            const hasKarta = paymentMethods.some(
+              (p) => p.payment_method === "Карта",
+            );
+            if (!hasKarta) {
+              const totalPaid = paymentMethods.reduce(
+                (sum, p) => sum + (p.amount || 0),
+                0,
+              );
+              const remaining = total - totalPaid;
+              setPaymentMethods((prev) => [
+                ...prev,
+                {
+                  amount: remaining > 0 ? remaining : 0,
+                  payment_method: "Карта",
+                },
+              ]);
+            }
+          }
+          return;
+        case "F4":
+          e.preventDefault();
+          if (isPaymentModalOpen) {
+            const hasPerechislenie = paymentMethods.some(
+              (p) => p.payment_method === "Перечисление",
+            );
+            if (!hasPerechislenie) {
+              const totalPaid = paymentMethods.reduce(
+                (sum, p) => sum + (p.amount || 0),
+                0,
+              );
+              const remaining = total - totalPaid;
+              setPaymentMethods((prev) => [
+                ...prev,
+                {
+                  amount: remaining > 0 ? remaining : 0,
+                  payment_method: "Перечисление",
+                },
+              ]);
+            }
+          }
+          return;
+      }
+
+      // Handle navigation shortcuts only when cart has items
       if (cartProducts.length === 0) return;
 
       switch (e.key) {
@@ -950,7 +1074,18 @@ const POSInterface = () => {
           break;
       }
     },
-    [cartProducts, focusedProductIndex, updateProductQuantity, removeProduct],
+    [
+      cartProducts,
+      focusedProductIndex,
+      updateProductQuantity,
+      removeProduct,
+      handleSearchClick,
+      total,
+      setPaymentMethods,
+      setIsPaymentModalOpen,
+      isPaymentModalOpen,
+      paymentMethods,
+    ],
   );
 
   // Set up keyboard event listeners
@@ -997,7 +1132,9 @@ const POSInterface = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div
+      className={`flex h-screen bg-gray-50 ${isFullscreenMode ? "overflow-hidden" : ""}`}
+    >
       {/* Left Panel */}
       <div className="flex-1 flex flex-col bg-white">
         {/* Session Tabs */}
@@ -1356,11 +1493,19 @@ const POSInterface = () => {
                             </td>
                             <td className="p-4 text-right text-gray-900">
                               <Input
-                                type="number"
-                                value={product.price}
+                                type="text"
+                                value={product.price.toString()}
                                 onChange={(e) => {
-                                  const newPrice = Number(e.target.value);
-                                  if (newPrice >= 0) {
+                                  const inputValue = e.target.value;
+                                  // Allow empty input or valid number input (including decimals)
+                                  if (
+                                    inputValue === "" ||
+                                    /^\d*\.?\d*$/.test(inputValue)
+                                  ) {
+                                    const newPrice =
+                                      inputValue === ""
+                                        ? 0
+                                        : parseFloat(inputValue) || 0;
                                     const updatedProducts = cartProducts.map(
                                       (p) =>
                                         p.id === product.id
@@ -1374,8 +1519,16 @@ const POSInterface = () => {
                                     setCartProducts(updatedProducts);
                                   }
                                 }}
+                                onFocus={(e) => {
+                                  e.stopPropagation();
+                                }}
+                                onBlur={(e) => {
+                                  e.stopPropagation();
+                                }}
                                 className="w-24 text-right"
-                                min="0"
+                                inputMode="decimal"
+                                pattern="[0-9]*"
+                                placeholder="0"
                               />
                             </td>
                             <td className="p-4 text-center text-gray-900">
@@ -1528,10 +1681,13 @@ const POSInterface = () => {
             <div className="flex items-center space-x-2 justify-center">
               <button
                 onClick={handleSearchClick}
-                className="bg-blue-500 text-white p-4 rounded-xl hover:bg-blue-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
+                className="bg-blue-500 text-white p-4 rounded-xl hover:bg-blue-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px] relative"
                 title="Поиск товаров"
               >
                 <Search className="w-6 h-6" />
+                <span className="text-sm bg-blue-400 text-white px-2 py-1 rounded absolute -top-1 -right-1">
+                  B
+                </span>
               </button>
               <button
                 onClick={handleUserClick}
@@ -1554,14 +1710,6 @@ const POSInterface = () => {
                 title="Новая сессия"
               >
                 <Plus className="w-6 h-6" />
-              </button>
-
-              <button
-                onClick={handleCloseShift}
-                className="bg-red-500 text-white p-4 rounded-xl hover:bg-red-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                title="Закрыть смену"
-              >
-                <LogOut className="w-6 h-6" />
               </button>
 
               {/* Calculator Toggle Button - Only show when calculator is hidden */}
@@ -1833,13 +1981,19 @@ const POSInterface = () => {
           <div className="px-6 pb-4 space-y-4">
             {/* Search Input */}
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" />
               <Input
                 type="text"
                 placeholder="Поиск по товарам..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 text-base border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                onFocus={(e) => {
+                  e.stopPropagation();
+                }}
+                onBlur={(e) => {
+                  e.stopPropagation();
+                }}
+                className="w-full pl-14 pr-6 py-4 text-lg border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
                 autoComplete="off"
                 autoFocus
               />
@@ -1855,7 +2009,7 @@ const POSInterface = () => {
                     </span>
                     <button
                       onClick={handleSaveSelectedProducts}
-                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                      className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-base font-medium transition-colors"
                     >
                       Добавить выбранные
                     </button>
@@ -1867,13 +2021,13 @@ const POSInterface = () => {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setSelectedProducts(new Set())}
-                    className="px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                    className="px-4 py-2 text-base bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                   >
                     Очистить
                   </button>
                   <button
                     onClick={handleSaveSelectedProducts}
-                    className="px-4 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                    className="px-6 py-2 text-base bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                   >
                     Добавить в корзину ({selectedProducts.size})
                   </button>
@@ -1905,6 +2059,12 @@ const POSInterface = () => {
                           } else {
                             setSelectedProducts(new Set());
                           }
+                        }}
+                        onFocus={(e) => {
+                          e.stopPropagation();
+                        }}
+                        onBlur={(e) => {
+                          e.stopPropagation();
                         }}
                         className="w-4 h-4 rounded border-gray-300"
                       />
@@ -1966,6 +2126,12 @@ const POSInterface = () => {
                               e.stopPropagation();
                               handleProductSelect(product);
                             }}
+                            onFocus={(e) => {
+                              e.stopPropagation();
+                            }}
+                            onBlur={(e) => {
+                              e.stopPropagation();
+                            }}
                             className="w-4 h-4 rounded border-gray-300"
                           />
                         </td>
@@ -2022,15 +2188,15 @@ const POSInterface = () => {
                         </td>
                         <td className="p-4 text-center">
                           <Button
-                            size="sm"
+                            size="lg"
                             variant="ghost"
-                            className="text-gray-400 hover:text-gray-600"
+                            className="text-gray-400 hover:text-gray-600 text-lg font-semibold"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleProductSelect(product);
                             }}
                           >
-                            •••
+                            Добавить
                           </Button>
                         </td>
                       </tr>
@@ -2126,6 +2292,12 @@ const POSInterface = () => {
                 placeholder="Поиск клиентов..."
                 value={clientSearchTerm}
                 onChange={(e) => setClientSearchTerm(e.target.value)}
+                onFocus={(e) => {
+                  e.stopPropagation();
+                }}
+                onBlur={(e) => {
+                  e.stopPropagation();
+                }}
                 className="mb-2"
                 autoComplete="off"
               />
@@ -2344,6 +2516,12 @@ const POSInterface = () => {
                     type="number"
                     value={manualQuantityInput}
                     onChange={(e) => setManualQuantityInput(e.target.value)}
+                    onFocus={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onBlur={(e) => {
+                      e.stopPropagation();
+                    }}
                     className={`w-full px-4 py-4 text-2xl text-center border-2 rounded-xl focus:outline-none ${
                       manualQuantityInput &&
                       parseFloat(manualQuantityInput) >
@@ -2442,7 +2620,7 @@ const POSInterface = () => {
                     0,
                   );
                   if (!onCredit && totalPayment < total) {
-                    alert("Сумма оплаты меньше общей суммы!");
+                    toast.error("Сумма оплаты меньше общей суммы!");
                     return;
                   }
 
@@ -2568,10 +2746,12 @@ const POSInterface = () => {
                     setFocusedProductIndex(-1);
 
                     // Show success message
-                    alert("Продажа успешно оформлена!");
+                    toast.success("Продажа успешно оформлена!");
                   } catch (error) {
                     console.error("Error creating sale:", error);
-                    alert("Ошибка при оформлении продажи. Попробуйте еще раз.");
+                    toast.error(
+                      "Ошибка при оформлении продажи. Попробуйте еще раз.",
+                    );
                   } finally {
                     setIsProcessingSale(false);
                   }
@@ -2830,6 +3010,12 @@ const POSInterface = () => {
                       const updated = [...paymentMethods];
                       updated[index].amount = Number(e.target.value);
                       setPaymentMethods(updated);
+                    }}
+                    onFocus={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onBlur={(e) => {
+                      e.stopPropagation();
                     }}
                     placeholder="0"
                     className="w-full text-4xl font-bold text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-0 p-0"
