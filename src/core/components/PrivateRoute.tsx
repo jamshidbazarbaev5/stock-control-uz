@@ -34,11 +34,13 @@ export function PrivateRoute({ children, allowedRoles }: PrivateRouteProps) {
         "/debts/:id/history",
         "/profile",
         "/product-stock-balance",
+        "/pos",
         "/pos-fullscreen",
         "/expense",
         "/income",
         "/income/:id",
         "/shifts",
+        "/close-shift/active",
         "/shifts/:id/edit",
       ];
       // Convert route patterns to regex patterns
@@ -87,7 +89,7 @@ export function PrivateRoute({ children, allowedRoles }: PrivateRouteProps) {
       if (currentUser.is_mobile_user) {
         return <Navigate to="/create-sale" replace />;
       } else {
-        return <Navigate to="/pos-fullscreen" replace />;
+        return <Navigate to="/pos" replace />;
       }
     }
 

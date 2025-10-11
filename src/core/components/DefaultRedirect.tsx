@@ -19,7 +19,7 @@ export function DefaultRedirect() {
     if (currentUser.is_mobile_user) {
       return <Navigate to="/create-sale" replace />;
     } else {
-      return <Navigate to="/pos-fullscreen" replace />;
+      return <Navigate to="/pos" replace />;
     }
   }
 

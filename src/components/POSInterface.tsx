@@ -205,7 +205,7 @@ const POSInterface = () => {
   const [isCalculatorVisible, setIsCalculatorVisible] = useState(true);
 
   // Fullscreen mode state - default based on route
-  const [isFullscreenMode, setIsFullscreenMode] = useState(true);
+  const [isFullscreenMode, setIsFullscreenMode] = useState(isFullscreenRoute);
 
   // User data
   const { data: currentUser } = useCurrentUser();
@@ -265,8 +265,8 @@ const POSInterface = () => {
 
   // Sync fullscreen mode with route
   useEffect(() => {
-    setIsFullscreenMode(true);
-  }, [isFullscreenRoute]);
+    setIsFullscreenMode(isFullscreenRoute);
+  }, [isFullscreenRoute, location.pathname]);
 
   // Initialize seller selection for non-admin users
   useEffect(() => {
@@ -1758,11 +1758,7 @@ const POSInterface = () => {
               {!isFullscreenMode ? (
                 <button
                   onClick={() => {
-                    if (!isFullscreenRoute) {
-                      navigate("/pos-fullscreen");
-                    } else {
-                      setIsFullscreenMode(true);
-                    }
+                    navigate("/pos-fullscreen");
                   }}
                   className="bg-orange-500 text-white p-4 rounded-xl hover:bg-orange-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
                   title="Полноэкранный режим"
@@ -1784,11 +1780,7 @@ const POSInterface = () => {
               ) : (
                 <button
                   onClick={() => {
-                    if (isFullscreenRoute) {
-                      navigate("/pos");
-                    } else {
-                      setIsFullscreenMode(false);
-                    }
+                    navigate("/pos");
                   }}
                   className="bg-orange-500 text-white p-4 rounded-xl hover:bg-orange-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
                   title="Выйти из полноэкранного режима"
