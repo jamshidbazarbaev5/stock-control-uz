@@ -135,6 +135,9 @@
     "per": "Перечисление"
   },
   "pages": {
+    "attributes": {
+      "create_new_attribute": "Создать новый атрибут"
+    },
     "debt_payments": "Платежи по долгам",
     "create_expense_name": "Создать название расхода",
     "payment_history": "История платежей",

@@ -220,6 +220,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           label: t("navigation.dashobard"),
           href: "/dashboard",
         },
+        {
+          icon: Ruler,
+          label: t("navigation.pos"),
+          href: "/pos-fullscreen",
+        },
         { icon: ShoppingBag, label: t("navigation.sale"), href: "/sales" },
         {
           icon: Package,
@@ -228,6 +233,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         },
         { icon: UserCheck, label: t("navigation.clients"), href: "/clients" },
         { icon: ShoppingBag, label: t("navigation.debt"), href: "/debts" },
+        {
+          icon: BanknoteIcon,
+          label: t("navigation.expense"),
+          href: "/expense",
+        },
+        {
+          icon: BanknoteIcon,
+          label: t("navigation.income"),
+          href: "/income",
+        },
+        {
+          icon: ArrowLeftRight,
+          label: t("navigation.smena"),
+          href: "/shifts",
+        },
       ];
     }
 

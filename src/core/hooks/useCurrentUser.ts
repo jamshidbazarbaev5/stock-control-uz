@@ -1,4 +1,4 @@
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from "../context/AuthContext";
 
 export interface CurrentUser {
   id: number;
@@ -6,7 +6,8 @@ export interface CurrentUser {
   phone_number: string;
   role: string;
   is_superuser: boolean;
-  has_active_shift:boolean;
+  has_active_shift: boolean;
+  is_mobile_user: boolean;
   store_read?: {
     id: number;
     name: string;
@@ -27,8 +28,7 @@ export interface CurrentUser {
  */
 export function useCurrentUser() {
   const { currentUser, isLoading } = useAuth();
-  
-  
+
   // Return in the same format as the original useQuery hook
   return {
     data: currentUser,

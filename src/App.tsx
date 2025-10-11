@@ -80,6 +80,7 @@ import CreateCassaPage from "@/core/pages/CreateCassa.tsx";
 import AttributesPage from "@/pages/AttributesPage";
 import AttributeFormPage from "@/pages/AttributeFormPage";
 import CloseShiftPage from "./core/pages/CloseShiftPage";
+import { DefaultRedirect } from "./core/components/DefaultRedirect";
 // import CreateSalePos from "./core/pages/create-sale-2";
 
 const queryClient = new QueryClient();
@@ -364,7 +365,7 @@ function App() {
               <Route
                 path="/expense"
                 element={
-                  <PrivateRoute allowedRoles={["Администратор"]}>
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
                     <ExpensesPage />
                   </PrivateRoute>
                 }
@@ -460,7 +461,7 @@ function App() {
               <Route
                 path="/income"
                 element={
-                  <PrivateRoute allowedRoles={["Администратор"]}>
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
                     <IncomePage />
                   </PrivateRoute>
                 }
@@ -476,7 +477,7 @@ function App() {
               <Route
                 path="/income/:id"
                 element={
-                  <PrivateRoute allowedRoles={["Администратор"]}>
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
                     <IncomeDetailsPage />
                   </PrivateRoute>
                 }
@@ -638,7 +639,7 @@ function App() {
               <Route
                 path="/shifts"
                 element={
-                  <PrivateRoute allowedRoles={["Администратор"]}>
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
                     <ShiftsPage />
                   </PrivateRoute>
                 }
@@ -646,7 +647,7 @@ function App() {
               <Route
                 path="/shifts/:id/edit"
                 element={
-                  <PrivateRoute allowedRoles={["Администратор"]}>
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
                     <EditShiftPage />
                   </PrivateRoute>
                 }
@@ -667,7 +668,7 @@ function App() {
                   </PrivateRoute>
                 }
               /> */}
-              <Route path="/" element={<Navigate to="/dashboard" />} />
+              <Route path="/" element={<DefaultRedirect />} />
               <Route
                 path="/receipt-designer"
                 element={
@@ -690,7 +691,7 @@ function App() {
             <Route
               path="/pos-fullscreen"
               element={
-                <PrivateRoute allowedRoles={["Администратор"]}>
+                <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
                   <POSPage />
                 </PrivateRoute>
               }

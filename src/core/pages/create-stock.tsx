@@ -183,6 +183,7 @@ export default function CreateStock() {
       const { conversion_factor, exchange_rate, is_base_currency } =
         calculationMetadata;
       const qty = result.purchase_unit_quantity;
+      const quantity = result.quantity;
 
       // Quantity ↔️ purchase_unit_quantity
       if (changedField === "purchase_unit_quantity" && qty) {
@@ -190,8 +191,8 @@ export default function CreateStock() {
         result.total_price_in_currency =
           (result.price_per_unit_currency || 0) * qty;
         result.total_price_in_uz = (result.price_per_unit_uz || 0) * qty;
-      } else if (changedField === "quantity" && result.quantity) {
-        result.purchase_unit_quantity = result.quantity / conversion_factor;
+      } else if (changedField === "quantity" && quantity) {
+        result.purchase_unit_quantity = quantity / conversion_factor;
         result.total_price_in_currency =
           (result.price_per_unit_currency || 0) * result.purchase_unit_quantity;
         result.total_price_in_uz =
@@ -348,14 +349,13 @@ export default function CreateStock() {
     [calculationMetadata, form, dynamicFields, calculateFields],
   );
 
-
-
   // State to track previous values for change detection
   const [previousValues, setPreviousValues] = useState<{
     purchase_unit_quantity?: string | number;
     total_price_in_currency?: string | number;
     price_per_unit_currency?: string | number;
     price_per_unit_uz?: string | number;
+    quantity?: string | number;
   }>({});
 
   // Watch only required fields for initial calculation
@@ -399,6 +399,7 @@ export default function CreateStock() {
     "total_price_in_currency",
     "price_per_unit_currency",
     "price_per_unit_uz",
+    "quantity",
   ]);
 
   useEffect(() => {
@@ -407,6 +408,7 @@ export default function CreateStock() {
       totalPriceInCurrency,
       pricePerUnitCurrency,
       pricePerUnitUz,
+      quantity,
     ] = watchedFields;
 
     // Check if values have actually changed
@@ -414,7 +416,8 @@ export default function CreateStock() {
       purchaseUnitQuantity !== previousValues.purchase_unit_quantity ||
       totalPriceInCurrency !== previousValues.total_price_in_currency ||
       pricePerUnitCurrency !== previousValues.price_per_unit_currency ||
-      pricePerUnitUz !== previousValues.price_per_unit_uz;
+      pricePerUnitUz !== previousValues.price_per_unit_uz ||
+      quantity !== previousValues.quantity;
 
     // Only trigger calculation if values have changed and initial calculation was done
     if (hasChanged && initialCalculationDone && calculationMetadata) {
@@ -433,6 +436,8 @@ export default function CreateStock() {
           changedField = "price_per_unit_currency";
         } else if (pricePerUnitUz !== previousValues.price_per_unit_uz) {
           changedField = "price_per_unit_uz";
+        } else if (quantity !== previousValues.quantity) {
+          changedField = "quantity";
         }
 
         if (changedField) {
@@ -445,6 +450,7 @@ export default function CreateStock() {
           total_price_in_currency: totalPriceInCurrency,
           price_per_unit_currency: pricePerUnitCurrency,
           price_per_unit_uz: pricePerUnitUz,
+          quantity: quantity,
         });
       }, 500); // 500ms debounce
 
