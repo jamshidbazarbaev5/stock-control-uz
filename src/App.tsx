@@ -615,7 +615,7 @@ function App() {
               <Route
                 path="/pos"
                 element={
-                  <PrivateRoute allowedRoles={["Администратор"]}>
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
                     <POSPage />
                   </PrivateRoute>
                 }

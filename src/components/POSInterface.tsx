@@ -270,10 +270,21 @@ const POSInterface = () => {
 
   // Initialize seller selection for non-admin users
   useEffect(() => {
+    console.log("Seller selection debug:", {
+      isAdmin,
+      isSuperUser,
+      currentUserId: currentUser?.id,
+      selectedSeller,
+      currentUserRole: currentUser?.role,
+      usersCount: users.length,
+      usersData: users.map((u) => ({ id: u.id, name: u.name, role: u.role })),
+    });
+
     if (!isAdmin && !isSuperUser && currentUser?.id && !selectedSeller) {
+      console.log("Setting selectedSeller to:", currentUser.id);
       setSelectedSeller(currentUser.id);
     }
-  }, [currentUser?.id, isAdmin, isSuperUser, selectedSeller]);
+  }, [currentUser?.id, isAdmin, isSuperUser, selectedSeller, users]);
 
   // Calculate totals
   const total = cartProducts.reduce((sum, product) => sum + product.total, 0);
@@ -1215,7 +1226,10 @@ const POSInterface = () => {
                       {selectedSeller && (
                         <span className="text-blue-700 font-medium">
                           Продавец:{" "}
-                          {users.find((u) => u.id === selectedSeller)?.name}
+                          {users.find((u) => u.id === selectedSeller)?.name ||
+                            (selectedSeller === currentUser?.id
+                              ? currentUser?.name
+                              : `ID: ${selectedSeller} (не найден)`)}
                         </span>
                       )}
                       {selectedSeller && selectedClient && (
@@ -2349,7 +2363,10 @@ const POSInterface = () => {
                 {selectedSeller && (
                   <p className="text-sm text-blue-700">
                     <strong>Продавец:</strong>{" "}
-                    {users.find((u) => u.id === selectedSeller)?.name}
+                    {users.find((u) => u.id === selectedSeller)?.name ||
+                      (selectedSeller === currentUser?.id
+                        ? currentUser?.name
+                        : `ID: ${selectedSeller}`)}
                   </p>
                 )}
                 {selectedClient && (
