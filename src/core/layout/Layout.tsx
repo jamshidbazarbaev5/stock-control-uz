@@ -128,6 +128,32 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Mobile user redirection logic
+  useEffect(() => {
+    if (userData?.is_mobile_user && userData?.has_active_shift) {
+      const currentPath = location.pathname;
+      // Allow mobile users to stay on specific pages
+      const allowedPaths = [
+        "/create-sale",
+        "/sales",
+        "/clients",
+        "/debts",
+        "/expense",
+        "/pos-fullscreen",
+        "/pos",
+      ];
+
+      if (!allowedPaths.includes(currentPath)) {
+        navigate("/create-sale");
+      }
+    }
+  }, [
+    userData?.is_mobile_user,
+    userData?.has_active_shift,
+    location.pathname,
+    navigate,
+  ]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

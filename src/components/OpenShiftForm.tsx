@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useForm } from 'react-hook-form';
-import type { Register } from '../core/api/shift';
-import { cashRegisterApi } from '../core/api/cash-register';
-import { shiftsApi } from '../core/api/shift';
-import { useAuth } from '../core/context/AuthContext';
-import { Button } from './ui/button';
-import { Card } from './ui/card';
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useForm } from "react-hook-form";
+import type { Register } from "../core/api/shift";
+import { cashRegisterApi } from "../core/api/cash-register";
+import { shiftsApi } from "../core/api/shift";
+import { useAuth } from "../core/context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { useCurrentUser } from "../core/hooks/useCurrentUser";
+import { Button } from "./ui/button";
+import { Card } from "./ui/card";
 import {
   Form,
   FormControl,
@@ -14,16 +16,16 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from './ui/form';
-import { Input } from './ui/input';
+} from "./ui/form";
+import { Input } from "./ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './ui/select';
-import { Textarea } from './ui/textarea';
+} from "./ui/select";
+import { Textarea } from "./ui/textarea";
 
 interface FormData {
   register_id: string;
@@ -34,24 +36,26 @@ interface FormData {
 export function OpenShiftForm() {
   const { t } = useTranslation();
   const { refreshUser } = useAuth();
+  const navigate = useNavigate();
+  const { data: userData } = useCurrentUser();
   const [registers, setRegisters] = useState<Register[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  console.log('registers', registers);
+  console.log("registers", registers);
   const form = useForm<FormData>({
     defaultValues: {
-      register_id: '',
-      opening_cash: '',
-      comment: '',
+      register_id: "",
+      opening_cash: "",
+      comment: "",
     },
   });
 
   useEffect(() => {
     const fetchRegisters = async () => {
       try {
-        const response:any = await cashRegisterApi.getAll();
+        const response: any = await cashRegisterApi.getAll();
         setRegisters(response.data?.results);
       } catch (error) {
-        console.error('Failed to fetch registers:', error);
+        console.error("Failed to fetch registers:", error);
       }
     };
 
@@ -67,13 +71,17 @@ export function OpenShiftForm() {
         opening_cash: data.opening_cash,
         opening_comment: data.comment,
       });
-      
+
       // Refresh user data to update has_active_shift status
       await refreshUser();
-      
-      // No need to navigate - the component will re-render and show POS interface
+
+      // If user is a mobile user, redirect to create-sale page
+      if (userData?.is_mobile_user) {
+        navigate("/create-sale");
+      }
+      // No need to navigate for non-mobile users - the component will re-render and show POS interface
     } catch (error) {
-      console.error('Failed to open shift:', error);
+      console.error("Failed to open shift:", error);
     } finally {
       setIsLoading(false);
     }
@@ -82,7 +90,7 @@ export function OpenShiftForm() {
   return (
     <div className="container mx-auto max-w-md p-4">
       <Card className="p-6">
-        <h2 className="text-2xl font-bold mb-6">{t('forms.shift')}</h2>
+        <h2 className="text-2xl font-bold mb-6">{t("forms.shift")}</h2>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -90,14 +98,14 @@ export function OpenShiftForm() {
               name="register_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('forms.shift')}</FormLabel>
+                  <FormLabel>{t("forms.shift")}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder={t('forms.register')} />
+                        <SelectValue placeholder={t("forms.register")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -121,7 +129,7 @@ export function OpenShiftForm() {
               name="opening_cash"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('forms.opening_cash')}</FormLabel>
+                  <FormLabel>{t("forms.opening_cash")}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -140,9 +148,9 @@ export function OpenShiftForm() {
               name="comment"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('forms.comment')}</FormLabel>
+                  <FormLabel>{t("forms.comment")}</FormLabel>
                   <FormControl>
-                    <Textarea placeholder={t('forms.comment')} {...field} />
+                    <Textarea placeholder={t("forms.comment")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -150,7 +158,7 @@ export function OpenShiftForm() {
             />
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? t('Opening...') : t('forms.open_shift')}
+              {isLoading ? t("Opening...") : t("forms.open_shift")}
             </Button>
           </form>
         </Form>
