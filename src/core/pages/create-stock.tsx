@@ -61,6 +61,15 @@ interface CreateSupplierForm {
   phone_number: string;
 }
 
+// Helper function to format numbers to two decimal places for display and API submission
+const formatNumber = (value: any): string => {
+  const num = Number(value);
+  if (isNaN(num) || num === 0) {
+    return ""; // Return empty for invalid numbers or zero to keep placeholders clean
+  }
+  return num.toFixed(2);
+};
+
 export default function CreateStock() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -261,7 +270,19 @@ export default function CreateStock() {
         ([fieldName, fieldData]) => {
           if (fieldData.value !== null && fieldData.value !== undefined) {
             // Use the existing helper function to get the correct display value
-            const displayValue = formatFieldValue(fieldData.value);
+            const rawValue = formatFieldValue(fieldData.value);
+            // Apply number formatting for relevant fields
+            const displayValue = [
+              "price_per_unit_currency",
+              "price_per_unit_uz",
+              "total_price_in_currency",
+              "total_price_in_uz",
+              "base_unit_in_currency",
+              "base_unit_in_uzs",
+              "exchange_rate",
+            ].includes(fieldName)
+              ? formatNumber(rawValue)
+              : rawValue;
 
             form.setValue(fieldName as keyof FormValues, displayValue, {
               shouldValidate: false,
@@ -324,10 +345,12 @@ export default function CreateStock() {
       // Calculate new values
       const calculatedValues = calculateFields(changedField, numericValues);
 
-      // Update form with calculated values
+      // Update form with calculated and formatted values
       Object.entries(calculatedValues).forEach(([fieldName, value]) => {
         if (fieldName !== changedField && value !== undefined) {
-          form.setValue(fieldName as keyof FormValues, String(value), {
+          // Format the number to two decimal places before setting it in the form
+          const formattedValue = formatNumber(value);
+          form.setValue(fieldName as keyof FormValues, formattedValue, {
             shouldValidate: false,
           });
         }
@@ -649,7 +672,7 @@ export default function CreateStock() {
         }))
     : [];
 
-  // Helper function to safely convert value to string
+  // Helper function to safely convert value to string, used for complex objects from API
   const formatFieldValue = (value: any): string => {
     if (value === null || value === undefined) {
       return "";
@@ -733,7 +756,8 @@ export default function CreateStock() {
           placeholder: fieldData.label,
           required: false,
           readOnly: !fieldData.editable,
-          value: formatFieldValue(fieldData.value),
+          // Format the value for display
+          value: formatNumber(formatFieldValue(fieldData.value)),
         }))
     : [];
 
@@ -767,6 +791,12 @@ export default function CreateStock() {
         return;
       }
 
+      // Helper to parse and format number for API payload
+      const formatPayloadNumber = (value: any) => {
+        const num = parseFloat(Number(value).toFixed(2));
+        return isNaN(num) ? undefined : num;
+      };
+
       // Build the final payload combining user input and calculated values
       const payload: any = {
         // Required fields
@@ -777,18 +807,24 @@ export default function CreateStock() {
         supplier: Number(data.supplier),
         date_of_arrived: data.date_of_arrived,
 
-        // Include calculation input fields (user entered values)
+        // Include calculation input fields (user entered values), formatted for API
         ...(data.purchase_unit_quantity && {
-          purchase_unit_quantity: Number(data.purchase_unit_quantity),
+          purchase_unit_quantity: formatPayloadNumber(
+            data.purchase_unit_quantity,
+          ),
         }),
         ...(data.total_price_in_currency && {
-          total_price_in_currency: Number(data.total_price_in_currency),
+          total_price_in_currency: formatPayloadNumber(
+            data.total_price_in_currency,
+          ),
         }),
         ...(data.price_per_unit_currency && {
-          price_per_unit_currency: Number(data.price_per_unit_currency),
+          price_per_unit_currency: formatPayloadNumber(
+            data.price_per_unit_currency,
+          ),
         }),
         ...(data.price_per_unit_uz && {
-          price_per_unit_uz: Number(data.price_per_unit_uz),
+          price_per_unit_uz: formatPayloadNumber(data.price_per_unit_uz),
         }),
 
         // Include all dynamic calculated fields from API response
@@ -808,8 +844,10 @@ export default function CreateStock() {
                 typeof fieldData.value === "object" &&
                 (fieldData.value as any).rate
               ) {
-                // Extract rate for exchange_rate if it has rate property
-                acc[fieldName] = (fieldData.value as any).rate;
+                // Extract rate and format it
+                acc[fieldName] = formatPayloadNumber(
+                  (fieldData.value as any).rate,
+                );
               } else if (
                 typeof fieldData.value === "object" &&
                 (fieldData.value as any).id !== undefined
@@ -817,8 +855,8 @@ export default function CreateStock() {
                 // For other objects with ID, extract the ID
                 acc[fieldName] = (fieldData.value as any).id;
               } else {
-                // For primitive values, use as-is
-                acc[fieldName] = fieldData.value;
+                // For primitive values, format them if they are numeric
+                acc[fieldName] = formatPayloadNumber(fieldData.value);
               }
             }
             return acc;
