@@ -336,9 +336,10 @@ export default function CreateStock() {
       const updatedDynamicFields = { ...dynamicFields };
       Object.entries(calculatedValues).forEach(([fieldName, value]) => {
         if (updatedDynamicFields[fieldName]) {
+          // @ts-ignore
           updatedDynamicFields[fieldName] = {
             ...updatedDynamicFields[fieldName],
-            value: value,
+            value: value as any,
           };
         }
       });
@@ -347,101 +348,7 @@ export default function CreateStock() {
     [calculationMetadata, form, dynamicFields, calculateFields],
   );
 
-  // Debounced calculation function
-  const debouncedCalculate = useCallback(
-    async (formData: FormValues) => {
-      if (
-        !formData.store ||
-        !formData.product ||
-        !formData.currency ||
-        !formData.purchase_unit ||
-        !formData.supplier ||
-        !formData.date_of_arrived
-      ) {
-        return; // Don't calculate if required fields are missing
-      }
 
-      setIsCalculating(true);
-      try {
-        // Build comprehensive calculation request matching stock creation payload structure
-        const calculationRequest: any = {
-          // Required fields
-          store: Number(formData.store),
-          product: Number(formData.product),
-          currency: Number(formData.currency),
-          purchase_unit: Number(formData.purchase_unit),
-          supplier: Number(formData.supplier),
-          date_of_arrived: formData.date_of_arrived,
-
-          // User input calculation fields
-          ...(formData.purchase_unit_quantity && {
-            purchase_unit_quantity: Number(formData.purchase_unit_quantity),
-          }),
-          ...(formData.total_price_in_currency && {
-            total_price_in_currency: Number(formData.total_price_in_currency),
-          }),
-          ...(formData.price_per_unit_currency && {
-            price_per_unit_currency: Number(formData.price_per_unit_currency),
-          }),
-          ...(formData.price_per_unit_uz && {
-            price_per_unit_uz: Number(formData.price_per_unit_uz),
-          }),
-
-          // Include non-user-input dynamic calculated fields
-          ...Object.entries(dynamicFields).reduce(
-            (acc, [fieldName, fieldData]) => {
-              if (
-                ![
-                  "purchase_unit_quantity",
-                  "total_price_in_currency",
-                  "price_per_unit_currency",
-                  "price_per_unit_uz",
-                ].includes(fieldName)
-              ) {
-                if (fieldData.value !== null && fieldData.value !== undefined) {
-                  if (
-                    typeof fieldData.value === "object" &&
-                    (fieldData.value as any).id !== undefined
-                  ) {
-                    acc[fieldName] = (fieldData.value as any).id;
-                  } else {
-                    acc[fieldName] = fieldData.value;
-                  }
-                }
-              }
-              return acc;
-            },
-            {} as any,
-          ),
-        };
-
-        console.log("Calculation request payload:", calculationRequest); // Debug log
-        const response = await calculateStock(calculationRequest);
-        setDynamicFields(response.dynamic_fields);
-
-        // **FIXED LOGIC STARTS HERE**
-        // Update form with ALL calculated values from the response
-        Object.entries(response.dynamic_fields).forEach(
-          ([fieldName, fieldData]) => {
-            if (fieldData.value !== null && fieldData.value !== undefined) {
-              // Use the existing formatFieldValue logic to get the correct display value
-              const displayValue = formatFieldValue(fieldData.value);
-
-              form.setValue(fieldName as keyof FormValues, displayValue, {
-                shouldValidate: false,
-              });
-            }
-          },
-        );
-        // **FIXED LOGIC ENDS HERE**
-      } catch (error) {
-        console.error("Calculation error:", error);
-      } finally {
-        setIsCalculating(false);
-      }
-    },
-    [form, dynamicFields], // Removed formatFieldValue from dependencies as it's defined outside
-  );
 
   // State to track previous values for change detection
   const [previousValues, setPreviousValues] = useState<{
