@@ -143,6 +143,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         "/create-expense",
         "/pos-fullscreen",
         "/pos",
+          "/close-shift/active",
         "/create-expense"
       ];
 
