@@ -382,15 +382,12 @@ export default function DebtDetailsPage() {
                                   <Package className="w-4 h-4 text-emerald-500 mt-1" />
                                   <div>
                                     <div className="font-medium text-gray-900">
-                                      {
-                                        item.stock_read.product_read
-                                          .product_name
-                                      }
+                                      {item.product_read.product_name}
                                     </div>
                                     <div className="text-sm text-gray-500">
                                       {
-                                        item.stock_read.product_read
-                                          .category_read.category_name
+                                        item.product_read.category_read
+                                          .category_name
                                       }
                                     </div>
                                   </div>
@@ -400,7 +397,7 @@ export default function DebtDetailsPage() {
                                 {item.quantity}
                               </td>
                               <td className="text-right py-3 px-4 text-gray-900">
-                                {formatCurrency(item.stock_read.selling_price)}
+                                {formatCurrency(item.price_per_unit)}
                               </td>
                               <td className="text-right py-3 px-4 font-medium text-gray-900">
                                 {formatCurrency(item.subtotal)}

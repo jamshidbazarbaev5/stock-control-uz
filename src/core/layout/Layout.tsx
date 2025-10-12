@@ -711,7 +711,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         {/* Current Rates Display */}
                         <div>
                           <h3 className="text-lg font-medium mb-3">
-                            Current Exchange Rates
+                         Текущий курсы
                           </h3>
                           <div className="space-y-2 max-h-40 overflow-y-auto">
                             {(Array.isArray(currencyRates)
@@ -751,13 +751,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           className="space-y-4"
                         >
                           <h3 className="text-lg font-medium">
-                            Create New Exchange Rate
+                           Создать новый курс
                           </h3>
 
                           {/* Currency Selection */}
                           <div>
                             <label className="block text-sm font-medium mb-2">
-                              Currency
+                            Валюта
                             </label>
                             <Select
                               value={selectedCurrency}
@@ -765,7 +765,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                               required
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="Select currency" />
+                                <SelectValue placeholder="Выбырать курс" />
                               </SelectTrigger>
                               <SelectContent>
                                 {(Array.isArray(currencies)
@@ -788,7 +788,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           {/* Rate Input */}
                           <div>
                             <label className="block text-sm font-medium mb-2">
-                              Exchange Rate
+                              Курс
                             </label>
                             <Input
                               type="number"
