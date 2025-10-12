@@ -2875,7 +2875,7 @@ const POSInterface = () => {
             </div>
 
             {/* Payment Summary */}
-            <div className="grid grid-cols-2 gap-8 mb-8">
+            <div className="grid grid-cols-3 gap-8 mb-8">
               <div>
                 <div className="text-gray-500 text-lg mb-2">Итого:</div>
                 <div className="text-5xl font-bold text-gray-900">
@@ -2892,6 +2892,19 @@ const POSInterface = () => {
                         (sum, p) => sum + (p.amount || 0),
                         0,
                       ),
+                  ).toLocaleString()}{" "}
+                  UZS
+                </div>
+              </div>
+              <div>
+                <div className="text-blue-500 text-lg mb-2">СДАЧА:</div>
+                <div className="text-5xl font-bold text-blue-500">
+                  {Math.max(
+                    0,
+                    paymentMethods.reduce(
+                      (sum, p) => sum + (p.amount || 0),
+                      0,
+                    ) - total,
                   ).toLocaleString()}{" "}
                   UZS
                 </div>

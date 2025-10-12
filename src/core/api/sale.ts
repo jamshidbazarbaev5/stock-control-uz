@@ -129,6 +129,7 @@ export const useGetSales = (options?: { params?: Record<string, any> }) => {
       return response.data;
     },
   });
+
 };
 
 export const useGetSale = (id: number) => {
