@@ -236,7 +236,7 @@ function App() {
               <Route
                 path="/create-stock"
                 element={
-                  <PrivateRoute allowedRoles={["Администратор"]}>
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
                     <CreateStock />
                   </PrivateRoute>
                 }
@@ -276,7 +276,7 @@ function App() {
               <Route
                 path="/create-client"
                 element={
-                  <PrivateRoute allowedRoles={["Администратор"]}>
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
                     <CreateClient />
                   </PrivateRoute>
                 }
@@ -284,7 +284,7 @@ function App() {
               <Route
                 path="/edit-client/:id"
                 element={
-                  <PrivateRoute allowedRoles={["Администратор"]}>
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
                     <EditClient />
                   </PrivateRoute>
                 }
@@ -373,7 +373,7 @@ function App() {
               <Route
                 path="/create-expense"
                 element={
-                  <PrivateRoute allowedRoles={["Администратор"]}>
+                  <PrivateRoute allowedRoles={["Администратор", "Продавец"]}>
                     <CreateExpense />
                   </PrivateRoute>
                 }

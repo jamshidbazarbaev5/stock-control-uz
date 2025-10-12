@@ -38,6 +38,7 @@ export function PrivateRoute({ children, allowedRoles }: PrivateRouteProps) {
         "/pos-fullscreen",
         "/expense",
         "/income",
+          "/create-expense",
         "/income/:id",
         "/shifts",
         "/close-shift/active",

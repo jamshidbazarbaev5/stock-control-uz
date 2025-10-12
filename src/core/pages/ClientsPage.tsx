@@ -1,21 +1,43 @@
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { ResourceTable } from '../helpers/ResourseTable';
-import { type Client, useGetClients, useDeleteClient, useIncrementBalance } from '../api/client';
-import { toast } from 'sonner';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useCurrentUser } from '../hooks/useCurrentUser';
+ import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { ResourceTable } from "../helpers/ResourseTable";
+import {
+  type Client,
+  useGetClients,
+  useDeleteClient,
+  useIncrementBalance,
+} from "../api/client";
+import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useCurrentUser } from "../hooks/useCurrentUser";
 
 const formSchema = z.object({
-  amount: z.number().min(0.01, 'Amount must be greater than 0'),
+  amount: z.number().min(0.01, "Amount must be greater than 0"),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -26,7 +48,11 @@ interface BalanceIncrementDialogProps {
   onClose: () => void;
 }
 
-function BalanceIncrementDialog({ clientId, isOpen, onClose }: BalanceIncrementDialogProps) {
+function BalanceIncrementDialog({
+  clientId,
+  isOpen,
+  onClose,
+}: BalanceIncrementDialogProps) {
   const { t } = useTranslation();
   const incrementBalance = useIncrementBalance();
   const form = useForm<FormData>({
@@ -39,12 +65,12 @@ function BalanceIncrementDialog({ clientId, isOpen, onClose }: BalanceIncrementD
   const onSubmit = async (data: FormData) => {
     try {
       await incrementBalance.mutateAsync({ id: clientId, amount: data.amount });
-      toast.success(t('messages.success.balance_incremented'));
+      toast.success(t("messages.success.balance_incremented"));
       form.reset();
       onClose();
     } catch (error) {
-      toast.error(t('messages.error.balance_increment'));
-      console.error('Failed to increment balance:', error);
+      toast.error(t("messages.error.balance_increment"));
+      console.error("Failed to increment balance:", error);
     }
   };
 
@@ -52,7 +78,7 @@ function BalanceIncrementDialog({ clientId, isOpen, onClose }: BalanceIncrementD
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('forms.increment_balance')}</DialogTitle>
+          <DialogTitle>{t("forms.increment_balance")}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -61,13 +87,15 @@ function BalanceIncrementDialog({ clientId, isOpen, onClose }: BalanceIncrementD
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('forms.amount')}</FormLabel>
+                  <FormLabel>{t("forms.amount")}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       step="0.01"
                       {...field}
-                      onChange={e => field.onChange(parseFloat(e.target.value))}
+                      onChange={(e) =>
+                        field.onChange(parseFloat(e.target.value))
+                      }
                     />
                   </FormControl>
                 </FormItem>
@@ -75,10 +103,10 @@ function BalanceIncrementDialog({ clientId, isOpen, onClose }: BalanceIncrementD
             />
             <div className="flex justify-end space-x-2">
               <Button type="button" variant="outline" onClick={onClose}>
-                {t('common.cancel')}
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={incrementBalance.isPending}>
-                {t('common.save')}
+                {t("common.save")}
               </Button>
             </div>
           </form>
@@ -91,71 +119,83 @@ function BalanceIncrementDialog({ clientId, isOpen, onClose }: BalanceIncrementD
 export default function ClientsPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
-  const { data: clientsData, isLoading } = useGetClients({ params: selectedType === 'all' ? {} : { type: selectedType } });
+  const { data: clientsData, isLoading } = useGetClients({
+    params: selectedType === "all" ? {} : { type: selectedType },
+  });
   const deleteClient = useDeleteClient();
-  const {data:currentUser}  = useCurrentUser()
-  const clients = Array.isArray(clientsData) ? clientsData : clientsData?.results || [];
-  const totalCount = Array.isArray(clientsData) ? clients.length : clientsData?.count || 0;
+  const { data: currentUser } = useCurrentUser();
+  const clients = Array.isArray(clientsData)
+    ? clientsData
+    : clientsData?.results || [];
+  const totalCount = Array.isArray(clientsData)
+    ? clients.length
+    : clientsData?.count || 0;
 
   const columns = [
     {
-      header: t('forms.client_type'),
-      accessorKey: 'type',
+      header: t("forms.client_type"),
+      accessorKey: "type",
     },
     {
-      header: t('forms.name'),
-      accessorKey: (row: Client) => row.type === 'Юр.лицо' ? row.name + ' (' + row.ceo_name + ')' : row.name,
+      header: t("forms.name"),
+      accessorKey: (row: Client) =>
+        row.type === "Юр.лицо"
+          ? row.name + " (" + row.ceo_name + ")"
+          : row.name,
     },
     {
-      header: t('forms.phone'),
-      accessorKey: 'phone_number',
+      header: t("forms.phone"),
+      accessorKey: "phone_number",
     },
     {
-      header: t('forms.address'),
-      accessorKey: 'address',
+      header: t("forms.address"),
+      accessorKey: "address",
     },
     {
-      header: t('forms.balance'),
-      accessorKey: (row: Client) => 'balance' in row ? row.balance : '-',
+      header: t("forms.balance"),
+      accessorKey: (row: Client) => ("balance" in row ? row.balance : "-"),
     },
     {
-      header: '',
-      id: 'actions',
-      accessorKey: 'id',
-      cell: (row: Client) => 
-        row.type === 'Юр.лицо' ? (
+      header: "",
+      id: "actions",
+      accessorKey: "id",
+      cell: (row: Client) =>
+        row.type === "Юр.лицо" ? (
           <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={() => navigate(`/clients/${row.id}/history`)}
             >
-              {t('common.history')}
+              {t("common.history")}
             </Button>
-            {currentUser?.is_superuser && ( <Button
-              variant="outline"
-              onClick={() => row.id && setSelectedClientId(row.id)}
-            >
-              {t('common.increment_balance')}
-            </Button>)}
-           
+            {currentUser?.is_superuser && (
+              <Button
+                variant="outline"
+                onClick={() => row.id && setSelectedClientId(row.id)}
+              >
+                {t("common.increment_balance")}
+              </Button>
+            )}
           </div>
         ) : null,
     },
   ];
 
-
   const handleDelete = async (id: number) => {
-
     try {
       if (currentUser?.is_superuser) {
         await deleteClient.mutateAsync(id);
-        toast.success(t('messages.success.deleted', { item: t('navigation.clients') }));
+        toast.success(
+          t("messages.success.deleted", { item: t("navigation.clients") }),
+        );
       }
     } catch (error) {
-      toast.error(t('messages.error.delete', { item: t('navigation.clients') }));
-      console.error('Failed to delete client:', error);
+      toast.error(
+        t("messages.error.delete", { item: t("navigation.clients") }),
+      );
+      console.error("Failed to delete client:", error);
     }
   };
 
@@ -164,12 +204,12 @@ export default function ClientsPage() {
       <div className="mb-4">
         <Select value={selectedType} onValueChange={setSelectedType}>
           <SelectTrigger>
-            <SelectValue placeholder={t('forms.select_client_type')} />
+            <SelectValue placeholder={t("forms.select_client_type")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t('common.all')}</SelectItem>
-            <SelectItem value="Физ.лицо">{t('forms.individual')}</SelectItem>
-            <SelectItem value="Юр.лицо">{t('forms.legal_entity')}</SelectItem>
+            <SelectItem value="all">{t("common.all")}</SelectItem>
+            <SelectItem value="Физ.лицо">{t("forms.individual")}</SelectItem>
+            <SelectItem value="Юр.лицо">{t("forms.legal_entity")}</SelectItem>
           </SelectContent>
         </Select>
       </div>

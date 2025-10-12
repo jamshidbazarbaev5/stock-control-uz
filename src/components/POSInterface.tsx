@@ -85,6 +85,8 @@ interface SessionState {
   selectedClient: number | null;
   clientSearchTerm: string;
   onCredit: boolean;
+  debtDeposit: string;
+  debtDueDate: string;
 }
 
 interface SalePayment {
@@ -133,6 +135,8 @@ const POSInterface = () => {
       selectedClient: null,
       clientSearchTerm: "",
       onCredit: false,
+      debtDeposit: "",
+      debtDueDate: "",
     },
   ]);
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0);
@@ -163,6 +167,8 @@ const POSInterface = () => {
     currentSession.clientSearchTerm,
   );
   const [onCredit, setOnCredit] = useState(currentSession.onCredit);
+  const [debtDeposit, setDebtDeposit] = useState(currentSession.debtDeposit);
+  const [debtDueDate, setDebtDueDate] = useState(currentSession.debtDueDate);
 
   // Global modal states (shared across sessions)
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
@@ -245,6 +251,8 @@ const POSInterface = () => {
               selectedClient,
               clientSearchTerm,
               onCredit,
+              debtDeposit,
+              debtDueDate,
             }
           : session,
       ),
@@ -261,6 +269,8 @@ const POSInterface = () => {
     selectedClient,
     clientSearchTerm,
     onCredit,
+    debtDeposit,
+    debtDueDate,
   ]);
 
   // Sync fullscreen mode with route
@@ -696,6 +706,8 @@ const POSInterface = () => {
       selectedClient: null,
       clientSearchTerm: "",
       onCredit: false,
+      debtDeposit: "",
+      debtDueDate: "",
     };
 
     setSessions((prev) => [...prev, newSession]);
@@ -715,6 +727,8 @@ const POSInterface = () => {
     setSelectedClient(null);
     setClientSearchTerm("");
     setOnCredit(false);
+    setDebtDeposit("");
+    setDebtDueDate("");
   };
 
   // Auto-update session name based on selected client or seller
@@ -770,6 +784,8 @@ const POSInterface = () => {
         selectedClient,
         clientSearchTerm,
         onCredit,
+        debtDeposit,
+        debtDueDate,
       };
       setSessions(updatedSessions);
 
@@ -788,6 +804,8 @@ const POSInterface = () => {
       setSelectedClient(targetSession.selectedClient);
       setClientSearchTerm(targetSession.clientSearchTerm);
       setOnCredit(targetSession.onCredit);
+      setDebtDeposit(targetSession.debtDeposit);
+      setDebtDueDate(targetSession.debtDueDate);
     }
   };
 
@@ -815,6 +833,8 @@ const POSInterface = () => {
         setSelectedClient(newActiveSession.selectedClient);
         setClientSearchTerm(newActiveSession.clientSearchTerm);
         setOnCredit(newActiveSession.onCredit);
+        setDebtDeposit(newActiveSession.debtDeposit);
+        setDebtDueDate(newActiveSession.debtDueDate);
       }
     }
   };
@@ -1254,6 +1274,8 @@ const POSInterface = () => {
                       setSelectedClient(null);
                       setOnCredit(false);
                       setClientSearchTerm("");
+                      setDebtDeposit("");
+                      setDebtDueDate("");
                     }}
                     className="text-gray-400 hover:text-gray-600 transition-colors"
                     title="Очистить выбор"
@@ -2275,6 +2297,8 @@ const POSInterface = () => {
                   setOnCredit(isCredit);
                   if (!isCredit) {
                     setSelectedClient(null);
+                    setDebtDeposit("");
+                    setDebtDueDate("");
                   }
                 }}
               >
@@ -2346,6 +2370,50 @@ const POSInterface = () => {
               </Select>
             </div>
 
+            {/* Debt specific fields - shown only when onCredit is true */}
+            {onCredit && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Сумма залога (сум)
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="Введите сумму залога..."
+                    value={debtDeposit}
+                    onChange={(e) => setDebtDeposit(e.target.value)}
+                    onFocus={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onBlur={(e) => {
+                      e.stopPropagation();
+                    }}
+                    className="mb-2"
+                    autoComplete="off"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Срок погашения
+                  </label>
+                  <Input
+                    type="date"
+                    value={debtDueDate}
+                    onChange={(e) => setDebtDueDate(e.target.value)}
+                    onFocus={(e) => {
+                      e.stopPropagation();
+                    }}
+                    onBlur={(e) => {
+                      e.stopPropagation();
+                    }}
+                    className="mb-2"
+                    autoComplete="off"
+                  />
+                </div>
+              </>
+            )}
+
             {/* Current Selection Display */}
             {(selectedSeller || selectedClient) && (
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -2362,15 +2430,33 @@ const POSInterface = () => {
                   </p>
                 )}
                 {selectedClient && (
-                  <p className="text-sm text-blue-700">
-                    <strong>Клиент:</strong>{" "}
-                    {clients.find((c) => c.id === selectedClient)?.name}
-                    {onCredit && (
-                      <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">
-                        В кредит
-                      </span>
+                  <>
+                    <p className="text-sm text-blue-700">
+                      <strong>Клиент:</strong>{" "}
+                      {clients.find((c) => c.id === selectedClient)?.name}
+                      {onCredit && (
+                        <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">
+                          В кредит
+                        </span>
+                      )}
+                    </p>
+                    {onCredit && (debtDeposit || debtDueDate) && (
+                      <div className="text-sm text-blue-700 mt-1">
+                        {debtDeposit && (
+                          <p>
+                            <strong>Залог:</strong>{" "}
+                            {parseInt(debtDeposit).toLocaleString()} сум
+                          </p>
+                        )}
+                        {debtDueDate && (
+                          <p>
+                            <strong>Срок:</strong>{" "}
+                            {new Date(debtDueDate).toLocaleDateString("ru-RU")}
+                          </p>
+                        )}
+                      </div>
                     )}
-                  </p>
+                  </>
                 )}
               </div>
             )}
@@ -2384,6 +2470,8 @@ const POSInterface = () => {
                   setSelectedClient(null);
                   setOnCredit(false);
                   setClientSearchTerm("");
+                  setDebtDeposit("");
+                  setDebtDueDate("");
                 }}
                 variant="outline"
                 className="flex-1"
@@ -2633,6 +2721,22 @@ const POSInterface = () => {
                     return;
                   }
 
+                  // Validate debt fields when onCredit is true
+                  if (onCredit && !selectedClient) {
+                    toast.error("Выберите клиента для продажи в кредит!");
+                    return;
+                  }
+
+                  if (onCredit && !debtDeposit) {
+                    toast.error("Введите сумму залога!");
+                    return;
+                  }
+
+                  if (onCredit && !debtDueDate) {
+                    toast.error("Выберите срок погашения!");
+                    return;
+                  }
+
                   try {
                     setIsProcessingSale(true);
 
@@ -2653,12 +2757,8 @@ const POSInterface = () => {
                         selectedClient && {
                           sale_debt: {
                             client: selectedClient,
-                            deposit: totalPayment,
-                            due_date: new Date(
-                              Date.now() + 30 * 24 * 60 * 60 * 1000,
-                            )
-                              .toISOString()
-                              .split("T")[0],
+                            deposit: parseInt(debtDeposit || "0"),
+                            due_date: debtDueDate,
                           },
                         }),
                     };
@@ -2689,12 +2789,8 @@ const POSInterface = () => {
                         selectedClient && {
                           sale_debt: {
                             client: selectedClient,
-                            deposit: totalPayment.toString(),
-                            due_date: new Date(
-                              Date.now() + 30 * 24 * 60 * 60 * 1000,
-                            )
-                              .toISOString()
-                              .split("T")[0],
+                            deposit: debtDeposit,
+                            due_date: debtDueDate,
                           },
                         }),
                     };

@@ -224,15 +224,7 @@ export default function StocksPage() {
                 {t("common.remove")}
               </DropdownMenuItem>
             ) : null}
-            <DropdownMenuItem
-              onClick={() =>
-                navigate(
-                  `/create-sale?productId=${row.product?.id || row.product_read?.id}&stockId=${row.id}`,
-                )
-              }
-            >
-              {t("common.create")} {t("navigation.sale")}
-            </DropdownMenuItem>
+
             {currentUser?.role?.toLowerCase() !== "продавец" && (
               <>
                 <DropdownMenuItem

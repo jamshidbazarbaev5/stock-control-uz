@@ -145,8 +145,10 @@
     "create_expense": "Создать расход"
   },
   "common": {
+    "selling_unit":"Единица измерения",
     "mobile": "Мобильный",
     "desktop": "Десктоп",
+    "print": "Чек",
     "refund": "Возврат",
     "notes": "Примечания",
     "confirm_refund": "Подтвердить возврат",
@@ -584,6 +586,7 @@
     "edit": "Изменить"
   },
   "placeholders": {
+    "search_products": "Поиск товаров",
     "search_currency": "Поиск валюты",
     "enter_short_name": "Введите короткое название",
     "select_device": "Телефонная версия",
@@ -653,7 +656,9 @@
   },
   "table": {
     "select":"Выбрать",
+    "price_per_unit": "Цена за единицу",
     "products":"Товары",
+    "selling_unit": "Единица измерения",
     "field_type": "Тип",
     "russian_translation": "Перевод",
     "old_selling_price":"Предыдущая цена продажи",

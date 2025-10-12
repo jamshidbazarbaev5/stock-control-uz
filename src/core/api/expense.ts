@@ -1,4 +1,4 @@
-import { createResourceApiHooks } from '../helpers/createResourceApi';
+import { createResourceApiHooks } from "../helpers/createResourceApi";
 
 // Types
 export interface Expense {
@@ -24,7 +24,7 @@ export interface Expense {
 }
 
 // API endpoints
-const EXPENSE_URL = 'budget/expenses/';
+const EXPENSE_URL = "budget/expenses/";
 
 // Create expense API hooks using the factory function
 export const {
@@ -33,4 +33,4 @@ export const {
   useCreateResource: useCreateExpense,
   useUpdateResource: useUpdateExpense,
   useDeleteResource: useDeleteExpense,
-} = createResourceApiHooks<Expense>(EXPENSE_URL, 'expenses');
+} = createResourceApiHooks<Expense>(EXPENSE_URL, "expenses");

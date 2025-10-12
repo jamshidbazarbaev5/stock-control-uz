@@ -78,6 +78,7 @@ export default function CreateClient() {
 
   const handleSubmit = async (data: Client) => {
     try {
+      // @ts-ignore
       await createClient.mutateAsync(data);
       toast.success(t('messages.success.created', { item: t('navigation.clients') }));
       navigate('/clients');

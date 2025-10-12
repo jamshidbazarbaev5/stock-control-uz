@@ -68,7 +68,7 @@ const recyclingFields = (
   {
     name: "quantity_of_parts",
     label: t("table.quantity_of_part"),
-    type: "string",
+    type: "number",
     placeholder: t("placeholders.quantity_of_parts"),
     required: true,
   },
@@ -408,7 +408,7 @@ export default function CreateRecycling() {
   useEffect(() => {
     if (!fromTo) return;
     const selectedStock = stocks.find((stock) => stock.id === Number(fromTo));
-    const baseSellingPrice = selectedStock?.selling_price
+      const baseSellingPrice = selectedStock?.selling_price
         ? Number(selectedStock.selling_price)
         : 0;
     const spentAmt = Number(form.watch("spent_amount"));
@@ -477,7 +477,7 @@ export default function CreateRecycling() {
     const us = Number(purchasePriceInUs);
     const rate = Number(exchangeRateField);
     if (!isNaN(us) && !isNaN(rate) && us > 0 && rate > 0) {
-      const uz = us * rate;
+        const uz = us * rate;
       form.setValue("purchase_price_in_uz", uz, {
         shouldValidate: false,
         shouldDirty: true,
@@ -565,7 +565,10 @@ export default function CreateRecycling() {
   const handleSubmit = async (data: FormValues) => {
     try {
       // Validate quantity_of_parts is required when to_product is "Рейка"
-      if (isReyka && (!data.quantity_of_parts || data.quantity_of_parts <= 0)) {
+      if (
+          isReyka &&
+          (!data.quantity_of_parts || Number(data.quantity_of_parts) <= 0)
+      ) {
         toast.error(t("common.quantity_of_parts_required"));
         return;
       }

@@ -50,7 +50,7 @@ const CLIENT_URL = 'clients/';
 export const {
   useGetResources: useGetClients,
   useGetResource: useGetClient,
-  useCreateResource: useCreateClient,
+  // useCreateResource: useCreateClient,
   useUpdateResource: useUpdateClient,
   useDeleteResource: useDeleteClient,
 } = createResourceApiHooks<Client>(CLIENT_URL, 'clients');
@@ -88,3 +88,18 @@ export const useIncrementBalance = () => {
     },
   });
 };
+
+
+export const useCreateClient = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data) => {
+      const response = await api.post('/clients/create/',data)
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      // queryClient.invalidateQueries({ queryKey: ['debtPayments'] });
+    },
+  });
+}

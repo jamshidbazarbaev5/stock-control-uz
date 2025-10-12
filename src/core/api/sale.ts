@@ -1,6 +1,7 @@
 import { createResourceApiHooks } from "../helpers/createResourceApi";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "./api";
+import { attributeApi } from "@/core/api/attribute.ts";
 
 // Types
 export interface SaleDebt {
@@ -99,7 +100,7 @@ const {
   useCreateResource: useCreateSale,
   useUpdateResource: useUpdateSale,
   useDeleteResource: useDeleteSale,
-} = createResourceApiHooks<Sale>(SALE_CREATE_URL, "sales");
+} = createResourceApiHooks<Sale>(SALE_LIST_URL, "sales");
 
 // Custom GET hooks using the correct /sales/ endpoint
 export const useGetSales = (options?: { params?: Record<string, any> }) => {

@@ -137,13 +137,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         "/create-sale",
         "/sales",
         "/clients",
+        "/create-client",
         "/debts",
         "/expense",
+        "/create-expense",
         "/pos-fullscreen",
         "/pos",
+        "/create-expense"
       ];
 
-      if (!allowedPaths.includes(currentPath)) {
+      // Check for exact matches or dynamic routes
+      const isAllowed =
+        allowedPaths.some((path) => currentPath.startsWith(path)) ||
+        currentPath.startsWith("/edit-client/");
+
+      if (!isAllowed) {
         navigate("/create-sale");
       }
     }
