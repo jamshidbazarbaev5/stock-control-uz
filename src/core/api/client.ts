@@ -1,7 +1,7 @@
-import { createResourceApiHooks } from '../helpers/createResourceApi';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from './api';
-import { toast } from 'sonner';
+import { createResourceApiHooks } from "../helpers/createResourceApi";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "./api";
+import { toast } from "sonner";
 
 // Types
 export interface BaseClient {
@@ -12,11 +12,11 @@ export interface BaseClient {
 }
 
 export interface IndividualClient extends BaseClient {
-  type: 'Физ.лицо';
+  type: "Физ.лицо";
 }
 
 export interface CorporateClient extends BaseClient {
-  type: 'Юр.лицо';
+  type: "Юр.лицо";
   ceo_name: string;
   balance: number;
 }
@@ -44,7 +44,7 @@ export interface IncrementBalancePayload {
 }
 
 // API endpoints
-const CLIENT_URL = 'clients/';
+const CLIENT_URL = "clients/";
 
 // Create client API hooks using the factory function
 export const {
@@ -53,65 +53,79 @@ export const {
   // useCreateResource: useCreateClient,
   useUpdateResource: useUpdateClient,
   useDeleteResource: useDeleteClient,
-} = createResourceApiHooks<Client>(CLIENT_URL, 'clients');
+} = createResourceApiHooks<Client>(CLIENT_URL, "clients");
 
 // Client history hook
-export const useGetClientHistory = (clientId: number, params?: { sale?: string; start_date?: string; end_date?: string; type?: string }) => {
+export const useGetClientHistory = (
+  clientId: number,
+  params?: {
+    sale?: string;
+    start_date?: string;
+    end_date?: string;
+    type?: string;
+  },
+) => {
   return useQuery({
-    queryKey: ['clientHistory', clientId, params],
+    queryKey: ["clientHistory", clientId, params],
     queryFn: async () => {
-      const response = await api.get<ClientHistoryEntry[]>(`${CLIENT_URL}${clientId}/history`, { params });
+      const response = await api.get<ClientHistoryEntry[]>(
+        `${CLIENT_URL}${clientId}/history`,
+        { params },
+      );
       return response.data;
     },
     enabled: !!clientId,
   });
 };
-// Client history hook
-export const useGetClient = (clientId: number, params?: { sale?: string; start_date?: string; end_date?: string; type?: string }) => {
+// Client hook
+export const useGetClient = (clientId: number) => {
   return useQuery({
-    queryKey: ['clientHistory', clientId, params],
+    queryKey: ["clients", clientId],
     queryFn: async () => {
-      const response = await api.get<Client[]>(`${CLIENT_URL}${clientId}`, { params });
+      const response = await api.get<Client>(`${CLIENT_URL}${clientId}/`);
       return response.data;
     },
     enabled: !!clientId,
   });
 };
-
 
 // Increment balance mutation hook
 export const useIncrementBalance = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, amount }: { id: number; amount: number }) => {
-      const response = await api.post<Client>(`${CLIENT_URL}${id}/increment-balance/`, { amount });
+      const response = await api.post<Client>(
+        `${CLIENT_URL}${id}/increment-balance/`,
+        { amount },
+      );
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
       if (data.id) {
-        queryClient.invalidateQueries({ queryKey: ['clients', data.id] });
-        queryClient.invalidateQueries({ queryKey: ['clientHistory', data.id] });
+        queryClient.invalidateQueries({ queryKey: ["clients", data.id] });
+        queryClient.invalidateQueries({ queryKey: ["clientHistory", data.id] });
       }
     },
     onError: (error: any) => {
-      console.error('Error incrementing balance:', error);
-      toast.error(error?.response?.data?.detail || 'Failed to increment balance');
+      console.error("Error incrementing balance:", error);
+      toast.error(
+        error?.response?.data?.detail || "Failed to increment balance",
+      );
     },
   });
 };
-
 
 export const useCreateClient = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data) => {
-      const response = await api.post('/clients/create/',data)
+      const response = await api.post("/clients/create/", data);
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
       // queryClient.invalidateQueries({ queryKey: ['debtPayments'] });
     },
   });
-}
+};
