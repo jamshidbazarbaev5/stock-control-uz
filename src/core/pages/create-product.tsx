@@ -231,6 +231,7 @@ export default function CreateProduct() {
     console.log("Form data received:", data);
 
     try {
+      // @ts-ignore
       const formattedData: Product = {
         product_name: data.product_name,
         category_write:

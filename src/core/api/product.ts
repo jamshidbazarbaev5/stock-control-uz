@@ -4,8 +4,10 @@ import api from "./api";
 
 // Types
 export interface ProductMeasurement {
+  to_unit: number;
+  from_unit: number;
   id?: number;
-  measurement_write: number;
+  measurement_write?: number;
   measurement_read?: {
     id: number;
     measurement_name: string;

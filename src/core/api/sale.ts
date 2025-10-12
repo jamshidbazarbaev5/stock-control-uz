@@ -1,7 +1,6 @@
 import { createResourceApiHooks } from "../helpers/createResourceApi";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "./api";
-import { attributeApi } from "@/core/api/attribute.ts";
 
 // Types
 export interface SaleDebt {
@@ -95,12 +94,29 @@ export interface Sale {
 const SALE_CREATE_URL = "sales/create/";
 const SALE_LIST_URL = "sales/";
 
-// Create hooks for write operations (create, update, delete)
-const {
-  useCreateResource: useCreateSale,
-  useUpdateResource: useUpdateSale,
-  useDeleteResource: useDeleteSale,
-} = createResourceApiHooks<Sale>(SALE_LIST_URL, "sales");
+// Create hooks for update and delete operations using the list URL
+const { useUpdateResource: useUpdateSale, useDeleteResource: useDeleteSale } =
+  createResourceApiHooks<Sale>(SALE_LIST_URL, "sales");
+
+// Custom create hook using the correct create endpoint
+const useCreateSale = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (newSale: Sale | FormData) => {
+      const isFormData = newSale instanceof FormData;
+      const config = isFormData
+        ? { headers: { "Content-Type": "multipart/form-data" } }
+        : {};
+
+      const response = await api.post<Sale>(SALE_CREATE_URL, newSale, config);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sales"] });
+    },
+  });
+};
 
 // Custom GET hooks using the correct /sales/ endpoint
 export const useGetSales = (options?: { params?: Record<string, any> }) => {

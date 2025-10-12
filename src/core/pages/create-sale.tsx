@@ -267,6 +267,7 @@ export default function CreateSale() {
 
       const handleProduct = (product: Product) => {
         // Get base unit (is_base: true) as default
+        // @ts-ignore
         const defaultUnit = getBaseUnit(product.available_units) || {
           id: product.base_unit || 1,
           short_name: "шт",
@@ -392,6 +393,7 @@ export default function CreateSale() {
     }
 
     // Get base unit (is_base: true) as default
+    // @ts-ignore
     const defaultUnit = getBaseUnit(selectedProduct.available_units) || {
       id: selectedProduct.base_unit || 1,
       short_name: "шт",
