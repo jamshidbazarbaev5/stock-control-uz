@@ -290,9 +290,14 @@ export default function SalesPage() {
       return;
     }
 
+    if (!refundNotes.trim()) {
+      toast.error(t("errors.refund_notes_required"));
+      return;
+    }
+
     const refundData = {
       sale: selectedSaleForRefund.id,
-      notes: refundNotes || undefined,
+      notes: refundNotes,
       refund_items: refundItems,
     } as Refund;
 
@@ -432,9 +437,9 @@ export default function SalesPage() {
                   <div className="mb-1">
                     <div className="flex items-center justify-between text-xs mb-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-red-700">
-                          #{refund.id}
-                        </span>
+                        {/*<span className="font-semibold text-red-700">*/}
+                        {/*  #{refund.id}*/}
+                        {/*</span>*/}
                         <span className="text-gray-600">
                           {new Date(refund.created_at).toLocaleDateString()}
                         </span>
@@ -620,7 +625,24 @@ export default function SalesPage() {
         </div>
       ),
     },
-
+    {
+      header: "Возврат",
+      accessorKey: "sale_refunds",
+      cell: (row: Sale) => (
+        <div className="flex items-center justify-center">
+          {row.sale_refunds && row.sale_refunds.length > 0 ? (
+            <div className="flex items-center gap-1">
+              <span className="inline-flex items-center justify-center w-5 h-5 bg-red-100 text-red-700 text-xs font-medium rounded-full">
+                {row.sale_refunds.length}
+              </span>
+              <span className="text-xs text-red-600">возврат</span>
+            </div>
+          ) : (
+            <span className="text-xs text-gray-400">-</span>
+          )}
+        </div>
+      ),
+    },
     {
       header: t("table.sold_date"),
       accessorKey: "sold_date",
@@ -643,17 +665,19 @@ export default function SalesPage() {
       accessorKey: "actions",
       cell: (row: Sale) => (
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setSelectedSaleForPrint(row);
-              setShowPrintReceipt(true);
-            }}
-          >
-            <Printer className="w-4 h-4 mr-2" />
-            {t("common.print")}
-          </Button>
+          {currentUser?.is_mobile_user === false && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSelectedSaleForPrint(row);
+                setShowPrintReceipt(true);
+              }}
+            >
+              <Printer className="w-4 h-4 mr-2" />
+              {t("common.print")}
+            </Button>
+          )}
         </div>
       ),
     },
@@ -748,12 +772,14 @@ export default function SalesPage() {
         <h1 className="text-xl sm:text-2xl font-bold">
           {t("navigation.sales")}
         </h1>
-        <Button
-          onClick={() => navigate("/create-sale")}
-          className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
-        >
-          {t("common.create")}
-        </Button>
+        {!currentUser?.is_superuser && (
+          <Button
+            onClick={() => navigate("/create-sale")}
+            className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
+          >
+            {t("common.create")}
+          </Button>
+        )}
       </div>
 
       {/* Filters */}
@@ -859,16 +885,16 @@ export default function SalesPage() {
               columns={columns}
               isLoading={isLoading}
               onDelete={
-                currentUser?.role === "Продавец" ? undefined : handleDelete
-              }
-              totalCount={totalCount}
-              onEdit={
-                currentUser?.is_superuser
-                  ? (sale: Sale) => navigate(`/edit-sale/${sale.id}`)
+                currentUser?.is_mobile_user === false &&
+                currentUser?.role !== "Продавец"
+                  ? handleDelete
                   : undefined
               }
+              totalCount={totalCount}
               onRefund={
-                currentUser?.role !== "Продавец"
+                currentUser?.is_mobile_user === false &&
+                (currentUser?.role === "Продавец" ||
+                  currentUser?.role === "Админ")
                   ? (sale: Sale) => handleOpenRefundModal(sale)
                   : undefined
               }
@@ -1188,7 +1214,7 @@ export default function SalesPage() {
                 {/* Notes */}
                 <div>
                   <label className="font-medium text-gray-700 mb-2 block">
-                    {t("common.notes")}
+                    {t("common.notes")} <span className="text-red-500">*</span>
                   </label>
                   <Textarea
                     value={refundNotes}
@@ -1196,6 +1222,7 @@ export default function SalesPage() {
                     placeholder={t("placeholders.refund_notes")}
                     rows={3}
                     className="w-full"
+                    required
                   />
                 </div>
               </div>
@@ -1216,7 +1243,7 @@ export default function SalesPage() {
             </Button>
             <Button
               onClick={handleRefundSubmit}
-              disabled={createRefund.isPending}
+              disabled={createRefund.isPending || !refundNotes.trim()}
               className="bg-red-600 hover:bg-red-700"
             >
               {createRefund.isPending ? (

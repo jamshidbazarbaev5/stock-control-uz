@@ -52,7 +52,7 @@ export function OpenShiftForm() {
   useEffect(() => {
     const fetchRegisters = async () => {
       try {
-        const response: any = await cashRegisterApi.getAll();
+        const response = await cashRegisterApi.getAll();
         setRegisters(response.data?.results);
       } catch (error) {
         console.error("Failed to fetch registers:", error);
@@ -68,7 +68,7 @@ export function OpenShiftForm() {
       await shiftsApi.openShift({
         store: 1, // TODO: Get from context/config
         register_id: parseInt(data.register_id),
-        opening_cash: data.opening_cash,
+        opening_cash: data.opening_cash || "0",
         opening_comment: data.comment,
       });
 

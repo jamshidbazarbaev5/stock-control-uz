@@ -25,17 +25,28 @@ import { useLogout } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
+  WideDialog,
+  WideDialogContent,
+  WideDialogHeader,
+  WideDialogTitle,
+  WideDialogFooter,
+} from "@/components/ui/wide-dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import api from "../api/api";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useGetCurrencies } from "../api/currency";
+import {
+  useCreateCurrencyRate,
+  useGetCurrencyRates,
+} from "../api/currency-rate";
 import { ThemeToggle } from "../components/ThemeToggle";
+import { toast } from "sonner";
 
 type NavItem = {
   icon: LucideIcon;
@@ -51,11 +62,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const [currencyModalOpen, setCurrencyModalOpen] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState<string>("");
   const [currencyRate, setCurrencyRate] = useState("");
-  const [currencyId, setCurrencyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -77,55 +86,44 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Fetch current currency rate when modal opens
-  useEffect(() => {
-    if (currencyModalOpen) {
-      setLoading(true);
-      setError("");
-      setSuccess(false);
-      api
-        .get("items/currency/")
-        .then((res) => {
-          const results = res.data.results || [];
-          if (Array.isArray(results) && results.length > 0) {
-            // Only keep the integer part of the currency rate
-            const rate = results[0].currency_rate;
-            setCurrencyRate(rate ? String(Math.trunc(Number(rate))) : "");
-            setCurrencyId(results[0].id?.toString() || null);
-          } else {
-            setCurrencyRate("");
-            setCurrencyId(null);
-          }
-        })
-        .catch(() => {
-          setError("Failed to fetch currency rate");
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [currencyModalOpen]);
+  // API hooks
+  const { data: currencies } = useGetCurrencies();
+  const { data: currencyRates } = useGetCurrencyRates();
+  const createCurrencyRate = useCreateCurrencyRate();
 
   const handleCurrencySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!selectedCurrency || !currencyRate) {
+      toast.error("Please select a currency and enter a rate");
+      return;
+    }
+
     setLoading(true);
-    setError("");
-    setSuccess(false);
     try {
-      if (currencyId) {
-        await api.patch(`items/currency/${currencyId}/`, {
-          currency_rate: Number(currencyRate),
-        });
-      } else {
-        await api.post("items/currency/", {
-          currency_rate: Number(currencyRate),
-        });
-      }
-      setSuccess(true);
-      setTimeout(() => setCurrencyModalOpen(false), 1000);
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || "Error");
+      await createCurrencyRate.mutateAsync({
+        currency: parseInt(selectedCurrency),
+        rate: currencyRate,
+      });
+
+      toast.success("Currency rate created successfully");
+      setCurrencyModalOpen(false);
+      setSelectedCurrency("");
+      setCurrencyRate("");
+    } catch (error: unknown) {
+      const errorMessage =
+        (error as any)?.response?.data?.detail ||
+        "Failed to create currency rate";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleModalClose = () => {
+    setCurrencyModalOpen(false);
+    setSelectedCurrency("");
+    setCurrencyRate("");
   };
 
   // Mobile user redirection logic
@@ -143,8 +141,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         "/create-expense",
         "/pos-fullscreen",
         "/pos",
-          "/close-shift/active",
-        "/create-expense"
+        "/dashboard",
+        "/product-stock-balance",
+        "/close-shift/active",
+        "/create-expense",
       ];
 
       // Check for exact matches or dynamic routes
@@ -199,11 +199,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         label: t("navigation.dashobard"),
         href: "/dashboard",
       },
-      {
-        icon: Ruler,
-        label: t("navigation.pos"),
-        href: "/pos-fullscreen",
-      },
+      // Add POS navigation for non-superusers
+      ...(!currentUser?.is_superuser
+        ? [
+            {
+              icon: Ruler,
+              label: t("navigation.pos"),
+              href: "/pos-fullscreen",
+            },
+          ]
+        : []),
 
       {
         icon: Package,
@@ -259,16 +264,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
     // Settings section - not for "Администратор" and customized for "Продавец"
     if (currentUser?.role === "Продавец") {
-      return [
+      const prodavecItems = [
         {
           icon: Package,
           label: t("navigation.dashobard"),
           href: "/dashboard",
-        },
-        {
-          icon: Ruler,
-          label: t("navigation.pos"),
-          href: "/pos-fullscreen",
         },
         { icon: ShoppingBag, label: t("navigation.sale"), href: "/sales" },
         {
@@ -283,17 +283,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           label: t("navigation.expense"),
           href: "/expense",
         },
-        {
-          icon: BanknoteIcon,
-          label: t("navigation.income"),
-          href: "/income",
-        },
-        {
-          icon: ArrowLeftRight,
-          label: t("navigation.smena"),
-          href: "/shifts",
-        },
       ];
+
+      // Add POS navigation only for non-mobile users and non-superusers
+      if (!userData?.is_mobile_user && !userData?.is_superuser) {
+        prodavecItems.splice(1, 0, {
+          icon: Ruler,
+          label: t("navigation.pos"),
+          href: "/pos-fullscreen",
+        });
+      }
+
+      return prodavecItems;
     }
 
     // Add settings section for all roles except "Администратор"
@@ -464,25 +465,26 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           <User size={16} className="text-gray-500" />
                           {t("common.profile")}
                         </button>
-                        {userData?.has_active_shift && (
-                          <button
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                            }}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setDropdownOpen(false);
-                              handleCloseShift();
-                            }}
-                            className="w-full px-4 py-2 text-left text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-3 transition-colors cursor-pointer"
-                            style={{ pointerEvents: "auto" }}
-                          >
-                            <LogOut size={16} className="text-orange-500" />
-                            Закрыть смену
-                          </button>
-                        )}
+                        {userData?.has_active_shift &&
+                          !currentUser?.is_superuser && (
+                            <button
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setDropdownOpen(false);
+                                handleCloseShift();
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-3 transition-colors cursor-pointer"
+                              style={{ pointerEvents: "auto" }}
+                            >
+                              <LogOut size={16} className="text-orange-500" />
+                              Закрыть смену
+                            </button>
+                          )}
                         <button
                           onMouseDown={(e) => {
                             e.preventDefault();
@@ -688,58 +690,138 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="h-full flex flex-col min-w-[320px]">
             <div className=" px-4 md:px-6 py-4 flex items-center justify-end gap-4 sticky top-0 z-30 border-b border-border">
               {currentUser?.is_superuser && (
-                <Dialog
-                  open={currencyModalOpen}
-                  onOpenChange={setCurrencyModalOpen}
-                >
-                  <DialogTrigger asChild>
-                    <button
-                      className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition mr-2"
-                      onClick={() => setCurrencyModalOpen(true)}
-                    >
-                      {t("currency.set")}
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{t("currency.set")}</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleCurrencySubmit} className="space-y-4">
-                      <Input
-                        type="number"
-                        placeholder="12500"
-                        value={currencyRate}
-                        onChange={(e) => setCurrencyRate(e.target.value)}
-                        required
-                      />
-                      {error && (
-                        <div className="text-red-500 text-sm">{error}</div>
-                      )}
-                      {success && (
-                        <div className="text-green-600 text-sm">
-                          {t("Success!")}
+                <>
+                  <button
+                    className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition mr-2"
+                    onClick={() => setCurrencyModalOpen(true)}
+                  >
+                    {t("currency.set")}
+                  </button>
+
+                  <WideDialog
+                    open={currencyModalOpen}
+                    onOpenChange={handleModalClose}
+                  >
+                    <WideDialogContent className="max-w-2xl">
+                      <WideDialogHeader>
+                        <WideDialogTitle>{t("currency.set")}</WideDialogTitle>
+                      </WideDialogHeader>
+
+                      <div className="space-y-6 p-6">
+                        {/* Current Rates Display */}
+                        <div>
+                          <h3 className="text-lg font-medium mb-3">
+                            Current Exchange Rates
+                          </h3>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {(Array.isArray(currencyRates)
+                              ? currencyRates
+                              : currencyRates?.results
+                            )?.map((rate) => {
+                              return (
+                                <div
+                                  key={rate.id || rate.created_at}
+                                  className="flex justify-between items-center p-2 bg-gray-50 rounded"
+                                >
+                                  <span className="font-medium">
+                                    {rate.currency_detail?.name} (
+                                    {rate.currency_detail?.short_name})
+                                  </span>
+                                  <span>{rate.rate}</span>
+                                </div>
+                              );
+                            })}
+                            {(!(Array.isArray(currencyRates)
+                              ? currencyRates
+                              : currencyRates?.results) ||
+                              (Array.isArray(currencyRates)
+                                ? currencyRates
+                                : currencyRates?.results || []
+                              ).length === 0) && (
+                              <p className="text-gray-500 text-center py-4">
+                                No exchange rates set yet
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      )}
-                      <DialogFooter>
-                        <button
-                          type="submit"
-                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+
+                        {/* Create New Rate Form */}
+                        <form
+                          onSubmit={handleCurrencySubmit}
+                          className="space-y-4"
+                        >
+                          <h3 className="text-lg font-medium">
+                            Create New Exchange Rate
+                          </h3>
+
+                          {/* Currency Selection */}
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Currency
+                            </label>
+                            <Select
+                              value={selectedCurrency}
+                              onValueChange={setSelectedCurrency}
+                              required
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select currency" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(Array.isArray(currencies)
+                                  ? currencies
+                                  : currencies?.results
+                                )
+                                  ?.filter((currency) => !currency.is_base)
+                                  ?.map((currency) => (
+                                    <SelectItem
+                                      key={currency.id}
+                                      value={currency.id!.toString()}
+                                    >
+                                      {currency.name} ({currency.short_name})
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Rate Input */}
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Exchange Rate
+                            </label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="12800.00"
+                              value={currencyRate}
+                              onChange={(e) => setCurrencyRate(e.target.value)}
+                              required
+                            />
+                          </div>
+                        </form>
+                      </div>
+
+                      <WideDialogFooter className="p-6 pt-0">
+                        <Button
+                          variant="outline"
+                          onClick={handleModalClose}
                           disabled={loading}
                         >
+                          {t("common.cancel")}
+                        </Button>
+                        <Button
+                          onClick={handleCurrencySubmit}
+                          disabled={
+                            loading || !selectedCurrency || !currencyRate
+                          }
+                        >
                           {loading ? t("common.saving") : t("common.save")}
-                        </button>
-                        <DialogClose asChild>
-                          <button
-                            type="button"
-                            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                          >
-                            {t("common.cancel")}
-                          </button>
-                        </DialogClose>
-                      </DialogFooter>
-                    </form>
-                  </DialogContent>
-                </Dialog>
+                        </Button>
+                      </WideDialogFooter>
+                    </WideDialogContent>
+                  </WideDialog>
+                </>
               )}
 
               <div className="hidden md:flex items-center gap-2">
@@ -806,19 +888,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                               {t("common.profile")}
                             </span>
                           </button>
-                          {userData?.has_active_shift && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDropdownOpen(false);
-                                handleCloseShift();
-                              }}
-                              className="w-full px-4 py-3 text-left text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-3 transition-colors"
-                            >
-                              <LogOut size={16} className="text-orange-500" />
-                              <span className="font-medium">Закрыть смену</span>
-                            </button>
-                          )}
+                          {userData?.has_active_shift &&
+                            !currentUser?.is_superuser && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDropdownOpen(false);
+                                  handleCloseShift();
+                                }}
+                                className="w-full px-4 py-3 text-left text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-3 transition-colors"
+                              >
+                                <LogOut size={16} className="text-orange-500" />
+                                <span className="font-medium">
+                                  Закрыть смену
+                                </span>
+                              </button>
+                            )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();

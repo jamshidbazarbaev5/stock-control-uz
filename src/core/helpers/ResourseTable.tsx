@@ -12,7 +12,7 @@ import { Skeleton } from "../../components/ui/skeleton";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
-  EyeIcon,
+  Edit,
   TrashIcon,
   PlusIcon,
   ChevronDownIcon,
@@ -244,7 +244,7 @@ export function ResourceTable<T extends { id?: number }>({
                               onClick={() => onEdit(row)}
                               className="h-8 w-8 p-0 hover:bg-gray-100"
                             >
-                              <EyeIcon className="h-4 w-4 text-gray-600" />
+                              <Edit className="h-4 w-4 text-gray-600" />
                             </Button>
                           )}
                           {onRefund && (

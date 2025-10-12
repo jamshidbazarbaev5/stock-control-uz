@@ -2840,7 +2840,7 @@ const POSInterfaceCore = () => {
                         product_write: item.productId,
                         selling_unit: item?.selectedUnit?.id,
                         quantity: item.quantity.toString(),
-                        price_per_unit: item.total.toString(),
+                        price_per_unit: item.price.toString(),
                       })),
                       on_credit: onCredit,
                       total_amount: total.toString(),

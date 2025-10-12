@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/form";
 import { fetchAllProducts } from "../api/fetchAllProducts";
 import type { Product } from "../api/product";
+import { OpenShiftForm } from "@/components/OpenShiftForm";
 
 interface ProductInCart {
   id: number;
@@ -91,7 +92,19 @@ function getBaseUnit(availableUnits: any[]) {
   return availableUnits?.find((unit) => unit.is_base) || availableUnits?.[0];
 }
 
-export default function CreateSale() {
+// Wrapper component to handle shift check
+function CreateSaleWrapper() {
+  const { data: currentUser } = useCurrentUser();
+
+  // Check if user has active shift - if not, show OpenShiftForm
+  if (currentUser && !currentUser.has_active_shift) {
+    return <OpenShiftForm />;
+  }
+
+  return <CreateSale />;
+}
+
+function CreateSale() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
@@ -1388,3 +1401,5 @@ export default function CreateSale() {
     </div>
   );
 }
+
+export default CreateSaleWrapper;

@@ -4,6 +4,12 @@
     "amount_exceeds_total": "Summa ulıwma qarz summasınan artıq bolmawı kerek",
     "selling_price_greater_than_min_price": "Satıw bahası min bahadan ulıwma bolmawı kerek"
   },
+  "errors": {
+    "no_sale_selected": "Satıw saylanbaǵan",
+    "no_items_selected_for_refund": "Qaytarıw ushın tawarllar saylanbaǵan",
+    "refund_notes_required": "Qaytarıwǵa kommentariy tiyisti",
+    "max_quantity": "Maksimal sanlıǵı"
+  },
   "dashboard": {
     "no_expenses": "Rasxodlar yoq",
     "clients": "Klientler",

@@ -7,19 +7,20 @@
   "errors": {
     "no_sale_selected": "Продажа не выбрана",
     "no_items_selected_for_refund": "Не выбраны товары для возврата",
+    "refund_notes_required": "Комментарий к возврату обязателен",
     "max_quantity": "Максимальное количество"
   },
   "buttons": {
     "print": "Распечатать штрих-код",
-    "revaluate":"Переоценка",
-    "cancel":"Отмена",
-    "submit":"Сохранить"
+    "revaluate": "Переоценка",
+    "cancel": "Отмена",
+    "submit": "Сохранить"
   },
-  "dialogs":{
-    "revaluation.title":"Переоценка",
-    "revaluation.new_selling_price":"Цена продажи",
-    "revaluation.new_min_price":"Мин цена",
-    "revaluation.comment":"Комментарий"
+  "dialogs": {
+    "revaluation.title": "Переоценка",
+    "revaluation.new_selling_price": "Цена продажи",
+    "revaluation.new_min_price": "Мин цена",
+    "revaluation.comment": "Комментарий"
   },
 
   "dashboard": {
@@ -145,7 +146,7 @@
     "create_expense": "Создать расход"
   },
   "common": {
-    "selling_unit":"Единица измерения",
+    "selling_unit": "Единица измерения",
     "mobile": "Мобильный",
     "desktop": "Десктоп",
     "print": "Чек",
@@ -289,11 +290,11 @@
     "saving": "Сохранение..."
   },
   "navigation": {
-    "writeoff":"Списание",
+    "writeoff": "Списание",
     "currencies": "Валюта",
-    "pos":"Пос",
+    "pos": "Пос",
     "shifts": "Смены",
-    "revaluations":"Переоценка",
+    "revaluations": "Переоценка",
     "check": "Чек",
     "cassa": "Касса",
     "smena": "Смена",
@@ -376,8 +377,8 @@
 
   "forms": {
     "price_per_unit": "Цена за едииницу",
-
-    "reason":"Причина",
+    "barcode": "Баркод",
+    "reason": "Причина",
     "currency_name": "Название валюты",
     "short_name": "Короткое название",
     "attributes": "Атрибуты",
@@ -657,18 +658,18 @@
     "complex": "Сложная оплата"
   },
   "table": {
-    "select":"Выбрать",
+    "select": "Выбрать",
     "price_per_unit": "Цена за единицу",
-    "products":"Товары",
+    "products": "Товары",
     "selling_unit": "Единица измерения",
     "field_type": "Тип",
     "russian_translation": "Перевод",
-    "old_selling_price":"Предыдущая цена продажи",
+    "old_selling_price": "Предыдущая цена продажи",
     "id": "ИД",
-    "old_min_price":"Предыдущая мин цена",
-    "comment":"Комментарий",
-    "new_selling_price":"Новая цена продажи",
-    "new_min_price":"Новая мин цена",
+    "old_min_price": "Предыдущая мин цена",
+    "comment": "Комментарий",
+    "new_selling_price": "Новая цена продажи",
+    "new_min_price": "Новая мин цена",
     "revenue_details": "Прибыль",
     "sale_info": "Информация о продаже",
     "quantity_of_parts": "Количество частей",
