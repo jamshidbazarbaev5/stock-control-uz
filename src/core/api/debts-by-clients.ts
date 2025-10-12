@@ -38,7 +38,7 @@ export const useGetDebtsByClients = (filters?: DebtsByClientsFilters) => {
   return useQuery({
     queryKey: ['debtsByClients', filters],
     queryFn: async () => {
-      const response = await api.get<DebtsByClientsResponse>('debts-by-clients', {
+      const response = await api.get<DebtsByClientsResponse>('debts/debts-by-clients', {
         params: filters,
       });
       return response.data;

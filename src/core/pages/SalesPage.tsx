@@ -322,99 +322,163 @@ export default function SalesPage() {
   };
 
   const renderExpandedRow = (row: Sale) => {
-    if (!row.sale_items?.length)
+    const hasItems = row.sale_items?.length > 0;
+    const hasRefunds = (row.sale_refunds?.length ?? 0) > 0;
+
+    if (!hasItems && !hasRefunds) {
       return (
         <div className="p-4 text-center text-gray-500">
           {t("messages.no_items_found")}
         </div>
       );
+    }
 
     return (
-      <div className="p-4">
-        <h3 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-          {t("common.sale_items")}
-          <span className="text-sm bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-            {row.sale_items.length}
-          </span>
-        </h3>
-        <div className="space-y-3">
-          {row.sale_items.map((item, index) => (
-            <div
-              key={index}
-              className=" dark:bg-expanded-row-dark p-4 rounded-lg transition-all duration-200"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                <div>
-                  <span className="text-sm text-gray-500 block mb-1">
-                    {t("table.id")}
-                  </span>
-                  <span className="font-medium">{item.id}</span>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-500 block mb-1">
-                    {t("table.product")}
-                  </span>
-                  <span
-                    className="font-medium line-clamp-2"
-                    title={item.product_read?.product_name || "-"}
-                  >
-                    {item.product_read?.product_name || "-"}
-                  </span>
-                  {item.product_read?.category_read && (
-                    <span className="text-xs text-gray-500">
-                      {item.product_read.category_read.category_name}
-                    </span>
+      <div className="p-2 space-y-3">
+        {/* Sale Items Section */}
+        {hasItems && (
+          <div>
+            <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2 text-sm">
+              {t("common.sale_items")}
+              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                {row.sale_items.length}
+              </span>
+            </h3>
+            <div className="space-y-1">
+              {row.sale_items.map((item, index) => (
+                <div
+                  key={index}
+                  className="dark:bg-expanded-row-dark bg-gray-50 p-2 rounded border-l-4 border-blue-400 transition-all duration-200"
+                >
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 text-xs">
+                    <div>
+                      <span className="text-gray-500 font-medium">
+                        #{item.id}
+                      </span>
+                    </div>
+                    <div className="md:col-span-2">
+                      <span
+                        className="font-medium text-gray-800 line-clamp-1 text-sm"
+                        title={item.product_read?.product_name || "-"}
+                      >
+                        {item.product_read?.product_name || "-"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">
+                        {item.quantity}{" "}
+                        <span className="text-gray-500">
+                          {item.product_read?.base_unit
+                            ? item.product_read.available_units?.find(
+                                (u: any) => u.id === item.selling_unit,
+                              )?.short_name || ""
+                            : ""}
+                        </span>
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-emerald-600 text-sm">
+                        {formatCurrency(item?.price_per_unit)}
+                      </span>
+                    </div>
+                  </div>
+                  {row.sale_debt?.client_read && (
+                    <div className="mt-1 pt-1 border-t border-gray-200">
+                      <div className="flex gap-3 text-xs">
+                        <span
+                          className="hover:underline cursor-pointer text-blue-600"
+                          onClick={() => {
+                            navigate(
+                              `/clients/${row.sale_debt?.client_read?.id}`,
+                            );
+                          }}
+                        >
+                          {row.sale_debt.client_read.name}
+                        </span>
+                        <span
+                          className="hover:underline cursor-pointer text-gray-600"
+                          onClick={() => {
+                            navigate(
+                              `/debts/${row.sale_debt?.client_read?.id}`,
+                            );
+                          }}
+                        >
+                          {row.sale_debt.client_read.phone_number}
+                        </span>
+                      </div>
+                    </div>
                   )}
                 </div>
-                <div>
-                  <span className="text-sm text-gray-500 block mb-1">
-                    {t("table.quantity")}
-                  </span>
-                  <span className="font-medium">
-                    {item.quantity}{" "}
-                    {item.product_read?.base_unit
-                      ? item.product_read.available_units?.find(
-                          (u: any) => u.id === item.selling_unit,
-                        )?.short_name || ""
-                      : ""}
-                  </span>
-                </div>
-                {/* <div>
-                  <span className="text-sm text-gray-500 block mb-1">{t('table.price')}</span>
-                  <span className="font-medium">
-                    {formatCurrency(Number(item.subtotal) / Number(item.quantity))}
-                  </span>
-                </div> */}
-                <div>
-                  <span className="text-sm text-gray-500 block mb-1">
-                    {t("forms.amount4")}
-                  </span>
-                  <span className="font-medium text-emerald-600">
-                    {formatCurrency(item?.price_per_unit)} UZS
-                  </span>
-                </div>
-                <div className="hover:underline cursor-pointer">
-                  <span
-                    className="font-medium text-gray-500 block mb-1"
-                    onClick={() => {
-                      navigate(`/clients/${row.sale_debt?.client_read?.id}`);
-                    }}
-                  >
-                    {row.sale_debt?.client_read?.name}
-                  </span>
-                  <span
-                    className="font-medium text-gray-500 block mb-1"
-                    onClick={() => {
-                      navigate(`/debts/${row.sale_debt?.client_read?.id}`);
-                    }}
-                  >
-                    {row.sale_debt?.client_read?.phone_number}
-                  </span>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
+
+        {/* Sale Refunds Section */}
+        {hasRefunds && (
+          <div>
+            <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2 text-sm">
+              <span className="text-red-600">🔄 Возвраты</span>
+              <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                {row.sale_refunds?.length ?? 0}
+              </span>
+            </h3>
+            <div className="space-y-1">
+              {row.sale_refunds?.map((refund, refundIndex) => (
+                <div
+                  key={refundIndex}
+                  className="border-l-4 border-red-400 pl-2 bg-red-50 rounded-r-md p-2"
+                >
+                  <div className="mb-1">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-red-700">
+                          #{refund.id}
+                        </span>
+                        <span className="text-gray-600">
+                          {new Date(refund.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <span className="font-semibold text-red-700 bg-red-200 px-2 py-0.5 rounded text-xs">
+                        -{formatCurrency(refund.total_refund_amount)}
+                      </span>
+                    </div>
+                    {refund.notes && (
+                      <p className="text-xs text-gray-600 italic bg-white p-1 rounded">
+                        "{refund.notes}"
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    {refund.refund_items.map((refundItem, itemIndex) => (
+                      <div
+                        key={itemIndex}
+                        className="bg-white p-1 rounded border border-red-200"
+                      >
+                        <div className="grid grid-cols-3 gap-2 text-xs items-center">
+                          <div className="col-span-2">
+                            <span className="font-medium text-gray-800 text-sm line-clamp-1">
+                              {refundItem.sale_item.product_read
+                                ?.product_name || "-"}
+                            </span>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-gray-600">
+                              Кол-во: {refundItem.quantity}
+                            </div>
+                            <div className="font-medium text-red-600">
+                              {formatCurrency(refundItem.subtotal)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   };

@@ -57,6 +57,58 @@ export interface SaleItem {
   subtotal?: string;
 }
 
+export interface SaleRefund {
+  id: number;
+  store: number;
+  refund_items: Array<{
+    id: number;
+    sale_item: {
+      id: number;
+      product_read?: {
+        id: number;
+        product_name: string;
+        barcode: string;
+        ikpu: string;
+        category_read?: {
+          id: number;
+          category_name: string;
+        };
+        base_unit?: number;
+        measurement?: Array<{
+          id: number;
+          from_unit?: {
+            id: number;
+            measurement_name: string;
+            short_name: string;
+          };
+          to_unit?: {
+            id: number;
+            measurement_name: string;
+            short_name: string;
+          };
+          number: string;
+        }>;
+        available_units?: Array<{
+          id: number;
+          short_name: string;
+          factor: number;
+          is_base: boolean;
+        }>;
+      };
+      quantity: string;
+      selling_unit: number;
+      price_per_unit: string;
+      subtotal: string;
+    };
+    quantity: string;
+    subtotal: string;
+  }>;
+  total_refund_amount: string;
+  notes: string;
+  refunded_by: number;
+  created_at: string;
+}
+
 export interface Sale {
   id?: number;
 
@@ -84,6 +136,7 @@ export interface Sale {
         amount: string;
       }[]
     | undefined;
+  sale_refunds?: SaleRefund[];
   client?: number;
   created_at?: string;
   sold_date?: string;
@@ -129,7 +182,6 @@ export const useGetSales = (options?: { params?: Record<string, any> }) => {
       return response.data;
     },
   });
-
 };
 
 export const useGetSale = (id: number) => {

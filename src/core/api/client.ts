@@ -49,7 +49,7 @@ const CLIENT_URL = 'clients/';
 // Create client API hooks using the factory function
 export const {
   useGetResources: useGetClients,
-  useGetResource: useGetClient,
+  // useGetResource: useGetClient,
   // useCreateResource: useCreateClient,
   useUpdateResource: useUpdateClient,
   useDeleteResource: useDeleteClient,
@@ -60,12 +60,24 @@ export const useGetClientHistory = (clientId: number, params?: { sale?: string; 
   return useQuery({
     queryKey: ['clientHistory', clientId, params],
     queryFn: async () => {
-      const response = await api.get<ClientHistoryEntry[]>(`${CLIENT_URL}${clientId}/history/`, { params });
+      const response = await api.get<ClientHistoryEntry[]>(`${CLIENT_URL}${clientId}/history`, { params });
       return response.data;
     },
     enabled: !!clientId,
   });
 };
+// Client history hook
+export const useGetClient = (clientId: number, params?: { sale?: string; start_date?: string; end_date?: string; type?: string }) => {
+  return useQuery({
+    queryKey: ['clientHistory', clientId, params],
+    queryFn: async () => {
+      const response = await api.get<Client[]>(`${CLIENT_URL}${clientId}`, { params });
+      return response.data;
+    },
+    enabled: !!clientId,
+  });
+};
+
 
 // Increment balance mutation hook
 export const useIncrementBalance = () => {

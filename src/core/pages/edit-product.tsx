@@ -119,8 +119,8 @@ export default function EditProduct() {
       if (product.measurement) {
         setMeasurements(
           product.measurement.map((m: any) => ({
-            from_unit: m.from_unit || 0,
-            to_unit: m.to_unit || 0,
+            from_unit: m.from_unit?.id || 0,
+            to_unit: m.to_unit?.id || 0,
             number: parseNumericValue(m.number),
           })),
         );

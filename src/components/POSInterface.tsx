@@ -112,34 +112,73 @@ interface SalePayload {
   };
 }
 
-const POSInterface = () => {
-  const { data: userData } = useCurrentUser();
+// Main POS component with all hooks
+const POSInterfaceCore = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   // Determine if we're in fullscreen route
   const isFullscreenRoute = location.pathname === "/pos-fullscreen";
 
+  // Load state from localStorage
+  const loadStateFromStorage = () => {
+    try {
+      const savedSessions = localStorage.getItem("pos-sessions");
+      const savedSessionIndex = localStorage.getItem(
+        "pos-current-session-index",
+      );
+
+      if (savedSessions) {
+        const parsedSessions = JSON.parse(savedSessions);
+        const sessionIndex = savedSessionIndex
+          ? parseInt(savedSessionIndex, 10)
+          : 0;
+        return {
+          sessions: parsedSessions,
+          currentSessionIndex: Math.max(
+            0,
+            Math.min(sessionIndex, parsedSessions.length - 1),
+          ),
+        };
+      }
+    } catch (error) {
+      console.error("Error loading POS state from localStorage:", error);
+    }
+
+    // Return default state if no saved state or error
+    return {
+      sessions: [
+        {
+          id: "1",
+          name: "Сессия 1",
+          currentInput: "",
+          previousInput: "",
+          operation: "",
+          waitingForNewValue: false,
+          products: [],
+          focusedProductIndex: -1,
+          selectedSeller: null,
+          selectedClient: null,
+          clientSearchTerm: "",
+          onCredit: false,
+          debtDeposit: "",
+          debtDueDate: "",
+        },
+      ],
+      currentSessionIndex: 0,
+    };
+  };
+
+  // Initialize state from localStorage
+  const initialState = loadStateFromStorage();
+
   // Session management
-  const [sessions, setSessions] = useState<SessionState[]>([
-    {
-      id: "1",
-      name: "Сессия 1",
-      currentInput: "",
-      previousInput: "",
-      operation: "",
-      waitingForNewValue: false,
-      products: [],
-      focusedProductIndex: -1,
-      selectedSeller: null,
-      selectedClient: null,
-      clientSearchTerm: "",
-      onCredit: false,
-      debtDeposit: "",
-      debtDueDate: "",
-    },
-  ]);
-  const [currentSessionIndex, setCurrentSessionIndex] = useState(0);
+  const [sessions, setSessions] = useState<SessionState[]>(
+    initialState.sessions,
+  );
+  const [currentSessionIndex, setCurrentSessionIndex] = useState(
+    initialState.currentSessionIndex,
+  );
 
   // Current session state (derived from active session)
   const currentSession = sessions[currentSessionIndex];
@@ -229,11 +268,6 @@ const POSInterface = () => {
   const isAdmin = currentUser?.role === "Администратор";
   const isSuperUser = currentUser?.is_superuser === true;
 
-  // Early return after all hooks are declared
-  if (!userData?.has_active_shift) {
-    return <OpenShiftForm />;
-  }
-
   // Save current session state whenever it changes
   useEffect(() => {
     setSessions((prev) =>
@@ -272,6 +306,27 @@ const POSInterface = () => {
     debtDeposit,
     debtDueDate,
   ]);
+
+  // Save sessions to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem("pos-sessions", JSON.stringify(sessions));
+    } catch (error) {
+      console.error("Error saving sessions to localStorage:", error);
+    }
+  }, [sessions]);
+
+  // Save current session index to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "pos-current-session-index",
+        currentSessionIndex.toString(),
+      );
+    } catch (error) {
+      console.error("Error saving session index to localStorage:", error);
+    }
+  }, [currentSessionIndex]);
 
   // Sync fullscreen mode with route
   useEffect(() => {
@@ -949,6 +1004,16 @@ const POSInterface = () => {
   const clearCart = () => {
     setCartProducts([]);
     setFocusedProductIndex(-1);
+  };
+
+  // Utility function to clear localStorage state
+  const clearPersistedState = () => {
+    try {
+      localStorage.removeItem("pos-sessions");
+      localStorage.removeItem("pos-current-session-index");
+    } catch (error) {
+      console.error("Error clearing POS state from localStorage:", error);
+    }
   };
 
   // Keyboard navigation handlers
@@ -2848,6 +2913,9 @@ const POSInterface = () => {
                     setSelectedClient(null);
                     setSelectedSeller(null);
                     setOnCredit(false);
+
+                    // Clear persisted state after successful sale
+                    clearPersistedState();
                     setFocusedProductIndex(-1);
 
                     // Show success message
@@ -3146,6 +3214,18 @@ const POSInterface = () => {
       </WideDialog>
     </div>
   );
+};
+
+// Wrapper component that handles the shift check
+const POSInterface = () => {
+  const { data: userData } = useCurrentUser();
+
+  // Early return before rendering main component
+  if (!userData?.has_active_shift) {
+    return <OpenShiftForm />;
+  }
+
+  return <POSInterfaceCore />;
 };
 
 export default POSInterface;

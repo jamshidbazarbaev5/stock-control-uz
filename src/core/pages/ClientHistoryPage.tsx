@@ -1,27 +1,42 @@
-import { useParams } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { useGetClient, useGetClientHistory, type ClientHistoryEntry } from '../api/client';
-import { format } from 'date-fns';
-import { ResourceTable } from '../helpers/ResourseTable';
-import { CalendarIcon, CoinsIcon, PiggyBankIcon, UserIcon } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useState } from 'react';
+import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import {
+  useGetClient,
+  useGetClientHistory,
+  type ClientHistoryEntry,
+} from "../api/client";
+import { format } from "date-fns";
+import { ResourceTable } from "../helpers/ResourseTable";
+import { CalendarIcon, CoinsIcon, PiggyBankIcon, UserIcon } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useState } from "react";
 
 export default function ClientHistoryPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
-  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<string>("all");
   const { data: client, isLoading: isClientLoading } = useGetClient(Number(id));
-  const { data: history, isLoading: isHistoryLoading } = useGetClientHistory(Number(id), { 
-    type: selectedType === 'all' ? undefined : selectedType 
-  });
+  const { data: history, isLoading: isHistoryLoading } = useGetClientHistory(
+    Number(id),
+    {
+      type: selectedType === "all" ? undefined : selectedType,
+    },
+  );
 
   if (isClientLoading || isHistoryLoading) {
     return <div className="container py-8 px-4">Loading...</div>;
   }
 
-  if (!client || client.type !== 'Юр.лицо') {
-    return <div className="container py-8 px-4">{t('messages.error.not_found')}</div>;
+  if (!client || client.type !== "Юр.лицо") {
+    return (
+      <div className="container py-8 px-4">{t("messages.error.not_found")}</div>
+    );
   }
 
   const columns = [
@@ -107,17 +122,24 @@ export default function ClientHistoryPage() {
     <div className="container py-8 px-4">
       <div className="mb-6">
         <h2 className="text-2xl font-bold">{client.name}</h2>
-        <p className="text-gray-600">{t('forms.ceo_name')}: {client.ceo_name}</p>
-        <p className="text-gray-600">{t('forms.current_balance')}: {new Intl.NumberFormat('ru-RU').format(parseFloat(String(client.balance)))}</p>
+        <p className="text-gray-600">
+          {t("forms.ceo_name")}: {client.ceo_name}
+        </p>
+        <p className="text-gray-600">
+          {t("forms.current_balance")}:{" "}
+          {new Intl.NumberFormat("ru-RU").format(
+            parseFloat(String(client.balance)),
+          )}
+        </p>
       </div>
 
       <div className="mb-4 w-[200px]">
         <Select value={selectedType} onValueChange={setSelectedType}>
           <SelectTrigger>
-            <SelectValue placeholder={t('forms.select_type')} />
+            <SelectValue placeholder={t("forms.select_type")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t('common.all')}</SelectItem>
+            <SelectItem value="all">{t("common.all")}</SelectItem>
             <SelectItem value="Расход">Расход</SelectItem>
             <SelectItem value="Пополнение">Пополнение</SelectItem>
           </SelectContent>
