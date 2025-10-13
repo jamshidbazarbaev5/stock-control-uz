@@ -666,9 +666,10 @@
     "income": "Доход",
     "actual": "Актуально",
     "expense": "Расходы",
-    "expected": "Ожидается",
+    "expected": "Сумма",
+
     "payments": "Оплаты",
-    "total_expected": "Ожидается",
+    "total_expected": "Сумма",
     "total_actual": "Актуально",
     "approval_comment": "Комментарий Одобрение",
     "awaiting_approval": "ожидание одобрения ",

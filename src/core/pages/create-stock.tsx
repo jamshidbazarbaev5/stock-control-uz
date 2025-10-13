@@ -742,47 +742,48 @@ export default function CreateStock() {
         purchase_unit: Number(data.purchase_unit),
         supplier: Number(data.supplier),
         date_of_arrived: data.date_of_arrived,
-        ...(data.purchase_unit_quantity && {
-          purchase_unit_quantity: formatNumberForAPI(
-            data.purchase_unit_quantity,
-          ),
-        }),
-        ...(data.total_price_in_currency && {
-          total_price_in_currency: formatNumberForAPI(
-            data.total_price_in_currency,
-          ),
-        }),
-        ...(data.price_per_unit_currency && {
-          price_per_unit_currency: formatNumberForAPI(
-            data.price_per_unit_currency,
-          ),
-        }),
-        ...(data.price_per_unit_uz && {
-          price_per_unit_uz: formatNumberForAPI(data.price_per_unit_uz),
-        }),
-        ...Object.entries(dynamicFields).reduce(
-          (acc, [fieldName, fieldData]) => {
-            if (fieldData.value !== null && fieldData.value !== undefined) {
-              if (
-                fieldName === "exchange_rate" &&
-                typeof fieldData.value === "object" &&
-                (fieldData.value as any).id
-              ) {
-                acc[fieldName] = (fieldData.value as any).id;
-              } else if (
-                typeof fieldData.value === "object" &&
-                (fieldData.value as any).id !== undefined
-              ) {
-                acc[fieldName] = (fieldData.value as any).id;
-              } else {
-                acc[fieldName] = formatNumberForAPI(fieldData.value);
-              }
-            }
-            return acc;
-          },
-          {} as any,
-        ),
       };
+
+      // Handle dynamic fields - only send editable fields if they have values
+      Object.entries(dynamicFields).forEach(([fieldName, fieldData]) => {
+        // Skip conversion_factor and other internal fields that shouldn't be sent
+        if (fieldName === "conversion_factor") return;
+
+        const formValue = data[fieldName as keyof FormValues];
+        const isQuantityField =
+          fieldName === "quantity" || fieldName === "purchase_unit_quantity";
+
+        // For quantity fields, only send if editable and has a value
+        if (isQuantityField) {
+          if (fieldData.editable && formValue && Number(formValue) !== 0) {
+            payload[fieldName] = formatNumberForAPI(formValue);
+          }
+        } else {
+          // Handle exchange_rate - always send id from object value
+          if (
+            fieldName === "exchange_rate" &&
+            fieldData.value !== null &&
+            fieldData.value !== undefined &&
+            typeof fieldData.value === "object" &&
+            (fieldData.value as any).id
+          ) {
+            payload[fieldName] = (fieldData.value as any).id;
+          }
+          // Handle other object fields with id
+          else if (
+            fieldData.value !== null &&
+            fieldData.value !== undefined &&
+            typeof fieldData.value === "object" &&
+            (fieldData.value as any).id !== undefined
+          ) {
+            payload[fieldName] = (fieldData.value as any).id;
+          }
+          // For regular non-quantity fields, send if they have values
+          else if (formValue && Number(formValue) !== 0) {
+            payload[fieldName] = formatNumberForAPI(formValue);
+          }
+        }
+      });
 
       console.log("[Debug] Final payload for API:", payload);
       console.log("payload", payload);
