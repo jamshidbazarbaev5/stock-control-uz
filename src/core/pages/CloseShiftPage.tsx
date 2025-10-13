@@ -16,6 +16,7 @@ import {
   shiftClosureReceiptService,
   type ShiftClosureData,
 } from "@/services/shiftClosureReceiptService";
+import {toast} from "sonner";
 
 const CloseShiftPage = () => {
   const navigate = useNavigate();
@@ -215,6 +216,7 @@ const CloseShiftPage = () => {
 
       // Refresh user data to update has_active_shift status
       await refreshUser();
+      toast.success('Смена закрыто успешно')
 
       // Navigate back to POS interface - it will show OpenShiftForm since shift is now closed
       navigate("/pos");

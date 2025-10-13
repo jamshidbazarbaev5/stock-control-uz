@@ -32,8 +32,8 @@ export default function ShiftsPage() {
   const totalCount = response?.data?.count || 0;
   const columns = [
     {
-      header: t("table.id"),
-      accessorKey: "id",
+      header: t("table.total_expected"),
+      accessorKey: "total_expected",
     },
     {
       header: t("table.store"),
@@ -72,11 +72,7 @@ export default function ShiftsPage() {
       cell: (row: Shift) =>
         row.is_active ? t("common.active") : t("common.closed"),
     },
-    {
-      header: t("table.opening_comment"),
-      accessorKey: "opening_comment",
-      cell: (row: Shift) => row.opening_comment || "-",
-    },
+
     {
       header: "Печать",
       accessorKey: "print",

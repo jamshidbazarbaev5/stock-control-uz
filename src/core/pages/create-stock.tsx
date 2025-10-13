@@ -99,10 +99,15 @@ export default function CreateStock() {
   const createProduct = useCreateProduct();
   const createSupplier = useCreateSupplier();
   const { data: storesData, isLoading: storesLoading } = useGetStores({});
-  const { data: suppliersData, isLoading: suppliersLoading } = useGetSuppliers({});
-  const { data: categoriesData, isLoading: categoriesLoading } = useGetCategories({});
-  const { data: currenciesData, isLoading: currenciesLoading } = useGetCurrencies({});
-  const { data: _measurementsData, isLoading: measurementsLoading } = useGetMeasurements({});
+  const { data: suppliersData, isLoading: suppliersLoading } = useGetSuppliers(
+    {},
+  );
+  const { data: categoriesData, isLoading: categoriesLoading } =
+    useGetCategories({});
+  const { data: currenciesData, isLoading: currenciesLoading } =
+    useGetCurrencies({});
+  const { data: _measurementsData, isLoading: measurementsLoading } =
+    useGetMeasurements({});
 
   const [createProductOpen, setCreateProductOpen] = useState(false);
   const [createSupplierOpen, setCreateSupplierOpen] = useState(false);
@@ -133,10 +138,18 @@ export default function CreateStock() {
     },
   });
 
-  const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
-  const suppliers = Array.isArray(suppliersData) ? suppliersData : suppliersData?.results || [];
-  const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData?.results || [];
-  const currencies = Array.isArray(currenciesData) ? currenciesData : currenciesData?.results || [];
+  const stores = Array.isArray(storesData)
+    ? storesData
+    : storesData?.results || [];
+  const suppliers = Array.isArray(suppliersData)
+    ? suppliersData
+    : suppliersData?.results || [];
+  const categories = Array.isArray(categoriesData)
+    ? categoriesData
+    : categoriesData?.results || [];
+  const currencies = Array.isArray(currenciesData)
+    ? currenciesData
+    : currenciesData?.results || [];
   // const measurements = Array.isArray(measurementsData) ? measurementsData : measurementsData?.results || [];
 
   // Fetch all products
@@ -169,7 +182,7 @@ export default function CreateStock() {
   const watchedProduct = form.watch("product");
   useEffect(() => {
     if (watchedProduct) {
-      const product = allProducts.find(p => p.id === Number(watchedProduct));
+      const product = allProducts.find((p) => p.id === Number(watchedProduct));
       setSelectedProduct(product);
       // Reset purchase_unit when product changes
       form.setValue("purchase_unit", "");
@@ -187,53 +200,71 @@ export default function CreateStock() {
 
   // Fixed calculation logic
   const calculateFields = useCallback(
-      (changedField: string, currentValues: any) => {
-        if (!calculationMetadata) return currentValues;
+    (changedField: string, currentValues: any) => {
+      if (!calculationMetadata) return currentValues;
 
-        const result = { ...currentValues };
-        const { conversion_factor, exchange_rate, is_base_currency } = calculationMetadata;
-        const qty = Number(result.purchase_unit_quantity) || 0;
-        const quantity = Number(result.quantity) || 0;
+      const result = { ...currentValues };
+      const { conversion_factor, exchange_rate, is_base_currency } =
+        calculationMetadata;
+      const qty = Number(result.purchase_unit_quantity) || 0;
+      const quantity = Number(result.quantity) || 0;
 
-        // FIXED: Bidirectional quantity ↔ purchase_unit_quantity conversion
-        if (changedField === "purchase_unit_quantity" && qty) {
-          result.quantity = qty * conversion_factor;
-        } else if (changedField === "quantity" && quantity) {
-          result.purchase_unit_quantity = quantity / conversion_factor;
+      // FIXED: Bidirectional quantity ↔ purchase_unit_quantity conversion
+      if (changedField === "purchase_unit_quantity" && qty) {
+        result.quantity = qty * conversion_factor;
+        console.log(
+          `[Debug] Changed purchase_unit_quantity (${qty}). New quantity: ${result.quantity}`,
+        );
+      } else if (changedField === "quantity" && quantity) {
+        result.purchase_unit_quantity = quantity / conversion_factor;
+        console.log(
+          `[Debug] Changed quantity (${quantity}). New purchase_unit_quantity: ${result.purchase_unit_quantity}`,
+        );
+      }
+
+      // Recalculate prices based on current purchase_unit_quantity
+      const currentQty =
+        changedField === "purchase_unit_quantity"
+          ? qty
+          : Number(result.purchase_unit_quantity) || 0;
+
+      // Price calculations
+      if (!is_base_currency && currentQty) {
+        if (changedField === "price_per_unit_currency") {
+          result.total_price_in_currency =
+            Number(result.price_per_unit_currency) * currentQty;
         }
-
-        // Recalculate prices based on current purchase_unit_quantity
-        const currentQty = changedField === "purchase_unit_quantity" ? qty : Number(result.purchase_unit_quantity) || 0;
-
-        // Price calculations
-        if (!is_base_currency && currentQty) {
-          if (changedField === "price_per_unit_currency") {
-            result.total_price_in_currency = Number(result.price_per_unit_currency) * currentQty;
-          }
-          if (changedField === "total_price_in_currency") {
-            result.price_per_unit_currency = Number(result.total_price_in_currency) / currentQty;
-          }
-          result.price_per_unit_uz = (Number(result.price_per_unit_currency) || 0) * exchange_rate;
-          result.total_price_in_uz = (Number(result.total_price_in_currency) || 0) * exchange_rate;
-        } else if (is_base_currency && currentQty) {
-          if (changedField === "price_per_unit_uz") {
-            result.total_price_in_uz = Number(result.price_per_unit_uz) * currentQty;
-          }
-          if (changedField === "total_price_in_uz") {
-            result.price_per_unit_uz = Number(result.total_price_in_uz) / currentQty;
-          }
+        if (changedField === "total_price_in_currency") {
+          result.price_per_unit_currency =
+            Number(result.total_price_in_currency) / currentQty;
         }
-
-        // Base unit cost
-        const finalQuantity = Number(result.quantity) || 0;
-        if (finalQuantity) {
-          result.base_unit_in_currency = (Number(result.total_price_in_currency) || 0) / finalQuantity;
-          result.base_unit_in_uzs = (Number(result.total_price_in_uz) || 0) / finalQuantity;
+        result.price_per_unit_uz =
+          (Number(result.price_per_unit_currency) || 0) * exchange_rate;
+        result.total_price_in_uz =
+          (Number(result.total_price_in_currency) || 0) * exchange_rate;
+      } else if (is_base_currency && currentQty) {
+        if (changedField === "price_per_unit_uz") {
+          result.total_price_in_uz =
+            Number(result.price_per_unit_uz) * currentQty;
         }
+        if (changedField === "total_price_in_uz") {
+          result.price_per_unit_uz =
+            Number(result.total_price_in_uz) / currentQty;
+        }
+      }
 
-        return result;
-      },
-      [calculationMetadata],
+      // Base unit cost
+      const finalQuantity = Number(result.quantity) || 0;
+      if (finalQuantity) {
+        result.base_unit_in_currency =
+          (Number(result.total_price_in_currency) || 0) / finalQuantity;
+        result.base_unit_in_uzs =
+          (Number(result.total_price_in_uz) || 0) / finalQuantity;
+      }
+
+      return result;
+    },
+    [calculationMetadata],
   );
 
   // Helper to extract value from API response
@@ -244,7 +275,8 @@ export default function CreateStock() {
       if (value.value !== undefined) {
         if (typeof value.value === "object") {
           if (value.value.rate !== undefined) return String(value.value.rate);
-          if (value.value.amount !== undefined) return String(value.value.amount);
+          if (value.value.amount !== undefined)
+            return String(value.value.amount);
         }
         return String(value.value);
       }
@@ -257,12 +289,12 @@ export default function CreateStock() {
   // Get field configuration
   const getFieldConfiguration = useCallback(async (formData: FormValues) => {
     if (
-        !formData.store ||
-        !formData.product ||
-        !formData.currency ||
-        !formData.purchase_unit ||
-        !formData.supplier ||
-        !formData.date_of_arrived
+      !formData.store ||
+      !formData.product ||
+      !formData.currency ||
+      !formData.purchase_unit ||
+      !formData.supplier ||
+      !formData.date_of_arrived
     ) {
       return;
     }
@@ -286,26 +318,33 @@ export default function CreateStock() {
       setDynamicFields(response.dynamic_fields);
 
       // Populate form with initial values WITHOUT forcing .00
-      Object.entries(response.dynamic_fields).forEach(([fieldName, fieldData]) => {
-        if (fieldData.value !== null && fieldData.value !== undefined) {
-          const rawValue = formatFieldValue(fieldData.value);
-          const displayValue = formatNumberDisplay(rawValue);
-          form.setValue(fieldName as keyof FormValues, displayValue, {
-            shouldValidate: false,
-          });
-        }
-      });
+      Object.entries(response.dynamic_fields).forEach(
+        ([fieldName, fieldData]) => {
+          if (fieldData.value !== null && fieldData.value !== undefined) {
+            const rawValue = formatFieldValue(fieldData.value);
+            const displayValue = formatNumberDisplay(rawValue);
+            form.setValue(fieldName as keyof FormValues, displayValue, {
+              shouldValidate: false,
+            });
+          }
+        },
+      );
 
       // Extract metadata
       const exchangeRateValue = response.dynamic_fields.exchange_rate?.value;
       const exchangeRate =
-          typeof exchangeRateValue === "object" && exchangeRateValue !== null && "rate" in exchangeRateValue
-              ? Number(exchangeRateValue.rate)
-              : 1;
+        typeof exchangeRateValue === "object" &&
+        exchangeRateValue !== null &&
+        "rate" in exchangeRateValue
+          ? Number(exchangeRateValue.rate)
+          : 1;
 
-      const conversionFactorValue = response.dynamic_fields.conversion_factor?.value;
+      const conversionFactorValue =
+        response.dynamic_fields.conversion_factor?.value;
       const conversionFactor =
-          typeof conversionFactorValue === "number" ? conversionFactorValue : Number(conversionFactorValue) || 1;
+        typeof conversionFactorValue === "number"
+          ? conversionFactorValue
+          : Number(conversionFactorValue) || 1;
 
       const metadata = {
         conversion_factor: conversionFactor,
@@ -322,46 +361,49 @@ export default function CreateStock() {
 
   // Update form with calculations
   const updateFormWithCalculations = useCallback(
-      (changedField: string) => {
-        if (!calculationMetadata) return;
+    (changedField: string) => {
+      if (!calculationMetadata) return;
 
-        const currentValues = form.getValues();
-        const numericValues = {
-          purchase_unit_quantity: Number(currentValues.purchase_unit_quantity) || 0,
-          price_per_unit_currency: Number(currentValues.price_per_unit_currency) || 0,
-          total_price_in_currency: Number(currentValues.total_price_in_currency) || 0,
-          price_per_unit_uz: Number(currentValues.price_per_unit_uz) || 0,
-          quantity: Number(currentValues.quantity) || 0,
-          total_price_in_uz: Number(currentValues.total_price_in_uz) || 0,
-          base_unit_in_currency: Number(currentValues.base_unit_in_currency) || 0,
-          base_unit_in_uzs: Number(currentValues.base_unit_in_uzs) || 0,
-        };
+      const currentValues = form.getValues();
+      const numericValues = {
+        purchase_unit_quantity:
+          Number(currentValues.purchase_unit_quantity) || 0,
+        price_per_unit_currency:
+          Number(currentValues.price_per_unit_currency) || 0,
+        total_price_in_currency:
+          Number(currentValues.total_price_in_currency) || 0,
+        price_per_unit_uz: Number(currentValues.price_per_unit_uz) || 0,
+        quantity: Number(currentValues.quantity) || 0,
+        total_price_in_uz: Number(currentValues.total_price_in_uz) || 0,
+        base_unit_in_currency: Number(currentValues.base_unit_in_currency) || 0,
+        base_unit_in_uzs: Number(currentValues.base_unit_in_uzs) || 0,
+      };
 
-        const calculatedValues = calculateFields(changedField, numericValues);
+      const calculatedValues = calculateFields(changedField, numericValues);
 
-        // FIXED: Update without forcing .00 formatting
-        Object.entries(calculatedValues).forEach(([fieldName, value]) => {
-          if (fieldName !== changedField && value !== undefined) {
-            const formattedValue = formatNumberDisplay(value);
-            form.setValue(fieldName as keyof FormValues, formattedValue, {
-              shouldValidate: false,
-            });
-          }
-        });
+      // FIXED: Update without forcing .00 formatting
+      Object.entries(calculatedValues).forEach(([fieldName, value]) => {
+        if (fieldName !== changedField && value !== undefined) {
+          const formattedValue = formatNumberDisplay(value);
+          form.setValue(fieldName as keyof FormValues, formattedValue, {
+            shouldValidate: false,
+          });
+        }
+      });
 
-        // Update dynamic fields
-        const updatedDynamicFields = { ...dynamicFields };
-        Object.entries(calculatedValues).forEach(([fieldName, value]) => {
-          if (updatedDynamicFields[fieldName]) {
-            updatedDynamicFields[fieldName] = {
-              ...updatedDynamicFields[fieldName],
-              value: value as any,
-            };
-          }
-        });
-        setDynamicFields(updatedDynamicFields);
-      },
-      [calculationMetadata, form, dynamicFields, calculateFields],
+      // Update dynamic fields
+      const updatedDynamicFields = { ...dynamicFields };
+      Object.entries(calculatedValues).forEach(([fieldName, value]) => {
+        if (updatedDynamicFields[fieldName]) {
+          updatedDynamicFields[fieldName] = {
+            ...updatedDynamicFields[fieldName],
+            value: value as any,
+          };
+        }
+      });
+      setDynamicFields(updatedDynamicFields);
+    },
+    [calculationMetadata, form, dynamicFields, calculateFields],
   );
 
   const [previousValues, setPreviousValues] = useState<any>({});
@@ -377,16 +419,17 @@ export default function CreateStock() {
   ]);
 
   useEffect(() => {
-    const [store, product, currency, purchase_unit, supplier, date_of_arrived] = requiredFields;
+    const [store, product, currency, purchase_unit, supplier, date_of_arrived] =
+      requiredFields;
 
     if (
-        !initialCalculationDone &&
-        store &&
-        product &&
-        currency &&
-        purchase_unit &&
-        supplier &&
-        date_of_arrived
+      !initialCalculationDone &&
+      store &&
+      product &&
+      currency &&
+      purchase_unit &&
+      supplier &&
+      date_of_arrived
     ) {
       const timeoutId = setTimeout(() => {
         const formData = form.getValues();
@@ -409,23 +452,34 @@ export default function CreateStock() {
   ]);
 
   useEffect(() => {
-    const [purchaseUnitQuantity, totalPriceInCurrency, pricePerUnitCurrency, pricePerUnitUz, quantity] = watchedFields;
+    const [
+      purchaseUnitQuantity,
+      totalPriceInCurrency,
+      pricePerUnitCurrency,
+      pricePerUnitUz,
+      quantity,
+    ] = watchedFields;
+    console.log("[Debug] Watched fields changed. Current quantity:", quantity);
 
     const hasChanged =
-        purchaseUnitQuantity !== previousValues.purchase_unit_quantity ||
-        totalPriceInCurrency !== previousValues.total_price_in_currency ||
-        pricePerUnitCurrency !== previousValues.price_per_unit_currency ||
-        pricePerUnitUz !== previousValues.price_per_unit_uz ||
-        quantity !== previousValues.quantity;
+      purchaseUnitQuantity !== previousValues.purchase_unit_quantity ||
+      totalPriceInCurrency !== previousValues.total_price_in_currency ||
+      pricePerUnitCurrency !== previousValues.price_per_unit_currency ||
+      pricePerUnitUz !== previousValues.price_per_unit_uz ||
+      quantity !== previousValues.quantity;
 
     if (hasChanged && initialCalculationDone && calculationMetadata) {
       const timeoutId = setTimeout(() => {
         let changedField = "";
         if (purchaseUnitQuantity !== previousValues.purchase_unit_quantity) {
           changedField = "purchase_unit_quantity";
-        } else if (totalPriceInCurrency !== previousValues.total_price_in_currency) {
+        } else if (
+          totalPriceInCurrency !== previousValues.total_price_in_currency
+        ) {
           changedField = "total_price_in_currency";
-        } else if (pricePerUnitCurrency !== previousValues.price_per_unit_currency) {
+        } else if (
+          pricePerUnitCurrency !== previousValues.price_per_unit_currency
+        ) {
           changedField = "price_per_unit_currency";
         } else if (pricePerUnitUz !== previousValues.price_per_unit_uz) {
           changedField = "price_per_unit_uz";
@@ -448,13 +502,24 @@ export default function CreateStock() {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [watchedFields, previousValues, form, updateFormWithCalculations, initialCalculationDone, calculationMetadata]);
+  }, [
+    watchedFields,
+    previousValues,
+    form,
+    updateFormWithCalculations,
+    initialCalculationDone,
+    calculationMetadata,
+  ]);
 
   // Barcode scanner
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT") {
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT"
+      ) {
         return;
       }
 
@@ -468,21 +533,27 @@ export default function CreateStock() {
         event.preventDefault();
         if (scanBuffer.trim()) {
           searchProductByBarcode(scanBuffer.trim())
-              .then((product) => {
-                if (product) {
-                  form.setValue("product", product.id!);
-                  toast.success(`Product found and selected: ${product.product_name}`);
-                  setProductSearchTerm("");
-                } else {
-                  setProductSearchTerm(scanBuffer.trim());
-                  toast.info(`No product found with barcode: ${scanBuffer.trim()}. Showing search results.`);
-                }
-              })
-              .catch((error) => {
-                console.error("Error searching for product:", error);
+            .then((product) => {
+              if (product) {
+                form.setValue("product", product.id!);
+                toast.success(
+                  `Product found and selected: ${product.product_name}`,
+                );
+                setProductSearchTerm("");
+              } else {
                 setProductSearchTerm(scanBuffer.trim());
-                toast.error("Error searching for product. Showing search results.");
-              });
+                toast.info(
+                  `No product found with barcode: ${scanBuffer.trim()}. Showing search results.`,
+                );
+              }
+            })
+            .catch((error) => {
+              console.error("Error searching for product:", error);
+              setProductSearchTerm(scanBuffer.trim());
+              toast.error(
+                "Error searching for product. Showing search results.",
+              );
+            });
         }
         setScanBuffer("");
         setIsScanning(false);
@@ -515,10 +586,12 @@ export default function CreateStock() {
       type: "select",
       placeholder: t("common.select_store"),
       required: true,
-      options: stores.filter((store) => store.is_main).map((store) => ({
-        value: store.id,
-        label: store.name,
-      })),
+      options: stores
+        .filter((store) => store.is_main)
+        .map((store) => ({
+          value: store.id,
+          label: store.name,
+        })),
       isLoading: storesLoading,
     },
     {
@@ -553,10 +626,11 @@ export default function CreateStock() {
       placeholder: t("common.select_purchase_unit"),
       required: true,
       // FIXED: Use available_units from selected product
-      options: selectedProduct?.available_units?.map((unit: any) => ({
-        value: unit.id,
-        label: `${unit.short_name}${unit.is_base ? " (base)" : ""}`,
-      })) || [],
+      options:
+        selectedProduct?.available_units?.map((unit: any) => ({
+          value: unit.id,
+          label: `${unit.short_name}${unit.is_base ? " (base)" : ""}`,
+        })) || [],
       isLoading: measurementsLoading,
     },
     {
@@ -587,36 +661,51 @@ export default function CreateStock() {
     if (!initialCalculationDone) return [];
 
     return dynamicFieldsOrder
-        .filter((fieldName) => {
-          const fieldData = dynamicFields[fieldName];
-          return fieldData && fieldData.show;
-        })
-        .map((fieldName) => {
-          const fieldData = dynamicFields[fieldName];
-          return {
-            name: fieldName,
-            label: fieldData.label,
-            type: "number",
-            placeholder: fieldData.label,
-            required: false,
-            readOnly: !fieldData.editable,
-            value: fieldData.editable ? undefined : formatNumberDisplay(formatFieldValue(fieldData.value)),
-          };
-        });
+      .filter((fieldName) => {
+        const fieldData = dynamicFields[fieldName];
+        return fieldData && fieldData.show;
+      })
+      .map((fieldName) => {
+        const fieldData = dynamicFields[fieldName];
+        return {
+          name: fieldName,
+          label: fieldData.label,
+          type: "number",
+          placeholder: fieldData.label,
+          required: false,
+          readOnly: !fieldData.editable,
+          value: fieldData.editable
+            ? undefined
+            : formatNumberDisplay(formatFieldValue(fieldData.value)),
+        };
+      });
   };
 
   const allFields = [...baseStockFields, ...getDynamicFieldsByOrder()];
 
   const handleSubmit = async (data: FormValues) => {
     try {
-      const requiredFields = ["store", "product", "currency", "purchase_unit", "supplier", "date_of_arrived"];
-      const missingFields = requiredFields.filter((field) => !data[field as keyof FormValues]);
+      const requiredFields = [
+        "store",
+        "product",
+        "currency",
+        "purchase_unit",
+        "supplier",
+        "date_of_arrived",
+      ];
+      const missingFields = requiredFields.filter(
+        (field) => !data[field as keyof FormValues],
+      );
 
       if (missingFields.length > 0) {
-        toast.error(t("validation.fill_all_required_fields") || "Please fill all required fields");
+        toast.error(
+          t("validation.fill_all_required_fields") ||
+            "Please fill all required fields",
+        );
         return;
       }
 
+      console.log("[Debug] Submitting data. Raw quantity:", data.quantity);
       const payload: any = {
         store: Number(data.store),
         product: Number(data.product),
@@ -624,25 +713,50 @@ export default function CreateStock() {
         purchase_unit: Number(data.purchase_unit),
         supplier: Number(data.supplier),
         date_of_arrived: data.date_of_arrived,
-        ...(data.purchase_unit_quantity && { purchase_unit_quantity: formatNumberForAPI(data.purchase_unit_quantity) }),
-        ...(data.total_price_in_currency && { total_price_in_currency: formatNumberForAPI(data.total_price_in_currency) }),
-        ...(data.price_per_unit_currency && { price_per_unit_currency: formatNumberForAPI(data.price_per_unit_currency) }),
-        ...(data.price_per_unit_uz && { price_per_unit_uz: formatNumberForAPI(data.price_per_unit_uz) }),
-        ...Object.entries(dynamicFields).reduce((acc, [fieldName, fieldData]) => {
-          if (fieldData.value !== null && fieldData.value !== undefined) {
-            if (fieldName === "exchange_rate" && typeof fieldData.value === "object" && (fieldData.value as any).id) {
-              acc[fieldName] = (fieldData.value as any).id;
-            } else if (typeof fieldData.value === "object" && (fieldData.value as any).id !== undefined) {
-              acc[fieldName] = (fieldData.value as any).id;
-            } else {
-              acc[fieldName] = formatNumberForAPI(fieldData.value);
+        ...(data.purchase_unit_quantity && {
+          purchase_unit_quantity: formatNumberForAPI(
+            data.purchase_unit_quantity,
+          ),
+        }),
+        ...(data.total_price_in_currency && {
+          total_price_in_currency: formatNumberForAPI(
+            data.total_price_in_currency,
+          ),
+        }),
+        ...(data.price_per_unit_currency && {
+          price_per_unit_currency: formatNumberForAPI(
+            data.price_per_unit_currency,
+          ),
+        }),
+        ...(data.price_per_unit_uz && {
+          price_per_unit_uz: formatNumberForAPI(data.price_per_unit_uz),
+        }),
+        ...Object.entries(dynamicFields).reduce(
+          (acc, [fieldName, fieldData]) => {
+            if (fieldData.value !== null && fieldData.value !== undefined) {
+              if (
+                fieldName === "exchange_rate" &&
+                typeof fieldData.value === "object" &&
+                (fieldData.value as any).id
+              ) {
+                acc[fieldName] = (fieldData.value as any).id;
+              } else if (
+                typeof fieldData.value === "object" &&
+                (fieldData.value as any).id !== undefined
+              ) {
+                acc[fieldName] = (fieldData.value as any).id;
+              } else {
+                acc[fieldName] = formatNumberForAPI(fieldData.value);
+              }
             }
-          }
-          return acc;
-        }, {} as any),
+            return acc;
+          },
+          {} as any,
+        ),
       };
 
-      console.log("Final payload:", payload);
+      console.log("[Debug] Final payload for API:", payload);
+      console.log("payload", payload);
       await createStock.mutateAsync(payload);
       toast.success("Stock created successfully");
       navigate("/stock");
@@ -675,96 +789,123 @@ export default function CreateStock() {
   };
 
   return (
-      <div className="container mx-auto py-8 px-4">
-        {isScanning && (
-            <div className="mb-4 p-3 bg-blue-100 border border-blue-300 rounded-md">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                <span className="text-blue-700 font-medium">
+    <div className="container mx-auto py-8 px-4">
+      {isScanning && (
+        <div className="mb-4 p-3 bg-blue-100 border border-blue-300 rounded-md">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-blue-700 font-medium">
               Scanning barcode to find product... ({scanBuffer})
             </span>
-              </div>
+          </div>
+        </div>
+      )}
+
+      <ResourceForm<FormValues>
+        fields={allFields}
+        onSubmit={handleSubmit}
+        isSubmitting={createStock.isPending || isCalculating}
+        title={t("common.create_new_stock")}
+        form={form}
+      />
+
+      <Dialog open={createProductOpen} onOpenChange={setCreateProductOpen}>
+        <DialogContent>
+          <DialogTitle>{t("common.create_new_product")}</DialogTitle>
+          <form
+            onSubmit={productForm.handleSubmit(handleCreateProductSubmit)}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="product_name">{t("common.product_name")}</Label>
+              <Input
+                id="product_name"
+                {...productForm.register("product_name", { required: true })}
+              />
             </div>
-        )}
-
-        <ResourceForm<FormValues>
-            fields={allFields}
-            onSubmit={handleSubmit}
-            isSubmitting={createStock.isPending || isCalculating}
-            title={t("common.create_new_stock")}
-            form={form}
-        />
-
-        <Dialog open={createProductOpen} onOpenChange={setCreateProductOpen}>
-          <DialogContent>
-            <DialogTitle>{t("common.create_new_product")}</DialogTitle>
-            <form onSubmit={productForm.handleSubmit(handleCreateProductSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="product_name">{t("common.product_name")}</Label>
-                <Input id="product_name" {...productForm.register("product_name", { required: true })} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category_write">{t("common.category")}</Label>
-                <Select
-                    value={productForm.watch("category_write")?.toString()}
-                    onValueChange={(value) => productForm.setValue("category_write", parseInt(value))}
-                    disabled={categoriesLoading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("common.select_category")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                        <SelectItem key={String(category.id)} value={String(category.id || "")}>
-                          {category.category_name}
-                        </SelectItem>
+            <div className="space-y-2">
+              <Label htmlFor="category_write">{t("common.category")}</Label>
+              <Select
+                value={productForm.watch("category_write")?.toString()}
+                onValueChange={(value) =>
+                  productForm.setValue("category_write", parseInt(value))
+                }
+                disabled={categoriesLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("common.select_category")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem
+                      key={String(category.id)}
+                      value={String(category.id || "")}
+                    >
+                      {category.category_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="store_write">{t("common.store")}</Label>
+              <Select
+                value={productForm.watch("store_write")?.toString()}
+                onValueChange={(value) =>
+                  productForm.setValue("store_write", parseInt(value))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("common.select_store")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {stores
+                    .filter((store) => !store.is_main)
+                    .map((store) => (
+                      <SelectItem
+                        key={store.id?.toString() || ""}
+                        value={(store.id || 0).toString()}
+                      >
+                        {store.name}
+                      </SelectItem>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="store_write">{t("common.store")}</Label>
-                <Select
-                    value={productForm.watch("store_write")?.toString()}
-                    onValueChange={(value) => productForm.setValue("store_write", parseInt(value))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("common.select_store")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {stores.filter((store) => !store.is_main).map((store) => (
-                        <SelectItem key={store.id?.toString() || ""} value={(store.id || 0).toString()}>
-                          {store.name}
-                        </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" disabled={createProduct.isPending}>
-                {t("common.create")}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" disabled={createProduct.isPending}>
+              {t("common.create")}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-        <Dialog open={createSupplierOpen} onOpenChange={setCreateSupplierOpen}>
-          <DialogContent>
-            <DialogTitle>{t("common.create_new_supplier")}</DialogTitle>
-            <form onSubmit={supplierForm.handleSubmit(handleCreateSupplierSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">{t("common.supplier_name")}</Label>
-                <Input id="name" {...supplierForm.register("name", { required: true })} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone_number">{t("common.phone_number")}</Label>
-                <Input id="phone_number" {...supplierForm.register("phone_number", { required: true })} />
-              </div>
-              <Button type="submit" disabled={createSupplier.isPending}>
-                {t("common.create")}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+      <Dialog open={createSupplierOpen} onOpenChange={setCreateSupplierOpen}>
+        <DialogContent>
+          <DialogTitle>{t("common.create_new_supplier")}</DialogTitle>
+          <form
+            onSubmit={supplierForm.handleSubmit(handleCreateSupplierSubmit)}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="name">{t("common.supplier_name")}</Label>
+              <Input
+                id="name"
+                {...supplierForm.register("name", { required: true })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone_number">{t("common.phone_number")}</Label>
+              <Input
+                id="phone_number"
+                {...supplierForm.register("phone_number", { required: true })}
+              />
+            </div>
+            <Button type="submit" disabled={createSupplier.isPending}>
+              {t("common.create")}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

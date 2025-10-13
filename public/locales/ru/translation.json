@@ -663,6 +663,17 @@
     "complex": "Сложная оплата"
   },
   "table": {
+    "income": "Доход",
+    "actual": "Актуально",
+    "expense": "Расходы",
+    "expected": "Ожидается",
+    "payments": "Оплаты",
+    "total_expected": "Ожидается",
+    "total_actual": "Актуально",
+    "approval_comment": "Комментарий Одобрение",
+    "awaiting_approval": "ожидание одобрения ",
+    "approved": "одобрено",
+    "closing_comment": "Закрытые коментария",
     "select": "Выбрать",
     "price_per_unit": "Цена за единицу",
     "products": "Товары",
