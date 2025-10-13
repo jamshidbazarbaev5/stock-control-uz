@@ -1,4 +1,4 @@
-import api  from "./api";
+import api from "./api";
 import type { Product } from "./product";
 
 interface FetchProductsParams {
@@ -24,7 +24,10 @@ export async function fetchAllProducts(
 
     try {
       const response = await api.get<ProductsResponse>("/items/product/", {
-        params: { barcode: params.barcode },
+        params: {
+          barcode: params.barcode,
+          non_zero: 1,
+        },
       });
 
       console.log("✅ Products API Response:", response.data);
@@ -49,7 +52,7 @@ export async function fetchAllProducts(
   while (hasNext) {
     try {
       const response = await api.get<ProductsResponse>("/items/product/", {
-        params: { ...params, page },
+        params: { ...params, page, non_zero: 1 },
       });
 
       const data = response.data;
@@ -74,7 +77,7 @@ export async function fetchProductByBarcode(
 
   try {
     const response = await api.get<ProductsResponse>("/items/product/", {
-      params: { barcode },
+      params: { barcode, non_zero: 1 },
     });
 
     console.log("✅ API Response:", response.data);
