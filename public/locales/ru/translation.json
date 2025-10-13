@@ -146,6 +146,10 @@
     "create_expense": "Создать расход"
   },
   "common": {
+    "select_currency": "Валюта",
+    "purchase_unit": "Ед измерения",
+    "select_purchase_unit": "Eд измерения",
+    "currency": "Валюта",
     "selling_unit": "Единица измерения",
     "mobile": "Мобильный",
     "desktop": "Десктоп",

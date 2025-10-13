@@ -27,22 +27,17 @@ import {
 import api from "../api/api";
 
 interface FormValues {
-  // Required initial fields
   store: number | string;
   product: number | string;
   currency: number | string;
   purchase_unit: number | string;
   supplier: number | string;
   date_of_arrived: string;
-
-  // Dynamic calculation fields (user input)
   purchase_unit_quantity?: number | string;
   total_price_in_currency?: number | string;
   price_per_unit_currency?: number | string;
   price_per_unit_uz?: number | string;
   exchange_rate?: number | string;
-
-  // Backend calculated fields (will be populated from API response)
   quantity?: number | string;
   total_price_in_uz?: number | string;
   base_unit_in_uzs?: number | string;
@@ -61,13 +56,25 @@ interface CreateSupplierForm {
   phone_number: string;
 }
 
-// Helper function to format numbers to two decimal places for display and API submission
-const formatNumber = (value: any): string => {
-  const num = Number(value);
-  if (isNaN(num) || num === 0) {
-    return ""; // Return empty for invalid numbers or zero to keep placeholders clean
+// Helper function to format numbers with max 2 decimals, no trailing zeros
+const formatNumberDisplay = (value: any): string => {
+  if (value === "" || value === null || value === undefined) {
+    return "";
   }
-  return num.toFixed(2);
+  const num = Number(value);
+  if (isNaN(num)) {
+    return "";
+  }
+  // Round to 2 decimal places and remove trailing zeros
+  const rounded = Math.round(num * 100) / 100;
+  return String(rounded);
+};
+
+// Helper function to format for API submission (with 2 decimals)
+const formatNumberForAPI = (value: any): number | undefined => {
+  const num = parseFloat(value);
+  if (isNaN(num)) return undefined;
+  return parseFloat(num.toFixed(2));
 };
 
 export default function CreateStock() {
@@ -78,7 +85,9 @@ export default function CreateStock() {
   const [dynamicFields, setDynamicFields] = useState<{
     [key: string]: DynamicField;
   }>({});
+  const [dynamicFieldsOrder, setDynamicFieldsOrder] = useState<string[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   // Barcode scanner state
   const [scanBuffer, setScanBuffer] = useState("");
@@ -90,21 +99,14 @@ export default function CreateStock() {
   const createProduct = useCreateProduct();
   const createSupplier = useCreateSupplier();
   const { data: storesData, isLoading: storesLoading } = useGetStores({});
-  const { data: suppliersData, isLoading: suppliersLoading } = useGetSuppliers(
-    {},
-  );
-  const { data: categoriesData, isLoading: categoriesLoading } =
-    useGetCategories({});
-  const { data: currenciesData, isLoading: currenciesLoading } =
-    useGetCurrencies({});
-  const { data: measurementsData, isLoading: measurementsLoading } =
-    useGetMeasurements({});
+  const { data: suppliersData, isLoading: suppliersLoading } = useGetSuppliers({});
+  const { data: categoriesData, isLoading: categoriesLoading } = useGetCategories({});
+  const { data: currenciesData, isLoading: currenciesLoading } = useGetCurrencies({});
+  const { data: measurementsData, isLoading: measurementsLoading } = useGetMeasurements({});
 
-  // State for create new modals
   const [createProductOpen, setCreateProductOpen] = useState(false);
   const [createSupplierOpen, setCreateSupplierOpen] = useState(false);
 
-  // Forms for creating new items
   const productForm = useForm<CreateProductForm>();
   const supplierForm = useForm<CreateSupplierForm>();
 
@@ -127,27 +129,17 @@ export default function CreateStock() {
       exchange_rate: "",
       base_unit_in_currency: "",
       conversion_factor: "",
+      quantity: "",
     },
   });
 
-  // Get the arrays from response data
-  const stores = Array.isArray(storesData)
-    ? storesData
-    : storesData?.results || [];
-  const suppliers = Array.isArray(suppliersData)
-    ? suppliersData
-    : suppliersData?.results || [];
-  const categories = Array.isArray(categoriesData)
-    ? categoriesData
-    : categoriesData?.results || [];
-  const currencies = Array.isArray(currenciesData)
-    ? currenciesData
-    : currenciesData?.results || [];
-  const measurements = Array.isArray(measurementsData)
-    ? measurementsData
-    : measurementsData?.results || [];
+  const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
+  const suppliers = Array.isArray(suppliersData) ? suppliersData : suppliersData?.results || [];
+  const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData?.results || [];
+  const currencies = Array.isArray(currenciesData) ? currenciesData : currenciesData?.results || [];
+  // const measurements = Array.isArray(measurementsData) ? measurementsData : measurementsData?.results || [];
 
-  // Fetch all products from all API pages
+  // Fetch all products
   useEffect(() => {
     const fetchAllProducts = async () => {
       let page = 1;
@@ -173,80 +165,104 @@ export default function CreateStock() {
     fetchAllProducts();
   }, [productSearchTerm]);
 
-  // State to track if initial calculation has been done
-  const [initialCalculationDone, setInitialCalculationDone] = useState(false);
+  // Watch product selection to update available units
+  const watchedProduct = form.watch("product");
+  useEffect(() => {
+    if (watchedProduct) {
+      const product = allProducts.find(p => p.id === Number(watchedProduct));
+      setSelectedProduct(product);
+      // Reset purchase_unit when product changes
+      form.setValue("purchase_unit", "");
+    } else {
+      setSelectedProduct(null);
+    }
+  }, [watchedProduct, allProducts]);
 
-  // Store calculation metadata from initial API call
+  const [initialCalculationDone, setInitialCalculationDone] = useState(false);
   const [calculationMetadata, setCalculationMetadata] = useState<{
     conversion_factor: number;
     exchange_rate: number;
     is_base_currency: boolean;
   } | null>(null);
 
-  // Calculate fields locally using metadata
+  // Fixed calculation logic
   const calculateFields = useCallback(
-    (changedField: string, currentValues: any) => {
-      if (!calculationMetadata) return currentValues;
+      (changedField: string, currentValues: any) => {
+        if (!calculationMetadata) return currentValues;
 
-      const result = { ...currentValues };
-      const { conversion_factor, exchange_rate, is_base_currency } =
-        calculationMetadata;
-      const qty = result.purchase_unit_quantity;
-      const quantity = result.quantity;
+        const result = { ...currentValues };
+        const { conversion_factor, exchange_rate, is_base_currency } = calculationMetadata;
+        const qty = Number(result.purchase_unit_quantity) || 0;
+        const quantity = Number(result.quantity) || 0;
 
-      // Quantity ↔️ purchase_unit_quantity
-      if (changedField === "purchase_unit_quantity" && qty) {
-        result.quantity = qty * conversion_factor;
-        result.total_price_in_currency =
-          (result.price_per_unit_currency || 0) * qty;
-        result.total_price_in_uz = (result.price_per_unit_uz || 0) * qty;
-      } else if (changedField === "quantity" && quantity) {
-        result.purchase_unit_quantity = quantity / conversion_factor;
-        result.total_price_in_currency =
-          (result.price_per_unit_currency || 0) * result.purchase_unit_quantity;
-        result.total_price_in_uz =
-          (result.price_per_unit_uz || 0) * result.purchase_unit_quantity;
-      }
+        // FIXED: Bidirectional quantity ↔ purchase_unit_quantity conversion
+        if (changedField === "purchase_unit_quantity" && qty) {
+          result.quantity = qty * conversion_factor;
+        } else if (changedField === "quantity" && quantity) {
+          result.purchase_unit_quantity = quantity / conversion_factor;
+        }
 
-      // Price calculations
-      if (!is_base_currency && qty) {
-        if (changedField === "price_per_unit_currency")
-          result.total_price_in_currency = result.price_per_unit_currency * qty;
-        if (changedField === "total_price_in_currency")
-          result.price_per_unit_currency = result.total_price_in_currency / qty;
-        result.price_per_unit_uz =
-          (result.price_per_unit_currency || 0) * exchange_rate;
-        result.total_price_in_uz =
-          (result.total_price_in_currency || 0) * exchange_rate;
-      } else if (is_base_currency && qty) {
-        if (changedField === "price_per_unit_uz")
-          result.total_price_in_uz = result.price_per_unit_uz * qty;
-        if (changedField === "total_price_in_uz")
-          result.price_per_unit_uz = result.total_price_in_uz / qty;
-      }
+        // Recalculate prices based on current purchase_unit_quantity
+        const currentQty = changedField === "purchase_unit_quantity" ? qty : Number(result.purchase_unit_quantity) || 0;
 
-      // Base unit cost
-      if (result.quantity) {
-        result.base_unit_in_currency =
-          (result.total_price_in_currency || 0) / result.quantity;
-        result.base_unit_in_uzs =
-          (result.total_price_in_uz || 0) / result.quantity;
-      }
+        // Price calculations
+        if (!is_base_currency && currentQty) {
+          if (changedField === "price_per_unit_currency") {
+            result.total_price_in_currency = Number(result.price_per_unit_currency) * currentQty;
+          }
+          if (changedField === "total_price_in_currency") {
+            result.price_per_unit_currency = Number(result.total_price_in_currency) / currentQty;
+          }
+          result.price_per_unit_uz = (Number(result.price_per_unit_currency) || 0) * exchange_rate;
+          result.total_price_in_uz = (Number(result.total_price_in_currency) || 0) * exchange_rate;
+        } else if (is_base_currency && currentQty) {
+          if (changedField === "price_per_unit_uz") {
+            result.total_price_in_uz = Number(result.price_per_unit_uz) * currentQty;
+          }
+          if (changedField === "total_price_in_uz") {
+            result.price_per_unit_uz = Number(result.total_price_in_uz) / currentQty;
+          }
+        }
 
-      return result;
-    },
-    [calculationMetadata],
+        // Base unit cost
+        const finalQuantity = Number(result.quantity) || 0;
+        if (finalQuantity) {
+          result.base_unit_in_currency = (Number(result.total_price_in_currency) || 0) / finalQuantity;
+          result.base_unit_in_uzs = (Number(result.total_price_in_uz) || 0) / finalQuantity;
+        }
+
+        return result;
+      },
+      [calculationMetadata],
   );
 
-  // Get field configuration when base fields are selected
+  // Helper to extract value from API response
+  const formatFieldValue = (value: any): string => {
+    if (value === null || value === undefined) return "";
+    if (typeof value === "object") {
+      if (value.rate !== undefined) return String(value.rate);
+      if (value.value !== undefined) {
+        if (typeof value.value === "object") {
+          if (value.value.rate !== undefined) return String(value.value.rate);
+          if (value.value.amount !== undefined) return String(value.value.amount);
+        }
+        return String(value.value);
+      }
+      if (value.amount !== undefined) return String(value.amount);
+      if (value.id !== undefined) return String(value.id);
+    }
+    return String(value);
+  };
+
+  // Get field configuration
   const getFieldConfiguration = useCallback(async (formData: FormValues) => {
     if (
-      !formData.store ||
-      !formData.product ||
-      !formData.currency ||
-      !formData.purchase_unit ||
-      !formData.supplier ||
-      !formData.date_of_arrived
+        !formData.store ||
+        !formData.product ||
+        !formData.currency ||
+        !formData.purchase_unit ||
+        !formData.supplier ||
+        !formData.date_of_arrived
     ) {
       return;
     }
@@ -263,49 +279,33 @@ export default function CreateStock() {
       };
 
       const response = await calculateStock(configRequest);
+
+      // FIXED: Store field order from API response
+      const fieldOrder = Object.keys(response.dynamic_fields);
+      setDynamicFieldsOrder(fieldOrder);
       setDynamicFields(response.dynamic_fields);
 
-      // Populate form with initial calculated values from the API response
-      Object.entries(response.dynamic_fields).forEach(
-        ([fieldName, fieldData]) => {
-          if (fieldData.value !== null && fieldData.value !== undefined) {
-            // Use the existing helper function to get the correct display value
-            const rawValue = formatFieldValue(fieldData.value);
-            // Apply number formatting for relevant fields
-            const displayValue = [
-              "price_per_unit_currency",
-              "price_per_unit_uz",
-              "total_price_in_currency",
-              "total_price_in_uz",
-              "base_unit_in_currency",
-              "base_unit_in_uzs",
-              "exchange_rate",
-            ].includes(fieldName)
-              ? formatNumber(rawValue)
-              : rawValue;
+      // Populate form with initial values WITHOUT forcing .00
+      Object.entries(response.dynamic_fields).forEach(([fieldName, fieldData]) => {
+        if (fieldData.value !== null && fieldData.value !== undefined) {
+          const rawValue = formatFieldValue(fieldData.value);
+          const displayValue = formatNumberDisplay(rawValue);
+          form.setValue(fieldName as keyof FormValues, displayValue, {
+            shouldValidate: false,
+          });
+        }
+      });
 
-            form.setValue(fieldName as keyof FormValues, displayValue, {
-              shouldValidate: false,
-            });
-          }
-        },
-      );
-
-      // Extract calculation metadata
+      // Extract metadata
       const exchangeRateValue = response.dynamic_fields.exchange_rate?.value;
       const exchangeRate =
-        typeof exchangeRateValue === "object" &&
-        exchangeRateValue !== null &&
-        "rate" in exchangeRateValue
-          ? Number(exchangeRateValue.rate)
-          : 1;
+          typeof exchangeRateValue === "object" && exchangeRateValue !== null && "rate" in exchangeRateValue
+              ? Number(exchangeRateValue.rate)
+              : 1;
 
-      const conversionFactorValue =
-        response.dynamic_fields.conversion_factor?.value;
+      const conversionFactorValue = response.dynamic_fields.conversion_factor?.value;
       const conversionFactor =
-        typeof conversionFactorValue === "number"
-          ? conversionFactorValue
-          : Number(conversionFactorValue) || 1;
+          typeof conversionFactorValue === "number" ? conversionFactorValue : Number(conversionFactorValue) || 1;
 
       const metadata = {
         conversion_factor: conversionFactor,
@@ -320,68 +320,53 @@ export default function CreateStock() {
     }
   }, []);
 
-  // Update form values using local calculations
+  // Update form with calculations
   const updateFormWithCalculations = useCallback(
-    (changedField: string) => {
-      if (!calculationMetadata) return;
+      (changedField: string) => {
+        if (!calculationMetadata) return;
 
-      const currentValues = form.getValues();
+        const currentValues = form.getValues();
+        const numericValues = {
+          purchase_unit_quantity: Number(currentValues.purchase_unit_quantity) || 0,
+          price_per_unit_currency: Number(currentValues.price_per_unit_currency) || 0,
+          total_price_in_currency: Number(currentValues.total_price_in_currency) || 0,
+          price_per_unit_uz: Number(currentValues.price_per_unit_uz) || 0,
+          quantity: Number(currentValues.quantity) || 0,
+          total_price_in_uz: Number(currentValues.total_price_in_uz) || 0,
+          base_unit_in_currency: Number(currentValues.base_unit_in_currency) || 0,
+          base_unit_in_uzs: Number(currentValues.base_unit_in_uzs) || 0,
+        };
 
-      // Convert form values to numbers for calculations
-      const numericValues = {
-        purchase_unit_quantity:
-          Number(currentValues.purchase_unit_quantity) || 0,
-        price_per_unit_currency:
-          Number(currentValues.price_per_unit_currency) || 0,
-        total_price_in_currency:
-          Number(currentValues.total_price_in_currency) || 0,
-        price_per_unit_uz: Number(currentValues.price_per_unit_uz) || 0,
-        quantity: Number(currentValues.quantity) || 0,
-        total_price_in_uz: Number(currentValues.total_price_in_uz) || 0,
-        base_unit_in_currency: Number(currentValues.base_unit_in_currency) || 0,
-        base_unit_in_uzs: Number(currentValues.base_unit_in_uzs) || 0,
-      };
+        const calculatedValues = calculateFields(changedField, numericValues);
 
-      // Calculate new values
-      const calculatedValues = calculateFields(changedField, numericValues);
+        // FIXED: Update without forcing .00 formatting
+        Object.entries(calculatedValues).forEach(([fieldName, value]) => {
+          if (fieldName !== changedField && value !== undefined) {
+            const formattedValue = formatNumberDisplay(value);
+            form.setValue(fieldName as keyof FormValues, formattedValue, {
+              shouldValidate: false,
+            });
+          }
+        });
 
-      // Update form with calculated and formatted values
-      Object.entries(calculatedValues).forEach(([fieldName, value]) => {
-        if (fieldName !== changedField && value !== undefined) {
-          // Format the number to two decimal places before setting it in the form
-          const formattedValue = formatNumber(value);
-          form.setValue(fieldName as keyof FormValues, formattedValue, {
-            shouldValidate: false,
-          });
-        }
-      });
-
-      // Update dynamic fields to reflect new calculated values
-      const updatedDynamicFields = { ...dynamicFields };
-      Object.entries(calculatedValues).forEach(([fieldName, value]) => {
-        if (updatedDynamicFields[fieldName]) {
-          // @ts-ignore
-          updatedDynamicFields[fieldName] = {
-            ...updatedDynamicFields[fieldName],
-            value: value as any,
-          };
-        }
-      });
-      setDynamicFields(updatedDynamicFields);
-    },
-    [calculationMetadata, form, dynamicFields, calculateFields],
+        // Update dynamic fields
+        const updatedDynamicFields = { ...dynamicFields };
+        Object.entries(calculatedValues).forEach(([fieldName, value]) => {
+          if (updatedDynamicFields[fieldName]) {
+            updatedDynamicFields[fieldName] = {
+              ...updatedDynamicFields[fieldName],
+              value: value as any,
+            };
+          }
+        });
+        setDynamicFields(updatedDynamicFields);
+      },
+      [calculationMetadata, form, dynamicFields, calculateFields],
   );
 
-  // State to track previous values for change detection
-  const [previousValues, setPreviousValues] = useState<{
-    purchase_unit_quantity?: string | number;
-    total_price_in_currency?: string | number;
-    price_per_unit_currency?: string | number;
-    price_per_unit_uz?: string | number;
-    quantity?: string | number;
-  }>({});
+  const [previousValues, setPreviousValues] = useState<any>({});
 
-  // Watch only required fields for initial calculation
+  // Watch required fields for initial calculation
   const requiredFields = form.watch([
     "store",
     "product",
@@ -392,31 +377,29 @@ export default function CreateStock() {
   ]);
 
   useEffect(() => {
-    const [store, product, currency, purchase_unit, supplier, date_of_arrived] =
-      requiredFields;
+    const [store, product, currency, purchase_unit, supplier, date_of_arrived] = requiredFields;
 
-    // Trigger calculation only once when all required fields are filled and calculation hasn't been done yet
     if (
-      !initialCalculationDone &&
-      store &&
-      product &&
-      currency &&
-      purchase_unit &&
-      supplier &&
-      date_of_arrived
+        !initialCalculationDone &&
+        store &&
+        product &&
+        currency &&
+        purchase_unit &&
+        supplier &&
+        date_of_arrived
     ) {
       const timeoutId = setTimeout(() => {
         const formData = form.getValues();
         getFieldConfiguration(formData as FormValues).then(() => {
           setInitialCalculationDone(true);
         });
-      }, 500); // 500ms debounce
+      }, 500);
 
       return () => clearTimeout(timeoutId);
     }
   }, [requiredFields, getFieldConfiguration, initialCalculationDone, form]);
 
-  // Watch calculation trigger fields for updates after initial load
+  // Watch calculation fields
   const watchedFields = form.watch([
     "purchase_unit_quantity",
     "total_price_in_currency",
@@ -426,36 +409,23 @@ export default function CreateStock() {
   ]);
 
   useEffect(() => {
-    const [
-      purchaseUnitQuantity,
-      totalPriceInCurrency,
-      pricePerUnitCurrency,
-      pricePerUnitUz,
-      quantity,
-    ] = watchedFields;
+    const [purchaseUnitQuantity, totalPriceInCurrency, pricePerUnitCurrency, pricePerUnitUz, quantity] = watchedFields;
 
-    // Check if values have actually changed
     const hasChanged =
-      purchaseUnitQuantity !== previousValues.purchase_unit_quantity ||
-      totalPriceInCurrency !== previousValues.total_price_in_currency ||
-      pricePerUnitCurrency !== previousValues.price_per_unit_currency ||
-      pricePerUnitUz !== previousValues.price_per_unit_uz ||
-      quantity !== previousValues.quantity;
+        purchaseUnitQuantity !== previousValues.purchase_unit_quantity ||
+        totalPriceInCurrency !== previousValues.total_price_in_currency ||
+        pricePerUnitCurrency !== previousValues.price_per_unit_currency ||
+        pricePerUnitUz !== previousValues.price_per_unit_uz ||
+        quantity !== previousValues.quantity;
 
-    // Only trigger calculation if values have changed and initial calculation was done
     if (hasChanged && initialCalculationDone && calculationMetadata) {
       const timeoutId = setTimeout(() => {
-        // Determine which field changed
         let changedField = "";
         if (purchaseUnitQuantity !== previousValues.purchase_unit_quantity) {
           changedField = "purchase_unit_quantity";
-        } else if (
-          totalPriceInCurrency !== previousValues.total_price_in_currency
-        ) {
+        } else if (totalPriceInCurrency !== previousValues.total_price_in_currency) {
           changedField = "total_price_in_currency";
-        } else if (
-          pricePerUnitCurrency !== previousValues.price_per_unit_currency
-        ) {
+        } else if (pricePerUnitCurrency !== previousValues.price_per_unit_currency) {
           changedField = "price_per_unit_currency";
         } else if (pricePerUnitUz !== previousValues.price_per_unit_uz) {
           changedField = "price_per_unit_uz";
@@ -467,7 +437,6 @@ export default function CreateStock() {
           updateFormWithCalculations(changedField);
         }
 
-        // Update previous values after calculation
         setPreviousValues({
           purchase_unit_quantity: purchaseUnitQuantity,
           total_price_in_currency: totalPriceInCurrency,
@@ -475,97 +444,61 @@ export default function CreateStock() {
           price_per_unit_uz: pricePerUnitUz,
           quantity: quantity,
         });
-      }, 500); // 500ms debounce
+      }, 500);
 
       return () => clearTimeout(timeoutId);
     }
-  }, [
-    watchedFields,
-    previousValues,
-    form,
-    updateFormWithCalculations,
-    initialCalculationDone,
-    calculationMetadata,
-  ]);
+  }, [watchedFields, previousValues, form, updateFormWithCalculations, initialCalculationDone, calculationMetadata]);
 
-  // Barcode scanner functionality
+  // Barcode scanner
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
-      // Ignore if user is typing in an input field
       const target = event.target as HTMLElement;
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.tagName === "SELECT"
-      ) {
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT") {
         return;
       }
 
-      // Clear any existing timeout
       if (scanTimeoutRef.current) {
         clearTimeout(scanTimeoutRef.current);
       }
 
-      // Start scanning mode
       setIsScanning(true);
 
-      // Handle Enter key (end of barcode scan)
       if (event.key === "Enter") {
         event.preventDefault();
         if (scanBuffer.trim()) {
-          console.log("Searching for product with barcode:", scanBuffer.trim());
-
-          // Search for product by barcode
           searchProductByBarcode(scanBuffer.trim())
-            .then((product) => {
-              if (product) {
-                // Product found - select it in the form
-                form.setValue("product", product.id!);
-                toast.success(
-                  `Product found and selected: ${product.product_name}`,
-                );
-
-                // Clear search term to show all products again
-                setProductSearchTerm("");
-              } else {
-                // No product found - use barcode as search term
+              .then((product) => {
+                if (product) {
+                  form.setValue("product", product.id!);
+                  toast.success(`Product found and selected: ${product.product_name}`);
+                  setProductSearchTerm("");
+                } else {
+                  setProductSearchTerm(scanBuffer.trim());
+                  toast.info(`No product found with barcode: ${scanBuffer.trim()}. Showing search results.`);
+                }
+              })
+              .catch((error) => {
+                console.error("Error searching for product:", error);
                 setProductSearchTerm(scanBuffer.trim());
-                toast.info(
-                  `No product found with barcode: ${scanBuffer.trim()}. Showing search results.`,
-                );
-              }
-            })
-            .catch((error) => {
-              console.error("Error searching for product:", error);
-              // Fallback: use barcode as search term
-              setProductSearchTerm(scanBuffer.trim());
-              toast.error(
-                "Error searching for product. Showing search results.",
-              );
-            });
+                toast.error("Error searching for product. Showing search results.");
+              });
         }
         setScanBuffer("");
         setIsScanning(false);
         return;
       }
 
-      // Accumulate characters for barcode
       if (event.key.length === 1) {
-        // Only single characters, not special keys
         setScanBuffer((prev) => prev + event.key);
-
-        // Set timeout to reset buffer if scanning stops
         scanTimeoutRef.current = setTimeout(() => {
           setScanBuffer("");
           setIsScanning(false);
-        }, 100); // 100ms timeout between characters
+        }, 100);
       }
     };
 
-    // Add event listener
     document.addEventListener("keydown", handleKeyPress);
-
-    // Cleanup
     return () => {
       document.removeEventListener("keydown", handleKeyPress);
       if (scanTimeoutRef.current) {
@@ -574,7 +507,7 @@ export default function CreateStock() {
     };
   }, [scanBuffer]);
 
-  // Define base stock fields
+  // Base fields
   const baseStockFields = [
     {
       name: "store",
@@ -582,12 +515,10 @@ export default function CreateStock() {
       type: "select",
       placeholder: t("common.select_store"),
       required: true,
-      options: stores
-        .filter((store) => store.is_main)
-        .map((store) => ({
-          value: store.id,
-          label: store.name,
-        })),
+      options: stores.filter((store) => store.is_main).map((store) => ({
+        value: store.id,
+        label: store.name,
+      })),
       isLoading: storesLoading,
     },
     {
@@ -621,10 +552,11 @@ export default function CreateStock() {
       type: "select",
       placeholder: t("common.select_purchase_unit"),
       required: true,
-      options: measurements.map((measurement) => ({
-        value: measurement.id,
-        label: `${measurement.measurement_name} (${measurement.short_name || ""})`,
-      })),
+      // FIXED: Use available_units from selected product
+      options: selectedProduct?.available_units?.map((unit: any) => ({
+        value: unit.id,
+        label: `${unit.short_name}${unit.is_base ? " (base)" : ""}`,
+      })) || [],
       isLoading: measurementsLoading,
     },
     {
@@ -650,222 +582,67 @@ export default function CreateStock() {
     },
   ];
 
-  // Dynamic calculation fields - only show fields that are marked as 'show: true' in API response AND initial calculation is done
-  const calculationFields = initialCalculationDone
-    ? Object.entries(dynamicFields)
-        .filter(
-          ([fieldName, fieldData]) =>
-            [
-              "purchase_unit_quantity",
-              "total_price_in_currency",
-              "price_per_unit_currency",
-              "price_per_unit_uz",
-            ].includes(fieldName) && fieldData.show,
-        )
-        .map(([fieldName, fieldData]) => ({
-          name: fieldName,
-          label: fieldData.label,
-          type: "number",
-          placeholder: fieldData.label,
-          required: false,
-          readOnly: !fieldData.editable,
-        }))
-    : [];
+  // FIXED: Show dynamic fields in API response order
+  const getDynamicFieldsByOrder = () => {
+    if (!initialCalculationDone) return [];
 
-  // Helper function to safely convert value to string, used for complex objects from API
-  const formatFieldValue = (value: any): string => {
-    if (value === null || value === undefined) {
-      return "";
-    }
-
-    // If it's an object, try to extract meaningful value
-    if (typeof value === "object") {
-      // Handle direct exchange rate object like { id: 1, rate: 13000.0 }
-      if (value.rate !== undefined) {
-        return String(value.rate);
-      }
-
-      // Handle nested object structure like exchange_rate: { value: { id: 1, rate: 13000.0 } }
-      if (value.value !== undefined && typeof value.value === "object") {
-        // Check if the nested value object has a rate property
-        if (value.value.rate !== undefined) {
-          return String(value.value.rate);
-        }
-        // Check if the nested value object has an amount property
-        if (value.value.amount !== undefined) {
-          return String(value.value.amount);
-        }
-        // If nested value is a simple value, use it
-        if (typeof value.value !== "object") {
-          return String(value.value);
-        }
-        // If it's still an object, try to find any numeric property
-        const numericKeys = ["rate", "amount", "price", "value", "id"];
-        for (const key of numericKeys) {
-          if (value.value[key] !== undefined) {
-            return String(value.value[key]);
-          }
-        }
-      }
-      // If it has a direct 'value' property that's not an object, use that
-      else if (value.value !== undefined) {
-        return String(value.value);
-      }
-
-      // If it has an 'amount' property, use that
-      if (value.amount !== undefined) {
-        return String(value.amount);
-      }
-
-      // For exchange rate objects with id but no rate, show the id
-      if (value.id !== undefined) {
-        return String(value.id);
-      }
-
-      // Try to JSON stringify if it's a simple object, but avoid showing [object Object]
-      try {
-        const stringified = JSON.stringify(value);
-        if (stringified === "{}" || stringified === "[]") {
-          return "";
-        }
-        return stringified;
-      } catch {
-        return String(value);
-      }
-    }
-
-    return String(value);
+    return dynamicFieldsOrder
+        .filter((fieldName) => {
+          const fieldData = dynamicFields[fieldName];
+          return fieldData && fieldData.show;
+        })
+        .map((fieldName) => {
+          const fieldData = dynamicFields[fieldName];
+          return {
+            name: fieldName,
+            label: fieldData.label,
+            type: "number",
+            placeholder: fieldData.label,
+            required: false,
+            readOnly: !fieldData.editable,
+            value: fieldData.editable ? undefined : formatNumberDisplay(formatFieldValue(fieldData.value)),
+          };
+        });
   };
 
-  // Add dynamic backend-calculated fields based on API response (filter out input fields and only show visible fields) AND initial calculation is done
-  const dynamicCalculatedFields = initialCalculationDone
-    ? Object.entries(dynamicFields)
-        .filter(
-          ([fieldName, fieldData]) =>
-            ![
-              "purchase_unit_quantity",
-              "total_price_in_currency",
-              "price_per_unit_currency",
-              "price_per_unit_uz",
-            ].includes(fieldName) && fieldData.show,
-        )
-        .map(([fieldName, fieldData]) => ({
-          name: fieldName,
-          label: fieldData.label,
-          type: "text",
-          placeholder: fieldData.label,
-          required: false,
-          readOnly: !fieldData.editable,
-          // Format the value for display
-          value: formatNumber(formatFieldValue(fieldData.value)),
-        }))
-    : [];
-
-  // Combine all fields
-  const allFields = [
-    ...baseStockFields,
-    ...calculationFields,
-    ...dynamicCalculatedFields,
-  ];
+  const allFields = [...baseStockFields, ...getDynamicFieldsByOrder()];
 
   const handleSubmit = async (data: FormValues) => {
     try {
-      // Validate required fields
-      const requiredFields = [
-        "store",
-        "product",
-        "currency",
-        "purchase_unit",
-        "supplier",
-        "date_of_arrived",
-      ];
-      const missingFields = requiredFields.filter(
-        (field) => !data[field as keyof FormValues],
-      );
+      const requiredFields = ["store", "product", "currency", "purchase_unit", "supplier", "date_of_arrived"];
+      const missingFields = requiredFields.filter((field) => !data[field as keyof FormValues]);
 
       if (missingFields.length > 0) {
-        toast.error(
-          t("validation.fill_all_required_fields") ||
-            "Please fill all required fields",
-        );
+        toast.error(t("validation.fill_all_required_fields") || "Please fill all required fields");
         return;
       }
 
-      // Helper to parse and format number for API payload
-      const formatPayloadNumber = (value: any) => {
-        const num = parseFloat(Number(value).toFixed(2));
-        return isNaN(num) ? undefined : num;
-      };
-
-      // Build the final payload combining user input and calculated values
       const payload: any = {
-        // Required fields
         store: Number(data.store),
         product: Number(data.product),
         currency: Number(data.currency),
         purchase_unit: Number(data.purchase_unit),
         supplier: Number(data.supplier),
         date_of_arrived: data.date_of_arrived,
-
-        // Include calculation input fields (user entered values), formatted for API
-        ...(data.purchase_unit_quantity && {
-          purchase_unit_quantity: formatPayloadNumber(
-            data.purchase_unit_quantity,
-          ),
-        }),
-        ...(data.total_price_in_currency && {
-          total_price_in_currency: formatPayloadNumber(
-            data.total_price_in_currency,
-          ),
-        }),
-        ...(data.price_per_unit_currency && {
-          price_per_unit_currency: formatPayloadNumber(
-            data.price_per_unit_currency,
-          ),
-        }),
-        ...(data.price_per_unit_uz && {
-          price_per_unit_uz: formatPayloadNumber(data.price_per_unit_uz),
-        }),
-
-        // Include all dynamic calculated fields from API response
-        ...Object.entries(dynamicFields).reduce(
-          (acc, [fieldName, fieldData]) => {
-            if (fieldData.value !== null && fieldData.value !== undefined) {
-              // Handle special cases where backend expects different format
-              if (
-                fieldName === "exchange_rate" &&
-                typeof fieldData.value === "object" &&
-                (fieldData.value as any).id
-              ) {
-                // Extract ID for exchange_rate since backend expects pk value
-                acc[fieldName] = (fieldData.value as any).id;
-              } else if (
-                fieldName === "exchange_rate" &&
-                typeof fieldData.value === "object" &&
-                (fieldData.value as any).rate
-              ) {
-                // Extract rate and format it
-                acc[fieldName] = formatPayloadNumber(
-                  (fieldData.value as any).rate,
-                );
-              } else if (
-                typeof fieldData.value === "object" &&
-                (fieldData.value as any).id !== undefined
-              ) {
-                // For other objects with ID, extract the ID
-                acc[fieldName] = (fieldData.value as any).id;
-              } else {
-                // For primitive values, format them if they are numeric
-                acc[fieldName] = formatPayloadNumber(fieldData.value);
-              }
+        ...(data.purchase_unit_quantity && { purchase_unit_quantity: formatNumberForAPI(data.purchase_unit_quantity) }),
+        ...(data.total_price_in_currency && { total_price_in_currency: formatNumberForAPI(data.total_price_in_currency) }),
+        ...(data.price_per_unit_currency && { price_per_unit_currency: formatNumberForAPI(data.price_per_unit_currency) }),
+        ...(data.price_per_unit_uz && { price_per_unit_uz: formatNumberForAPI(data.price_per_unit_uz) }),
+        ...Object.entries(dynamicFields).reduce((acc, [fieldName, fieldData]) => {
+          if (fieldData.value !== null && fieldData.value !== undefined) {
+            if (fieldName === "exchange_rate" && typeof fieldData.value === "object" && (fieldData.value as any).id) {
+              acc[fieldName] = (fieldData.value as any).id;
+            } else if (typeof fieldData.value === "object" && (fieldData.value as any).id !== undefined) {
+              acc[fieldName] = (fieldData.value as any).id;
+            } else {
+              acc[fieldName] = formatNumberForAPI(fieldData.value);
             }
-            return acc;
-          },
-          {} as any,
-        ),
+          }
+          return acc;
+        }, {} as any),
       };
 
-      console.log("Final payload:", payload); // Debug log
+      console.log("Final payload:", payload);
       await createStock.mutateAsync(payload);
       toast.success("Stock created successfully");
       navigate("/stock");
@@ -875,7 +652,6 @@ export default function CreateStock() {
     }
   };
 
-  // Handlers for creating new items
   const handleCreateProductSubmit = async (data: CreateProductForm) => {
     try {
       await createProduct.mutateAsync(data);
@@ -899,126 +675,96 @@ export default function CreateStock() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      {/* Barcode Scanner Status */}
-      {isScanning && (
-        <div className="mb-4 p-3 bg-blue-100 border border-blue-300 rounded-md">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-            <span className="text-blue-700 font-medium">
+      <div className="container mx-auto py-8 px-4">
+        {isScanning && (
+            <div className="mb-4 p-3 bg-blue-100 border border-blue-300 rounded-md">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="text-blue-700 font-medium">
               Scanning barcode to find product... ({scanBuffer})
             </span>
-          </div>
-        </div>
-      )}
-
-      <ResourceForm<FormValues>
-        fields={allFields}
-        onSubmit={handleSubmit}
-        isSubmitting={createStock.isPending || isCalculating}
-        title={t("common.create_new_stock")}
-        form={form}
-      />
-
-      {/* Create Product Modal */}
-      <Dialog open={createProductOpen} onOpenChange={setCreateProductOpen}>
-        <DialogContent>
-          <DialogTitle>{t("common.create_new_product")}</DialogTitle>
-          <form
-            onSubmit={productForm.handleSubmit(handleCreateProductSubmit)}
-            className="space-y-4"
-          >
-            <div className="space-y-2">
-              <Label htmlFor="product_name">{t("common.product_name")}</Label>
-              <Input
-                id="product_name"
-                {...productForm.register("product_name", { required: true })}
-              />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="category_write">{t("common.category")}</Label>
-              <Select
-                value={productForm.watch("category_write")?.toString()}
-                onValueChange={(value) =>
-                  productForm.setValue("category_write", parseInt(value))
-                }
-                disabled={categoriesLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t("common.select_category")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem
-                      key={String(category.id)}
-                      value={String(category.id || "")}
-                    >
-                      {category.category_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="store_write">{t("common.store")}</Label>
-              <Select
-                value={productForm.watch("store_write")?.toString()}
-                onValueChange={(value) =>
-                  productForm.setValue("store_write", parseInt(value))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t("common.select_store")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {stores
-                    .filter((store) => !store.is_main)
-                    .map((store) => (
-                      <SelectItem
-                        key={store.id?.toString() || ""}
-                        value={(store.id || 0).toString()}
-                      >
-                        {store.name}
-                      </SelectItem>
+        )}
+
+        <ResourceForm<FormValues>
+            fields={allFields}
+            onSubmit={handleSubmit}
+            isSubmitting={createStock.isPending || isCalculating}
+            title={t("common.create_new_stock")}
+            form={form}
+        />
+
+        <Dialog open={createProductOpen} onOpenChange={setCreateProductOpen}>
+          <DialogContent>
+            <DialogTitle>{t("common.create_new_product")}</DialogTitle>
+            <form onSubmit={productForm.handleSubmit(handleCreateProductSubmit)} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="product_name">{t("common.product_name")}</Label>
+                <Input id="product_name" {...productForm.register("product_name", { required: true })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category_write">{t("common.category")}</Label>
+                <Select
+                    value={productForm.watch("category_write")?.toString()}
+                    onValueChange={(value) => productForm.setValue("category_write", parseInt(value))}
+                    disabled={categoriesLoading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("common.select_category")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                        <SelectItem key={String(category.id)} value={String(category.id || "")}>
+                          {category.category_name}
+                        </SelectItem>
                     ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button type="submit" disabled={createProduct.isPending}>
-              {t("common.create")}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="store_write">{t("common.store")}</Label>
+                <Select
+                    value={productForm.watch("store_write")?.toString()}
+                    onValueChange={(value) => productForm.setValue("store_write", parseInt(value))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("common.select_store")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {stores.filter((store) => !store.is_main).map((store) => (
+                        <SelectItem key={store.id?.toString() || ""} value={(store.id || 0).toString()}>
+                          {store.name}
+                        </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" disabled={createProduct.isPending}>
+                {t("common.create")}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
 
-      {/* Create Supplier Modal */}
-      <Dialog open={createSupplierOpen} onOpenChange={setCreateSupplierOpen}>
-        <DialogContent>
-          <DialogTitle>{t("common.create_new_supplier")}</DialogTitle>
-          <form
-            onSubmit={supplierForm.handleSubmit(handleCreateSupplierSubmit)}
-            className="space-y-4"
-          >
-            <div className="space-y-2">
-              <Label htmlFor="name">{t("common.supplier_name")}</Label>
-              <Input
-                id="name"
-                {...supplierForm.register("name", { required: true })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone_number">{t("common.phone_number")}</Label>
-              <Input
-                id="phone_number"
-                {...supplierForm.register("phone_number", { required: true })}
-              />
-            </div>
-            <Button type="submit" disabled={createSupplier.isPending}>
-              {t("common.create")}
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </div>
+        <Dialog open={createSupplierOpen} onOpenChange={setCreateSupplierOpen}>
+          <DialogContent>
+            <DialogTitle>{t("common.create_new_supplier")}</DialogTitle>
+            <form onSubmit={supplierForm.handleSubmit(handleCreateSupplierSubmit)} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">{t("common.supplier_name")}</Label>
+                <Input id="name" {...supplierForm.register("name", { required: true })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone_number">{t("common.phone_number")}</Label>
+                <Input id="phone_number" {...supplierForm.register("phone_number", { required: true })} />
+              </div>
+              <Button type="submit" disabled={createSupplier.isPending}>
+                {t("common.create")}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
   );
 }
