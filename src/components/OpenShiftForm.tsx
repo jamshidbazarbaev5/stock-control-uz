@@ -53,7 +53,7 @@ export function OpenShiftForm() {
     const fetchRegisters = async () => {
       try {
         const response = await cashRegisterApi.getAll();
-        setRegisters(response.data);
+        setRegisters(response.data.results);
       } catch (error) {
         console.error("Failed to fetch registers:", error);
       }

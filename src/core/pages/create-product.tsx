@@ -305,9 +305,9 @@ export default function CreateProduct() {
 
           {
             name: "base_unit",
-            label: "Base Unit",
+            label: t("forms.base_unit"),
             type: "select",
-            placeholder: "Select base unit",
+            placeholder:  t("forms.base_unit"),
             options: availableMeasurements.map((measurement) => ({
               value: measurement.id,
               label: measurement.measurement_name,
@@ -319,13 +319,13 @@ export default function CreateProduct() {
             name: "barcode",
             label: t("forms.barcode"),
             type: "text",
-            placeholder: t("placeholders.enter_barcode"),
+            placeholder:t("forms.barcode"),
           },
           {
             name: "min_price",
             label: t("forms.min_price"),
             type: "number",
-            placeholder: t("placeholders.enter_min_price"),
+            placeholder:t("forms.min_price"),
             required: true,
             value: minPrice,
             onChange: (value: string) => setMinPrice(value),
@@ -334,7 +334,7 @@ export default function CreateProduct() {
             name: "selling_price",
             label: t("forms.selling_price"),
             type: "number",
-            placeholder: t("placeholders.enter_selling_price"),
+            placeholder:t("forms.selling_price"),
             required: true,
             value: sellingPrice,
             onChange: (value: string) => setSellingPrice(value),
@@ -346,12 +346,12 @@ export default function CreateProduct() {
       >
         {/* Measurements Section */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium">Measurements</h3>
+          <h3 className="text-lg font-medium">Ед измерения</h3>
           {measurements.map((measurement, index) => (
             <div key={index} className="flex gap-4 items-end">
               <div className="flex-1">
                 <label className="block text-sm font-medium mb-2">
-                  From Unit
+                Из
                 </label>
                 <select
                   className="w-full px-3 py-2 border rounded-md"
@@ -365,7 +365,7 @@ export default function CreateProduct() {
                     setMeasurements(newMeasurements);
                   }}
                 >
-                  <option value="">Select from unit</option>
+                  <option value="">Из</option>
                   {availableMeasurements.map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.measurement_name}
@@ -375,7 +375,7 @@ export default function CreateProduct() {
               </div>
               <div className="flex-1">
                 <label className="block text-sm font-medium mb-2">
-                  To Unit
+                 К
                 </label>
                 <select
                   className="w-full px-3 py-2 border rounded-md"
@@ -389,7 +389,7 @@ export default function CreateProduct() {
                     setMeasurements(newMeasurements);
                   }}
                 >
-                  <option value="">Select to unit</option>
+                  <option value="">К</option>
                   {availableMeasurements.map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.measurement_name}
@@ -398,11 +398,11 @@ export default function CreateProduct() {
                 </select>
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium mb-2">Number</label>
+                <label className="block text-sm font-medium mb-2">Число</label>
                 <input
                   type="number"
                   className="w-full px-3 py-2 border rounded-md"
-                  placeholder="Enter quantity"
+                  placeholder="Число"
                   value={measurement.number || ""}
                   onChange={(e) => {
                     const newMeasurements = [...measurements];
@@ -422,7 +422,7 @@ export default function CreateProduct() {
                     setMeasurements(measurements.filter((_, i) => i !== index));
                   }}
                 >
-                  Remove
+                  Удалить
                 </button>
               )}
             </div>
@@ -437,7 +437,7 @@ export default function CreateProduct() {
               ]);
             }}
           >
-            Add Measurement
+           Добавить
           </button>
         </div>
         {/* Dynamic Attribute Fields */}

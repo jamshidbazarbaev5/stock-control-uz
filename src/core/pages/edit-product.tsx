@@ -236,9 +236,9 @@ export default function EditProduct() {
           },
           {
             name: "base_unit",
-            label: "Base Unit",
+            label: t('forms.base_unit'),
             type: "select",
-            placeholder: "Select base unit",
+            placeholder: t('forms.base_unit'),
             options: availableMeasurements.map((measurement) => ({
               value: measurement.id,
               label: measurement.measurement_name,
@@ -250,7 +250,7 @@ export default function EditProduct() {
             name: "barcode",
             label: t("forms.barcode"),
             type: "number",
-            placeholder: t("placeholders.enter_barcode"),
+            placeholder: t("forms.barcode"),
             value: barcode,
             onChange: (value: string) => setBarcode(value),
           },
@@ -258,7 +258,7 @@ export default function EditProduct() {
             name: "min_price",
             label: t("forms.min_price"),
             type: "number",
-            placeholder: t("placeholders.enter_min_price"),
+            placeholder: t("forms.min_price"),
             required: true,
             value: minPrice,
             onChange: (value: string) => setMinPrice(value),
@@ -267,7 +267,7 @@ export default function EditProduct() {
             name: "selling_price",
             label: t("forms.selling_price"),
             type: "number",
-            placeholder: t("placeholders.enter_selling_price"),
+            placeholder: t("forms.selling_price"),
             required: true,
             value: sellingPrice,
             onChange: (value: string) => setSellingPrice(value),
@@ -289,12 +289,12 @@ export default function EditProduct() {
       >
         {/* Measurements Section */}
         <div className="space-y-4">
-          <h3 className="text-lg font-medium">Measurements</h3>
+          <h3 className="text-lg font-medium">Ед измерения</h3>
           {measurements.map((measurement, index) => (
             <div key={index} className="flex gap-4 items-end">
               <div className="flex-1">
                 <label className="block text-sm font-medium mb-2">
-                  From Unit
+                 ИЗ
                 </label>
                 <select
                   className="w-full px-3 py-2 border rounded-md"
@@ -308,7 +308,7 @@ export default function EditProduct() {
                     setMeasurements(newMeasurements);
                   }}
                 >
-                  <option value="">Select from unit</option>
+                  <option value="">ИЗ</option>
                   {availableMeasurements.map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.measurement_name}
@@ -318,7 +318,7 @@ export default function EditProduct() {
               </div>
               <div className="flex-1">
                 <label className="block text-sm font-medium mb-2">
-                  To Unit
+                К
                 </label>
                 <select
                   className="w-full px-3 py-2 border rounded-md"
@@ -332,7 +332,7 @@ export default function EditProduct() {
                     setMeasurements(newMeasurements);
                   }}
                 >
-                  <option value="">Select to unit</option>
+                  <option value="">К</option>
                   {availableMeasurements.map((m) => (
                     <option key={m.id} value={m.id}>
                       {m.measurement_name}
@@ -341,11 +341,11 @@ export default function EditProduct() {
                 </select>
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium mb-2">Number</label>
+                <label className="block text-sm font-medium mb-2">Число</label>
                 <input
                   type="number"
                   className="w-full px-3 py-2 border rounded-md"
-                  placeholder="Enter quantity"
+                  placeholder="Число"
                   value={measurement.number || ""}
                   onChange={(e) => {
                     const newMeasurements = [...measurements];
@@ -365,7 +365,7 @@ export default function EditProduct() {
                     setMeasurements(measurements.filter((_, i) => i !== index));
                   }}
                 >
-                  Remove
+                Удалить
                 </button>
               )}
             </div>
@@ -380,7 +380,7 @@ export default function EditProduct() {
               ]);
             }}
           >
-            Add Measurement
+          Добавить
           </button>
         </div>
         {/* Dynamic Attribute Fields */}
