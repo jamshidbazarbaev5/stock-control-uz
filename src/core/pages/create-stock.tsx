@@ -239,59 +239,38 @@ export default function CreateStock() {
           ? qty
           : Number(result.purchase_unit_quantity) || 0;
 
-      // Price calculations - respect editable property
+      // Price calculations
       if (!is_base_currency && currentQty) {
-        if (
-          changedField === "price_per_unit_currency" &&
-          !dynamicFields.total_price_in_currency?.editable
-        ) {
+        if (changedField === "price_per_unit_currency") {
           result.total_price_in_currency =
             Number(result.price_per_unit_currency) * currentQty;
         }
-        if (
-          changedField === "total_price_in_currency" &&
-          !dynamicFields.price_per_unit_currency?.editable
-        ) {
+        if (changedField === "total_price_in_currency") {
           result.price_per_unit_currency =
             Number(result.total_price_in_currency) / currentQty;
         }
-        // Update non-editable UZS fields
-        if (!dynamicFields.price_per_unit_uz?.editable) {
-          result.price_per_unit_uz =
-            (Number(result.price_per_unit_currency) || 0) * exchange_rate;
-        }
-        if (!dynamicFields.total_price_in_uz?.editable) {
-          result.total_price_in_uz =
-            (Number(result.total_price_in_currency) || 0) * exchange_rate;
-        }
+        result.price_per_unit_uz =
+          (Number(result.price_per_unit_currency) || 0) * exchange_rate;
+        result.total_price_in_uz =
+          (Number(result.total_price_in_currency) || 0) * exchange_rate;
       } else if (is_base_currency && currentQty) {
-        if (
-          changedField === "price_per_unit_uz" &&
-          !dynamicFields.total_price_in_uz?.editable
-        ) {
+        if (changedField === "price_per_unit_uz") {
           result.total_price_in_uz =
             Number(result.price_per_unit_uz) * currentQty;
         }
-        if (
-          changedField === "total_price_in_uz" &&
-          !dynamicFields.price_per_unit_uz?.editable
-        ) {
+        if (changedField === "total_price_in_uz") {
           result.price_per_unit_uz =
             Number(result.total_price_in_uz) / currentQty;
         }
       }
 
-      // Base unit cost - only update if not editable
+      // Base unit cost
       const finalQuantity = Number(result.quantity) || 0;
       if (finalQuantity) {
-        if (!dynamicFields.base_unit_in_currency?.editable) {
-          result.base_unit_in_currency =
-            (Number(result.total_price_in_currency) || 0) / finalQuantity;
-        }
-        if (!dynamicFields.base_unit_in_uzs?.editable) {
-          result.base_unit_in_uzs =
-            (Number(result.total_price_in_uz) || 0) / finalQuantity;
-        }
+        result.base_unit_in_currency =
+          (Number(result.total_price_in_currency) || 0) / finalQuantity;
+        result.base_unit_in_uzs =
+          (Number(result.total_price_in_uz) || 0) / finalQuantity;
       }
 
       return result;
@@ -413,12 +392,18 @@ export default function CreateStock() {
 
       const calculatedValues = calculateFields(changedField, numericValues);
 
-      // FIXED: Update without forcing .00 formatting - only update non-editable fields
+      // FIXED: Update without forcing .00 formatting
+      // Only check editable property for quantity/purchase_unit_quantity fields
       Object.entries(calculatedValues).forEach(([fieldName, value]) => {
         if (fieldName !== changedField && value !== undefined) {
-          // Only update if the field is NOT editable (calculated fields only)
+          // Only check editable for quantity fields
+          const isQuantityField =
+            fieldName === "quantity" || fieldName === "purchase_unit_quantity";
           const fieldConfig = dynamicFields[fieldName];
-          if (!fieldConfig || !fieldConfig.editable) {
+          const shouldUpdate =
+            !isQuantityField || !fieldConfig || !fieldConfig.editable;
+
+          if (shouldUpdate) {
             const formattedValue = formatNumberDisplay(value);
             form.setValue(fieldName as keyof FormValues, formattedValue, {
               shouldValidate: false,
@@ -427,17 +412,22 @@ export default function CreateStock() {
         }
       });
 
-      // Update dynamic fields - only update non-editable fields
+      // Update dynamic fields
       const updatedDynamicFields = { ...dynamicFields };
       Object.entries(calculatedValues).forEach(([fieldName, value]) => {
-        if (
-          updatedDynamicFields[fieldName] &&
-          !updatedDynamicFields[fieldName].editable
-        ) {
-          updatedDynamicFields[fieldName] = {
-            ...updatedDynamicFields[fieldName],
-            value: value as any,
-          };
+        if (updatedDynamicFields[fieldName]) {
+          // Only check editable for quantity fields
+          const isQuantityField =
+            fieldName === "quantity" || fieldName === "purchase_unit_quantity";
+          const shouldUpdate =
+            !isQuantityField || !updatedDynamicFields[fieldName].editable;
+
+          if (shouldUpdate) {
+            updatedDynamicFields[fieldName] = {
+              ...updatedDynamicFields[fieldName],
+              value: value as any,
+            };
+          }
         }
       });
       setDynamicFields(updatedDynamicFields);
