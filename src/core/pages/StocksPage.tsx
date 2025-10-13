@@ -90,11 +90,7 @@ export default function StocksPage() {
         );
       },
     },
-    {
-      header: t("table.id"),
-      accessorKey: "stock_id",
-      cell: (row: Stock) => row.id,
-    },
+
     {
       header: t("table.product"),
       accessorKey: "product",
@@ -112,25 +108,7 @@ export default function StocksPage() {
       cell: (row: Stock) =>
         row.supplier?.name || row.supplier_read?.name || "-",
     },
-    {
-      header: "Валюта",
-      accessorKey: "currency",
-      cell: (row: Stock) =>
-        row.currency ? `${row.currency.short_name}` : "UZS",
-    },
-    {
-      header: "Единица закупки",
-      accessorKey: "purchase_unit",
-      cell: (row: Stock) => row.purchase_unit?.short_name || "-",
-    },
-    {
-      header: "Цена за единицу (валюта)",
-      accessorKey: "price_per_unit_currency",
-      cell: (row: Stock) =>
-        row.price_per_unit_currency
-          ? `${row.price_per_unit_currency} ${row.currency?.short_name || "UZS"}`
-          : "-",
-    },
+
     {
       header: "Общая цена (валюта)",
       accessorKey: "total_price_in_currency",
@@ -139,14 +117,7 @@ export default function StocksPage() {
           ? `${row.total_price_in_currency} ${row.currency?.short_name || "UZS"}`
           : "-",
     },
-    {
-      header: "Цена за единицу (UZS)",
-      accessorKey: "price_per_unit_uz",
-      cell: (row: Stock) =>
-        row.price_per_unit_uz
-          ? `${Number(row.price_per_unit_uz).toLocaleString()} UZS`
-          : "-",
-    },
+
     {
       header: "Общая цена (UZS)",
       accessorKey: "total_price_in_uz",
