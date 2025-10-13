@@ -1391,7 +1391,7 @@ function CreateSale() {
             disabled={createSale.isPending || hasBelowMinPrices}
           >
             {hasBelowMinPrices
-              ? "Cannot sell below minimum price"
+              ? "Невозможно продать ниже минимальной цены"
               : createSale.isPending
                 ? t("common.creating")
                 : t("common.create")}

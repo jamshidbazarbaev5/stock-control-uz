@@ -46,13 +46,14 @@ const columns = (
     accessorKey: (row: Product) => row.category_read?.category_name || row.category_write,
   },
   {
-    header: t('table.min_price'),
-    accessorKey: (row: Product) => row?.min_price
-  },
-  {
     header: t('table.selling_price'),
     accessorKey: (row: Product) => row?.selling_price
   },
+  {
+    header: t('table.min_price'),
+    accessorKey: (row: Product) => row?.min_price
+  },
+
   {
     header: t('table.actions'),
     accessorKey: 'id',
