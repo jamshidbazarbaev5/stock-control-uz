@@ -216,7 +216,7 @@ export default function CreateStock() {
           `[Debug] Changed purchase_unit_quantity (${qty}). New quantity: ${result.quantity}`,
         );
       } else if (changedField === "quantity" && quantity) {
-        result.purchase_unit_quantity = quantity / conversion_factor;
+        result.purchase_unit_quantity = quantity * conversion_factor;
         console.log(
           `[Debug] Changed quantity (${quantity}). New purchase_unit_quantity: ${result.purchase_unit_quantity}`,
         );
