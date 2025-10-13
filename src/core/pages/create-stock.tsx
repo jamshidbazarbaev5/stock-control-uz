@@ -744,7 +744,7 @@ export default function CreateStock() {
         date_of_arrived: data.date_of_arrived,
       };
 
-      // Handle dynamic fields - only send editable fields if they have values
+      // Handle dynamic fields - send both editable and disabled fields with their values
       Object.entries(dynamicFields).forEach(([fieldName, fieldData]) => {
         // Skip conversion_factor and other internal fields that shouldn't be sent
         if (fieldName === "conversion_factor") return;
@@ -753,10 +753,21 @@ export default function CreateStock() {
         const isQuantityField =
           fieldName === "quantity" || fieldName === "purchase_unit_quantity";
 
-        // For quantity fields, only send if editable and has a value
+        // For quantity fields, send both editable (from form) and non-editable (calculated) values
         if (isQuantityField) {
-          if (fieldData.editable && formValue && Number(formValue) !== 0) {
-            payload[fieldName] = formatNumberForAPI(formValue);
+          if (fieldData.editable) {
+            // Editable field: use form value if provided
+            if (formValue && Number(formValue) !== 0) {
+              payload[fieldName] = formatNumberForAPI(formValue);
+            }
+          } else {
+            // Non-editable field: use calculated value from fieldData
+            if (fieldData.value !== null && fieldData.value !== undefined) {
+              const numValue = Number(fieldData.value);
+              if (!isNaN(numValue) && numValue !== 0) {
+                payload[fieldName] = formatNumberForAPI(numValue);
+              }
+            }
           }
         } else {
           // Handle exchange_rate - always send id from object value
@@ -778,9 +789,20 @@ export default function CreateStock() {
           ) {
             payload[fieldName] = (fieldData.value as any).id;
           }
-          // For regular non-quantity fields, send if they have values
-          else if (formValue && Number(formValue) !== 0) {
-            payload[fieldName] = formatNumberForAPI(formValue);
+          // For regular non-quantity fields
+          else if (fieldData.editable) {
+            // Editable field: use form value if provided
+            if (formValue && Number(formValue) !== 0) {
+              payload[fieldName] = formatNumberForAPI(formValue);
+            }
+          } else {
+            // Non-editable field: use calculated value from fieldData
+            if (fieldData.value !== null && fieldData.value !== undefined) {
+              const numValue = Number(fieldData.value);
+              if (!isNaN(numValue) && numValue !== 0) {
+                payload[fieldName] = formatNumberForAPI(numValue);
+              }
+            }
           }
         }
       });

@@ -46,15 +46,12 @@ const columns = (
     accessorKey: (row: Product) => row.category_read?.category_name || row.category_write,
   },
   {
-    header: t('table.measurements'),
-    accessorKey: (row: Product) => {
-      if (!row.measurement || row.measurement.length === 0) return '-';
-      return row.measurement.map((m: any) => {
-        const measurementName = m.measurement_read ? m.measurement_read.measurement_name : '';
-        const number = typeof m.number === 'string' ? parseFloat(m.number) : m.number;
-        return `${measurementName}: ${number}${m.for_sale ? ' (продажа)' : ''}`;
-      }).join(', ');
-    },
+    header: t('table.min_price'),
+    accessorKey: (row: Product) => row?.min_price
+  },
+  {
+    header: t('table.selling_price'),
+    accessorKey: (row: Product) => row?.selling_price
   },
   {
     header: t('table.actions'),

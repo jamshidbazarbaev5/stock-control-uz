@@ -26,14 +26,25 @@ export const RevaluationHistory: React.FC = () => {
 
   const columns = [
     {
+      header: t("table.products"),
+      accessorKey: "revaluation_products",
+      cell: (row: Revaluation) => (
+          <div className="space-y-1">
+            {row.revaluation_products.map((product: RevaluationProduct) => (
+                <div key={product.product} className="text-sm">
+                  <div>{product.product_name}</div>
+
+                </div>
+            ))}
+          </div>
+      ),
+    },
+    {
       header: t("table.date"),
       accessorKey: "created_at",
       cell: (row: Revaluation) => format(new Date(row.created_at), "dd.MM.yyyy HH:mm"),
     },
-    {
-      header: t("table.comment"),
-      accessorKey: "comment",
-    },
+
     {
       header: t("table.new_selling_price"),
       accessorKey: "new_selling_price",
@@ -42,25 +53,7 @@ export const RevaluationHistory: React.FC = () => {
       header: t("table.new_min_price"),
       accessorKey: "new_min_price",
     },
-    {
-      header: t("table.products"),
-      accessorKey: "revaluation_products",
-      cell: (row: Revaluation) => (
-        <div className="space-y-1">
-          {row.revaluation_products.map((product: RevaluationProduct) => (
-            <div key={product.product} className="text-sm">
-              <div>{product.product_name}</div>
-              <div className="text-muted-foreground">
-                {t("table.old_selling_price")}: {product.old_selling_price}
-              </div>
-              <div className="text-muted-foreground">
-                {t("table.old_min_price")}: {product.old_min_price}
-              </div>
-            </div>
-          ))}
-        </div>
-      ),
-    },
+
   ];
 
   return (

@@ -32,10 +32,6 @@ export default function ShiftsPage() {
   const totalCount = response?.data?.count || 0;
   const columns = [
     {
-      header: t("table.total_expected"),
-      accessorKey: "total_expected",
-    },
-    {
       header: t("table.store"),
       accessorKey: (row: any) => row.store?.name,
     },
@@ -47,6 +43,13 @@ export default function ShiftsPage() {
       header: t("table.cashier"),
       accessorKey: (row: any) => row.cashier?.name,
     },
+    {
+      header: t("table.total_expected"),
+      accessorKey: "total_expected",
+    },
+
+
+
     {
       header: t("table.opened_at"),
       accessorKey: "opened_at",
@@ -61,11 +64,7 @@ export default function ShiftsPage() {
       header: t("table.opening_cash"),
       accessorKey: "opening_cash",
     },
-    {
-      header: t("table.closing_cash"),
-      accessorKey: "closing_cash",
-      cell: (row: Shift) => row.closing_cash || "-",
-    },
+
     {
       header: t("table.status"),
       accessorKey: "is_active",
