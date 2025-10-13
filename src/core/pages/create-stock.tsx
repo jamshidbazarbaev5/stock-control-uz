@@ -210,11 +210,10 @@ export default function CreateStock() {
       const quantity = Number(result.quantity) || 0;
 
       // FIXED: Respect editable property - only update non-editable fields
-      // Only update quantity if purchase_unit_quantity is editable and quantity is NOT editable
+      // Only update quantity if quantity is NOT editable (calculated field)
       if (
         changedField === "purchase_unit_quantity" &&
         qty &&
-        dynamicFields.purchase_unit_quantity?.editable &&
         !dynamicFields.quantity?.editable
       ) {
         result.quantity = qty * conversion_factor;
@@ -222,11 +221,10 @@ export default function CreateStock() {
           `[Debug] Changed purchase_unit_quantity (${qty}). New quantity: ${result.quantity}`,
         );
       }
-      // Only update purchase_unit_quantity if quantity is editable and purchase_unit_quantity is NOT editable
+      // Only update purchase_unit_quantity if purchase_unit_quantity is NOT editable (calculated field)
       else if (
         changedField === "quantity" &&
         quantity &&
-        dynamicFields.quantity?.editable &&
         !dynamicFields.purchase_unit_quantity?.editable
       ) {
         result.purchase_unit_quantity = quantity * conversion_factor;
@@ -245,7 +243,6 @@ export default function CreateStock() {
       if (!is_base_currency && currentQty) {
         if (
           changedField === "price_per_unit_currency" &&
-          dynamicFields.price_per_unit_currency?.editable &&
           !dynamicFields.total_price_in_currency?.editable
         ) {
           result.total_price_in_currency =
@@ -253,7 +250,6 @@ export default function CreateStock() {
         }
         if (
           changedField === "total_price_in_currency" &&
-          dynamicFields.total_price_in_currency?.editable &&
           !dynamicFields.price_per_unit_currency?.editable
         ) {
           result.price_per_unit_currency =
@@ -271,7 +267,6 @@ export default function CreateStock() {
       } else if (is_base_currency && currentQty) {
         if (
           changedField === "price_per_unit_uz" &&
-          dynamicFields.price_per_unit_uz?.editable &&
           !dynamicFields.total_price_in_uz?.editable
         ) {
           result.total_price_in_uz =
@@ -279,7 +274,6 @@ export default function CreateStock() {
         }
         if (
           changedField === "total_price_in_uz" &&
-          dynamicFields.total_price_in_uz?.editable &&
           !dynamicFields.price_per_unit_uz?.editable
         ) {
           result.price_per_unit_uz =
