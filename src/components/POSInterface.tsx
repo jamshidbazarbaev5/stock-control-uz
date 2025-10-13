@@ -1918,7 +1918,7 @@ const POSInterfaceCore = () => {
                 onClick={handleClearInput}
                 className="bg-orange-100 hover:bg-orange-200 rounded-2xl transition-colors h-20 flex items-center justify-center col-span-2"
               >
-                <span className="text-xl font-bold text-orange-600">CLEAR</span>
+                <span className="text-xl font-bold text-orange-600">Очистить</span>
               </button>
               <button
                 onClick={handleBackspace}
