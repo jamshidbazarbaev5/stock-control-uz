@@ -102,7 +102,7 @@ export default function CreateStock() {
   const { data: suppliersData, isLoading: suppliersLoading } = useGetSuppliers({});
   const { data: categoriesData, isLoading: categoriesLoading } = useGetCategories({});
   const { data: currenciesData, isLoading: currenciesLoading } = useGetCurrencies({});
-  const { data: measurementsData, isLoading: measurementsLoading } = useGetMeasurements({});
+  const { data: _measurementsData, isLoading: measurementsLoading } = useGetMeasurements({});
 
   const [createProductOpen, setCreateProductOpen] = useState(false);
   const [createSupplierOpen, setCreateSupplierOpen] = useState(false);
