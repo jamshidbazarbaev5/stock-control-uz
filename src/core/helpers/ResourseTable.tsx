@@ -115,33 +115,36 @@ export function ResourceTable<T extends { id?: number }>({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold"></h2>
         {onAdd && (
-          <Button onClick={onAdd} className="flex items-center gap-1">
+          <Button
+            onClick={onAdd}
+            className="flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow"
+          >
             <PlusIcon className="h-4 w-4" /> {t("common.create")}
           </Button>
         )}
       </div>
 
-      <div className="rounded-lg overflow-hidden">
+      <div className="rounded-xl border border-gray-200 overflow-hidden shadow-sm bg-white">
         <Table>
           <TableHeader>
-            <TableRow className="border-gray-200 ">
-              <TableHead className="text-xs uppercase text-gray-500 font-medium w-[60px]">
+            <TableRow className="border-b border-gray-200 bg-gray-50/80">
+              <TableHead className="text-xs uppercase text-gray-600 font-semibold w-[60px] py-4">
                 №
               </TableHead>
               {columns.map((column, index) => (
                 <TableHead
                   key={index}
-                  className="text-xs uppercase text-gray-500 font-medium"
+                  className="text-xs uppercase text-gray-600 font-semibold py-4"
                 >
                   {column.header}
                 </TableHead>
               ))}
               {(onEdit || onDelete || actions) && (
-                <TableHead className="text-xs uppercase text-gray-500 font-medium text-right">
+                <TableHead className="text-xs uppercase text-gray-600 font-semibold text-right py-4">
                   Действия
                 </TableHead>
               )}
@@ -152,21 +155,23 @@ export function ResourceTable<T extends { id?: number }>({
               Array.from({ length: 5 }).map((_, index) => (
                 <TableRow
                   key={`skeleton-${index}`}
-                  className=" border-gray-100 last:border-0"
+                  className="border-b border-gray-100 last:border-0"
                 >
-                  <TableCell className="w-[60px]">
-                    <Skeleton className="h-4 w-8" />
+                  <TableCell className="w-[60px] py-4">
+                    <Skeleton className="h-4 w-8 rounded" />
                   </TableCell>
                   {columns.map((_, colIndex) => (
-                    <TableCell key={colIndex}>
-                      <Skeleton className="h-4 w-full" />
+                    <TableCell key={colIndex} className="py-4">
+                      <Skeleton className="h-4 w-full rounded" />
                     </TableCell>
                   ))}
                   {(onEdit || onDelete || actions) && (
-                    <TableCell className="w-[100px]">
-                      <div className="flex gap-1 justify-end">
-                        <Skeleton className="h-8 w-8" />
-                        {onDelete && <Skeleton className="h-8 w-8" />}
+                    <TableCell className="w-[100px] py-4">
+                      <div className="flex gap-2 justify-end">
+                        <Skeleton className="h-8 w-8 rounded-md" />
+                        {onDelete && (
+                          <Skeleton className="h-8 w-8 rounded-md" />
+                        )}
                       </div>
                     </TableCell>
                   )}
@@ -180,16 +185,19 @@ export function ResourceTable<T extends { id?: number }>({
                     1 +
                     (onEdit || onDelete || onRefund ? 1 : 0)
                   }
-                  className="text-center text-gray-500"
+                  className="text-center text-gray-500 py-12"
                 >
-                  Данные отсутствуют
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="text-gray-400 text-4xl">📋</div>
+                    <p className="font-medium">Данные отсутствуют</p>
+                  </div>
                 </TableCell>
               </TableRow>
             ) : (
               tableData.map((row, rowIndex) => (
                 <React.Fragment key={rowIndex}>
                   <TableRow
-                    className={` border-gray-100 ${expandedRowRenderer || onRowClick ? "" : ""}`}
+                    className={`border-b border-gray-100 hover:bg-gray-50/50 transition-colors duration-150 ${expandedRowRenderer || onRowClick ? "cursor-pointer" : ""} ${expandedRow === rowIndex ? "bg-gray-50/50" : ""}`}
                     onClick={(e) => {
                       if (expandedRowRenderer) {
                         e.stopPropagation();
@@ -202,7 +210,7 @@ export function ResourceTable<T extends { id?: number }>({
                       }
                     }}
                   >
-                    <TableCell className="w-[60px] font-medium text-gray-500 flex items-center gap-2">
+                    <TableCell className="w-[60px] font-medium text-gray-600 flex items-center gap-2 py-4">
                       {getRowNumber(rowIndex)}
                       {(row as any)?.store_read?.color && (
                         <span
@@ -219,7 +227,7 @@ export function ResourceTable<T extends { id?: number }>({
                       )}
                     </TableCell>
                     {columns.map((column, colIndex) => (
-                      <TableCell key={colIndex}>
+                      <TableCell key={colIndex} className="py-4 text-gray-700">
                         {column.cell
                           ? column.cell(row)
                           : typeof column.accessorKey === "function"
@@ -233,18 +241,18 @@ export function ResourceTable<T extends { id?: number }>({
                     ))}
                     {(onEdit || onDelete || onRefund || actions) && (
                       <TableCell
-                        className="text-right w-[100px]"
+                        className="text-right w-[100px] py-4"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="flex gap-1 justify-end">
+                        <div className="flex gap-1.5 justify-end">
                           {onEdit && (
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => onEdit(row)}
-                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                              className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600 transition-colors rounded-md"
                             >
-                              <Edit className="h-4 w-4 text-gray-600" />
+                              <Edit className="h-4 w-4" />
                             </Button>
                           )}
                           {onRefund && (
@@ -252,10 +260,10 @@ export function ResourceTable<T extends { id?: number }>({
                               variant="ghost"
                               size="sm"
                               onClick={() => onRefund(row)}
-                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                              className="h-8 w-8 p-0 hover:bg-orange-50 hover:text-orange-600 transition-colors rounded-md"
                               title="Refund"
                             >
-                              <Undo2 className="h-4 w-4 text-orange-600" />
+                              <Undo2 className="h-4 w-4 text-orange-500" />
                             </Button>
                           )}
                           {onDelete && row.id && (
@@ -266,9 +274,9 @@ export function ResourceTable<T extends { id?: number }>({
                                 setItemToDelete(row.id);
                                 setIsDeleteModalOpen(true);
                               }}
-                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                              className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 transition-colors rounded-md"
                             >
-                              <TrashIcon className="h-4 w-4 text-gray-600" />
+                              <TrashIcon className="h-4 w-4" />
                             </Button>
                           )}
                           {actions && actions(row)}
@@ -282,12 +290,12 @@ export function ResourceTable<T extends { id?: number }>({
                                   expandedRow === rowIndex ? -1 : rowIndex,
                                 );
                               }}
-                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                              className="h-8 w-8 p-0 hover:bg-gray-100 transition-colors rounded-md"
                             >
                               {expandedRow === rowIndex ? (
-                                <ChevronUpIcon className="h-4 w-4 text-gray-500" />
+                                <ChevronUpIcon className="h-4 w-4 text-gray-600" />
                               ) : (
-                                <ChevronDownIcon className="h-4 w-4 text-gray-500" />
+                                <ChevronDownIcon className="h-4 w-4 text-gray-600" />
                               )}
                             </Button>
                           )}
@@ -296,16 +304,16 @@ export function ResourceTable<T extends { id?: number }>({
                     )}
                   </TableRow>
                   {expandedRowRenderer && expandedRow === rowIndex && (
-                    <TableRow>
+                    <TableRow className="bg-gray-50/30">
                       <TableCell
                         colSpan={
                           columns.length +
                           1 +
                           (onEdit || onDelete || onRefund ? 1 : 0)
                         }
-                        className=" border-gray-100"
+                        className="border-b border-gray-100 py-4"
                       >
-                        {expandedRowRenderer(row)}
+                        <div className="px-2">{expandedRowRenderer(row)}</div>
                       </TableCell>
                     </TableRow>
                   )}
@@ -317,13 +325,13 @@ export function ResourceTable<T extends { id?: number }>({
       </div>
 
       {totalPages >= 1 && (
-        <div className="flex justify-end gap-2 items-center text-sm text-gray-600">
+        <div className="flex justify-end gap-2 items-center text-sm text-gray-600 bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => onPageChange?.(currentPage - 1)}
             disabled={currentPage === 1}
-            className="hover:bg-gray-100"
+            className="hover:bg-gray-100 disabled:opacity-50 transition-colors rounded-md"
           >
             <ChevronLeftIcon className="h-4 w-4" />
           </Button>
@@ -336,16 +344,19 @@ export function ResourceTable<T extends { id?: number }>({
                   variant={currentPage === page ? "default" : "ghost"}
                   size="sm"
                   onClick={() => onPageChange?.(page)}
-                  className={`h-8 w-8 p-0 ${
+                  className={`h-8 w-8 p-0 rounded-md transition-all ${
                     currentPage === page
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-primary text-primary-foreground shadow-sm"
                       : "hover:bg-gray-100"
                   }`}
                 >
                   {page}
                 </Button>
               ) : (
-                <span key={index} className="px-2">
+                <span
+                  key={index}
+                  className="px-2 flex items-center text-gray-400"
+                >
                   {page}
                 </span>
               ),
@@ -357,7 +368,7 @@ export function ResourceTable<T extends { id?: number }>({
             size="sm"
             onClick={() => onPageChange?.(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="hover:bg-gray-100"
+            className="hover:bg-gray-100 disabled:opacity-50 transition-colors rounded-md"
           >
             <ChevronRightIcon className="h-4 w-4" />
           </Button>
