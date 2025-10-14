@@ -373,8 +373,8 @@ export default function EditSale() {
       profit = calculateRecyclingProfit(recyclingRecord, 1); // default 1 unit
     } else if (
       selectedStock.product_read?.has_kub &&
-      (selectedStock.product_read?.category_read?.id === 2 ||
-        selectedStock.product_read?.category_read?.id === 8)
+      (selectedStock.product_read?.category_read?.category_name === "Кругляк" ||
+        selectedStock.product_read?.category_read?.category_name === "Шифер")
     ) {
       const measurements = selectedStock.product_read.measurement || [];
       const getNumber = (name: string) => {
@@ -452,8 +452,10 @@ export default function EditSale() {
           profit = newProfitPerUnit * value;
         } else if (
           selectedStock.product_read?.has_kub &&
-          (selectedStock.product_read?.category_read?.id === 2 ||
-            selectedStock.product_read?.category_read?.id === 8)
+          (selectedStock.product_read?.category_read?.category_name ===
+            "Кругляк" ||
+            selectedStock.product_read?.category_read?.category_name ===
+              "Шифер")
         ) {
           const measurements = selectedStock.product_read.measurement || [];
           const getNumber = (name: string) => {
@@ -520,8 +522,9 @@ export default function EditSale() {
         profit = newProfitPerUnit * quantity;
       } else if (
         selectedStock.product_read?.has_kub &&
-        (selectedStock.product_read?.category_read?.id === 2 ||
-          selectedStock.product_read?.category_read?.id === 8)
+        (selectedStock.product_read?.category_read?.category_name ===
+          "Кругляк" ||
+          selectedStock.product_read?.category_read?.category_name === "Шифер")
       ) {
         const measurements = selectedStock.product_read.measurement || [];
         const getNumber = (name: string) => {
@@ -612,8 +615,10 @@ export default function EditSale() {
           if (!recyclingProfitUsed && selectedStock) {
             if (
               selectedStock.product_read?.has_kub &&
-              (selectedStock.product_read?.category_read?.id === 2 ||
-                selectedStock.product_read?.category_read?.id === 8)
+              (selectedStock.product_read?.category_read?.category_name ===
+                "Кругляк" ||
+                selectedStock.product_read?.category_read?.category_name ===
+                  "Шифер")
             ) {
               const measurements = selectedStock.product_read.measurement || [];
               const getNumber = (name: string) => {
@@ -1411,10 +1416,10 @@ export default function EditSale() {
                           if (!recyclingProfitUsed && selectedStock) {
                             if (
                               selectedStock.product_read?.has_kub &&
-                              (selectedStock.product_read?.category_read?.id ===
-                                2 ||
+                              (selectedStock.product_read?.category_read
+                                ?.category_name === "Кругляк" ||
                                 selectedStock.product_read?.category_read
-                                  ?.id === 8)
+                                  ?.category_name === "Шифер")
                             ) {
                               const measurements =
                                 selectedStock.product_read.measurement || [];
