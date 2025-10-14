@@ -52,6 +52,19 @@ const COLUMN_CONFIG: Record<string, { label: string }> = {
   actions: { label: "Действия" },
 };
 
+// Helper function to check if a product is recyclable from attribute_values
+const isProductRecyclable = (product: any): boolean => {
+  if (!product?.attribute_values || !Array.isArray(product.attribute_values)) {
+    return false;
+  }
+
+  const isRecyclableAttr = product.attribute_values.find(
+    (attr: any) => attr.attribute?.name === "is_recyclable",
+  );
+
+  return isRecyclableAttr?.value === true;
+};
+
 export default function StocksPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -288,8 +301,8 @@ export default function StocksPage() {
                 >
                   {t("common.create")} {t("navigation.transfer")}
                 </DropdownMenuItem>
-                {(row.product_read?.has_recycling ||
-                  row.product?.has_recycling) && (
+                {(isProductRecyclable(row.product) ||
+                  isProductRecyclable(row.product_read)) && (
                   <DropdownMenuItem
                     onClick={() =>
                       navigate(

@@ -16,11 +16,48 @@ interface FormValues extends Partial<Recycling> {
   quantity_of_parts?: number;
 }
 
-const recyclingFields = (
-  t: any,
-  productSearchTerm: string,
-  perUnitPrice: number | null,
-) => [
+// Helper function to check if a product is recyclable from attribute_values
+const isProductRecyclable = (product: any): boolean => {
+  if (!product?.attribute_values || !Array.isArray(product.attribute_values)) {
+    return false;
+  }
+
+  const isRecyclableAttr = product.attribute_values.find(
+    (attr: any) => attr.attribute?.name === "is_recyclable",
+  );
+
+  return isRecyclableAttr?.value === true;
+};
+
+// Helper function to get allowed categories from attribute_values
+const getAllowedCategories = (
+  product: any,
+): Array<{ id: number; name: string }> | null => {
+  if (!product?.attribute_values || !Array.isArray(product.attribute_values)) {
+    return null;
+  }
+
+  const canBeRecycledToAttr = product.attribute_values.find(
+    (attr: any) => attr.attribute?.name === "can_be_recycled_to",
+  );
+
+  if (canBeRecycledToAttr && canBeRecycledToAttr.attribute?.related_objects) {
+    // Get the allowed category IDs
+    const allowedIds = Array.isArray(canBeRecycledToAttr.value)
+      ? canBeRecycledToAttr.value
+      : [];
+
+    // Get the related_objects array which contains {id, name}
+    const relatedObjects = canBeRecycledToAttr.attribute.related_objects;
+
+    // Filter to only include categories that are in the allowedIds
+    return relatedObjects.filter((obj: any) => allowedIds.includes(obj.id));
+  }
+
+  return null;
+};
+
+const recyclingFields = (t: any, productSearchTerm: string) => [
   // --- Product Selection ---
   {
     name: "from_to",
@@ -74,50 +111,12 @@ const recyclingFields = (
   },
   // --- Prices ---
 
-  {
-    name: "min_price",
-    label: t("forms.min_price"),
-    type: "number",
-    placeholder: t("placeholders.enter_price"),
-    required: true,
-  },
-  {
-    name: "purchase_price_in_us",
-    label: t("common.enter_purchase_price_usd"),
-    type: "text",
-    placeholder: t("common.enter_purchase_price_usd"),
-    required: true,
-  },
-  {
-    name: "exchange_rate",
-    label: t("common.enter_exchange_rate"),
-    type: "text",
-    placeholder: t("common.enter_exchange_rate"),
-    required: true,
-  },
-  {
-    name: "purchase_price_in_uz",
-    label: t("common.calculated_purchase_price_uzs"),
-    type: "text",
-    placeholder: t("common.calculated_purchase_price_uzs"),
-    readOnly: true,
-    helperText: perUnitPrice
-      ? `${t("common.per_unit_cost")}: ${perUnitPrice.toFixed(2)} UZS`
-      : "",
-  },
   // --- Date ---
   {
     name: "date_of_recycle",
     label: t("table.date"),
     type: "date",
     placeholder: t("placeholders.select_date"),
-    required: true,
-  },
-  {
-    name: "selling_price",
-    label: t("forms.selling_price"),
-    type: "number",
-    placeholder: t("placeholders.enter_price"),
     required: true,
   },
 ];
@@ -129,14 +128,15 @@ export default function CreateRecycling() {
   const { t } = useTranslation();
   const { data: currentUser } = useCurrentUser();
   const [productSearchTerm, setProductSearchTerm] = useState("");
-  const [allowedCategories, setAllowedCategories] = useState<number[] | null>(
-    null,
-  );
+  const [allowedCategories, setAllowedCategories] = useState<Array<{
+    id: number;
+    name: string;
+  }> | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [stocks, setStocks] = useState<any[]>([]);
   const [loadingStocks, setLoadingStocks] = useState(false);
-  const [exchangeRate, setExchangeRate] = useState<number | null>(null);
+  // const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const sellingPriceRef = useRef(false); // To prevent infinite loop
 
   // Get URL parameters
@@ -238,10 +238,13 @@ export default function CreateRecycling() {
         const selectedStock = stocks.find(
           (stock) => stock.id === Number(value.from_to),
         );
-        if (selectedStock?.product_read?.has_recycling) {
-          setAllowedCategories(
-              selectedStock.product_read.categories_for_recycling || null,
-          );
+
+        // Check both product and product_read for attribute_values
+        const product = selectedStock?.product || selectedStock?.product_read;
+
+        if (isProductRecyclable(product)) {
+          const categories = getAllowedCategories(product);
+          setAllowedCategories(categories);
           // Clear the to_product selection when changing from_to
           form.setValue("to_product", undefined);
         } else {
@@ -261,42 +264,44 @@ export default function CreateRecycling() {
         const stockItem = stocks.find(
           (stock) => stock.id === Number(fromStockId),
         );
-        if (stockItem?.product_read?.id) {
-          form.setValue("to_product", stockItem.product_read.id);
+
+        // Set allowed categories immediately for filtering
+        const product = stockItem?.product || stockItem?.product_read;
+        if (isProductRecyclable(product)) {
+          const categories = getAllowedCategories(product);
+          setAllowedCategories(categories);
+        }
+
+        if (stockItem?.product?.id || stockItem?.product_read?.id) {
+          form.setValue(
+            "to_product",
+            stockItem?.product?.id || stockItem?.product_read?.id,
+          );
         }
       } else if (fromProductId) {
         const stockWithProduct = stocks.find(
           (stock) =>
-            stock.product_read?.id === Number(fromProductId) &&
+            (stock.product?.id === Number(fromProductId) ||
+              stock.product_read?.id === Number(fromProductId)) &&
             stock.quantity > 0,
         );
 
         if (stockWithProduct) {
           form.setValue("from_to", stockWithProduct.id);
+
+          // Set allowed categories immediately for filtering
+          const product =
+            stockWithProduct?.product || stockWithProduct?.product_read;
+          if (isProductRecyclable(product)) {
+            const categories = getAllowedCategories(product);
+            setAllowedCategories(categories);
+          }
+
           form.setValue("to_product", Number(fromProductId));
         }
       }
     }
   }, [fromStockId, fromProductId, stocks, allProducts, form]);
-
-  // Fetch exchange rate on mount
-  useEffect(() => {
-    async function fetchExchangeRate() {
-      try {
-        const res = await api.get("/items/currency/");
-        const rate = res.data?.results?.[0]?.currency_rate;
-        if (rate) setExchangeRate(Number(rate));
-        // Set form value
-        form.setValue("exchange_rate", rate, {
-          shouldValidate: false,
-          shouldDirty: true,
-        });
-      } catch (e) {
-        toast.error("Failed to fetch exchange rate");
-      }
-    }
-    fetchExchangeRate();
-  }, []);
 
   const selectedStore = form.watch("store");
   const toProduct = form.watch("to_product");
@@ -308,26 +313,35 @@ export default function CreateRecycling() {
   const isReyka = selectedProduct?.category_read?.category_name === "Рейка";
 
   // Update fields with dynamic options
-  const fields = recyclingFields(t, productSearchTerm, null)
+  const fields = recyclingFields(t, productSearchTerm)
     .map((field) => {
       if (field.name === "from_to") {
         return {
           ...field,
           options: stocks
             .filter((stock: any) => {
-              // Allow stocks from selected store or from main store
+              // First filter: Only show recyclable products
+              const product = stock.product || stock.product_read;
+              if (!isProductRecyclable(product)) return false;
+
+              // Second filter: Allow stocks from selected store or from main store
               if (!selectedStore) return true;
-              return (
-                stock.store_read?.id === Number(selectedStore) ||
-                stock.store_read?.is_main
-              );
+              const storeId = stock.store?.id || stock.store_read?.id;
+              const isMain = stock.store?.is_main || stock.store_read?.is_main;
+              return storeId === Number(selectedStore) || isMain;
             })
-            .map((stock: any) => ({
-              value: stock.id,
-              label: `${stock.product_read?.product_name} (${
-                stock.quantity || 0
-              }) [${stock.store_read?.name}]`,
-            }))
+            .map((stock: any) => {
+              const productName =
+                stock.product?.product_name ||
+                stock.product_read?.product_name ||
+                "Unknown";
+              const storeName =
+                stock.store?.name || stock.store_read?.name || "Unknown";
+              return {
+                value: stock.id,
+                label: `${productName} (${stock.quantity || 0}) [${storeName}]`,
+              };
+            })
             .filter((opt: any) => opt.value),
           isLoading: loadingStocks,
         };
@@ -336,14 +350,37 @@ export default function CreateRecycling() {
         return {
           ...field,
           options: allProducts
-            .filter((product) => {
+            .filter((product:any) => {
               if (!allowedCategories || !product.category_read) return true;
-              return allowedCategories.includes(product.category_read.id);
+              return allowedCategories.some(
+                (cat) => cat.id === product?.category_read.id,
+              );
             })
-            .map((product: any) => ({
-              value: product.id,
-              label: product.product_name,
-            }))
+            .map((product: any) => {
+              // Find the category name from allowedCategories
+              const categoryInfo = allowedCategories?.find(
+                (cat) => cat.id === product.category_read?.id,
+              );
+              const categoryName =
+                categoryInfo?.name ||
+                product.category_read?.category_name ||
+                "";
+
+              return {
+                value: product.id,
+                label: categoryName
+                  ? `${categoryName} - ${product.product_name}`
+                  : product.product_name,
+                categoryName: categoryName,
+              };
+            })
+            .sort((a: any, b: any) => {
+              // Sort by category name first, then by product name
+              if (a.categoryName !== b.categoryName) {
+                return a.categoryName.localeCompare(b.categoryName, "ru");
+              }
+              return a.label.localeCompare(b.label, "ru");
+            })
             .filter((opt: any) => opt.value),
           onSearch: setProductSearchTerm,
           isLoading: isLoadingProducts,
@@ -369,13 +406,7 @@ export default function CreateRecycling() {
           disabled: isAdmin || isStoreIdLocked,
         };
       }
-      if (field.name === "exchange_rate") {
-        return {
-          ...field,
-          disabled: true,
-          value: exchangeRate !== null ? exchangeRate : "",
-        };
-      }
+
       return field;
     })
     // Hide specified fields and conditionally show quantity_of_parts
@@ -418,10 +449,12 @@ export default function CreateRecycling() {
     const selectedProduct = allProducts.find(
       (product) => product.id === Number(toProductId),
     );
-    const categoryId = selectedProduct?.category_read?.id;
-    // Special calculation for коньёк (17) and снегозадержатель (18)
+    const categoryName = selectedProduct?.category_read?.category_name;
+    // Special calculation for Коньёк, Снегозадержатель, and Уголок
     if (
-      (categoryId === 17 || categoryId === 18 || categoryId === 19) &&
+      (categoryName === "Коньёк" ||
+        categoryName === "Снегозадержатель" ||
+        categoryName === "Уголок") &&
       baseSellingPrice &&
       spentAmt &&
       getAmt
@@ -528,7 +561,7 @@ export default function CreateRecycling() {
             shouldDirty: true,
           });
         }
-      } else if (categoryName === "коньёк") {
+      } else if (categoryName === "Коньёк") {
         const newGetAmount = spentAmt * 6;
         if (form.getValues("get_amount") !== String(newGetAmount)) {
           form.setValue("get_amount", String(newGetAmount), {
@@ -536,7 +569,7 @@ export default function CreateRecycling() {
             shouldDirty: true,
           });
         }
-      } else if (categoryName === "снегозадержатель") {
+      } else if (categoryName === "Снегозадержатель") {
         const newGetAmount = spentAmt * 7;
         if (form.getValues("get_amount") !== String(newGetAmount)) {
           form.setValue("get_amount", String(newGetAmount), {
