@@ -40,6 +40,8 @@ import {
   type SaleData,
 } from "@/services/saleReceiptService";
 import { toast } from "sonner";
+import type { Stock } from "@/core/api/stock";
+import { StockSelectionModal } from "./StockSelectionModal";
 
 interface ProductInCart {
   id: number;
@@ -56,6 +58,8 @@ interface ProductInCart {
     factor: number;
     is_base: boolean;
   } | null;
+  stock?: Stock;
+  stockId?: number;
 }
 
 interface ExtendedUser extends User {
@@ -246,6 +250,11 @@ const POSInterfaceCore = () => {
   // User selection modal state
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
 
+  // Stock selection modal state
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const [productForStockSelection, setProductForStockSelection] =
+    useState<Product | null>(null);
+
   // Calculator visibility state
   const [isCalculatorVisible, setIsCalculatorVisible] = useState(true);
 
@@ -376,7 +385,7 @@ const POSInterfaceCore = () => {
 
   // Handle adding product directly to cart
   const handleProductDirectAdd = useCallback(
-    (product: Product) => {
+    (product: Product, stock?: Stock) => {
       if (product.product_name && product.id) {
         // Check if product has quantity available
         const availableQuantity = product.quantity
@@ -384,6 +393,14 @@ const POSInterfaceCore = () => {
           : 0;
 
         if (availableQuantity <= 0) {
+          return;
+        }
+
+        // Check if product requires stock selection
+        if (product.category_read?.sell_from_stock && !stock) {
+          // Show stock selection modal
+          setProductForStockSelection(product);
+          setIsStockModalOpen(true);
           return;
         }
 
@@ -406,7 +423,7 @@ const POSInterfaceCore = () => {
 
         // Check if product already exists in cart
         const existingProductIndex = cartProducts.findIndex(
-          (p) => p.productId === product.id,
+          (p) => p.productId === product.id && p.stockId === stock?.id,
         );
 
         if (existingProductIndex >= 0) {
@@ -433,12 +450,25 @@ const POSInterfaceCore = () => {
             product: product,
             barcode: product.barcode,
             selectedUnit: defaultUnit || null,
+            stock: stock,
+            stockId: stock?.id,
           };
           setCartProducts((prev) => [...prev, newProduct]);
         }
       }
     },
     [cartProducts],
+  );
+
+  // Handle stock selection
+  const handleStockSelect = useCallback(
+    (stock: Stock) => {
+      if (productForStockSelection) {
+        handleProductDirectAdd(productForStockSelection, stock);
+        setProductForStockSelection(null);
+      }
+    },
+    [productForStockSelection, handleProductDirectAdd],
   );
 
   // Handle barcode scanning with Enter key support
@@ -1918,7 +1948,9 @@ const POSInterfaceCore = () => {
                 onClick={handleClearInput}
                 className="bg-orange-100 hover:bg-orange-200 rounded-2xl transition-colors h-20 flex items-center justify-center col-span-2"
               >
-                <span className="text-xl font-bold text-orange-600">Очистить</span>
+                <span className="text-xl font-bold text-orange-600">
+                  Очистить
+                </span>
               </button>
               <button
                 onClick={handleBackspace}
@@ -2841,6 +2873,7 @@ const POSInterfaceCore = () => {
                         selling_unit: item?.selectedUnit?.id,
                         quantity: item.quantity.toString(),
                         price_per_unit: item.price.toString(),
+                        ...(item.stockId && { stock: item.stockId }),
                       })),
                       on_credit: onCredit,
                       total_amount: total.toString(),
@@ -3212,6 +3245,20 @@ const POSInterfaceCore = () => {
           </div>
         </WideDialogContent>
       </WideDialog>
+
+      {/* Stock Selection Modal */}
+      {productForStockSelection && (
+        <StockSelectionModal
+          isOpen={isStockModalOpen}
+          onClose={() => {
+            setIsStockModalOpen(false);
+            setProductForStockSelection(null);
+          }}
+          productId={productForStockSelection.id!}
+          productName={productForStockSelection.product_name}
+          onStockSelect={handleStockSelect}
+        />
+      )}
     </div>
   );
 };

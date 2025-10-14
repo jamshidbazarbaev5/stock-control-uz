@@ -14,6 +14,8 @@ import {
 import { fetchAllProducts } from "../api/fetchAllProducts";
 import type { Product } from "../api/product";
 import { OpenShiftForm } from "@/components/OpenShiftForm";
+import type { Stock } from "../api/stock";
+import { StockSelectionModal } from "@/components/StockSelectionModal";
 
 interface ProductInCart {
   id: number;
@@ -30,6 +32,8 @@ interface ProductInCart {
     factor: number;
     is_base: boolean;
   } | null;
+  stock?: Stock;
+  stockId?: number;
 }
 
 interface ExtendedUser extends User {
@@ -66,6 +70,7 @@ interface FormSaleItem {
   selling_unit: number;
   quantity: number;
   price_per_unit: string;
+  stock?: number;
 }
 
 interface FormSalePayment {
@@ -126,6 +131,16 @@ function CreateSale() {
   const [cartProducts, setCartProducts] = useState<ProductInCart[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [productSearchTerm, setProductSearchTerm] = useState("");
+  const [activeSearchIndex, setActiveSearchIndex] = useState<number | null>(
+    null,
+  );
+  const searchRefs = React.useRef<(HTMLDivElement | null)[]>([]);
+
+  // Stock selection modal state
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const [productForStockSelection, setProductForStockSelection] =
+    useState<Product | null>(null);
+  const [pendingProductIndex, setPendingProductIndex] = useState<number>(-1);
 
   // Effect for enforcing seller's store
   useEffect(() => {
@@ -385,26 +400,12 @@ function CreateSale() {
     }
   };
 
-  const handleProductSelection = (value: string, index: number) => {
-    const productId = parseInt(value, 10);
-    const selectedProduct = filteredProducts.find(
-      (product) => product.id === productId,
-    );
-
-    console.log("Product selected:", productId, selectedProduct?.product_name);
-
-    if (!selectedProduct) return;
-
-    // Check if product has quantity available
-    const availableQuantity =
-      typeof selectedProduct.quantity === "string"
-        ? parseFloat(selectedProduct.quantity)
-        : selectedProduct.quantity || 0;
-    if (availableQuantity <= 0) {
-      toast.error(t("messages.error.insufficient_quantity"));
-      return;
-    }
-
+  // Helper function to add product to cart
+  const addProductToCart = (
+    selectedProduct: Product,
+    index: number,
+    stock?: Stock,
+  ) => {
     // Get base unit (is_base: true) as default
     // @ts-ignore
     const defaultUnit = getBaseUnit(selectedProduct.available_units) || {
@@ -434,6 +435,8 @@ function CreateSale() {
         product: selectedProduct,
         barcode: selectedProduct.barcode,
         selectedUnit: defaultUnit,
+        stock: stock,
+        stockId: stock?.id,
       };
     } else {
       newCartProducts[index] = {
@@ -446,6 +449,8 @@ function CreateSale() {
         product: selectedProduct,
         barcode: selectedProduct.barcode,
         selectedUnit: defaultUnit,
+        stock: stock,
+        stockId: stock?.id,
       };
     }
     setCartProducts(newCartProducts);
@@ -465,10 +470,59 @@ function CreateSale() {
       shouldDirty: true,
     });
 
+    // Set stock ID if present
+    if (stock?.id) {
+      form.setValue(`sale_items.${index}.stock`, stock.id, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+    }
+
     // Force form to re-render the selling_unit field
     form.trigger(`sale_items.${index}.selling_unit`);
 
     updateTotalAmount();
+  };
+
+  const handleProductSelection = (value: string, index: number) => {
+    const productId = parseInt(value, 10);
+    const selectedProduct = filteredProducts.find(
+      (product) => product.id === productId,
+    );
+
+    console.log("Product selected:", productId, selectedProduct?.product_name);
+
+    if (!selectedProduct) return;
+
+    // Check if product has quantity available
+    const availableQuantity =
+      typeof selectedProduct.quantity === "string"
+        ? parseFloat(selectedProduct.quantity)
+        : selectedProduct.quantity || 0;
+    if (availableQuantity <= 0) {
+      toast.error(t("messages.error.insufficient_quantity"));
+      return;
+    }
+
+    // Check if product requires stock selection
+    if (selectedProduct.category_read?.sell_from_stock) {
+      setProductForStockSelection(selectedProduct);
+      setPendingProductIndex(index);
+      setIsStockModalOpen(true);
+      return;
+    }
+
+    // Add product without stock
+    addProductToCart(selectedProduct, index);
+  };
+
+  // Handle stock selection
+  const handleStockSelect = (stock: Stock) => {
+    if (productForStockSelection && pendingProductIndex >= 0) {
+      addProductToCart(productForStockSelection, pendingProductIndex, stock);
+      setProductForStockSelection(null);
+      setPendingProductIndex(-1);
+    }
   };
 
   const handleQuantityChange = (
@@ -713,6 +767,24 @@ function CreateSale() {
     }
   };
 
+  // Handle click outside to close search results
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (activeSearchIndex !== null) {
+        const currentRef = searchRefs.current[activeSearchIndex];
+        if (currentRef && !currentRef.contains(event.target as Node)) {
+          setActiveSearchIndex(null);
+          setProductSearchTerm("");
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [activeSearchIndex]);
+
   // Check for prices below minimum (blocking submission)
   const hasBelowMinPrices = cartProducts.some((product) => {
     if (product.product.min_price) {
@@ -861,78 +933,107 @@ function CreateSale() {
                         <FormLabel className="text-sm font-medium">
                           {t("table.product")}
                         </FormLabel>
-                        <input
-                          type="text"
-                          placeholder={t("placeholders.search_products")}
-                          value={productSearchTerm}
-                          onChange={(e) =>
-                            handleMobileSearch(
-                              e.target.value,
-                              setProductSearchTerm,
-                            )
-                          }
-                          className="flex-1 mb-2 w-full border rounded px-2 py-1"
-                          autoComplete="off"
-                        />
-                        <Select
-                          value={field.value?.toString()}
-                          onValueChange={(value) =>
-                            handleProductSelection(value, index)
-                          }
+                        <div
+                          className="relative"
+                          ref={(el) => {
+                            searchRefs.current[index] = el;
+                          }}
                         >
-                          <SelectTrigger
-                            className={
+                          <Input
+                            type="text"
+                            placeholder={t("placeholders.search_products")}
+                            value={
+                              activeSearchIndex === index
+                                ? productSearchTerm
+                                : ""
+                            }
+                            onChange={(e) => {
+                              handleMobileSearch(
+                                e.target.value,
+                                setProductSearchTerm,
+                              );
+                              setActiveSearchIndex(index);
+                            }}
+                            onFocus={() => {
+                              setActiveSearchIndex(index);
+                            }}
+                            className={`w-full ${
                               form.formState.errors.sale_items?.[index]
                                 ?.product_write
                                 ? "border-red-500"
                                 : ""
-                            }
-                          >
-                            <SelectValue
-                              placeholder={t("placeholders.select_product")}
-                            />
-                          </SelectTrigger>
-                          <SelectContent
-                            onPointerDownOutside={(e) => {
-                              const target = e.target as Node;
-                              const selectContent = document.querySelector(
-                                ".select-content-wrapper",
-                              );
-                              if (
-                                selectContent &&
-                                selectContent.contains(target)
-                              ) {
-                                e.preventDefault();
-                              }
-                            }}
-                          >
-                            <div className="mobile-select-wrapper">
-                              {/* No search input here anymore */}
-                              {filteredProducts
-                                .filter((product) => {
-                                  const qty =
-                                    typeof product.quantity === "string"
-                                      ? parseFloat(product.quantity)
-                                      : product.quantity || 0;
-                                  return qty > 0;
-                                })
-                                .map((product) => (
-                                  <SelectItem
-                                    key={product.id}
-                                    value={product.id?.toString() || ""}
-                                  >
-                                    {product.product_name} (
-                                    {typeof product.quantity === "string"
-                                      ? parseFloat(product.quantity)
-                                      : product.quantity || 0}{" "}
-                                    {product.available_units?.[0]?.short_name ||
-                                      "шт"}
-                                    )
-                                  </SelectItem>
-                                ))}
+                            }`}
+                            autoComplete="off"
+                          />
+                          {activeSearchIndex === index && (
+                            <div className="absolute z-50 w-full mt-1 bg-white  border-2 border-gray-300  rounded-lg shadow-xl max-h-[300px] overflow-y-auto">
+                              {filteredProducts.length > 0 ? (
+                                filteredProducts
+                                  .filter((product) => {
+                                    const qty =
+                                      typeof product.quantity === "string"
+                                        ? parseFloat(product.quantity)
+                                        : product.quantity || 0;
+                                    return qty > 0;
+                                  })
+                                  .map((product) => (
+                                    <div
+                                      key={product.id}
+                                      className="px-4 py-3 bg-white hover:bg-blue-50 active:bg-blue-100 dark:bg-gray-800 dark:hover:bg-gray-700 dark:active:bg-gray-600 cursor-pointer border-b border-gray-200 dark:border-gray-700 last:border-b-0 transition-all duration-150"
+                                      onClick={() => {
+                                        handleProductSelection(
+                                          product.id?.toString() || "",
+                                          index,
+                                        );
+                                        setProductSearchTerm("");
+                                        setActiveSearchIndex(null);
+                                      }}
+                                    >
+                                      <div className="flex justify-between items-center gap-2">
+                                        <span className="font-medium text-sm text-gray-900 dark:text-white">
+                                          {product.product_name}
+                                        </span>
+                                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                          {typeof product.quantity === "string"
+                                            ? parseFloat(product.quantity)
+                                            : product.quantity || 0}{" "}
+                                          {product.available_units?.[0]
+                                            ?.short_name || "шт"}
+                                        </span>
+                                      </div>
+                                      {product.barcode && (
+                                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                          {product.barcode}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))
+                              ) : (
+                                <div className="px-4 py-4 text-center text-gray-600 dark:text-gray-400 text-sm bg-white dark:bg-gray-800">
+                                  {t("common.no_results")}
+                                </div>
+                              )}
                             </div>
-                          </SelectContent>
-                        </Select>
+                          )}
+                          {field.value > 0 && activeSearchIndex !== index && (
+                            <div className="mt-2 px-3 py-2 bg-blue-50 border border-black-300 rounded-md text-sm flex justify-between items-center shadow-sm">
+                              <span className="font-medium text-black-900 ">
+                                {cartProducts[index]?.name ||
+                                  t("common.selected")}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveSearchIndex(index);
+                                  setProductSearchTerm("");
+                                }}
+                                className="text-blue-700 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-200 hover:underline text-xs font-medium"
+                              >
+                                {t("common.edit")}
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </FormItem>
                     )}
                   />
@@ -1398,6 +1499,21 @@ function CreateSale() {
           </Button>
         </form>
       </Form>
+
+      {/* Stock Selection Modal */}
+      {productForStockSelection && (
+        <StockSelectionModal
+          isOpen={isStockModalOpen}
+          onClose={() => {
+            setIsStockModalOpen(false);
+            setProductForStockSelection(null);
+            setPendingProductIndex(-1);
+          }}
+          productId={productForStockSelection.id!}
+          productName={productForStockSelection.product_name}
+          onStockSelect={handleStockSelect}
+        />
+      )}
     </div>
   );
 }

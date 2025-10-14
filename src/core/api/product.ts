@@ -39,10 +39,12 @@ export interface Product {
     category_name: string;
     store_write?: number;
     attributes_read?: Attribute[];
+    sell_from_stock?: boolean;
   };
   min_price?: number;
   selling_price?: number;
   quantity?: number | string;
+  is_default?: boolean;
   // For form submission (create/update)
   attribute_values?: Array<{
     attribute_id: number;

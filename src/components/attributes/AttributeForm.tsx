@@ -13,12 +13,25 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const attributeFormSchema = z.object({
   name: z.string().min(1),
-  category: z.number(),
-  field_type: z.enum(["number", "string", "date", "boolean", "choice", "many2many"]),
+  category: z.number().optional(),
+  field_type: z.enum([
+    "number",
+    "string",
+    "date",
+    "boolean",
+    "choice",
+    "many2many",
+  ]),
   formula: z.string().optional(),
   choices: z.array(z.string()).optional(),
   related_model: z.string().optional(),
@@ -35,7 +48,11 @@ interface AttributeFormProps {
   isLoading?: boolean;
 }
 
-export function AttributeForm({ initialData, onSubmit, isLoading }: AttributeFormProps) {
+export function AttributeForm({
+  initialData,
+  onSubmit,
+  isLoading,
+}: AttributeFormProps) {
   const { t } = useTranslation();
   // const { data: categoriesData } = useGetCategories();
   const form = useForm<AttributeFormData>({
@@ -48,7 +65,7 @@ export function AttributeForm({ initialData, onSubmit, isLoading }: AttributeFor
       choices: initialData?.choices || [],
       related_model: initialData?.related_model || "",
       translations: {
-        ru: initialData?.translations?.ru || ""
+        ru: initialData?.translations?.ru || "",
       },
     },
   });
@@ -109,22 +126,33 @@ export function AttributeForm({ initialData, onSubmit, isLoading }: AttributeFor
           render={({ field }) => (
             <FormItem>
               <FormLabel>{t("forms.field_type")}</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-              >
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder={t("placeholders.select_field_type")} />
+                    <SelectValue
+                      placeholder={t("placeholders.select_field_type")}
+                    />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="string">{t("forms.field_types.string")}</SelectItem>
-                  <SelectItem value="number">{t("forms.field_types.number")}</SelectItem>
-                  <SelectItem value="date">{t("forms.field_types.date")}</SelectItem>
-                  <SelectItem value="boolean">{t("forms.field_types.boolean")}</SelectItem>
-                  <SelectItem value="choice">{t("forms.field_types.choice")}</SelectItem>
-                  <SelectItem value="many2many">{t("forms.field_types.many_to_many")}</SelectItem>
+                  <SelectItem value="string">
+                    {t("forms.field_types.string")}
+                  </SelectItem>
+                  <SelectItem value="number">
+                    {t("forms.field_types.number")}
+                  </SelectItem>
+                  <SelectItem value="date">
+                    {t("forms.field_types.date")}
+                  </SelectItem>
+                  <SelectItem value="boolean">
+                    {t("forms.field_types.boolean")}
+                  </SelectItem>
+                  <SelectItem value="choice">
+                    {t("forms.field_types.choice")}
+                  </SelectItem>
+                  <SelectItem value="many2many">
+                    {t("forms.field_types.many_to_many")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -161,10 +189,14 @@ export function AttributeForm({ initialData, onSubmit, isLoading }: AttributeFor
                     value={field.value?.join(", ") || ""}
                     onChange={(e) =>
                       field.onChange(
-                        e.target.value.split(",").map((choice) => choice.trim())
+                        e.target.value
+                          .split(",")
+                          .map((choice) => choice.trim()),
                       )
                     }
-                    placeholder={t("placeholders.enter_choices_separated_by_commas")}
+                    placeholder={t(
+                      "placeholders.enter_choices_separated_by_commas",
+                    )}
                   />
                 </FormControl>
                 <p className="text-sm text-muted-foreground">

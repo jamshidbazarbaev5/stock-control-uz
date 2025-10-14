@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { WriteOffDialog } from "../components/dialogs/WriteOffDialog";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/button";
@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Settings } from "lucide-react";
 import { useGetStocks, useDeleteStock } from "../api/stock";
 import { useGetStores } from "../api/store";
 import { useGetSuppliers } from "../api/supplier";
@@ -28,8 +28,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 type PaginatedData<T> = { results: T[]; count: number } | T[];
+
+// Column configuration with Russian labels
+const COLUMN_CONFIG: Record<string, { label: string }> = {
+  select: { label: "Выбор" },
+  product: { label: "Продукт" },
+  store: { label: "Магазин" },
+  supplier: { label: "Поставщик" },
+  total_price_in_currency: { label: "Общая цена (валюта)" },
+  total_price_in_uz: { label: "Общая цена (UZS)" },
+  date_of_arrived: { label: "Дата прихода" },
+  quantity: { label: "Количество (базовая единица)" },
+  purchase_unit_quantity: { label: "Количество (единица закупки)" },
+  actions: { label: "Действия" },
+};
 
 export default function StocksPage() {
   const { t } = useTranslation();
@@ -48,6 +69,56 @@ export default function StocksPage() {
   const [productZero, setProductZero] = useState(false); // Show zero arrivals filter
   const pageSize = 30;
   const [productId, setProductId] = useState<string>("");
+  const [columnVisibilityDialogOpen, setColumnVisibilityDialogOpen] =
+    useState(false);
+
+  // Column visibility state - load from localStorage or use defaults
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
+    () => {
+      const saved = localStorage.getItem("stocksColumnVisibility");
+      if (saved) {
+        return JSON.parse(saved);
+      }
+      // Default: all columns visible
+      return Object.keys(COLUMN_CONFIG).reduce(
+        (acc, key) => {
+          acc[key] = true;
+          return acc;
+        },
+        {} as Record<string, boolean>,
+      );
+    },
+  );
+
+  // Save to localStorage whenever visibility changes
+  useEffect(() => {
+    localStorage.setItem(
+      "stocksColumnVisibility",
+      JSON.stringify(visibleColumns),
+    );
+  }, [visibleColumns]);
+
+  // Toggle individual column
+  const toggleColumn = (columnKey: string) => {
+    setVisibleColumns((prev) => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }));
+  };
+
+  // Toggle all columns
+  const toggleAllColumns = () => {
+    const allVisible = Object.values(visibleColumns).every((v) => v);
+    const newState = Object.keys(COLUMN_CONFIG).reduce(
+      (acc, key) => {
+        acc[key] = !allVisible;
+        return acc;
+      },
+      {} as Record<string, boolean>,
+    );
+    setVisibleColumns(newState);
+  };
+
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
@@ -66,7 +137,7 @@ export default function StocksPage() {
   // Columns definition
   const [selectedStocks, setSelectedStocks] = useState<number[]>([]);
 
-  const columns = [
+  const allColumns = [
     {
       header: t("table.select"),
       accessorKey: "select",
@@ -128,7 +199,7 @@ export default function StocksPage() {
     },
     {
       header: t("table.date_of_arrived"),
-      accessorKey: "date",
+      accessorKey: "date_of_arrived",
       cell: (row: any) => <p>{formatDate(row.date_of_arrived)}</p>,
     },
     {
@@ -227,6 +298,14 @@ export default function StocksPage() {
     },
   ];
 
+  // Filter columns based on visibility - always show select and actions
+  const columns = allColumns.filter(
+    (col) =>
+      col.accessorKey === "select" ||
+      col.accessorKey === "actions" ||
+      visibleColumns[col.accessorKey],
+  );
+
   // Removed stockFields - using dedicated create/edit pages instead
 
   const { data: stocksData, isLoading } = useGetStocks({
@@ -291,6 +370,48 @@ export default function StocksPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">{t("navigation.stocks")}</h1>
         <div className="flex gap-2">
+          <Dialog
+            open={columnVisibilityDialogOpen}
+            onOpenChange={setColumnVisibilityDialogOpen}
+          >
+            <DialogTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Настройка колонок таблицы</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={toggleAllColumns}
+                >
+                  {Object.values(visibleColumns).every((v) => v)
+                    ? "Снять выделение со всех"
+                    : "Выбрать все"}
+                </Button>
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {Object.entries(COLUMN_CONFIG).map(([key, config]) => (
+                    <label
+                      key={key}
+                      className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns[key] || false}
+                        onChange={() => toggleColumn(key)}
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm">{config.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Button variant="outline" onClick={() => setWriteOffDialogOpen(true)}>
             {t("common.create")} {t("navigation.writeoff")}
           </Button>

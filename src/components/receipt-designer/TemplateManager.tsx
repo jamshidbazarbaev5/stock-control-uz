@@ -8,7 +8,6 @@ import { Switch } from "../ui/switch";
 import {
   Eye,
   Edit,
-  Trash2,
   Copy,
   Plus,
   Calendar,
@@ -91,22 +90,22 @@ const TemplateManager: React.FC<TemplateManagerProps> = ({
     }
   };
 
-  const handleDeleteTemplate = async (templateId: number) => {
-    if (!confirm(t("receiptDesigner.confirmDeleteTemplate"))) {
-      return;
-    }
-
-    try {
-      await receiptTemplateService.deleteTemplate(templateId);
-      setTemplates((prev) =>
-        prev.filter((template) => template.id !== templateId),
-      );
-      toast.success(t("receiptDesigner.templateDeleted"));
-    } catch (error) {
-      toast.error(t("receiptDesigner.errorDeletingTemplate"));
-      console.error("Error deleting template:", error);
-    }
-  };
+  // const handleDeleteTemplate = async (templateId: number) => {
+  //   if (!confirm(t("receiptDesigner.confirmDeleteTemplate"))) {
+  //     return;
+  //   }
+  //
+  //   try {
+  //     await receiptTemplateService.deleteTemplate(templateId);
+  //     setTemplates((prev) =>
+  //       prev.filter((template) => template.id !== templateId),
+  //     );
+  //     toast.success(t("receiptDesigner.templateDeleted"));
+  //   } catch (error) {
+  //     toast.error(t("receiptDesigner.errorDeletingTemplate"));
+  //     console.error("Error deleting template:", error);
+  //   }
+  // };
 
   const handleDuplicateTemplate = async (template: ApiReceiptTemplate) => {
     try {
@@ -296,15 +295,7 @@ const TemplateManager: React.FC<TemplateManagerProps> = ({
                     <Copy size={14} />
                   </Button>
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteTemplate(template.id)}
-                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    title={t("receiptDesigner.delete")}
-                  >
-                    <Trash2 size={14} />
-                  </Button>
+
                 </div>
               </div>
             </CardContent>

@@ -1,26 +1,44 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ResourceTable } from '../helpers/ResourseTable';
-import { toast } from 'sonner';
-import { type Product, useGetProducts, useDeleteProduct } from '../api/product';
-import { useGetCategories } from '../api/category';
-import { useTranslation } from 'react-i18next';
-import { useGetMeasurements } from '../api/measurement';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ResourceTable } from "../helpers/ResourseTable";
+import { toast } from "sonner";
+import { type Product, useGetProducts, useDeleteProduct } from "../api/product";
+import { useGetCategories } from "../api/category";
+import { useTranslation } from "react-i18next";
+import { useGetMeasurements } from "../api/measurement";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { RevaluationDialog } from '@/components/dialogs/RevaluationDialog';
-import { useProductRevaluation } from '../api/revaluation';
+import { RevaluationDialog } from "@/components/dialogs/RevaluationDialog";
+import { useProductRevaluation } from "../api/revaluation";
+
+interface PriceEdit {
+  productId: number;
+  selling_price?: string;
+  min_price?: string;
+}
 
 const columns = (
   t: any,
   onPrint: (product: Product) => void,
   selectedProducts: number[],
-  onSelectProduct: (productId: number) => void
+  onSelectProduct: (productId: number) => void,
+  priceEdits: Record<number, PriceEdit>,
+  onPriceChange: (
+    productId: number,
+    field: "selling_price" | "min_price",
+    value: string,
+  ) => void,
 ) => [
   {
-    header: t('table.select'),
-    accessorKey: 'select',
+    header: t("table.select"),
+    accessorKey: "select",
     cell: (product: any) => {
       return (
         <input
@@ -38,25 +56,64 @@ const columns = (
     },
   },
   {
-    header: t('table.name'),
-    accessorKey: 'product_name',
+    header: t("table.name"),
+    accessorKey: "product_name",
   },
   {
-    header: t('table.category'),
-    accessorKey: (row: Product) => row.category_read?.category_name || row.category_write,
+    header: t("table.category"),
+    accessorKey: (row: Product) =>
+      row.category_read?.category_name || row.category_write,
   },
   {
-    header: t('table.selling_price'),
-    accessorKey: (row: Product) => row?.selling_price
+    header: t("table.selling_price"),
+    accessorKey: "selling_price",
+    cell: (product: any) => {
+      const editValue = priceEdits[product?.id]?.selling_price;
+      return (
+        <Input
+          type="number"
+          step="0.01"
+          value={
+            editValue !== undefined ? editValue : product?.selling_price || ""
+          }
+          onChange={(e) => {
+            e.stopPropagation();
+            if (product?.id) {
+              onPriceChange(product.id, "selling_price", e.target.value);
+            }
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className="w-28"
+        />
+      );
+    },
   },
   {
-    header: t('table.min_price'),
-    accessorKey: (row: Product) => row?.min_price
+    header: t("table.min_price"),
+    accessorKey: "min_price",
+    cell: (product: any) => {
+      const editValue = priceEdits[product?.id]?.min_price;
+      return (
+        <Input
+          type="number"
+          step="0.01"
+          value={editValue !== undefined ? editValue : product?.min_price || ""}
+          onChange={(e) => {
+            e.stopPropagation();
+            if (product?.id) {
+              onPriceChange(product.id, "min_price", e.target.value);
+            }
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className="w-28"
+        />
+      );
+    },
   },
 
   {
-    header: t('table.actions'),
-    accessorKey: 'id',
+    header: t("table.actions"),
+    accessorKey: "id",
     cell: (product: any) => {
       return (
         <Button
@@ -70,7 +127,7 @@ const columns = (
           }}
           disabled={!product?.id}
         >
-          {t('buttons.print')}
+          {t("buttons.print")}
         </Button>
       );
     },
@@ -81,11 +138,12 @@ export default function ProductsPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const { t } = useTranslation();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedMeasurement, setSelectedMeasurement] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedMeasurement, setSelectedMeasurement] = useState<string>("");
   const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
   const [isRevaluationDialogOpen, setIsRevaluationDialogOpen] = useState(false);
+  const [priceEdits, setPriceEdits] = useState<Record<number, PriceEdit>>({});
 
   const { data: productsData, isLoading } = useGetProducts({
     params: {
@@ -97,8 +155,12 @@ export default function ProductsPage() {
   });
 
   // Handle both array and object response formats
-  const results = Array.isArray(productsData) ? productsData : productsData?.results || [];
-  const totalCount = Array.isArray(productsData) ? productsData.length : productsData?.count || 0;
+  const results = Array.isArray(productsData)
+    ? productsData
+    : productsData?.results || [];
+  const totalCount = Array.isArray(productsData)
+    ? productsData.length
+    : productsData?.count || 0;
 
   const products = results.map((product, index) => ({
     ...product,
@@ -112,8 +174,12 @@ export default function ProductsPage() {
   const { data: measurementsData } = useGetMeasurements({});
 
   // Get the categories and measurements arrays
-  const categories = Array.isArray(categoriesData) ? categoriesData : categoriesData?.results || [];
-  const measurementsList = Array.isArray(measurementsData) ? measurementsData : measurementsData?.results || [];
+  const categories = Array.isArray(categoriesData)
+    ? categoriesData
+    : categoriesData?.results || [];
+  const measurementsList = Array.isArray(measurementsData)
+    ? measurementsData
+    : measurementsData?.results || [];
 
   const handleEdit = (product: Product) => {
     navigate(`/edit-product/${product?.id}`);
@@ -121,14 +187,18 @@ export default function ProductsPage() {
 
   const handleDelete = (id: number) => {
     deleteProduct(id, {
-      onSuccess: () => toast.success(t('messages.success.deleted', { item: t('table.product') })),
-      onError: () => toast.error(t('messages.error.delete', { item: t('table.product') })),
+      onSuccess: () =>
+        toast.success(
+          t("messages.success.deleted", { item: t("table.product") }),
+        ),
+      onError: () =>
+        toast.error(t("messages.error.delete", { item: t("table.product") })),
     });
   };
 
   const handlePrint = (product: Product) => {
     if (!product?.id) {
-      toast.error(t('messages.error.invalidProduct'));
+      toast.error(t("messages.error.invalidProduct"));
       return;
     }
     navigate(`/print-barcode/${product.id}`);
@@ -142,7 +212,7 @@ export default function ProductsPage() {
     new_min_price: string;
   }) => {
     if (selectedProducts.length === 0) {
-      toast.error(t('messages.error.noProductsSelected'));
+      toast.error(t("messages.error.noProductsSelected"));
       return;
     }
 
@@ -153,48 +223,124 @@ export default function ProductsPage() {
       },
       {
         onSuccess: () => {
-          toast.success(t('messages.success.revaluation'));
+          toast.success(t("messages.success.revaluation"));
           setIsRevaluationDialogOpen(false);
           setSelectedProducts([]);
         },
         onError: () => {
-          toast.error(t('messages.error.revaluation'));
+          toast.error(t("messages.error.revaluation"));
         },
-      }
+      },
     );
+  };
+
+  const handlePriceChange = (
+    productId: number,
+    field: "selling_price" | "min_price",
+    value: string,
+  ) => {
+    setPriceEdits((prev) => ({
+      ...prev,
+      [productId]: {
+        ...prev[productId],
+        productId,
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleSavePrices = () => {
+    const editsToSave = Object.values(priceEdits).filter(
+      (edit) =>
+        edit.selling_price !== undefined || edit.min_price !== undefined,
+    );
+
+    if (editsToSave.length === 0) {
+      toast.error(
+        t("messages.error.noPriceChanges") || "No price changes to save",
+      );
+      return;
+    }
+
+    // Save each product's price changes individually
+    editsToSave.forEach((edit) => {
+      const product = products.find((p) => p.id === edit.productId);
+      if (!product) return;
+
+      const newSellingPrice =
+        edit.selling_price !== undefined
+          ? edit.selling_price
+          : String(product.selling_price);
+      const newMinPrice =
+        edit.min_price !== undefined
+          ? edit.min_price
+          : String(product.min_price);
+
+      revaluateProducts(
+        {
+          comment: "Price update from products page",
+          new_selling_price: newSellingPrice,
+          new_min_price: newMinPrice,
+          product_ids: [edit.productId],
+        },
+        {
+          onSuccess: () => {
+            toast.success(
+              t("messages.success.priceUpdated") ||
+                `Price updated for ${product.product_name}`,
+            );
+            setPriceEdits((prev) => {
+              const newEdits = { ...prev };
+              delete newEdits[edit.productId];
+              return newEdits;
+            });
+          },
+          onError: () => {
+            toast.error(
+              t("messages.error.priceUpdate") ||
+                `Failed to update price for ${product.product_name}`,
+            );
+          },
+        },
+      );
+    });
   };
 
   return (
     <div className="container mx-auto py-3">
       <div className="flex justify-between items-center mb-3">
-        <h1 className="text-2xl font-bold">{t('navigation.products')}</h1>
+        <h1 className="text-2xl font-bold">{t("navigation.products")}</h1>
         <div className="flex gap-2">
+          <Button
+            variant="default"
+            disabled={Object.keys(priceEdits).length === 0}
+            onClick={handleSavePrices}
+          >
+            {t("buttons.save")} ({Object.keys(priceEdits).length})
+          </Button>
           <Button
             variant="secondary"
             disabled={selectedProducts.length === 0}
             onClick={() => setIsRevaluationDialogOpen(true)}
           >
-            {t('buttons.revaluate')} ({selectedProducts.length})
+            {t("buttons.revaluate")} ({selectedProducts.length})
           </Button>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
         <Input
           type="text"
-          placeholder={t('placeholders.search_product')}
+          placeholder={t("placeholders.search_product")}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        
-        <Select 
-          value={selectedCategory} 
-          onValueChange={setSelectedCategory}
-        >
+
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
           <SelectTrigger>
-            <SelectValue placeholder={t('placeholders.select_category')} />
+            <SelectValue placeholder={t("placeholders.select_category")} />
           </SelectTrigger>
           <SelectContent>
-            {categories.map(category => (
+            {categories.map((category) => (
               <SelectItem key={category.id} value={String(category.id)}>
                 {category.category_name}
               </SelectItem>
@@ -202,15 +348,15 @@ export default function ProductsPage() {
           </SelectContent>
         </Select>
 
-        <Select 
-          value={selectedMeasurement} 
+        <Select
+          value={selectedMeasurement}
           onValueChange={setSelectedMeasurement}
         >
           <SelectTrigger>
-            <SelectValue placeholder={t('placeholders.select_measurement')} />
+            <SelectValue placeholder={t("placeholders.select_measurement")} />
           </SelectTrigger>
           <SelectContent>
-            {measurementsList?.map(measurement => (
+            {measurementsList?.map((measurement) => (
               <SelectItem key={measurement.id} value={String(measurement.id)}>
                 {measurement.measurement_name}
               </SelectItem>
@@ -221,21 +367,29 @@ export default function ProductsPage() {
 
       <ResourceTable
         data={products}
-        columns={columns(t, handlePrint, selectedProducts, (productId: number) => {
-          setSelectedProducts((prev) =>
-            prev.includes(productId)
-              ? prev.filter((id) => id !== productId)
-              : [...prev, productId]
-          );
-        })}
+        columns={columns(
+          t,
+          handlePrint,
+          selectedProducts,
+          (productId: number) => {
+            setSelectedProducts((prev) =>
+              prev.includes(productId)
+                ? prev.filter((id) => id !== productId)
+                : [...prev, productId],
+            );
+          },
+          priceEdits,
+          handlePriceChange,
+        )}
         isLoading={isLoading}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        onAdd={() => navigate('/create-product')}
+        onAdd={() => navigate("/create-product")}
         totalCount={totalCount}
         pageSize={30}
         currentPage={page}
         onPageChange={(newPage) => setPage(newPage)}
+        canDelete={(product: Product) => !product.is_default}
       />
 
       <RevaluationDialog

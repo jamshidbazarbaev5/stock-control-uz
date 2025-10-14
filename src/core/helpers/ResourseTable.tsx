@@ -43,6 +43,7 @@ interface ResourceTableProps<T extends { id?: number }> {
   expandedRowRenderer?: (row: T) => React.ReactNode;
   onRowClick?: (row: T) => void;
   actions?: (row: T) => React.ReactNode;
+  canDelete?: (row: T) => boolean;
 }
 
 export function ResourceTable<T extends { id?: number }>({
@@ -60,6 +61,7 @@ export function ResourceTable<T extends { id?: number }>({
   expandedRowRenderer,
   onRowClick,
   actions,
+  canDelete,
 }: ResourceTableProps<T>) {
   // Handle case when data is undefined
   const tableData = data || [];
@@ -266,19 +268,21 @@ export function ResourceTable<T extends { id?: number }>({
                               <Undo2 className="h-4 w-4 text-orange-500" />
                             </Button>
                           )}
-                          {onDelete && row.id && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setItemToDelete(row.id);
-                                setIsDeleteModalOpen(true);
-                              }}
-                              className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 transition-colors rounded-md"
-                            >
-                              <TrashIcon className="h-4 w-4" />
-                            </Button>
-                          )}
+                          {onDelete &&
+                            row.id &&
+                            (!canDelete || canDelete(row)) && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setItemToDelete(row.id);
+                                  setIsDeleteModalOpen(true);
+                                }}
+                                className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 transition-colors rounded-md"
+                              >
+                                <TrashIcon className="h-4 w-4" />
+                              </Button>
+                            )}
                           {actions && actions(row)}
                           {expandedRowRenderer && (
                             <Button

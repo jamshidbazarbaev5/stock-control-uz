@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Printer } from "lucide-react";
+import { Printer, Settings2 } from "lucide-react";
 import PrintDialog from "../../components/receipt-designer/PrintDialog";
 import type { ReceiptPreviewData } from "../../types/receipt";
 import { DEFAULT_TEMPLATE } from "../../types/receipt";
@@ -43,10 +43,35 @@ import {
   WideDialogTitle,
   WideDialogFooter,
 } from "@/components/ui/wide-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Undo2 } from "lucide-react";
 
 type PaginatedData<T> = { results: T[]; count: number } | T[];
+
+// Column visibility configuration with Russian translations
+const COLUMN_CONFIG = [
+  { key: "store_read", label: "Магазин" },
+  { key: "sale_payments", label: "Способ оплаты" },
+  { key: "sale_items", label: "Товары" },
+  { key: "quantity", label: "Количество" },
+  { key: "total_amount", label: "Общая сумма" },
+  { key: "total_pure_revenue", label: "Чистая прибыль" },
+  { key: "on_credit", label: "Статус" },
+  { key: "sale_refunds", label: "Возврат" },
+  { key: "sold_date", label: "Дата продажи" },
+  { key: "actions", label: "Действия" },
+];
+
+const STORAGE_KEY = "salesPageVisibleColumns";
+
 export default function SalesPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -55,6 +80,25 @@ export default function SalesPage() {
   const { data: currentUser } = useCurrentUser();
   // const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   // const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+  // Column visibility states
+  const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
+    () => {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+      // Default: all columns visible
+      return COLUMN_CONFIG.reduce(
+        (acc, col) => {
+          acc[col.key] = true;
+          return acc;
+        },
+        {} as Record<string, boolean>,
+      );
+    },
+  );
 
   // Refund modal states
   const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
@@ -65,6 +109,43 @@ export default function SalesPage() {
   >({});
   const [refundNotes, setRefundNotes] = useState("");
   const createRefund = useCreateRefund();
+
+  // Save column visibility to localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
+
+  // Toggle column visibility
+  const toggleColumn = (columnKey: string) => {
+    setVisibleColumns((prev) => ({
+      ...prev,
+      [columnKey]: !prev[columnKey],
+    }));
+  };
+
+  // Select all columns
+  const selectAllColumns = () => {
+    const allVisible = COLUMN_CONFIG.reduce(
+      (acc, col) => {
+        acc[col.key] = true;
+        return acc;
+      },
+      {} as Record<string, boolean>,
+    );
+    setVisibleColumns(allVisible);
+  };
+
+  // Deselect all columns
+  const deselectAllColumns = () => {
+    const allHidden = COLUMN_CONFIG.reduce(
+      (acc, col) => {
+        acc[col.key] = false;
+        return acc;
+      },
+      {} as Record<string, boolean>,
+    );
+    setVisibleColumns(allHidden);
+  };
 
   // Set initial states
   // const [_selectedProduct, setSelectedProduct] = useState<string>("all");
@@ -493,7 +574,7 @@ export default function SalesPage() {
     null,
   );
 
-  const columns = [
+  const allColumns = [
     {
       header: t("table.store"),
       accessorKey: "store_read",
@@ -701,6 +782,9 @@ export default function SalesPage() {
     // }
   ];
 
+  // Filter columns based on visibility settings
+  const columns = allColumns.filter((col) => visibleColumns[col.accessorKey]);
+
   // Fetch all products with pagination
 
   // Transform sale data to receipt format
@@ -772,14 +856,24 @@ export default function SalesPage() {
         <h1 className="text-xl sm:text-2xl font-bold">
           {t("navigation.sales")}
         </h1>
-        {!currentUser?.is_superuser && (
+        <div className="flex gap-2 w-full sm:w-auto">
           <Button
-            onClick={() => navigate("/create-sale")}
-            className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
+            variant="outline"
+            onClick={() => setIsColumnModalOpen(true)}
+            className="w-full sm:w-auto"
           >
-            {t("common.create")}
+            <Settings2 className="w-4 h-4 mr-2" />
+            Колонки
           </Button>
-        )}
+          {!currentUser?.is_superuser && (
+            <Button
+              onClick={() => navigate("/create-sale")}
+              className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
+            >
+              {t("common.create")}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
@@ -1255,6 +1349,69 @@ export default function SalesPage() {
           </WideDialogFooter>
         </WideDialogContent>
       </WideDialog>
+
+      {/* Column Visibility Modal */}
+      <Dialog open={isColumnModalOpen} onOpenChange={setIsColumnModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings2 className="h-5 w-5" />
+              Настройка колонок таблицы
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4">
+            <div className="flex gap-2 mb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={selectAllColumns}
+                className="flex-1"
+              >
+                Выбрать все
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={deselectAllColumns}
+                className="flex-1"
+              >
+                Снять все
+              </Button>
+            </div>
+
+            <div className="space-y-3 max-h-[400px] overflow-y-auto">
+              {COLUMN_CONFIG.map((column) => (
+                <div
+                  key={column.key}
+                  className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Checkbox
+                    id={column.key}
+                    checked={visibleColumns[column.key]}
+                    onCheckedChange={() => toggleColumn(column.key)}
+                  />
+                  <label
+                    htmlFor={column.key}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
+                  >
+                    {column.label}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsColumnModalOpen(false)}
+            >
+              Закрыть
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

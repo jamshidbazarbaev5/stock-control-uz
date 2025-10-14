@@ -1,5 +1,5 @@
-import { createResourceApiHooks } from '../helpers/createResourceApi';
-import api from './api';
+import { createResourceApiHooks } from "../helpers/createResourceApi";
+import api from "./api";
 
 // Types
 export interface StockMeasurement {
@@ -36,8 +36,8 @@ export interface CreateStockDTO {
 
 export interface Stock {
   id?: number;
-  total_amount?:number;
-  total_pure_revenue?:number;
+  total_amount?: number;
+  total_pure_revenue?: number;
   // New nested object structure from API
   store?: {
     id: number;
@@ -95,7 +95,7 @@ export interface Stock {
         is_main: boolean;
         parent_store: number | null;
         owner: number;
-      }
+      };
     };
     store_read?: {
       id: number;
@@ -106,7 +106,7 @@ export interface Stock {
       is_main: boolean;
       parent_store: number | null;
       owner: number;
-    }
+    };
   };
   store_read?: {
     id: number;
@@ -133,7 +133,7 @@ export interface Stock {
         is_main: boolean;
         parent_store: number | null;
         owner: number;
-      }
+      };
     };
     number: number;
   }>;
@@ -150,7 +150,7 @@ export interface Stock {
     selling_price: number;
     purchase_price_in_us: number;
     purchase_price_in_uz: number;
-    date_of_arrived:Date;
+    date_of_arrived: Date;
   };
 }
 
@@ -232,11 +232,13 @@ export interface StockCalculationResponse {
 }
 
 // API endpoints
-const STOCK_URL = 'items/stock/';
-const STOCK_CALCULATE_URL = 'items/stock/calculate/';
+const STOCK_URL = "items/stock/";
+const STOCK_CALCULATE_URL = "items/stock/calculate/";
 
 // Stock calculation API function
-export const calculateStock = async (data: StockCalculationRequest): Promise<StockCalculationResponse> => {
+export const calculateStock = async (
+  data: StockCalculationRequest,
+): Promise<StockCalculationResponse> => {
   const response = await api.post(STOCK_CALCULATE_URL, data);
   return response.data;
 };
@@ -248,4 +250,20 @@ export const {
   useCreateResource: useCreateStock,
   useUpdateResource: useUpdateStock,
   useDeleteResource: useDeleteStock,
-} = createResourceApiHooks<Stock, StockResponse>(STOCK_URL, 'stocks');
+} = createResourceApiHooks<Stock, StockResponse>(STOCK_URL, "stocks");
+
+// Fetch stock items by product ID
+export const fetchStockByProduct = async (
+  productId: number,
+  productZero: boolean = false,
+): Promise<Stock[]> => {
+  try {
+    const response = await api.get(
+      `${STOCK_URL}?product=${productId}&product_zero=${productZero}`,
+    );
+    return response.data.results || [];
+  } catch (error) {
+    console.error("Error fetching stock by product:", error);
+    return [];
+  }
+};
