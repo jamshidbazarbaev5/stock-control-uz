@@ -43,6 +43,13 @@ export interface Product {
   };
   min_price?: number;
   selling_price?: number;
+  selling_price_in_currency?: number | string;
+  sell_in_currency_unit?: {
+    label: string;
+    exchange_rate: number;
+    action: string;
+    conversion: number;
+  };
   quantity?: number | string;
   is_default?: boolean;
   // For form submission (create/update)

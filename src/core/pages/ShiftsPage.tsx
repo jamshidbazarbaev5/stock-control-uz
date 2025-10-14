@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { ResourceTable } from "../helpers/ResourseTable";
 import { shiftsApi } from "../api/shift";
 import type { Shift } from "../api/shift";
-import { formatDate } from "../helpers/formatDate";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { Printer } from "lucide-react";
 import {
@@ -48,6 +47,20 @@ export default function ShiftsPage() {
   const { data: storesData } = useGetStores({});
   const { data: cashRegistersData } = useGetCashRegisters();
   const { data: usersData } = useGetUsers({});
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('ru-RU', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return '-';
+    }
+  }
 
   // Reset to page 1 when filters change
   useEffect(() => {

@@ -10,6 +10,20 @@
     "refund_notes_required": "Qaytarıwǵa kommentariy tiyisti",
     "max_quantity": "Maksimal sanlıǵı"
   },
+  "buttons": {
+    "save": "Saqlaw",
+    "print": "Basıp shıǵarıw",
+    "revaluate": "Qayta bahalaw",
+    "cancel": "Biykar etиw",
+    "submit": "Jiberиw"
+  },
+  "dialogs": {
+    "revaluation.title": "Qayta bahalaw",
+    "revaluation.new_selling_price": "Satıw bahası",
+    "revaluation.new_selling_price_in_currency": "Valyutadaǵı bahası",
+    "revaluation.new_min_price": "Min bahası",
+    "revaluation.comment": "Kommentariy"
+  },
   "dashboard": {
     "no_expenses": "Rasxodlar yoq",
     "clients": "Klientler",
@@ -520,6 +534,7 @@
     "supplier": "Taminleyishi",
     "purchase_price": "Alıw bahası",
     "selling_price": "Satıw bahası",
+    "selling_price_in_currency": "Valyutadaǵı bahası",
     "min_price": "Min baha",
     "quantity": "Sanı",
     "color": "Reńi",

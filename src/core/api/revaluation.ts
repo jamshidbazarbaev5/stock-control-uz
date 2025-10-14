@@ -21,6 +21,7 @@ interface RevaluationData {
   comment: string;
   new_selling_price: string;
   new_min_price: string;
+  new_selling_price_in_currency?: string;
   product_ids: number[];
 }
 
@@ -28,8 +29,7 @@ export const useProductRevaluation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: RevaluationData) =>
-      api.post("revaluation/", data),
+    mutationFn: (data: RevaluationData) => api.post("revaluation/", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["revaluation-history"] });

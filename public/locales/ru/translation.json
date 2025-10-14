@@ -20,6 +20,7 @@
   "dialogs": {
     "revaluation.title": "Переоценка",
     "revaluation.new_selling_price": "Цена продажи",
+    "revaluation.new_selling_price_in_currency": "Цена в валюте",
     "revaluation.new_min_price": "Мин цена",
     "revaluation.comment": "Комментарий"
   },
@@ -737,6 +738,7 @@
     "supplier": "Поставщик",
     "min_price": "Минимальная цена",
     "selling_price": "Цена продажи",
+    "selling_price_in_currency": "Цена в валюте",
     "staff": "Устав",
     "purchase_price": "Цена покупки",
     "name": "Название",

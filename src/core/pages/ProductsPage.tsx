@@ -21,6 +21,7 @@ import { useProductRevaluation } from "../api/revaluation";
 interface PriceEdit {
   productId: number;
   selling_price?: string;
+  selling_price_in_currency?: string;
   min_price?: string;
 }
 
@@ -32,8 +33,13 @@ const columns = (
   priceEdits: Record<number, PriceEdit>,
   onPriceChange: (
     productId: number,
-    field: "selling_price" | "min_price",
+    field: "selling_price" | "selling_price_in_currency" | "min_price",
     value: string,
+  ) => void,
+  onCurrencyPriceChange?: (
+    productId: number,
+    currencyPrice: string,
+    sellInCurrencyUnit: any,
   ) => void,
 ) => [
   {
@@ -80,6 +86,39 @@ const columns = (
             e.stopPropagation();
             if (product?.id) {
               onPriceChange(product.id, "selling_price", e.target.value);
+            }
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className="w-28"
+        />
+      );
+    },
+  },
+  {
+    header: t("table.selling_price_in_currency"),
+    accessorKey: "selling_price_in_currency",
+    cell: (product: any) => {
+      if (!product?.sell_in_currency_unit) {
+        return <span className="text-muted-foreground">-</span>;
+      }
+      const editValue = priceEdits[product?.id]?.selling_price_in_currency;
+      return (
+        <Input
+          type="number"
+          step="0.01"
+          value={
+            editValue !== undefined
+              ? editValue
+              : product?.selling_price_in_currency || ""
+          }
+          onChange={(e) => {
+            e.stopPropagation();
+            if (product?.id && onCurrencyPriceChange) {
+              onCurrencyPriceChange(
+                product.id,
+                e.target.value,
+                product.sell_in_currency_unit,
+              );
             }
           }}
           onClick={(e) => e.stopPropagation()}
@@ -241,7 +280,7 @@ export default function ProductsPage() {
 
   const handlePriceChange = (
     productId: number,
-    field: "selling_price" | "min_price",
+    field: "selling_price" | "selling_price_in_currency" | "min_price",
     value: string,
   ) => {
     setPriceEdits((prev) => ({
@@ -254,10 +293,58 @@ export default function ProductsPage() {
     }));
   };
 
+  const handleCurrencyPriceChange = (
+    productId: number,
+    currencyPrice: string,
+    sellInCurrencyUnit: any,
+  ) => {
+    const price = parseFloat(currencyPrice);
+    if (!isNaN(price)) {
+      let calculatedPrice: number;
+
+      if (sellInCurrencyUnit.action === "*") {
+        calculatedPrice =
+          price *
+          sellInCurrencyUnit.exchange_rate *
+          sellInCurrencyUnit.conversion;
+      } else if (sellInCurrencyUnit.action === "/") {
+        calculatedPrice =
+          (price / sellInCurrencyUnit.exchange_rate) *
+          sellInCurrencyUnit.conversion;
+      } else {
+        calculatedPrice =
+          price *
+          sellInCurrencyUnit.exchange_rate *
+          sellInCurrencyUnit.conversion;
+      }
+
+      setPriceEdits((prev) => ({
+        ...prev,
+        [productId]: {
+          ...prev[productId],
+          productId,
+          selling_price_in_currency: currencyPrice,
+          selling_price: calculatedPrice.toFixed(2),
+        },
+      }));
+    } else {
+      setPriceEdits((prev) => ({
+        ...prev,
+        [productId]: {
+          ...prev[productId],
+          productId,
+          selling_price_in_currency: currencyPrice,
+        },
+      }));
+    }
+  };
+
   const handleSavePrices = () => {
     const editsToSave = Object.values(priceEdits).filter(
       (edit) =>
-        edit.selling_price !== undefined || edit.min_price !== undefined,
+        edit.selling_price !== undefined ||
+        edit.selling_price_in_currency !== undefined ||
+        edit.min_price !== undefined,
     );
 
     if (editsToSave.length === 0) {
@@ -280,12 +367,19 @@ export default function ProductsPage() {
         edit.min_price !== undefined
           ? edit.min_price
           : String(product.min_price);
+      const newSellingPriceInCurrency =
+        edit.selling_price_in_currency !== undefined
+          ? edit.selling_price_in_currency
+          : product.selling_price_in_currency
+            ? String(product.selling_price_in_currency)
+            : undefined;
 
       revaluateProducts(
         {
           comment: "Price update from products page",
           new_selling_price: newSellingPrice,
           new_min_price: newMinPrice,
+          new_selling_price_in_currency: newSellingPriceInCurrency,
           product_ids: [edit.productId],
         },
         {
@@ -385,6 +479,7 @@ export default function ProductsPage() {
           },
           priceEdits,
           handlePriceChange,
+          handleCurrencyPriceChange,
         )}
         isLoading={isLoading}
         onEdit={handleEdit}
@@ -402,6 +497,12 @@ export default function ProductsPage() {
         onClose={() => setIsRevaluationDialogOpen(false)}
         onSubmit={handleRevaluation}
         selectedCount={selectedProducts.length}
+        sellInCurrencyUnit={
+          selectedProducts.length > 0
+            ? products.find((p) => p.id === selectedProducts[0])
+                ?.sell_in_currency_unit || null
+            : null
+        }
       />
     </div>
   );
