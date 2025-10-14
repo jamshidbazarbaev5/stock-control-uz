@@ -661,7 +661,14 @@
     "enter_amount": "Введите сумму",
     "select_user": "Выберите пользователя",
     "select_field_type": "Выберите тип поля",
-    "enter_choices_separated_by_commas": "Введите варианты через запятую"
+    "enter_choices_separated_by_commas": "Введите варианты через запятую",
+    "hold_ctrl_select": "Удерживайте Ctrl (или Cmd на Mac) для выбора нескольких вариантов",
+    "select_option": "Выберите вариант",
+    "select_options": "Выберите варианты",
+    "selected": "Выбрано",
+    "search": "Поиск...",
+    "no_results": "Ничего не найдено",
+    "clear_all": "Очистить все"
   },
   "payment_methods": {
     "cash": "Наличные",

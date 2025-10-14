@@ -38,6 +38,7 @@ export interface Stock {
   id?: number;
   total_amount?: number;
   total_pure_revenue?: number;
+  stock_name?: string | null;
   // New nested object structure from API
   store?: {
     id: number;

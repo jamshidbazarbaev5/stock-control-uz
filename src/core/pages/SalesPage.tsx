@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Printer, Settings2 } from "lucide-react";
+import {Printer, Settings, Settings2} from "lucide-react";
 import PrintDialog from "../../components/receipt-designer/PrintDialog";
 import type { ReceiptPreviewData } from "../../types/receipt";
 import { DEFAULT_TEMPLATE } from "../../types/receipt";
@@ -862,8 +862,7 @@ export default function SalesPage() {
             onClick={() => setIsColumnModalOpen(true)}
             className="w-full sm:w-auto"
           >
-            <Settings2 className="w-4 h-4 mr-2" />
-            Колонки
+            <Settings className="w-4 h-4 mr-2" />
           </Button>
           {!currentUser?.is_superuser && (
             <Button

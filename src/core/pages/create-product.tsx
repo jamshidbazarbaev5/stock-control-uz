@@ -15,10 +15,11 @@ import { toast } from "sonner";
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
+import { MultiSelect } from "@/components/MultiSelect";
 
 interface AttributeValue {
   attribute_id: number;
-  value: string | number | boolean;
+  value: string | number | boolean | number[];
 }
 
 export default function CreateProduct() {
@@ -307,7 +308,7 @@ export default function CreateProduct() {
             name: "base_unit",
             label: t("forms.base_unit"),
             type: "select",
-            placeholder:  t("forms.base_unit"),
+            placeholder: t("forms.base_unit"),
             options: availableMeasurements.map((measurement) => ({
               value: measurement.id,
               label: measurement.measurement_name,
@@ -319,13 +320,13 @@ export default function CreateProduct() {
             name: "barcode",
             label: t("forms.barcode"),
             type: "text",
-            placeholder:t("forms.barcode"),
+            placeholder: t("forms.barcode"),
           },
           {
             name: "min_price",
             label: t("forms.min_price"),
             type: "number",
-            placeholder:t("forms.min_price"),
+            placeholder: t("forms.min_price"),
             required: true,
             value: minPrice,
             onChange: (value: string) => setMinPrice(value),
@@ -334,7 +335,7 @@ export default function CreateProduct() {
             name: "selling_price",
             label: t("forms.selling_price"),
             type: "number",
-            placeholder:t("forms.selling_price"),
+            placeholder: t("forms.selling_price"),
             required: true,
             value: sellingPrice,
             onChange: (value: string) => setSellingPrice(value),
@@ -350,9 +351,7 @@ export default function CreateProduct() {
           {measurements.map((measurement, index) => (
             <div key={index} className="flex gap-4 items-end">
               <div className="flex-1">
-                <label className="block text-sm font-medium mb-2">
-                Из
-                </label>
+                <label className="block text-sm font-medium mb-2">Из</label>
                 <select
                   className="w-full px-3 py-2 border rounded-md"
                   value={measurement.from_unit || ""}
@@ -374,9 +373,7 @@ export default function CreateProduct() {
                 </select>
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium mb-2">
-                 К
-                </label>
+                <label className="block text-sm font-medium mb-2">К</label>
                 <select
                   className="w-full px-3 py-2 border rounded-md"
                   value={measurement.to_unit || ""}
@@ -437,7 +434,7 @@ export default function CreateProduct() {
               ]);
             }}
           >
-           Добавить
+            Добавить
           </button>
         </div>
         {/* Dynamic Attribute Fields */}
@@ -449,7 +446,9 @@ export default function CreateProduct() {
                 (v) => v.attribute_id === attribute.id,
               )?.value;
 
-              const handleAttributeChange = (value: string | boolean) => {
+              const handleAttributeChange = (
+                value: string | boolean | number[],
+              ) => {
                 setAttributeValues((prev) => {
                   const existing = prev.find(
                     (v) => v.attribute_id === attribute.id,
@@ -554,6 +553,29 @@ export default function CreateProduct() {
                       />
                     </div>
                   );
+                case "many2many":
+                  return attribute.related_objects ? (
+                    <div key={attribute.id} className="mb-4">
+                      <MultiSelect
+                        label={attribute.translations.ru}
+                        options={attribute.related_objects.map(
+                          (obj: { id: number; name: string }) => ({
+                            id: obj.id,
+                            name: obj.name,
+                          }),
+                        )}
+                        value={
+                          Array.isArray(existingValue)
+                            ? (existingValue as number[])
+                            : []
+                        }
+                        onChange={(selectedIds) =>
+                          handleAttributeChange(selectedIds)
+                        }
+                        placeholder={t("placeholders.select_options")}
+                      />
+                    </div>
+                  ) : null;
                 default:
                   return null;
               }

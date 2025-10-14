@@ -466,7 +466,14 @@
     "enter_balance": "Balanstı kiritiń",
     "select_client": "Klientti tańlań",
     "enter_amount": "Muǵdarın kiritiń",
-    "select_user": "Paydalanıwshını tańlań"
+    "select_user": "Paydalanıwshını tańlań",
+    "hold_ctrl_select": "Birneshe nusqanı tańlaw úshin Ctrl (yáki Mac-ta Cmd) basıp turıń",
+    "select_option": "Nusqanı tańlań",
+    "select_options": "Nusqalarni tańlań",
+    "selected": "Tańlangan",
+    "search": "Izlew...",
+    "no_results": "Eshteńe tabılmadı",
+    "clear_all": "Barshesın tazalaw"
   },
   "table": {
     "id": "Id",

@@ -241,7 +241,7 @@ export const useGetDebtPayments = (debtId: number) => {
     queryKey: ["debtPayments", debtId],
     queryFn: async () => {
       const { data } = await api.get(`debts/${debtId}/payments`);
-      return data;
+      return data.results;
     },
     enabled: !!debtId,
   });

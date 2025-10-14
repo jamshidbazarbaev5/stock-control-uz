@@ -165,8 +165,18 @@ export default function StocksPage() {
     {
       header: t("table.product"),
       accessorKey: "product",
-      cell: (row: Stock) =>
-        row.product?.product_name || row.product_read?.product_name || "-",
+      cell: (row: Stock) => {
+        const productName =
+          row.product?.product_name || row.product_read?.product_name || "-";
+
+        // If stock_name exists, show: ProductName (stock_name)
+        if (row.stock_name && row.stock_name.trim() !== "") {
+          return `${productName} (${row.stock_name})`;
+        }
+
+        // Otherwise just show the product name
+        return productName;
+      },
     },
     {
       header: t("table.store"),

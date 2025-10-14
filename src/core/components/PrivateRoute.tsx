@@ -41,6 +41,7 @@ export function PrivateRoute({ children, allowedRoles }: PrivateRouteProps) {
           "/create-expense",
         "/income/:id",
           "/dashboard",
+        "/debts/:id/payments",
         "/shifts",
         "/product-stock-balance",
         "/close-shift/active",

@@ -60,14 +60,14 @@ export const StockSelectionModal: React.FC<StockSelectionModalProps> = ({
 
 
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "-";
-    try {
-      return new Date(dateString).toLocaleDateString("ru-RU");
-    } catch {
-      return dateString;
-    }
-  };
+  // const formatDate = (dateString?: string) => {
+  //   if (!dateString) return "-";
+  //   try {
+  //     return new Date(dateString).toLocaleDateString("ru-RU");
+  //   } catch {
+  //     return dateString;
+  //   }
+  // };
 
   const formatCurrency = (value?: string | number) => {
     if (!value) return "0";
@@ -101,7 +101,7 @@ export const StockSelectionModal: React.FC<StockSelectionModalProps> = ({
         ) : (
           <div className="space-y-4">
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {stocks.map((stock) => (
+              {stocks.map((stock:any) => (
                 <div
                   key={stock.id}
                   onClick={() => setSelectedStockId(stock.id || null)}
@@ -115,20 +115,7 @@ export const StockSelectionModal: React.FC<StockSelectionModalProps> = ({
                   `}
                 >
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-xs text-gray-500">Магазин</p>
-                      <p className="font-medium">
-                        {stock.store?.name || stock.store_read?.name || "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Поставщик</p>
-                      <p className="font-medium">
-                        {stock.supplier?.name ||
-                          stock.supplier_read?.name ||
-                          "-"}
-                      </p>
-                    </div>
+
                     <div>
                       <p className="text-xs text-gray-500">Количество</p>
                       <p className="font-medium">
@@ -137,50 +124,12 @@ export const StockSelectionModal: React.FC<StockSelectionModalProps> = ({
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">
-                        Единица закупки
-                      </p>
+                      <p className="text-xs text-gray-500">Партия</p>
                       <p className="font-medium">
-                        {stock.purchase_unit?.short_name || "-"}:{" "}
-                        {formatCurrency(stock.purchase_unit_quantity)}
+                        {stock.stock_name}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Цена за единицу</p>
-                      <p className="font-medium">
-                        {formatCurrency(stock.price_per_unit_currency)}{" "}
-                        {stock.currency?.short_name || ""}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">
-                        Цена за единицу (UZS)
-                      </p>
-                      <p className="font-medium">
-                        {formatCurrency(stock.base_unit_in_uzs)} сум
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Общая цена</p>
-                      <p className="font-medium">
-                        {formatCurrency(stock.total_price_in_currency)}{" "}
-                        {stock.currency?.short_name || ""}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">
-                        Общая цена (UZS)
-                      </p>
-                      <p className="font-medium">
-                        {formatCurrency(stock.total_price_in_uz)} сум
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Дата прихода</p>
-                      <p className="font-medium">
-                        {formatDate(stock.date_of_arrived)}
-                      </p>
-                    </div>
+
                   </div>
                 </div>
               ))}

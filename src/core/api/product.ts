@@ -21,7 +21,7 @@ export interface ProductMeasurement {
 export interface AttributeValueResponse {
   id: number;
   attribute: Attribute;
-  value: string | number | boolean;
+  value: string | number | boolean | number[];
 }
 
 export interface Product {
@@ -48,7 +48,7 @@ export interface Product {
   // For form submission (create/update)
   attribute_values?: Array<{
     attribute_id: number;
-    value: string | number | boolean;
+    value: string | number | boolean | number[];
   }>;
   // For API response (get)
   attribute_values_response?: AttributeValueResponse[];

@@ -11,6 +11,7 @@ import type { Attribute } from "@/types/attribute";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { MultiSelect } from "@/components/MultiSelect";
 
 // Utility function to parse numeric values from API
 const parseNumericValue = (value: any): string => {
@@ -34,7 +35,7 @@ const parseNumericValue = (value: any): string => {
 
 interface AttributeValue {
   attribute_id: number;
-  value: string | number | boolean;
+  value: string | number | boolean | number[];
 }
 
 export default function EditProduct() {
@@ -236,9 +237,9 @@ export default function EditProduct() {
           },
           {
             name: "base_unit",
-            label: t('forms.base_unit'),
+            label: t("forms.base_unit"),
             type: "select",
-            placeholder: t('forms.base_unit'),
+            placeholder: t("forms.base_unit"),
             options: availableMeasurements.map((measurement) => ({
               value: measurement.id,
               label: measurement.measurement_name,
@@ -293,9 +294,7 @@ export default function EditProduct() {
           {measurements.map((measurement, index) => (
             <div key={index} className="flex gap-4 items-end">
               <div className="flex-1">
-                <label className="block text-sm font-medium mb-2">
-                 ИЗ
-                </label>
+                <label className="block text-sm font-medium mb-2">ИЗ</label>
                 <select
                   className="w-full px-3 py-2 border rounded-md"
                   value={measurement.from_unit || ""}
@@ -317,9 +316,7 @@ export default function EditProduct() {
                 </select>
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium mb-2">
-                К
-                </label>
+                <label className="block text-sm font-medium mb-2">К</label>
                 <select
                   className="w-full px-3 py-2 border rounded-md"
                   value={measurement.to_unit || ""}
@@ -365,7 +362,7 @@ export default function EditProduct() {
                     setMeasurements(measurements.filter((_, i) => i !== index));
                   }}
                 >
-                Удалить
+                  Удалить
                 </button>
               )}
             </div>
@@ -380,7 +377,7 @@ export default function EditProduct() {
               ]);
             }}
           >
-          Добавить
+            Добавить
           </button>
         </div>
         {/* Dynamic Attribute Fields */}
@@ -392,7 +389,9 @@ export default function EditProduct() {
                 (v) => v.attribute_id === attribute.id,
               )?.value;
 
-              const handleAttributeChange = (value: string | boolean) => {
+              const handleAttributeChange = (
+                value: string | boolean | number[],
+              ) => {
                 setAttributeValues((prev) => {
                   const existing = prev.find(
                     (v) => v.attribute_id === attribute.id,
@@ -497,6 +496,29 @@ export default function EditProduct() {
                       />
                     </div>
                   );
+                case "many2many":
+                  return attribute.related_objects ? (
+                    <div key={attribute.id} className="mb-4">
+                      <MultiSelect
+                        label={attribute.translations.ru}
+                        options={attribute.related_objects.map(
+                          (obj: { id: number; name: string }) => ({
+                            id: obj.id,
+                            name: obj.name,
+                          }),
+                        )}
+                        value={
+                          Array.isArray(existingValue)
+                            ? (existingValue as number[])
+                            : []
+                        }
+                        onChange={(selectedIds) =>
+                          handleAttributeChange(selectedIds)
+                        }
+                        placeholder={t("placeholders.select_options")}
+                      />
+                    </div>
+                  ) : null;
                 default:
                   return null;
               }

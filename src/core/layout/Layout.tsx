@@ -134,6 +134,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       const allowedPaths = [
         "/create-sale",
         "/sales",
+        "/debts/:id/payments",
         "/clients",
         "/create-client",
         "/debts",

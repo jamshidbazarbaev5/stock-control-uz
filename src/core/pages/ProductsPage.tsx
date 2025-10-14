@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ResourceTable } from "../helpers/ResourseTable";
 import { toast } from "sonner";
@@ -144,6 +144,11 @@ export default function ProductsPage() {
   const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
   const [isRevaluationDialogOpen, setIsRevaluationDialogOpen] = useState(false);
   const [priceEdits, setPriceEdits] = useState<Record<number, PriceEdit>>({});
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, selectedCategory, selectedMeasurement]);
 
   const { data: productsData, isLoading } = useGetProducts({
     params: {

@@ -831,13 +831,17 @@ export default function EditStock() {
       placeholder: t("common.enter_arrival_date"),
       required: true,
     },
-    {
-      name: "stock_name",
-      label: t("common.stock_name"),
-      type: "text",
-      placeholder: t("common.enter_stock_name"),
-      required: false,
-    },
+    ...(selectedProduct?.category_read?.sell_from_stock
+      ? [
+          {
+            name: "stock_name",
+            label: t("common.stock_name"),
+            type: "text",
+            placeholder: t("common.enter_stock_name"),
+            required: false,
+          },
+        ]
+      : []),
   ];
 
   // FIXED: Show dynamic fields in API response order
