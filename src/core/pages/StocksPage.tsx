@@ -46,6 +46,7 @@ const COLUMN_CONFIG: Record<string, { label: string }> = {
   supplier: { label: "Поставщик" },
   total_price_in_currency: { label: "Общая цена (валюта)" },
   total_price_in_uz: { label: "Общая цена (UZS)" },
+  base_unit_in_currency: { label: "Цена за базовую единицу (валюта)" },
   date_of_arrived: { label: "Дата прихода" },
   quantity: { label: "Количество (базовая единица)" },
   purchase_unit_quantity: { label: "Количество (единица закупки)" },
@@ -218,6 +219,14 @@ export default function StocksPage() {
       cell: (row: Stock) =>
         row.total_price_in_uz
           ? `${Number(row.total_price_in_uz).toLocaleString()} UZS`
+          : "-",
+    },
+    {
+      header: "Цена за базовую единицу (валюта)",
+      accessorKey: "base_unit_in_currency",
+      cell: (row: Stock) =>
+        row.base_unit_in_currency
+          ? `${Number(row.base_unit_in_currency).toFixed(2)} ${row.currency?.short_name || "UZS"}`
           : "-",
     },
     {
