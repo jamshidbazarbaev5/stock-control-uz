@@ -33,6 +33,7 @@ interface FormValues {
   purchase_unit: number | string;
   supplier: number | string;
   date_of_arrived: string;
+  stock_name?: string;
   purchase_unit_quantity?: number | string;
   total_price_in_currency?: number | string;
   price_per_unit_currency?: number | string;
@@ -90,6 +91,12 @@ export default function EditStock() {
   const [isCalculating, setIsCalculating] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+  const [pendingPurchaseUnit, setPendingPurchaseUnit] = useState<string | null>(
+    null,
+  );
+
+  // Track if this is the first time a product is being set (to prevent incorrect reset)
+  const isInitialProductLoad = useRef(true);
 
   // Barcode scanner state
   const [scanBuffer, setScanBuffer] = useState("");
@@ -126,6 +133,7 @@ export default function EditStock() {
       purchase_unit: "",
       supplier: "",
       date_of_arrived: "",
+      stock_name: "",
       purchase_unit_quantity: "",
       total_price_in_currency: "",
       price_per_unit_currency: "",
@@ -182,14 +190,20 @@ export default function EditStock() {
     if (watchedProduct) {
       const product = allProducts.find((p) => p.id === Number(watchedProduct));
       setSelectedProduct(product);
-      // Reset purchase_unit when product changes (only if not initial load)
-      if (initialDataLoaded) {
+
+      // The ref tracks if this is the FIRST time the product gets a value.
+      if (isInitialProductLoad.current) {
+        // If it's the first time, flip the ref and do nothing else.
+        // This prevents the purchase_unit from being reset on initial load.
+        isInitialProductLoad.current = false;
+      } else {
+        // On any SUBSEQUENT change by the user, reset the purchase unit.
         form.setValue("purchase_unit", "");
       }
     } else {
       setSelectedProduct(null);
     }
-  }, [watchedProduct, allProducts, initialDataLoaded]);
+  }, [watchedProduct, allProducts, form]);
 
   const [initialCalculationDone, setInitialCalculationDone] = useState(false);
   const [calculationMetadata, setCalculationMetadata] = useState<{
@@ -449,18 +463,34 @@ export default function EditStock() {
     ) {
       console.log("Loading initial stock data:", stock);
 
+      // Find the product object and set it in state immediately
+      const initialProduct = allProducts.find(
+        (p) => p.id === (stock as any).product?.id,
+      );
+      if (initialProduct) {
+        setSelectedProduct(initialProduct);
+      }
+
+      // Store purchase_unit to set it after selectedProduct is ready
+      const purchaseUnitValue =
+        (stock as any).purchase_unit?.id?.toString() || "";
+      if (purchaseUnitValue) {
+        setPendingPurchaseUnit(purchaseUnitValue);
+      }
+
       const formValues: FormValues = {
         store: (stock as any).store?.id?.toString() || "",
         product: (stock as any).product?.id?.toString() || "",
         currency: (stock as any).currency?.id?.toString() || "",
-        purchase_unit: (stock as any).purchase_unit?.id?.toString() || "",
+        purchase_unit: "", // Don't set purchase_unit yet - wait for selectedProduct to be ready
         supplier: (stock as any).supplier?.id?.toString() || "",
         date_of_arrived: stock.date_of_arrived
           ? new Date(stock.date_of_arrived).toISOString().slice(0, 16)
           : "",
+        stock_name: (stock as any).stock_name || "",
       };
 
-      // Set form values
+      // Set form values (excluding purchase_unit)
       Object.entries(formValues).forEach(([key, value]) => {
         form.setValue(key as keyof FormValues, value, {
           shouldValidate: false,
@@ -525,6 +555,24 @@ export default function EditStock() {
     form,
     initialDataLoaded,
   ]);
+
+  // Set purchase_unit after selectedProduct is ready with available_units
+  useEffect(() => {
+    if (pendingPurchaseUnit && selectedProduct?.available_units?.length > 0) {
+      // Check if the pending purchase_unit is in the available units
+      const isValidUnit = selectedProduct.available_units.some(
+        (unit: any) => unit.id.toString() === pendingPurchaseUnit,
+      );
+
+      if (isValidUnit) {
+        console.log("Setting purchase_unit from pending:", pendingPurchaseUnit);
+        form.setValue("purchase_unit", pendingPurchaseUnit, {
+          shouldValidate: false,
+        });
+        setPendingPurchaseUnit(null); // Clear pending value
+      }
+    }
+  }, [pendingPurchaseUnit, selectedProduct, form]);
 
   // Watch required fields for initial calculation
   const requiredFields = form.watch([
@@ -783,6 +831,13 @@ export default function EditStock() {
       placeholder: t("common.enter_arrival_date"),
       required: true,
     },
+    {
+      name: "stock_name",
+      label: t("common.stock_name"),
+      type: "text",
+      placeholder: t("common.enter_stock_name"),
+      required: false,
+    },
   ];
 
   // FIXED: Show dynamic fields in API response order
@@ -837,12 +892,14 @@ export default function EditStock() {
 
       console.log("[Debug] Submitting data. Raw quantity:", data.quantity);
       const payload: any = {
+        id: Number(id),
         store: Number(data.store),
         product: Number(data.product),
         currency: Number(data.currency),
         purchase_unit: Number(data.purchase_unit),
         supplier: Number(data.supplier),
         date_of_arrived: data.date_of_arrived,
+        ...(data.stock_name && { stock_name: data.stock_name }),
       };
 
       // Handle dynamic fields - send both editable and disabled fields with their values
@@ -911,7 +968,7 @@ export default function EditStock() {
       console.log("[Debug] Final payload for API:", payload);
       console.log("payload", payload);
       await updateStock.mutateAsync(payload);
-      toast.success("Stock updated successfully");
+      toast.success("Приход успешно обновлен");
       navigate("/stock");
     } catch (error) {
       toast.error("Failed to update stock");

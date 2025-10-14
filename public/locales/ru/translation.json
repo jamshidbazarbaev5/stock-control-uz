@@ -11,6 +11,7 @@
     "max_quantity": "Максимальное количество"
   },
   "buttons": {
+    "save": "Сохранить",
     "print": "Распечатать штрих-код",
     "revaluate": "Переоценка",
     "cancel": "Отмена",
@@ -146,6 +147,9 @@
     "create_expense": "Создать расход"
   },
   "common": {
+    "stock_name": "Партия",
+    "enter_stock_name": "Партия",
+
     "select_currency": "Валюта",
     "purchase_unit": "Ед измерения",
     "select_purchase_unit": "Eд измерения",

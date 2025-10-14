@@ -33,6 +33,7 @@ interface FormValues {
   purchase_unit: number | string;
   supplier: number | string;
   date_of_arrived: string;
+  stock_name?: string;
   purchase_unit_quantity?: number | string;
   total_price_in_currency?: number | string;
   price_per_unit_currency?: number | string;
@@ -127,6 +128,7 @@ export default function CreateStock() {
         date.setHours(date.getHours() + 5);
         return date.toISOString().slice(0, 16);
       })(),
+      stock_name: "",
       purchase_unit_quantity: "",
       total_price_in_currency: "",
       price_per_unit_currency: "",
@@ -683,6 +685,13 @@ export default function CreateStock() {
       placeholder: t("common.enter_arrival_date"),
       required: true,
     },
+    {
+      name: "stock_name",
+      label: t("common.stock_name"),
+      type: "text",
+      placeholder: t("common.enter_stock_name"),
+      required: false,
+    },
   ];
 
   // FIXED: Show dynamic fields in API response order
@@ -742,6 +751,7 @@ export default function CreateStock() {
         purchase_unit: Number(data.purchase_unit),
         supplier: Number(data.supplier),
         date_of_arrived: data.date_of_arrived,
+        ...(data.stock_name && { stock_name: data.stock_name }),
       };
 
       // Handle dynamic fields - send both editable and disabled fields with their values
