@@ -582,6 +582,7 @@
       "payment_created": "Платеж успешно создан"
     },
     "error": {
+      "add_money": "Пополните все поля",
       "negative": "Невозможно создать: прибыль не может быть отрицательной.",
       "delete_budget_negative": "Невозможно удалить: бюджет магазина станет отрицательным.",
       "create": "Не удалось создать ",
@@ -607,6 +608,11 @@
     "select_device": "Телефонная версия",
     "search_cassa": "Пойск кассу",
     "search_shifts": "Поиск смен",
+    "select_register": "Выберите кассу",
+    "select_cashier": "Выберите кассира",
+    "select_approver": "Выберите утверждающего",
+    "select_approval_status": "Выберите статус утверждения",
+    "select_awaiting_status": "Выберите статус ожидания",
     "select_sponsor": "Выберите спонсора",
     "quantity_of_parts": "Введите количество частей",
     "search_loansponsor": "Пишите спонсора",
@@ -688,6 +694,11 @@
     "approval_comment": "Комментарий Одобрение",
     "awaiting_approval": "ожидание одобрения ",
     "approved": "одобрено",
+    "approved_by": "Утверждено",
+    "approval_status": "Статус утверждения",
+    "not_approved": "Не утверждено",
+    "awaiting": "Ожидание",
+    "not_awaiting": "Не ожидается",
     "closing_comment": "Закрытые коментария",
     "select": "Выбрать",
     "price_per_unit": "Цена за единицу",
@@ -783,6 +794,7 @@
       "attribute_created": "Атрибут успешно создан"
     },
     "error": {
+      "add_money": "Пополните все поля",
       "negative": "Невозможно создать: прибыль не может быть отрицательной.",
       "delete_budget_negative": "Невозможно удалить: бюджет магазина станет отрицательным.",
       "create": "Не удалось создать ",

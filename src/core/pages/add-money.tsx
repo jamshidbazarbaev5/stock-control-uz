@@ -66,11 +66,15 @@ export default function AddMoney() {
       label: t("forms.comment"),
       type: "text",
       placeholder: t("placeholders.enter_comment"),
-      required: true,
+      required: false,
       validation: {
-        required: {
-          value: true,
-          message: t("validation.comment_required") || "Comment is required",
+        maxLength: {
+          value: 500,
+          message: t("validation.comment_too_long"),
+        },
+        minLength: {
+          value: 3,
+          message: t("validation.comment_too_short"),
         },
       },
     },

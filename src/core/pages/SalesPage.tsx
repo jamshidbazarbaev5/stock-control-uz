@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {Printer, Settings, Settings2} from "lucide-react";
+import { Printer, Settings, Settings2 } from "lucide-react";
 import PrintDialog from "../../components/receipt-designer/PrintDialog";
 import type { ReceiptPreviewData } from "../../types/receipt";
 import { DEFAULT_TEMPLATE } from "../../types/receipt";
@@ -206,6 +206,11 @@ export default function SalesPage() {
       console.groupEnd();
     }
   }, [sales, page]);
+
+  // Reset page to 1 when search filters change
+  useEffect(() => {
+    setPage(1);
+  }, [productName, stockId]);
 
   // Debug function to show profit calculation details
   const logSaleDetails = (sale: any) => {
@@ -421,6 +426,52 @@ export default function SalesPage() {
 
     return (
       <div className="p-2 space-y-3">
+        {/* Worker Information Section */}
+        {row.worker_read && (
+          <div>
+            <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2 text-sm">
+              👤 Продавец
+              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
+                Инфо
+              </span>
+            </h3>
+            <div className="space-y-1">
+              <div className="dark:bg-expanded-row-dark bg-gray-50 p-2 rounded border-l-4 border-purple-400 transition-all duration-200">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                  <div>
+                    <span className="text-gray-500 font-medium">Имя:</span>
+                    <p className="font-medium text-gray-700 text-sm">
+                      {row.worker_read.name}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 font-medium">Телефон:</span>
+                    <p className="font-medium text-gray-700 text-sm">
+                      {row.worker_read.phone_number}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 font-medium">Роль:</span>
+                    <p className="font-medium text-gray-700 text-sm">
+                      {row.worker_read.role}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 font-medium">Смена:</span>
+                    <p className="font-medium text-sm">
+                      {row.worker_read.has_active_shift ? (
+                        <span className="text-green-600">✓ Активна</span>
+                      ) : (
+                        <span className="text-gray-500">Неактивна</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Sale Items Section */}
         {hasItems && (
           <div>
@@ -445,9 +496,15 @@ export default function SalesPage() {
                     <div className="md:col-span-2">
                       <span
                         className="font-medium text-gray-800 line-clamp-1 text-sm"
-                        title={item.product_read?.product_name || "-"}
+                        title={
+                          item.stock_name
+                            ? `${item.product_read?.product_name} (${item.stock_name})`
+                            : item.product_read?.product_name || "-"
+                        }
                       >
-                        {item.product_read?.product_name || "-"}
+                        {item.stock_name
+                          ? `${item.product_read?.product_name} (${item.stock_name})`
+                          : item.product_read?.product_name || "-"}
                       </span>
                     </div>
                     <div>
@@ -544,8 +601,10 @@ export default function SalesPage() {
                         <div className="grid grid-cols-3 gap-2 text-xs items-center">
                           <div className="col-span-2">
                             <span className="font-medium text-gray-800 text-sm line-clamp-1">
-                              {refundItem.sale_item.product_read
-                                ?.product_name || "-"}
+                              {refundItem.sale_item.stock_name
+                                ? `${refundItem.sale_item.product_read?.product_name} (${refundItem.sale_item.stock_name})`
+                                : refundItem.sale_item.product_read
+                                    ?.product_name || "-"}
                             </span>
                           </div>
                           <div className="text-right">
@@ -619,7 +678,8 @@ export default function SalesPage() {
         const itemsText = row.sale_items
           .map((item) => {
             const product = item.product_read?.product_name || "-";
-            return `${product}`;
+            const stockName = item.stock_name;
+            return stockName ? `${product} (${stockName})` : product;
           })
           .join(" • ");
         return (

@@ -150,7 +150,15 @@ const BASE_URL = "pos/shifts/";
 const OPEN_SHIFT_URL = "pos/shifts/open/";
 
 export const shiftsApi = {
-  getAll: () => api.get<ShiftResponse>(BASE_URL),
+  getAll: (params?: {
+    store?: number;
+    register?: number;
+    cashier?: number;
+    approved_by?: number;
+    is_active?: boolean;
+    is_approved?: boolean;
+    is_awaiting_approval?: boolean;
+  }) => api.get<ShiftResponse>(BASE_URL, { params }),
   getById: (id: number) => api.get<Shift>(`${BASE_URL}${id}/`),
   create: (data: ShiftCreateData) => api.post<Shift>(BASE_URL, data),
   update: (id: number, data: ShiftUpdateData) =>

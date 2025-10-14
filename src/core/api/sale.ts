@@ -20,6 +20,7 @@ export interface SaleItem {
   price_per_unit?: string;
   id?: number;
   stock_write?: number;
+  stock_name?: string | null;
   product_read?: {
     id: number;
     product_name: string;
@@ -64,6 +65,7 @@ export interface SaleRefund {
     id: number;
     sale_item: {
       id: number;
+      stock_name?: string | null;
       product_read?: {
         id: number;
         product_name: string;
