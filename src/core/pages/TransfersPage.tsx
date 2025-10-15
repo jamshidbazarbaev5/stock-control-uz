@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { ResourceTable } from "../helpers/ResourseTable";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -35,6 +35,11 @@ export default function TransfersPage() {
   const [productNameFilter, setProductNameFilter] = useState("");
 
   const [fromStockId, setFromStockId] = useState<string>("");
+
+  // Reset to page 1 when any filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [productNameFilter, fromStockId]);
   const { data: transfersData, isLoading } = useGetTransfers({
     params: {
       page: page,

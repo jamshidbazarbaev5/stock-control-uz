@@ -5,12 +5,12 @@ import { ResourceForm } from "../helpers/ResourceForm";
 import type { Recycling } from "../api/recycling";
 import type { Product } from "../api/product";
 import { useCreateRecycling } from "../api/recycling";
+import { useGetProducts } from "../api/product";
 import { fetchAllStocks } from "../api/fetchAllStocks";
 import { useGetStores } from "../api/store";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
-import api from "../api/api";
 
 interface FormValues extends Partial<Recycling> {
   quantity_of_parts?: number;
@@ -132,8 +132,7 @@ export default function CreateRecycling() {
     id: number;
     name: string;
   }> | null>(null);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [productPage, setProductPage] = useState(1);
   const [stocks, setStocks] = useState<any[]>([]);
   const [loadingStocks, setLoadingStocks] = useState(false);
   // const [exchangeRate, setExchangeRate] = useState<number | null>(null);
@@ -164,6 +163,19 @@ export default function CreateRecycling() {
     ? storesData
     : storesData?.results || [];
 
+  // Fetch products with pagination
+  const { data: productsData, isLoading: isLoadingProducts } = useGetProducts({
+    params: {
+      page: productPage,
+      ...(productSearchTerm ? { product_name: productSearchTerm } : {}),
+    },
+  });
+
+  // Get products array from API response
+  const allProducts = Array.isArray(productsData)
+    ? productsData
+    : productsData?.results || [];
+
   // Effect to ensure store is set and locked for admin or if storeIdFromUrl is present
   useEffect(() => {
     if (storeIdFromUrl) {
@@ -175,49 +187,6 @@ export default function CreateRecycling() {
       form.setValue("store", currentUser.store_read.id);
     }
   }, [currentUser, form, storeIdFromUrl]);
-
-  // Function to fetch all pages of products
-  const fetchAllProducts = async (searchTerm: string) => {
-    try {
-      setIsLoadingProducts(true);
-      let allResults: Product[] = [];
-      let currentPage = 1;
-      let hasMore = true;
-
-      while (hasMore) {
-        const response = await api.get("items/product/", {
-          params: {
-            page: currentPage,
-            product_name: searchTerm || undefined,
-          },
-        });
-        const data = response.data;
-
-        allResults = [...allResults, ...(data.results || [])];
-
-        if (!data.links?.next) {
-          hasMore = false;
-        }
-        currentPage++;
-      }
-
-      setAllProducts(allResults);
-    } catch (error) {
-      console.error("Error fetching all products:", error);
-      toast.error(t("messages.error.load", { item: t("navigation.products") }));
-    } finally {
-      setIsLoadingProducts(false);
-    }
-  };
-
-  // Effect to fetch all products when search term changes
-  useEffect(() => {
-    const debouncedFetch = setTimeout(() => {
-      fetchAllProducts(productSearchTerm);
-    }, 300);
-
-    return () => clearTimeout(debouncedFetch);
-  }, [productSearchTerm]);
 
   // Fetch all stocks on mount
   useEffect(() => {
@@ -350,7 +319,7 @@ export default function CreateRecycling() {
         return {
           ...field,
           options: allProducts
-            .filter((product:any) => {
+            .filter((product: any) => {
               if (!allowedCategories || !product.category_read) return true;
               return allowedCategories.some(
                 (cat) => cat.id === product?.category_read.id,

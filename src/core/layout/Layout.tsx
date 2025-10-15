@@ -110,6 +110,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       setCurrencyModalOpen(false);
       setSelectedCurrency("");
       setCurrencyRate("");
+      // Reload page to update currency rates across the application
+      window.location.reload();
     } catch (error: unknown) {
       const errorMessage =
         (error as any)?.response?.data?.detail ||
@@ -712,7 +714,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                         {/* Current Rates Display */}
                         <div>
                           <h3 className="text-lg font-medium mb-3">
-                         Текущий курсы
+                            Текущий курсы
                           </h3>
                           <div className="space-y-2 max-h-40 overflow-y-auto">
                             {(Array.isArray(currencyRates)
@@ -752,13 +754,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           className="space-y-4"
                         >
                           <h3 className="text-lg font-medium">
-                           Создать новый курс
+                            Создать новый курс
                           </h3>
 
                           {/* Currency Selection */}
                           <div>
                             <label className="block text-sm font-medium mb-2">
-                            Валюта
+                              Валюта
                             </label>
                             <Select
                               value={selectedCurrency}

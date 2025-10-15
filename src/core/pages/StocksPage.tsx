@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { WriteOffDialog } from "../components/dialogs/WriteOffDialog";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/button";
@@ -70,6 +71,7 @@ const isProductRecyclable = (product: any): boolean => {
 export default function StocksPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: currentUser } = useCurrentUser();
   // Removed selectedStock state - using dedicated edit page instead
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -112,6 +114,19 @@ export default function StocksPage() {
       JSON.stringify(visibleColumns),
     );
   }, [visibleColumns]);
+
+  // Reset to page 1 when any filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    productName,
+    selectedSupplier,
+    selectedStore,
+    dateFrom,
+    dateTo,
+    productZero,
+    productId,
+  ]);
 
   // Toggle individual column
   const toggleColumn = (columnKey: string) => {
@@ -395,6 +410,8 @@ export default function StocksPage() {
   const handleDelete = async (id: number) => {
     try {
       await deleteStock.mutateAsync(id);
+      // Explicitly invalidate and refetch stocks query
+      await queryClient.invalidateQueries({ queryKey: ["stocks"] });
       toast.success(
         t("messages.success.deleted", { item: t("table.product") }),
       );

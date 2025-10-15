@@ -71,30 +71,6 @@ const columns = (
       row.category_read?.category_name || row.category_write,
   },
   {
-    header: t("table.selling_price"),
-    accessorKey: "selling_price",
-    cell: (product: any) => {
-      const editValue = priceEdits[product?.id]?.selling_price;
-      return (
-        <Input
-          type="number"
-          step="0.01"
-          value={
-            editValue !== undefined ? editValue : product?.selling_price || ""
-          }
-          onChange={(e) => {
-            e.stopPropagation();
-            if (product?.id) {
-              onPriceChange(product.id, "selling_price", e.target.value);
-            }
-          }}
-          onClick={(e) => e.stopPropagation()}
-          className="w-28"
-        />
-      );
-    },
-  },
-  {
     header: t("table.selling_price_in_currency"),
     accessorKey: "selling_price_in_currency",
     cell: (product: any) => {
@@ -119,6 +95,30 @@ const columns = (
                 e.target.value,
                 product.sell_in_currency_unit,
               );
+            }
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className="w-28"
+        />
+      );
+    },
+  },
+  {
+    header: t("table.selling_price"),
+    accessorKey: "selling_price",
+    cell: (product: any) => {
+      const editValue = priceEdits[product?.id]?.selling_price;
+      return (
+        <Input
+          type="number"
+          step="0.01"
+          value={
+            editValue !== undefined ? editValue : product?.selling_price || ""
+          }
+          onChange={(e) => {
+            e.stopPropagation();
+            if (product?.id) {
+              onPriceChange(product.id, "selling_price", e.target.value);
             }
           }}
           onClick={(e) => e.stopPropagation()}

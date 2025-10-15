@@ -3,7 +3,11 @@ import { ResourceForm } from "../helpers/ResourceForm";
 import type { DynamicField } from "../api/stock";
 import { calculateStock } from "../api/stock";
 import { useCreateStock } from "../api/stock";
-import { useCreateProduct, searchProductByBarcode } from "../api/product";
+import {
+  useCreateProduct,
+  useGetProducts,
+  searchProductByBarcode,
+} from "../api/product";
 import { useGetStores } from "../api/store";
 import { useGetSuppliers, useCreateSupplier } from "../api/supplier";
 import { useGetCategories } from "../api/category";
@@ -24,7 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
-import api from "../api/api";
 
 interface FormValues {
   store: number | string;
@@ -81,8 +84,8 @@ const formatNumberForAPI = (value: any): number | undefined => {
 export default function CreateStock() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [allProducts, setAllProducts] = useState<any[]>([]);
   const [productSearchTerm, setProductSearchTerm] = useState("");
+  const [productPage, setProductPage] = useState(1);
   const [dynamicFields, setDynamicFields] = useState<{
     [key: string]: DynamicField;
   }>({});
@@ -109,6 +112,12 @@ export default function CreateStock() {
     useGetCurrencies({});
   const { data: _measurementsData, isLoading: measurementsLoading } =
     useGetMeasurements({});
+  const { data: productsData, isLoading: productsLoading } = useGetProducts({
+    params: {
+      page: productPage,
+      ...(productSearchTerm ? { product_name: productSearchTerm } : {}),
+    },
+  });
 
   const [createProductOpen, setCreateProductOpen] = useState(false);
   const [createSupplierOpen, setCreateSupplierOpen] = useState(false);
@@ -154,31 +163,10 @@ export default function CreateStock() {
     : currenciesData?.results || [];
   // const measurements = Array.isArray(measurementsData) ? measurementsData : measurementsData?.results || [];
 
-  // Fetch all products
-  useEffect(() => {
-    const fetchAllProducts = async () => {
-      let page = 1;
-      let products: any[] = [];
-      let totalPages = 1;
-      try {
-        do {
-          const res = await api.get("items/product/", {
-            params: {
-              page,
-              ...(productSearchTerm ? { product_name: productSearchTerm } : {}),
-            },
-          });
-          products = products.concat(res.data.results);
-          totalPages = res.data.total_pages;
-          page++;
-        } while (page <= totalPages);
-        setAllProducts(products);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-      }
-    };
-    fetchAllProducts();
-  }, [productSearchTerm]);
+  // Get products array from API response
+  const allProducts = Array.isArray(productsData)
+    ? productsData
+    : productsData?.results || [];
 
   // Watch product selection to update available units
   const watchedProduct = form.watch("product");

@@ -155,6 +155,12 @@ export default function SalesPage() {
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [productName, setProductName] = useState<string>("");
   const [stockId, setStockId] = useState<string>("");
+
+  // Reset to page 1 when any filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [startDate, endDate, creditStatus, selectedStore, productName, stockId]);
+
   const { data: storesData } = useGetStores({});
   const { data: salesData, isLoading } = useGetSales({
     params: {

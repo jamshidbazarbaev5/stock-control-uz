@@ -11,8 +11,8 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
-import { fetchAllProducts } from "../api/fetchAllProducts";
 import type { Product } from "../api/product";
+import { useGetProducts } from "../api/product";
 import { OpenShiftForm } from "@/components/OpenShiftForm";
 import type { Stock } from "../api/stock";
 import { StockSelectionModal } from "@/components/StockSelectionModal";
@@ -131,6 +131,7 @@ function CreateSale() {
   const [cartProducts, setCartProducts] = useState<ProductInCart[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [productSearchTerm, setProductSearchTerm] = useState("");
+  const [productPage, setProductPage] = useState(1);
   const [activeSearchIndex, setActiveSearchIndex] = useState<number | null>(
     null,
   );
@@ -207,18 +208,21 @@ function CreateSale() {
   const stores = Array.isArray(storesData)
     ? storesData
     : storesData?.results || [];
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [, setLoadingAllProducts] = useState(false);
 
-  useEffect(() => {
-    setLoadingAllProducts(true);
-    fetchAllProducts({
-      product_name:
-        productSearchTerm.length > 0 ? productSearchTerm : undefined,
-    })
-      .then((data) => setAllProducts(data))
-      .finally(() => setLoadingAllProducts(false));
-  }, [productSearchTerm]);
+  // Fetch products with pagination
+  const { data: productsData, isLoading: isLoadingProducts } = useGetProducts({
+    params: {
+      page: productPage,
+      ...(productSearchTerm.length > 0
+        ? { product_name: productSearchTerm }
+        : {}),
+    },
+  });
+
+  // Get products array from API response
+  const allProducts = Array.isArray(productsData)
+    ? productsData
+    : productsData?.results || [];
 
   // Filter products by available quantity > 0
   const filteredProducts = useMemo(() => {

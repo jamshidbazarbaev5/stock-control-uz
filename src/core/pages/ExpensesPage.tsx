@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { ResourceTable } from "../helpers/ResourseTable";
@@ -30,6 +30,17 @@ export default function ExpensesPage() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const pageSize = 30;
   const { data: currentUser } = useCurrentUser();
+
+  // Reset to page 1 when any filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    selectedStore,
+    selectedExpenseName,
+    selectedPaymentType,
+    dateFrom,
+    dateTo,
+  ]);
 
   const { data: expensesData, isLoading } = useGetExpenses({
     params: {
@@ -127,13 +138,13 @@ export default function ExpensesPage() {
   };
 
   return (
-      <div className="container mx-auto py-8 px-4">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">{t("navigation.expenses")}</h1>
-          <Button onClick={() => navigation("/create-expense")}>
-            {t("common.create")}
-          </Button>
-        </div>
+    <div className="container mx-auto py-8 px-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">{t("navigation.expenses")}</h1>
+        <Button onClick={() => navigation("/create-expense")}>
+          {t("common.create")}
+        </Button>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {currentUser?.is_superuser && (

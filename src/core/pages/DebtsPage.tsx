@@ -1,21 +1,24 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useCreateDebtPayment } from '../api/debt';
-import { useGetDebtsByClients, type DebtByClient } from '../api/debts-by-clients';
-import { ResourceTable } from '../helpers/ResourseTable';
-import { useNavigate } from 'react-router-dom';
-import { ResourceForm } from '../helpers/ResourceForm';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCreateDebtPayment } from "../api/debt";
+import {
+  useGetDebtsByClients,
+  type DebtByClient,
+} from "../api/debts-by-clients";
+import { ResourceTable } from "../helpers/ResourseTable";
+import { useNavigate } from "react-router-dom";
+import { ResourceForm } from "../helpers/ResourceForm";
 
 interface PaymentFormData {
   amount: number;
@@ -26,12 +29,20 @@ export default function DebtsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [selectedDebtClient, setSelectedDebtClient] = useState<DebtByClient | null>(null);
+  const [selectedDebtClient, setSelectedDebtClient] =
+    useState<DebtByClient | null>(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [selectedTab, setSelectedTab] = useState<'Физ.лицо' | 'Юр.лицо'>('Физ.лицо');
-  const [searchName, setSearchName] = useState<string>('');
+  const [selectedTab, setSelectedTab] = useState<"Физ.лицо" | "Юр.лицо">(
+    "Физ.лицо",
+  );
+  const [searchName, setSearchName] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 30;
+
+  // Reset to page 1 when any filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchName, selectedTab]);
 
   const { data: debtsByClientsData, isLoading } = useGetDebtsByClients({
     ...(searchName && { name: searchName }),
@@ -45,12 +56,11 @@ export default function DebtsPage() {
 
   const createPayment = useCreateDebtPayment();
 
-
   const handlePaymentSubmit = async (data: PaymentFormData) => {
     if (!selectedDebtClient) return;
 
     if (data.amount > Number(selectedDebtClient.total_amount)) {
-      toast.error(t('validation.amount_exceeds_remainder'));
+      toast.error(t("validation.amount_exceeds_remainder"));
       return;
     }
 
@@ -60,45 +70,45 @@ export default function DebtsPage() {
         amount: data.amount,
         payment_method: data.payment_method,
       });
-      toast.success(t('messages.success.payment_created'));
+      toast.success(t("messages.success.payment_created"));
       // Invalidate and refetch debts
-      await queryClient.invalidateQueries({ queryKey: ['debtsByClients'] });
+      await queryClient.invalidateQueries({ queryKey: ["debtsByClients"] });
       setIsPaymentModalOpen(false);
       setSelectedDebtClient(null);
     } catch (error) {
-      toast.error(t('messages.error.payment_create'));
-      console.error('Failed to create payment:', error);
+      toast.error(t("messages.error.payment_create"));
+      console.error("Failed to create payment:", error);
     }
   };
 
   const paymentFields = [
     {
-      name: 'amount',
-      label: t('forms.amount'),
-      type: 'number',
-      placeholder: t('placeholders.enter_amount'),
+      name: "amount",
+      label: t("forms.amount"),
+      type: "number",
+      placeholder: t("placeholders.enter_amount"),
       required: true,
       validation: {
         min: {
           value: 0.01,
-          message: t('validation.amount_must_be_positive'),
+          message: t("validation.amount_must_be_positive"),
         },
         max: {
           value: selectedDebtClient?.balance || 0,
-          message: t('validation.amount_exceeds_remainder'),
+          message: t("validation.amount_exceeds_remainder"),
         },
       },
     },
     {
-      name: 'payment_method',
-      label: t('forms.payment_method'),
-      type: 'select',
-      placeholder: t('placeholders.select_payment_method'),
+      name: "payment_method",
+      label: t("forms.payment_method"),
+      type: "select",
+      placeholder: t("placeholders.select_payment_method"),
       required: true,
       options: [
-        { value: 'Наличные', label: t('forms.cash') },
-        { value: 'Карта', label: t('forms.card') },
-        { value: 'Click', label: t('forms.click') },
+        { value: "Наличные", label: t("forms.cash") },
+        { value: "Карта", label: t("forms.card") },
+        { value: "Click", label: t("forms.click") },
       ],
     },
   ];
@@ -106,8 +116,8 @@ export default function DebtsPage() {
   const getColumns = () => {
     const baseColumns = [
       {
-        accessorKey: 'name',
-        header: t('forms.client_name'),
+        accessorKey: "name",
+        header: t("forms.client_name"),
         cell: (client: DebtByClient) => (
           <div>
             <div>
@@ -118,48 +128,50 @@ export default function DebtsPage() {
                 {client.name}
               </button>
             </div>
-            <div className="text-sm text-gray-500">
-              {client.phone_number}
-            </div>
+            <div className="text-sm text-gray-500">{client.phone_number}</div>
           </div>
         ),
       },
       {
-        accessorKey: 'total_amount',
-        header: t('forms.total_amount4'),
+        accessorKey: "total_amount",
+        header: t("forms.total_amount4"),
         cell: (client: DebtByClient) => client.total_amount?.toLocaleString(),
       },
       {
-        accessorKey: 'total_deposit',
-        header: t('forms.deposit'),
+        accessorKey: "total_deposit",
+        header: t("forms.deposit"),
         cell: (client: DebtByClient) => client.total_deposit?.toLocaleString(),
-      }
+      },
     ];
 
     // Add balance column only for legal entities
-    if (selectedTab === 'Юр.лицо') {
+    if (selectedTab === "Юр.лицо") {
       baseColumns.push({
-        accessorKey: 'balance',
-        header: t('forms.balance'),
+        accessorKey: "balance",
+        header: t("forms.balance"),
         cell: (client: DebtByClient) => (
-          <span className={Number(client.balance) < 0 ? 'text-red-600' : 'text-green-600'}>
-            {client.balance?.toLocaleString() || '0'}
+          <span
+            className={
+              Number(client.balance) < 0 ? "text-red-600" : "text-green-600"
+            }
+          >
+            {client.balance?.toLocaleString() || "0"}
           </span>
         ),
       });
     }
 
     baseColumns.push({
-      accessorKey: 'actions',
-      header: t('forms.actions'),
+      accessorKey: "actions",
+      header: t("forms.actions"),
       cell: (client: DebtByClient) => (
         <div className="space-x-2">
-          {selectedTab === 'Юр.лицо' && (
+          {selectedTab === "Юр.лицо" && (
             <button
               onClick={() => navigate(`/clients/${client.id}/history`)}
               className="px-3 py-1 rounded bg-green-500 hover:bg-green-600 text-white"
             >
-              {t('forms.history')}
+              {t("forms.history")}
             </button>
           )}
         </div>
@@ -177,15 +189,19 @@ export default function DebtsPage() {
             type="text"
             value={searchName}
             onChange={(e) => setSearchName(e.target.value)}
-            placeholder={t('forms.search_by_name')}
+            placeholder={t("forms.search_by_name")}
           />
         </div>
       </Card>
 
-      <Tabs value={selectedTab} onValueChange={setSelectedTab as (value: string) => void} className="mb-6">
+      <Tabs
+        value={selectedTab}
+        onValueChange={setSelectedTab as (value: string) => void}
+        className="mb-6"
+      >
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="Физ.лицо">{t('forms.individual')}</TabsTrigger>
-          <TabsTrigger value="Юр.лицо">{t('forms.legal_entity')}</TabsTrigger>
+          <TabsTrigger value="Физ.лицо">{t("forms.individual")}</TabsTrigger>
+          <TabsTrigger value="Юр.лицо">{t("forms.legal_entity")}</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -202,13 +218,13 @@ export default function DebtsPage() {
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('forms.payment_method')}</DialogTitle>
+            <DialogTitle>{t("forms.payment_method")}</DialogTitle>
           </DialogHeader>
           <ResourceForm
             fields={paymentFields}
             onSubmit={handlePaymentSubmit}
             isSubmitting={createPayment.isPending}
-            title={t('forms.payment_method')}
+            title={t("forms.payment_method")}
           />
         </DialogContent>
       </Dialog>
