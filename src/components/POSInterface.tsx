@@ -230,6 +230,7 @@ const POSInterfaceCore = () => {
   const [isProcessingBarcode, setIsProcessingBarcode] = useState(false);
   const [debugMode, setDebugMode] = useState(false); // Toggle with Ctrl+D
   const [lastScannedBarcode, setLastScannedBarcode] = useState("");
+  const [isEditingPrice, setIsEditingPrice] = useState(false);
 
   // Quantity modal state
   const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false);
@@ -1519,9 +1520,9 @@ const POSInterfaceCore = () => {
                 }
               }}
               onBlur={(_e) => {
-                // Prevent losing focus
+                // Prevent losing focus unless we're editing price
                 setTimeout(() => {
-                  if (barcodeInputRef.current) {
+                  if (barcodeInputRef.current && !isEditingPrice) {
                     if (debugMode) {
                       console.log("Input lost focus, refocusing...");
                     }
@@ -1603,203 +1604,222 @@ const POSInterfaceCore = () => {
                         </tr>
                       ) : (
                         cartProducts.map((product, index) => (
-                          <tr
-                            key={product.id}
-                            className={`${
-                              index === focusedProductIndex
-                                ? "bg-blue-100 border-l-4 border-blue-500"
-                                : index % 2 === 0
-                                  ? "bg-gray-50"
-                                  : "bg-white"
-                            } transition-all duration-200 hover:bg-gray-100`}
-                          >
-                            <td className="p-4 text-gray-900">{index + 1}</td>
-                            <td className="p-4 font-medium text-gray-900">
-                              <div>
-                                <div>{product.name}</div>
-                                {product.barcode && (
-                                  <div className="text-xs text-gray-500">
-                                    Штрихкод: {product.barcode}
+                            <tr
+                                key={product.id}
+                                className={`${
+                                    index === focusedProductIndex
+                                        ? "bg-blue-100 border-l-4 border-blue-500"
+                                        : index % 2 === 0
+                                            ? "bg-gray-50"
+                                            : "bg-white"
+                                } transition-all duration-200 hover:bg-gray-100`}
+                            >
+                              <td className="p-4 text-gray-900">{index + 1}</td>
+                              <td className="p-4 font-medium text-gray-900">
+                                <div>
+                                  <div>{product.name}</div>
+                                  {product.barcode && (
+                                      <div className="text-xs text-gray-500">
+                                        Штрихкод: {product.barcode}
+                                      </div>
+                                  )}
+                                  {product.product.ikpu && (
+                                      <div className="text-xs text-gray-500">
+                                        ИКПУ: {product.product.ikpu}
+                                      </div>
+                                  )}
+                                  <div className="text-xs text-green-600 font-medium">
+                                    В наличии:{" "}
+                                    {parseFloat(
+                                        String(product.product.quantity),
+                                    ).toFixed(2)}{" "}
+                                    {product.selectedUnit?.short_name || "шт"}
                                   </div>
-                                )}
-                                {product.product.ikpu && (
-                                  <div className="text-xs text-gray-500">
-                                    ИКПУ: {product.product.ikpu}
-                                  </div>
-                                )}
-                                <div className="text-xs text-green-600 font-medium">
-                                  В наличии:{" "}
-                                  {parseFloat(
-                                    String(product.product.quantity),
-                                  ).toFixed(2)}{" "}
-                                  {product.selectedUnit?.short_name || "шт"}
                                 </div>
-                              </div>
-                            </td>
-                            <td className="p-4 text-right text-gray-900">
-                              <Input
-                                type="text"
-                                value={product.price.toString()}
-                                onChange={(e) => {
-                                  const inputValue = e.target.value;
-                                  // Allow empty input or valid number input (including decimals)
-                                  if (
-                                    inputValue === "" ||
-                                    /^\d*\.?\d*$/.test(inputValue)
-                                  ) {
-                                    const newPrice =
-                                      inputValue === ""
-                                        ? 0
-                                        : parseFloat(inputValue) || 0;
-                                    const updatedProducts = cartProducts.map(
-                                      (p) =>
-                                        p.id === product.id
-                                          ? {
-                                              ...p,
-                                              price: newPrice,
-                                              total: newPrice * p.quantity,
-                                            }
-                                          : p,
-                                    );
-                                    setCartProducts(updatedProducts);
-                                  }
-                                }}
-                                onFocus={(e) => {
-                                  e.stopPropagation();
-                                }}
-                                onBlur={(e) => {
-                                  e.stopPropagation();
-                                }}
-                                className="w-24 text-right"
-                                inputMode="decimal"
-                                pattern="[0-9]*"
-                                placeholder="0"
-                              />
-                            </td>
-                            <td className="p-4 text-center text-gray-900">
-                              {product.product.available_units &&
-                              product.product.available_units.length > 0 ? (
-                                <Select
-                                  value={
-                                    product.selectedUnit?.id?.toString() || ""
-                                  }
-                                  onValueChange={(value) => {
-                                    const unitId = Number(value);
-                                    const selectedUnit =
-                                      product.product.available_units?.find(
-                                        (u) => u.id === unitId,
-                                      );
-                                    if (selectedUnit) {
-                                      const updatedProducts = cartProducts.map(
-                                        (p) =>
-                                          p.id === product.id
-                                            ? { ...p, selectedUnit }
-                                            : p,
-                                      );
-                                      setCartProducts(updatedProducts);
-                                    }
-                                  }}
-                                >
-                                  <SelectTrigger className="w-20 text-xs">
-                                    <SelectValue placeholder="Ед." />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {product.product.available_units.map(
-                                      (unit) => (
-                                        <SelectItem
-                                          key={unit.id}
-                                          value={unit.id.toString()}
-                                        >
-                                          {unit.short_name}
-                                          {unit.is_base && " (осн.)"}
-                                        </SelectItem>
-                                      ),
-                                    )}
-                                  </SelectContent>
-                                </Select>
-                              ) : (
-                                <span className="text-xs text-gray-500">
+                              </td>
+                              <td className="p-4 text-right text-gray-900">
+                                <Input
+                                    type="text"
+                                    value={product.price.toString()}
+                                    onChange={(e) => {
+                                      const inputValue = e.target.value;
+                                      // Allow empty input or valid number input (including decimals)
+                                      if (
+                                          inputValue === "" ||
+                                          /^\d*\.?\d*$/.test(inputValue)
+                                      ) {
+                                        const newPrice =
+                                            inputValue === ""
+                                                ? 0
+                                                : parseFloat(inputValue) || 0;
+                                        const updatedProducts = cartProducts.map(
+                                            (p) =>
+                                                p.id === product.id
+                                                    ? {
+                                                      ...p,
+                                                      price: newPrice,
+                                                      total: newPrice * p.quantity,
+                                                    }
+                                                    : p,
+                                        );
+                                        setCartProducts(updatedProducts);
+                                      }
+                                    }}
+                                    onFocus={(e) => {
+                                      e.stopPropagation();
+                                      setIsEditingPrice(true);
+                                    }}
+                                    onBlur={(e) => {
+                                      e.stopPropagation();
+                                      // Delay state change to allow click events to process
+                                      setTimeout(() => {
+                                        setIsEditingPrice(false);
+                                      }, 150);
+                                      // Refocus barcode input after a longer delay
+                                      setTimeout(() => {
+                                        if (barcodeInputRef.current && !isEditingPrice) {
+                                          barcodeInputRef.current.focus();
+                                        }
+                                      }, 200);
+                                    }}
+                                    onMouseDown={(e) => {
+                                      // Prevent barcode input from stealing focus
+                                      e.stopPropagation();
+                                    }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setIsEditingPrice(true);
+                                    }}
+                                    className="w-24 text-right"
+                                    inputMode="decimal"
+                                    pattern="[0-9]*"
+                                    placeholder="0"
+                                />
+                              </td>
+                              <td className="p-4 text-center text-gray-900">
+                                {product.product.available_units &&
+                                product.product.available_units.length > 0 ? (
+                                    <Select
+                                        value={
+                                            product.selectedUnit?.id?.toString() || ""
+                                        }
+                                        onValueChange={(value) => {
+                                          const unitId = Number(value);
+                                          const selectedUnit =
+                                              product.product.available_units?.find(
+                                                  (u) => u.id === unitId,
+                                              );
+                                          if (selectedUnit) {
+                                            const updatedProducts = cartProducts.map(
+                                                (p) =>
+                                                    p.id === product.id
+                                                        ? {...p, selectedUnit}
+                                                        : p,
+                                            );
+                                            setCartProducts(updatedProducts);
+                                          }
+                                        }}
+                                    >
+                                      <SelectTrigger className="w-20 text-xs">
+                                        <SelectValue placeholder="Ед."/>
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {product.product.available_units.map(
+                                            (unit) => (
+                                                <SelectItem
+                                                    key={unit.id}
+                                                    value={unit.id.toString()}
+                                                >
+                                                  {unit.short_name}
+                                                  {unit.is_base && " (осн.)"}
+                                                </SelectItem>
+                                            ),
+                                        )}
+                                      </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <span className="text-xs text-gray-500">
                                   {product.selectedUnit?.short_name || "шт"}
                                 </span>
-                              )}
-                            </td>
-                            <td className="p-4 text-right text-gray-900">
-                              <div className="flex items-center justify-end space-x-2">
+                                )}
+                              </td>
+                              <td className="p-4 text-right text-gray-900">
+                                <div className="flex items-center justify-end space-x-2">
+                                  <button
+                                      onClick={() => {
+                                        const newQuantity = product.quantity - 1;
+                                        if (newQuantity > 0) {
+                                          updateProductQuantity(
+                                              product.id,
+                                              newQuantity,
+                                          );
+                                        }
+                                      }}
+                                      disabled={product.quantity <= 1}
+                                      className={`w-10 h-10 rounded-full ${
+                                          index === focusedProductIndex
+                                              ? "bg-blue-200 hover:bg-blue-300 text-blue-800"
+                                              : "bg-gray-200 hover:bg-gray-300"
+                                      } ${product.quantity <= 1 ? "opacity-50 cursor-not-allowed" : ""} flex items-center justify-center text-sm font-bold transition-colors`}
+                                  >
+                                    −
+                                  </button>
+                                  <button
+                                      onClick={() => handleQuantityClick(product)}
+                                      className={`min-w-[80px] min-h-[50px] text-center border rounded-lg px-3 py-2 text-lg font-semibold transition-all ${
+                                          index === focusedProductIndex
+                                              ? "border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                              : "border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50"
+                                      } focus:outline-none focus:ring-2 focus:ring-blue-200`}
+                                  >
+                                    {product.quantity.toFixed(2)}
+                                  </button>
+                                  <button
+                                      onClick={() =>
+                                          updateProductQuantity(
+                                              product.id,
+                                              product.quantity + 1,
+                                          )
+                                      }
+                                      disabled={
+                                          product.quantity >=
+                                          parseFloat(String(product.product.quantity))
+                                      }
+                                      className={`w-10 h-10 rounded-full ${
+                                          index === focusedProductIndex
+                                              ? "bg-blue-200 hover:bg-blue-300 text-blue-800"
+                                              : "bg-gray-200 hover:bg-gray-300"
+                                      } ${product.quantity >= parseFloat(String(product.product.quantity)) ? "opacity-50 cursor-not-allowed" : ""} flex items-center justify-center text-sm font-bold transition-colors`}
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </td>
+                              <td className="p-4 text-right font-semibold text-gray-900">
+                                {product.total.toLocaleString()}
+                              </td>
+                              <td className="p-4 text-center">
                                 <button
-                                  onClick={() => {
-                                    const newQuantity = product.quantity - 1;
-                                    if (newQuantity > 0) {
-                                      updateProductQuantity(
-                                        product.id,
-                                        newQuantity,
-                                      );
-                                    }
-                                  }}
-                                  disabled={product.quantity <= 1}
-                                  className={`w-10 h-10 rounded-full ${
-                                    index === focusedProductIndex
-                                      ? "bg-blue-200 hover:bg-blue-300 text-blue-800"
-                                      : "bg-gray-200 hover:bg-gray-300"
-                                  } ${product.quantity <= 1 ? "opacity-50 cursor-not-allowed" : ""} flex items-center justify-center text-sm font-bold transition-colors`}
+                                    onClick={() => {
+                                      removeProduct(product.id);
+                                      if (index === focusedProductIndex) {
+                                        setFocusedProductIndex((prev) =>
+                                            prev >= cartProducts.length - 1
+                                                ? cartProducts.length - 2
+                                                : prev,
+                                        );
+                                      }
+                                    }}
+                                    className={`w-8 h-8 rounded-full ${
+                                        index === focusedProductIndex
+                                            ? "bg-red-200 hover:bg-red-300 text-red-700 ring-2 ring-red-400"
+                                            : "bg-red-100 hover:bg-red-200 text-red-600"
+                                    } flex items-center justify-center transition-all`}
                                 >
-                                  −
+                                  <X className="w-4 h-4"/>
                                 </button>
-                                <button
-                                  onClick={() => handleQuantityClick(product)}
-                                  className={`min-w-[80px] min-h-[50px] text-center border rounded-lg px-3 py-2 text-lg font-semibold transition-all ${
-                                    index === focusedProductIndex
-                                      ? "border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100"
-                                      : "border-gray-300 bg-white hover:border-blue-400 hover:bg-blue-50"
-                                  } focus:outline-none focus:ring-2 focus:ring-blue-200`}
-                                >
-                                  {product.quantity.toFixed(2)}
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    updateProductQuantity(
-                                      product.id,
-                                      product.quantity + 1,
-                                    )
-                                  }
-                                  disabled={
-                                    product.quantity >=
-                                    parseFloat(String(product.product.quantity))
-                                  }
-                                  className={`w-10 h-10 rounded-full ${
-                                    index === focusedProductIndex
-                                      ? "bg-blue-200 hover:bg-blue-300 text-blue-800"
-                                      : "bg-gray-200 hover:bg-gray-300"
-                                  } ${product.quantity >= parseFloat(String(product.product.quantity)) ? "opacity-50 cursor-not-allowed" : ""} flex items-center justify-center text-sm font-bold transition-colors`}
-                                >
-                                  +
-                                </button>
-                              </div>
-                            </td>
-                            <td className="p-4 text-right font-semibold text-gray-900">
-                              {product.total.toLocaleString()}
-                            </td>
-                            <td className="p-4 text-center">
-                              <button
-                                onClick={() => {
-                                  removeProduct(product.id);
-                                  if (index === focusedProductIndex) {
-                                    setFocusedProductIndex((prev) =>
-                                      prev >= cartProducts.length - 1
-                                        ? cartProducts.length - 2
-                                        : prev,
-                                    );
-                                  }
-                                }}
-                                className={`w-8 h-8 rounded-full ${
-                                  index === focusedProductIndex
-                                    ? "bg-red-200 hover:bg-red-300 text-red-700 ring-2 ring-red-400"
-                                    : "bg-red-100 hover:bg-red-200 text-red-600"
-                                } flex items-center justify-center transition-all`}
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </td>
-                          </tr>
+                              </td>
+                            </tr>
                         ))
                       )}
                     </tbody>
@@ -1811,9 +1831,9 @@ const POSInterfaceCore = () => {
               <div className="flex items-center justify-between text-sm text-gray-500 mt-4 flex-shrink-0">
                 <span>Товаров в корзине: {cartProducts.length}</span>
                 <button
-                  onClick={clearCart}
-                  className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg text-sm font-medium transition-colors"
-                  disabled={cartProducts.length === 0}
+                    onClick={clearCart}
+                    className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg text-sm font-medium transition-colors"
+                    disabled={cartProducts.length === 0}
                 >
                   Очистить корзину
                 </button>
@@ -1825,52 +1845,53 @@ const POSInterfaceCore = () => {
           <div className="bg-white p-6 border-t border-gray-200">
             <div className="flex items-center space-x-2 justify-center">
               <button
-                onClick={handleSearchClick}
-                className="bg-blue-500 text-white p-4 rounded-xl hover:bg-blue-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px] relative"
-                title="Поиск товаров"
+                  onClick={handleSearchClick}
+                  className="bg-blue-500 text-white p-4 rounded-xl hover:bg-blue-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px] relative"
+                  title="Поиск товаров"
               >
-                <Search className="w-6 h-6" />
+                <Search className="w-6 h-6"/>
                 <span className="text-sm bg-blue-400 text-white px-2 py-1 rounded absolute -top-1 -right-1">
                   B
                 </span>
               </button>
               <button
-                onClick={handleUserClick}
-                className={`p-4 rounded-xl transition-colors flex items-center justify-center relative min-w-[60px] min-h-[60px] ${
-                  selectedSeller || selectedClient
-                    ? "bg-blue-500 text-white hover:bg-blue-600"
-                    : "bg-green-500 text-white hover:bg-green-600"
-                }`}
-                title="Выбор пользователя"
+                  onClick={handleUserClick}
+                  className={`p-4 rounded-xl transition-colors flex items-center justify-center relative min-w-[60px] min-h-[60px] ${
+                      selectedSeller || selectedClient
+                          ? "bg-blue-500 text-white hover:bg-blue-600"
+                          : "bg-green-500 text-white hover:bg-green-600"
+                  }`}
+                  title="Выбор пользователя"
               >
-                <UserIcon className="w-6 h-6" />
+                <UserIcon className="w-6 h-6"/>
                 {(selectedSeller || selectedClient) && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
+                    <div
+                        className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></div>
                 )}
               </button>
 
               <button
-                onClick={createNewSession}
-                className="bg-purple-500 text-white p-4 rounded-xl hover:bg-purple-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                title="Новая сессия"
+                  onClick={createNewSession}
+                  className="bg-purple-500 text-white p-4 rounded-xl hover:bg-purple-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
+                  title="Новая сессия"
               >
-                <Plus className="w-6 h-6" />
+                <Plus className="w-6 h-6"/>
               </button>
 
               {/* Calculator Toggle Button - Only show when calculator is hidden */}
               {!isCalculatorVisible && (
-                <button
-                  onClick={() => setIsCalculatorVisible(true)}
-                  className="bg-gray-500 text-white p-4 rounded-xl hover:bg-gray-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
-                  title="Показать калькулятор"
-                >
-                  <span className="text-xl font-bold">=</span>
-                </button>
+                  <button
+                      onClick={() => setIsCalculatorVisible(true)}
+                      className="bg-gray-500 text-white p-4 rounded-xl hover:bg-gray-600 transition-colors flex items-center justify-center min-w-[60px] min-h-[60px]"
+                      title="Показать калькулятор"
+                  >
+                    <span className="text-xl font-bold">=</span>
+                  </button>
               )}
 
               <button
-                onClick={handleBottomDownClick}
-                disabled={cartProducts.length === 0}
+                  onClick={handleBottomDownClick}
+                  disabled={cartProducts.length === 0}
                 className="bg-indigo-500 text-white p-4 rounded-xl hover:bg-indigo-600 transition-colors flex items-center justify-center disabled:bg-gray-400 disabled:cursor-not-allowed min-w-[60px] min-h-[60px]"
                 title="Вниз по списку"
               >
