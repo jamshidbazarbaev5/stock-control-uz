@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ResourceForm } from "../helpers/ResourceForm";
 import type { Recycling } from "../api/recycling";
-import type { Product } from "../api/product";
+// import type { Product } from "../api/product";
 import { useCreateRecycling } from "../api/recycling";
 import { useGetProducts } from "../api/product";
 import { fetchAllStocks } from "../api/fetchAllStocks";
@@ -132,7 +132,7 @@ export default function CreateRecycling() {
     id: number;
     name: string;
   }> | null>(null);
-  const [productPage, setProductPage] = useState(1);
+  const [productPage, _setProductPage] = useState(1);
   const [stocks, setStocks] = useState<any[]>([]);
   const [loadingStocks, setLoadingStocks] = useState(false);
   // const [exchangeRate, setExchangeRate] = useState<number | null>(null);

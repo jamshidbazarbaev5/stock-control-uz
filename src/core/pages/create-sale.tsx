@@ -131,7 +131,7 @@ function CreateSale() {
   const [cartProducts, setCartProducts] = useState<ProductInCart[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [productSearchTerm, setProductSearchTerm] = useState("");
-  const [productPage, setProductPage] = useState(1);
+  const [productPage, _setProductPage] = useState(1);
   const [activeSearchIndex, setActiveSearchIndex] = useState<number | null>(
     null,
   );
@@ -210,7 +210,7 @@ function CreateSale() {
     : storesData?.results || [];
 
   // Fetch products with pagination
-  const { data: productsData, isLoading: isLoadingProducts } = useGetProducts({
+  const { data: productsData, isLoading: _isLoadingProducts } = useGetProducts({
     params: {
       page: productPage,
       ...(productSearchTerm.length > 0

@@ -85,7 +85,7 @@ export default function CreateStock() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [productSearchTerm, setProductSearchTerm] = useState("");
-  const [productPage, setProductPage] = useState(1);
+  const [productPage, _setProductPage] = useState(1);
   const [dynamicFields, setDynamicFields] = useState<{
     [key: string]: DynamicField;
   }>({});
@@ -112,7 +112,7 @@ export default function CreateStock() {
     useGetCurrencies({});
   const { data: _measurementsData, isLoading: measurementsLoading } =
     useGetMeasurements({});
-  const { data: productsData, isLoading: productsLoading } = useGetProducts({
+  const { data: productsData, isLoading: _productsLoading } = useGetProducts({
     params: {
       page: productPage,
       ...(productSearchTerm ? { product_name: productSearchTerm } : {}),
