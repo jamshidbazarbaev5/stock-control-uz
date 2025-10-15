@@ -91,6 +91,7 @@ interface SessionState {
   onCredit: boolean;
   debtDeposit: string;
   debtDueDate: string;
+  depositPaymentMethod: string;
 }
 
 interface SalePayment {
@@ -113,6 +114,7 @@ interface SalePayload {
     client: number;
     deposit: number;
     due_date: string;
+    deposit_payment_method: string;
   };
 }
 
@@ -167,6 +169,7 @@ const POSInterfaceCore = () => {
           onCredit: false,
           debtDeposit: "",
           debtDueDate: "",
+          depositPaymentMethod: "Наличные",
         },
       ],
       currentSessionIndex: 0,
@@ -212,6 +215,9 @@ const POSInterfaceCore = () => {
   const [onCredit, setOnCredit] = useState(currentSession.onCredit);
   const [debtDeposit, setDebtDeposit] = useState(currentSession.debtDeposit);
   const [debtDueDate, setDebtDueDate] = useState(currentSession.debtDueDate);
+  const [depositPaymentMethod, setDepositPaymentMethod] = useState(
+    currentSession.depositPaymentMethod,
+  );
 
   // Global modal states (shared across sessions)
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
@@ -296,6 +302,7 @@ const POSInterfaceCore = () => {
               onCredit,
               debtDeposit,
               debtDueDate,
+              depositPaymentMethod,
             }
           : session,
       ),
@@ -314,6 +321,7 @@ const POSInterfaceCore = () => {
     onCredit,
     debtDeposit,
     debtDueDate,
+    depositPaymentMethod,
   ]);
 
   // Save sessions to localStorage whenever they change
@@ -793,6 +801,7 @@ const POSInterfaceCore = () => {
       onCredit: false,
       debtDeposit: "",
       debtDueDate: "",
+      depositPaymentMethod: "Наличные",
     };
 
     setSessions((prev) => [...prev, newSession]);
@@ -814,6 +823,7 @@ const POSInterfaceCore = () => {
     setOnCredit(false);
     setDebtDeposit("");
     setDebtDueDate("");
+    setDepositPaymentMethod("Наличные");
   };
 
   // Auto-update session name based on selected client or seller
@@ -871,6 +881,7 @@ const POSInterfaceCore = () => {
         onCredit,
         debtDeposit,
         debtDueDate,
+        depositPaymentMethod,
       };
       setSessions(updatedSessions);
 
@@ -891,6 +902,7 @@ const POSInterfaceCore = () => {
       setOnCredit(targetSession.onCredit);
       setDebtDeposit(targetSession.debtDeposit);
       setDebtDueDate(targetSession.debtDueDate);
+      setDepositPaymentMethod(targetSession.depositPaymentMethod);
     }
   };
 
@@ -920,6 +932,7 @@ const POSInterfaceCore = () => {
         setOnCredit(newActiveSession.onCredit);
         setDebtDeposit(newActiveSession.debtDeposit);
         setDebtDueDate(newActiveSession.debtDueDate);
+        setDepositPaymentMethod(newActiveSession.depositPaymentMethod);
       }
     }
   };
@@ -1371,6 +1384,7 @@ const POSInterfaceCore = () => {
                       setClientSearchTerm("");
                       setDebtDeposit("");
                       setDebtDueDate("");
+                      setDepositPaymentMethod("Наличные");
                     }}
                     className="text-gray-400 hover:text-gray-600 transition-colors"
                     title="Очистить выбор"
@@ -2396,6 +2410,7 @@ const POSInterfaceCore = () => {
                     setSelectedClient(null);
                     setDebtDeposit("");
                     setDebtDueDate("");
+                    setDepositPaymentMethod("Наличные");
                   }
                 }}
               >
@@ -2492,6 +2507,22 @@ const POSInterfaceCore = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Способ оплаты залога
+                  </label>
+                  <select
+                    value={depositPaymentMethod}
+                    onChange={(e) => setDepositPaymentMethod(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="Наличные">Наличные</option>
+                    <option value="Карта">Карта</option>
+                    <option value="Click">Click</option>
+                    <option value="Перечисление">Перечисление</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Срок погашения
                   </label>
                   <Input
@@ -2569,6 +2600,7 @@ const POSInterfaceCore = () => {
                   setClientSearchTerm("");
                   setDebtDeposit("");
                   setDebtDueDate("");
+                  setDepositPaymentMethod("Наличные");
                 }}
                 variant="outline"
                 className="flex-1"
@@ -2856,6 +2888,8 @@ const POSInterfaceCore = () => {
                             client: selectedClient,
                             deposit: parseInt(debtDeposit || "0"),
                             due_date: debtDueDate,
+                            deposit_payment_method:
+                              depositPaymentMethod || "Наличные",
                           },
                         }),
                     };
@@ -2889,6 +2923,8 @@ const POSInterfaceCore = () => {
                             client: selectedClient,
                             deposit: debtDeposit,
                             due_date: debtDueDate,
+                            deposit_payment_method:
+                              depositPaymentMethod || "Наличные",
                           },
                         }),
                     };

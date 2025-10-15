@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { Printer, Settings, Settings2 } from "lucide-react";
 import PrintDialog from "../../components/receipt-designer/PrintDialog";
 import type { ReceiptPreviewData } from "../../types/receipt";
@@ -75,6 +76,7 @@ const STORAGE_KEY = "salesPageVisibleColumns";
 export default function SalesPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
   const { data: currentUser } = useCurrentUser();
@@ -396,6 +398,8 @@ export default function SalesPage() {
     try {
       await createRefund.mutateAsync(refundData);
       toast.success(t("messages.success.refund_created"));
+      // Invalidate sales query to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["sales"] });
       setIsRefundModalOpen(false);
       setSelectedSaleForRefund(null);
       setRefundQuantities({});

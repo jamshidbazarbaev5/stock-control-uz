@@ -7,6 +7,7 @@ export interface SaleDebt {
   client: number;
   due_date: string;
   deposit?: string;
+  deposit_payment_method?: string;
   client_read?: {
     id: number;
     name: string;

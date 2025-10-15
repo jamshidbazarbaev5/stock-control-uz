@@ -89,6 +89,7 @@ interface SaleFormData {
     client: number;
     due_date: string;
     deposit?: number;
+    deposit_payment_method?: string;
   };
 }
 
@@ -169,6 +170,7 @@ function CreateSale() {
       sale_debt: {
         client: 0,
         due_date: addDays(new Date(), 30).toISOString().split("T")[0],
+        deposit_payment_method: "Наличные",
       },
     },
     mode: "onChange",
@@ -678,6 +680,8 @@ function CreateSale() {
                           String(data.sale_debt.deposit).replace(/,/g, ""),
                         ),
                       ).toString(),
+                      deposit_payment_method:
+                        data.sale_debt.deposit_payment_method || "Наличные",
                     }
                   : {}),
               },
@@ -1468,6 +1472,35 @@ function CreateSale() {
                           }
                         />
                       </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="sale_debt.deposit_payment_method"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("table.payment_method")}</FormLabel>
+                      <Select
+                        value={field.value || "Наличные"}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                        }}
+                        defaultValue="Наличные"
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите способ оплаты" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Наличные">Наличные</SelectItem>
+                          <SelectItem value="Карта">Карта</SelectItem>
+                          <SelectItem value="Click">Click</SelectItem>
+                          <SelectItem value="Перечисление">
+                            Перечисление
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </FormItem>
                   )}
                 />
