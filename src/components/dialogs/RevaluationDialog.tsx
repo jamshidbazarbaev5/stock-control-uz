@@ -195,7 +195,9 @@ export function RevaluationDialog({
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="comment">{t("dialogs.revaluation.comment")}</label>
+            <label htmlFor="comment">
+              {t("dialogs.revaluation.comment")} (необязательно)
+            </label>
             <Textarea
               id="comment"
               name="comment"

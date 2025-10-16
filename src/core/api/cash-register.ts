@@ -10,7 +10,8 @@ interface CashRegisterResponse {
 }
 
 export const cashRegisterApi = {
-  getAll: () => api.get<CashRegisterResponse>(BASE_URL),
+  getAll: (params?: Record<string, any>) =>
+    api.get<CashRegisterResponse>(BASE_URL, { params }),
   getById: (id: number) => api.get<Register>(`${BASE_URL}${id}/`),
 };
 

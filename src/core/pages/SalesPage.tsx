@@ -3,14 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { Printer, Settings, Settings2 } from "lucide-react";
-import PrintDialog from "../../components/receipt-designer/PrintDialog";
-import type { ReceiptPreviewData } from "../../types/receipt";
-import { DEFAULT_TEMPLATE } from "../../types/receipt";
 import { ResourceTable } from "../helpers/ResourseTable";
 import { type Sale, useGetSales, useDeleteSale } from "../api/sale";
 import { type Refund, type RefundItem, useCreateRefund } from "../api/refund";
 // import { useGetProducts } from '../api/product';
 import { toast } from "sonner";
+import {
+  saleReceiptService,
+  type SaleData,
+} from "@/services/saleReceiptService";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
@@ -59,6 +60,7 @@ type PaginatedData<T> = { results: T[]; count: number } | T[];
 
 // Column visibility configuration with Russian translations
 const COLUMN_CONFIG = [
+  { key: "sale_id", label: "ID продажи" },
   { key: "store_read", label: "Магазин" },
   { key: "sale_payments", label: "Способ оплаты" },
   { key: "sale_items", label: "Товары" },
@@ -156,12 +158,11 @@ export default function SalesPage() {
   const [creditStatus, setCreditStatus] = useState<string>("all");
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [productName, setProductName] = useState<string>("");
-  const [stockId, setStockId] = useState<string>("");
 
   // Reset to page 1 when any filter changes
   useEffect(() => {
     setPage(1);
-  }, [startDate, endDate, creditStatus, selectedStore, productName, stockId]);
+  }, [startDate, endDate, creditStatus, selectedStore, productName]);
 
   const { data: storesData } = useGetStores({});
   const { data: salesData, isLoading } = useGetSales({
@@ -172,7 +173,6 @@ export default function SalesPage() {
       start_date: startDate || undefined,
       product: productName || undefined, // Send as product_name
       end_date: endDate || undefined,
-      stock_id: stockId,
       on_credit: creditStatus !== "all" ? creditStatus === "true" : undefined,
     },
   });
@@ -218,7 +218,7 @@ export default function SalesPage() {
   // Reset page to 1 when search filters change
   useEffect(() => {
     setPage(1);
-  }, [productName, stockId]);
+  }, [productName]);
 
   // Debug function to show profit calculation details
   const logSaleDetails = (sale: any) => {
@@ -349,7 +349,6 @@ export default function SalesPage() {
     setCreditStatus("all");
     setSelectedStore("all");
     setProductName("");
-    setStockId("");
     setPage(1);
   };
 
@@ -519,7 +518,7 @@ export default function SalesPage() {
                     </div>
                     <div>
                       <span className="font-medium text-gray-700">
-                        {item.quantity}{" "}
+                        {parseFloat(item.quantity).toString()}{" "}
                         <span className="text-gray-500">
                           {item.product_read?.base_unit
                             ? item.product_read.available_units?.find(
@@ -619,7 +618,8 @@ export default function SalesPage() {
                           </div>
                           <div className="text-right">
                             <div className="text-gray-600">
-                              Кол-во: {refundItem.quantity}
+                              Кол-во:{" "}
+                              {parseFloat(refundItem.quantity).toString()}
                             </div>
                             <div className="font-medium text-red-600">
                               {formatCurrency(refundItem.subtotal)}
@@ -638,12 +638,33 @@ export default function SalesPage() {
     );
   };
 
-  const [showPrintReceipt, setShowPrintReceipt] = useState(false);
-  const [selectedSaleForPrint, setSelectedSaleForPrint] = useState<Sale | null>(
-    null,
-  );
+  // Handle manual thermal printing (like POSInterface but not automatic)
+  const handlePrintReceipt = async (sale: Sale) => {
+    try {
+      console.log("🖨️ Printing sale receipt manually...");
+      const printResult = await saleReceiptService.printWithFallback(
+        sale as unknown as SaleData,
+      );
+      saleReceiptService.showPrintNotification(printResult);
+      console.log("🖨️ Receipt print result:", printResult);
+    } catch (printError) {
+      console.error("❌ Receipt printing failed:", printError);
+      saleReceiptService.showPrintNotification({
+        success: false,
+        method: "failed",
+        message: "Не удалось напечатать чек",
+        error:
+          printError instanceof Error ? printError.message : "Unknown error",
+      });
+    }
+  };
 
   const allColumns = [
+    {
+      header: "ID продажи",
+      accessorKey: "sale_id",
+      cell: (row: Sale) => row.sale_id || "-",
+    },
     {
       header: t("table.store"),
       accessorKey: "store_read",
@@ -712,7 +733,9 @@ export default function SalesPage() {
               item.product_read?.available_units?.find(
                 (u: any) => u.id === item.selling_unit,
               )?.short_name || "";
-            return `${item.quantity} ${unitName}`;
+            // Format quantity to remove trailing zeros
+            const formattedQuantity = parseFloat(item.quantity).toString();
+            return `${formattedQuantity} ${unitName}`;
           })
           .join(" • ");
         return (
@@ -820,10 +843,7 @@ export default function SalesPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                setSelectedSaleForPrint(row);
-                setShowPrintReceipt(true);
-              }}
+              onClick={() => handlePrintReceipt(row)}
             >
               <Printer className="w-4 h-4 mr-2" />
               {t("common.print")}
@@ -855,73 +875,8 @@ export default function SalesPage() {
   // Filter columns based on visibility settings
   const columns = allColumns.filter((col) => visibleColumns[col.accessorKey]);
 
-  // Fetch all products with pagination
-
-  // Transform sale data to receipt format
-  const transformSaleToReceiptData = (sale: Sale): ReceiptPreviewData => {
-    const totalAmount = Number(sale.total_amount || 0);
-
-    // Calculate subtotal from individual items
-    const calculatedSubtotal =
-      sale.sale_items?.reduce((sum, item) => {
-        return sum + Number(item.price_per_unit || 0);
-      }, 0) || 0;
-
-    // Calculate tax as 12% of subtotal
-    const calculatedTax = calculatedSubtotal * 0.12;
-
-    return {
-      storeName: sale.store_read?.name || "",
-      storeAddress: sale.store_read?.address || "",
-      storePhone: sale.store_read?.phone_number || "",
-      cashierName: sale.worker_read?.username || "Cashier",
-      receiptNumber: `#${sale.id}`,
-      date: sale.sold_date
-        ? new Date(sale.sold_date).toLocaleDateString("ru-RU")
-        : "-",
-      time: sale.sold_date
-        ? new Date(sale.sold_date).toLocaleTimeString("ru-RU")
-        : "-",
-      paymentMethod:
-        sale.sale_payments?.map((p) => p.payment_method).join(", ") || "",
-      payments:
-        sale.sale_payments?.map((p) => ({
-          method: p.payment_method,
-          amount: p.amount?.toString() || "0",
-        })) || [],
-      subtotal: calculatedSubtotal,
-      discount: 0, // Add if you have discount data
-      tax: calculatedTax,
-      total: totalAmount,
-      change: 0, // Add if you track change amount
-      items:
-        sale.sale_items?.map((item) => {
-          const quantity = Number(item.quantity || 0);
-          const itemSubtotal = Number(item.price_per_unit || 0);
-          const price = quantity > 0 ? itemSubtotal / quantity : 0;
-
-          return {
-            name: item.product_read?.product_name || "",
-            quantity: quantity,
-            price: price,
-            total: itemSubtotal,
-          };
-        }) || [],
-      footerText: "СПАСИБО ЗА ПОКУПКУ!",
-    };
-  };
-
   return (
     <div className="container mx-auto py-4 sm:py-6 md:py-8 px-2 sm:px-4">
-      {/* Print Receipt Dialog */}
-      {selectedSaleForPrint && (
-        <PrintDialog
-          open={showPrintReceipt}
-          onOpenChange={setShowPrintReceipt}
-          template={DEFAULT_TEMPLATE}
-          previewData={transformSaleToReceiptData(selectedSaleForPrint)}
-        />
-      )}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">
           {t("navigation.sales")}
@@ -965,16 +920,6 @@ export default function SalesPage() {
             value={productName}
             onChange={(e) => setProductName(e.target.value)}
             placeholder={t("forms.type_product_name")}
-            className="w-full"
-          />
-          <label className="text-sm font-medium">
-            {t("forms.type_product_id")}
-          </label>
-          <Input
-            type="text"
-            value={stockId}
-            onChange={(e) => setStockId(e.target.value)}
-            placeholder={t("forms.type_product_id")}
             className="w-full"
           />
         </div>

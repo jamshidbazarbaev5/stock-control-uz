@@ -52,7 +52,7 @@ export function OpenShiftForm() {
   useEffect(() => {
     const fetchRegisters = async () => {
       try {
-        const response = await cashRegisterApi.getAll();
+        const response = await cashRegisterApi.getAll({ active: false });
         setRegisters(response.data.results);
       } catch (error) {
         console.error("Failed to fetch registers:", error);
@@ -100,7 +100,22 @@ export function OpenShiftForm() {
                 <FormItem>
                   <FormLabel>{t("forms.shift")}</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      // Find the selected register and set last_closing_cash to opening_cash
+                      const selectedRegister = registers.find(
+                        (r) => r.id.toString() === value,
+                      );
+                      if (
+                        selectedRegister &&
+                        selectedRegister.last_closing_cash !== undefined
+                      ) {
+                        form.setValue(
+                          "opening_cash",
+                          selectedRegister.last_closing_cash.toString(),
+                        );
+                      }
+                    }}
                     defaultValue={field.value}
                   >
                     <FormControl>

@@ -1,9 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ResourceForm } from "../helpers/ResourceForm";
 import type { Recycling } from "../api/recycling";
-// import type { Product } from "../api/product";
 import { useCreateRecycling } from "../api/recycling";
 import { useGetProducts } from "../api/product";
 import { fetchAllStocks } from "../api/fetchAllStocks";
@@ -11,9 +9,20 @@ import { useGetStores } from "../api/store";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
 interface FormValues extends Partial<Recycling> {
-  quantity_of_parts?: number;
+  outputs?: Array<{
+    to_product?: number;
+    get_amount?: string;
+  }>;
 }
 
 // Helper function to check if a product is recyclable from attribute_values
@@ -57,7 +66,7 @@ const getAllowedCategories = (
   return null;
 };
 
-const recyclingFields = (t: any, productSearchTerm: string) => [
+const recyclingFields = (t: any) => [
   // --- Product Selection ---
   {
     name: "from_to",
@@ -66,16 +75,6 @@ const recyclingFields = (t: any, productSearchTerm: string) => [
     placeholder: t("placeholders.select_product"),
     required: true,
     options: [], // Will be populated with stocks
-  },
-  {
-    name: "to_product",
-    label: t("table.to_product"),
-    type: "searchable-select",
-    placeholder: t("placeholders.select_product"),
-    required: true,
-    options: [], // Will be populated with products
-    searchTerm: productSearchTerm,
-    onSearch: productSearchTerm,
   },
   // --- Store Selection ---
   {
@@ -87,7 +86,6 @@ const recyclingFields = (t: any, productSearchTerm: string) => [
     options: [], // Will be populated with stores
   },
   // --- Amounts ---
-
   {
     name: "spent_amount",
     label: t("table.spent_amount"),
@@ -95,22 +93,6 @@ const recyclingFields = (t: any, productSearchTerm: string) => [
     placeholder: t("placeholders.enter_quantity"),
     required: true,
   },
-  {
-    name: "get_amount",
-    label: t("table.get_amount"),
-    type: "string",
-    placeholder: t("placeholders.enter_quantity"),
-    required: true,
-  },
-  {
-    name: "quantity_of_parts",
-    label: t("table.quantity_of_part"),
-    type: "number",
-    placeholder: t("placeholders.quantity_of_parts"),
-    required: true,
-  },
-  // --- Prices ---
-
   // --- Date ---
   {
     name: "date_of_recycle",
@@ -127,22 +109,23 @@ export default function CreateRecycling() {
   const createRecycling = useCreateRecycling();
   const { t } = useTranslation();
   const { data: currentUser } = useCurrentUser();
-  const [productSearchTerm, setProductSearchTerm] = useState("");
   const [allowedCategories, setAllowedCategories] = useState<Array<{
     id: number;
     name: string;
   }> | null>(null);
-  const [productPage, _setProductPage] = useState(1);
+  const [productPage] = useState(1);
   const [stocks, setStocks] = useState<any[]>([]);
   const [loadingStocks, setLoadingStocks] = useState(false);
-  // const [exchangeRate, setExchangeRate] = useState<number | null>(null);
-  const sellingPriceRef = useRef(false); // To prevent infinite loop
+  const [outputs, setOutputs] = useState<
+    Array<{ to_product?: number; get_amount?: string }>
+  >([{ to_product: undefined, get_amount: "" }]);
+  const [productSearchTerms, setProductSearchTerms] = useState<string[]>([""]);
 
   // Get URL parameters
   const searchParams = new URLSearchParams(location.search);
   const fromProductId = searchParams.get("fromProductId");
   const fromStockId = searchParams.get("fromStockId");
-  const storeIdFromUrl = searchParams.get("storeId"); // NEW: get storeId from URL
+  const storeIdFromUrl = searchParams.get("storeId");
 
   // Initialize form with default values
   const form = useForm<FormValues>({
@@ -154,6 +137,7 @@ export default function CreateRecycling() {
         : currentUser?.role === "Администратор"
           ? currentUser.store_read?.id
           : undefined,
+      outputs: [{ to_product: undefined, get_amount: "" }],
     },
     mode: "onChange",
   });
@@ -167,7 +151,7 @@ export default function CreateRecycling() {
   const { data: productsData, isLoading: isLoadingProducts } = useGetProducts({
     params: {
       page: productPage,
-      ...(productSearchTerm ? { product_name: productSearchTerm } : {}),
+      ...(productSearchTerms[0] ? { product_name: productSearchTerms[0] } : {}),
     },
   });
 
@@ -214,8 +198,9 @@ export default function CreateRecycling() {
         if (isProductRecyclable(product)) {
           const categories = getAllowedCategories(product);
           setAllowedCategories(categories);
-          // Clear the to_product selection when changing from_to
-          form.setValue("to_product", undefined);
+          // Clear all output selections when changing from_to
+          setOutputs([{ to_product: undefined, get_amount: "" }]);
+          form.setValue("outputs", [{ to_product: undefined, get_amount: "" }]);
         } else {
           setAllowedCategories(null);
         }
@@ -240,13 +225,6 @@ export default function CreateRecycling() {
           const categories = getAllowedCategories(product);
           setAllowedCategories(categories);
         }
-
-        if (stockItem?.product?.id || stockItem?.product_read?.id) {
-          form.setValue(
-            "to_product",
-            stockItem?.product?.id || stockItem?.product_read?.id,
-          );
-        }
       } else if (fromProductId) {
         const stockWithProduct = stocks.find(
           (stock) =>
@@ -265,24 +243,15 @@ export default function CreateRecycling() {
             const categories = getAllowedCategories(product);
             setAllowedCategories(categories);
           }
-
-          form.setValue("to_product", Number(fromProductId));
         }
       }
     }
   }, [fromStockId, fromProductId, stocks, allProducts, form]);
 
   const selectedStore = form.watch("store");
-  const toProduct = form.watch("to_product");
-
-  // Get selected product to check if it's "Рейка"
-  const selectedProduct = allProducts.find(
-    (product) => product.id === Number(toProduct),
-  );
-  const isReyka = selectedProduct?.category_read?.category_name === "Рейка";
 
   // Update fields with dynamic options
-  const fields = recyclingFields(t, productSearchTerm)
+  const fields = recyclingFields(t)
     .map((field) => {
       if (field.name === "from_to") {
         return {
@@ -315,46 +284,6 @@ export default function CreateRecycling() {
           isLoading: loadingStocks,
         };
       }
-      if (field.name === "to_product") {
-        return {
-          ...field,
-          options: allProducts
-            .filter((product: any) => {
-              if (!allowedCategories || !product.category_read) return true;
-              return allowedCategories.some(
-                (cat) => cat.id === product?.category_read.id,
-              );
-            })
-            .map((product: any) => {
-              // Find the category name from allowedCategories
-              const categoryInfo = allowedCategories?.find(
-                (cat) => cat.id === product.category_read?.id,
-              );
-              const categoryName =
-                categoryInfo?.name ||
-                product.category_read?.category_name ||
-                "";
-
-              return {
-                value: product.id,
-                label: categoryName
-                  ? `${categoryName} - ${product.product_name}`
-                  : product.product_name,
-                categoryName: categoryName,
-              };
-            })
-            .sort((a: any, b: any) => {
-              // Sort by category name first, then by product name
-              if (a.categoryName !== b.categoryName) {
-                return a.categoryName.localeCompare(b.categoryName, "ru");
-              }
-              return a.label.localeCompare(b.label, "ru");
-            })
-            .filter((opt: any) => opt.value),
-          onSearch: setProductSearchTerm,
-          isLoading: isLoadingProducts,
-        };
-      }
       if (field.name === "store") {
         const isAdmin = currentUser?.role === "Администратор";
         const isStoreIdLocked = Boolean(storeIdFromUrl);
@@ -378,219 +307,111 @@ export default function CreateRecycling() {
 
       return field;
     })
-    // Hide specified fields and conditionally show quantity_of_parts
+    // Hide store field
     .filter((field) => {
-      // Always hide these fields
-      if (
-        [
-          "store",
-          "exchange_rate",
-          "purchase_price_in_uz",
-          "purchase_price_in_us",
-        ].includes(field.name)
-      ) {
+      if (["store"].includes(field.name)) {
         return false;
-      }
-      // Only show quantity_of_parts when to_product is "Рейка"
-      if (field.name === "quantity_of_parts") {
-        return isReyka;
       }
       return true;
     });
 
-  // Watch specific fields for changes
-  const fromTo = form.watch("from_to");
-  const getAmount = form.watch("get_amount");
-  const purchasePriceInUs = form.watch("purchase_price_in_us");
-  const exchangeRateField = form.watch("exchange_rate");
-
-  // Auto-calculate selling price when spent_amount, get_amount, or from_to changes
-  useEffect(() => {
-    if (!fromTo) return;
-    const selectedStock = stocks.find((stock) => stock.id === Number(fromTo));
-    const baseSellingPrice = selectedStock?.selling_price
-      ? Number(selectedStock.selling_price)
-      : 0;
-    const spentAmt = Number(form.watch("spent_amount"));
-    const getAmt = Number(getAmount);
-    // Get selected to_product and its category
-    const toProductId = form.watch("to_product");
-    const selectedProduct = allProducts.find(
-      (product) => product.id === Number(toProductId),
-    );
-    const categoryName = selectedProduct?.category_read?.category_name;
-    // Special calculation for Коньёк, Снегозадержатель, and Уголок
-    if (
-      (categoryName === "Коньёк" ||
-        categoryName === "Снегозадержатель" ||
-        categoryName === "Уголок") &&
-      baseSellingPrice &&
-      spentAmt &&
-      getAmt
-    ) {
-      let calculated = (baseSellingPrice * spentAmt) / getAmt;
-      calculated = Math.round((calculated + Number.EPSILON) * 100) / 100;
-      if (!sellingPriceRef.current) {
-        form.setValue("selling_price", calculated, {
-          shouldValidate: false,
-          shouldDirty: true,
-        });
-        sellingPriceRef.current = true;
-        setTimeout(() => {
-          sellingPriceRef.current = false;
-        }, 100);
-      }
-    } else if (baseSellingPrice && spentAmt && getAmt) {
-      // Default calculation (keep as is)
-      let calculated = (baseSellingPrice * spentAmt) / getAmt;
-      calculated = Math.round((calculated + Number.EPSILON) * 100) / 100;
-      if (!sellingPriceRef.current) {
-        form.setValue("selling_price", calculated, {
-          shouldValidate: false,
-          shouldDirty: true,
-        });
-        sellingPriceRef.current = true;
-        setTimeout(() => {
-          sellingPriceRef.current = false;
-        }, 100);
-      }
-    } else if (!getAmt) {
-      form.setValue("selling_price", 0, {
-        shouldValidate: false,
-        shouldDirty: true,
-      });
-    }
-  }, [fromTo, getAmount, stocks, form, allProducts]);
-
-  // Watch for changes to from_to and set purchase_price_in_us from stock's selling_price_in_us
-  useEffect(() => {
-    if (!fromTo) return;
-    const selectedStock = stocks.find((stock) => stock.id === Number(fromTo));
-    if (selectedStock && selectedStock.selling_price_in_us) {
-      form.setValue("purchase_price_in_us", selectedStock.selling_price_in_us, {
-        shouldValidate: false,
-        shouldDirty: true,
-      });
-    }
-  }, [fromTo, stocks, form]);
-
-  // Auto-calculate purchase_price_in_uz when purchase_price_in_us or exchange_rate changes
-  useEffect(() => {
-    const us = Number(purchasePriceInUs);
-    const rate = Number(exchangeRateField);
-    if (!isNaN(us) && !isNaN(rate) && us > 0 && rate > 0) {
-      const uz = us * rate;
-      form.setValue("purchase_price_in_uz", uz, {
-        shouldValidate: false,
-        shouldDirty: true,
-      });
-    } else {
-      form.setValue("purchase_price_in_uz", 0, {
-        shouldValidate: false,
-        shouldDirty: true,
-      });
-    }
-  }, [purchasePriceInUs, exchangeRateField, form]);
-
-  // Watch for changes to to_product and spent_amount to auto-calculate get_amount for specific categories
-  useEffect(() => {
-    const toProductId = form.watch("to_product");
-    if (!toProductId) return;
-    const selectedProduct = allProducts.find(
-      (product) => product.id === Number(toProductId),
-    );
-    if (!selectedProduct || !selectedProduct.category_read) return;
-    const categoryName = selectedProduct.category_read.category_name;
-    const spentAmt = Number(form.watch("spent_amount"));
-    // Only auto-calculate if spent_amount is a valid number
-    if (!isNaN(spentAmt) && spentAmt > 0) {
-      if (categoryName === "Рейка") {
-        // Find the measurement with name "Метр"
-        const metrMeasurement = selectedProduct.measurement?.find(
-          (m) => m.measurement_read?.measurement_name === "Метр",
+  // Get product options for outputs
+  const getProductOptions = () => {
+    return allProducts
+      .filter((product: any) => {
+        if (!allowedCategories || !product.category_read) return true;
+        return allowedCategories.some(
+          (cat) => cat.id === product?.category_read.id,
         );
-        const metrValue = metrMeasurement ? Number(metrMeasurement.number) : 1;
-        // Check if from_to's product category is Половой агаш or Половой
-        let multiplier = 1;
-        const selectedFromStock = stocks.find(
-          (stock) => stock.id === Number(form.watch("from_to")),
+      })
+      .map((product: any) => {
+        // Find the category name from allowedCategories
+        const categoryInfo = allowedCategories?.find(
+          (cat) => cat.id === product.category_read?.id,
         );
-        const fromCategoryName =
-          selectedFromStock?.product_read?.category_read?.category_name;
-        if (
-          fromCategoryName === "Половой агаш" ||
-          fromCategoryName === "Половой"
-        ) {
-          multiplier = 2;
+        const categoryName =
+          categoryInfo?.name || product.category_read?.category_name || "";
+
+        return {
+          value: product.id,
+          label: categoryName
+            ? `${categoryName} - ${product.product_name}`
+            : product.product_name,
+          categoryName: categoryName,
+        };
+      })
+      .sort((a: any, b: any) => {
+        // Sort by category name first, then by product name
+        if (a.categoryName !== b.categoryName) {
+          return a.categoryName.localeCompare(b.categoryName, "ru");
         }
-        const newGetAmount = spentAmt * metrValue * multiplier;
-        if (form.getValues("get_amount") !== String(newGetAmount)) {
-          form.setValue("get_amount", String(newGetAmount), {
-            shouldValidate: false,
-            shouldDirty: true,
-          });
-        }
-      } else if (categoryName === "Коньёк") {
-        const newGetAmount = spentAmt * 6;
-        if (form.getValues("get_amount") !== String(newGetAmount)) {
-          form.setValue("get_amount", String(newGetAmount), {
-            shouldValidate: false,
-            shouldDirty: true,
-          });
-        }
-      } else if (categoryName === "Снегозадержатель") {
-        const newGetAmount = spentAmt * 7;
-        if (form.getValues("get_amount") !== String(newGetAmount)) {
-          form.setValue("get_amount", String(newGetAmount), {
-            shouldValidate: false,
-            shouldDirty: true,
-          });
-        }
-      } else if (categoryName === "Уголок") {
-        const newGetAmount = spentAmt * 12;
-        if (form.getValues("get_amount") !== String(newGetAmount)) {
-          form.setValue("get_amount", String(newGetAmount), {
-            shouldValidate: false,
-            shouldDirty: true,
-          });
-        }
-      }
+        return a.label.localeCompare(b.label, "ru");
+      })
+      .filter((opt: any) => opt.value);
+  };
+
+  // Add new output handler
+  const handleAddOutput = () => {
+    const newOutputs = [...outputs, { to_product: undefined, get_amount: "" }];
+    setOutputs(newOutputs);
+    setProductSearchTerms([...productSearchTerms, ""]);
+    form.setValue("outputs", newOutputs);
+  };
+
+  // Remove output handler
+  const handleRemoveOutput = (index: number) => {
+    if (outputs.length > 1) {
+      const newOutputs = outputs.filter((_, i) => i !== index);
+      const newSearchTerms = productSearchTerms.filter((_, i) => i !== index);
+      setOutputs(newOutputs);
+      setProductSearchTerms(newSearchTerms);
+      form.setValue("outputs", newOutputs);
     }
-  }, [
-    form.watch("to_product"),
-    form.watch("spent_amount"),
-    allProducts,
-    form,
-    stocks,
-  ]);
+  };
+
+  // Update output value
+  const handleOutputChange = (
+    index: number,
+    field: "to_product" | "get_amount",
+    value: any,
+  ) => {
+    const newOutputs = [...outputs];
+    newOutputs[index] = { ...newOutputs[index], [field]: value };
+    setOutputs(newOutputs);
+    form.setValue("outputs", newOutputs);
+  };
 
   const handleSubmit = async (data: FormValues) => {
     try {
-      // Validate quantity_of_parts is required when to_product is "Рейка"
-      if (
-        isReyka &&
-        (!data.quantity_of_parts || Number(data.quantity_of_parts) <= 0)
-      ) {
-        toast.error(t("common.quantity_of_parts_required"));
+      // Validate that at least one output exists
+      if (!outputs || outputs.length === 0) {
+        toast.error(
+          t("messages.error.at_least_one_output") ||
+            "At least one output is required",
+        );
         return;
       }
 
-      // Calculate purchase_price_uzs as selling_price * get_amount
-      // const sellingPrice = Number(data.selling_price);
-      // const getAmount = Number(data.get_amount);
-      // const _purchase_price_in_uz = sellingPrice * getAmount;
-      const selectedStock = stocks.find((stock) => stock.id === Number(fromTo));
-      console.log("selling_price_in_us", selectedStock.selling_price_in_us);
+      // Validate all outputs have required fields
+      for (const output of outputs) {
+        if (!output.to_product || !output.get_amount) {
+          toast.error(
+            t("messages.error.complete_all_outputs") ||
+              "Please complete all output fields",
+          );
+          return;
+        }
+      }
+
       const formattedData: any = {
         from_to: Number(data.from_to),
-        to_product: Number(data.to_product),
         store: Number(data.store),
         spent_amount: String(data.spent_amount || ""),
-        get_amount: String(data.get_amount || ""),
+        outputs: outputs.map((output) => ({
+          to_product: Number(output.to_product),
+          get_amount: String(output.get_amount),
+        })),
         date_of_recycle: data.date_of_recycle || "",
-        // purchase_price_in_us: Number(data.purchase_price_in_us),
-        // purchase_price_in_uz: Number(data.purchase_price_in_uz),
-        quantity_of_parts: isReyka ? Number(data.quantity_of_parts) : undefined,
       };
 
       await createRecycling.mutateAsync(formattedData);
@@ -610,13 +431,206 @@ export default function CreateRecycling() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <ResourceForm<FormValues>
-        fields={fields}
-        onSubmit={handleSubmit}
-        isSubmitting={createRecycling.isPending}
-        title={t("common.create") + " " + t("navigation.recyclings")}
-        form={form}
-      />
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-2xl font-bold mb-6">
+          {t("common.create")} {t("navigation.recyclings")}
+        </h1>
+
+        {/* Main Form Fields */}
+        <div className="bg-white p-6 rounded-lg shadow-sm space-y-4 mb-6">
+          {fields.map((field) => (
+            <div key={field.name}>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {field.label} {field.required && "*"}
+              </label>
+              {field.type === "select" ? (
+                <Select
+                  onValueChange={(value) =>
+                    form.setValue(field.name as any, Number(value))
+                  }
+                  value={form.watch(field.name as any)?.toString() || ""}
+                  disabled={(field as any).disabled || (field as any).isLoading}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={field.placeholder} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {field.options?.map((option: any) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value.toString()}
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : field.type === "date" ? (
+                <input
+                  type="date"
+                  {...form.register(field.name as any)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              ) : (
+                <input
+                  type={field.type}
+                  {...form.register(field.name as any)}
+                  placeholder={field.placeholder}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Outputs Section */}
+        <div className="mt-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">
+              {t("table.outputs") || "Outputs"}
+            </h2>
+            <button
+              type="button"
+              onClick={handleAddOutput}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              + {t("common.add") || "Add"}
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {outputs.map((output, index) => (
+              <div
+                key={index}
+                className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Product Select */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t("table.to_product")} *
+                      </label>
+                      <Select
+                        onValueChange={(value) =>
+                          handleOutputChange(index, "to_product", Number(value))
+                        }
+                        value={output.to_product?.toString() || ""}
+                        disabled={isLoadingProducts}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue
+                            placeholder={t("placeholders.select_product")}
+                          />
+                        </SelectTrigger>
+                        <SelectContent
+                          onPointerDownOutside={(e) => {
+                            const target = e.target as Node;
+                            const selectContent = document.querySelector(
+                              ".select-content-wrapper",
+                            );
+                            if (
+                              selectContent &&
+                              selectContent.contains(target)
+                            ) {
+                              e.preventDefault();
+                            }
+                          }}
+                        >
+                          <div className="p-2 sticky top-0 bg-white z-10 border-b select-content-wrapper">
+                            <Input
+                              type="text"
+                              placeholder={`Search ${t("table.to_product").toLowerCase()}...`}
+                              value={productSearchTerms[index] || ""}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                const newSearchTerms = [...productSearchTerms];
+                                newSearchTerms[index] = e.target.value;
+                                setProductSearchTerms(newSearchTerms);
+                              }}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => e.stopPropagation()}
+                              className="flex-1"
+                              autoFocus
+                            />
+                          </div>
+                          <div className="max-h-[200px] overflow-y-auto">
+                            {getProductOptions()
+                              .filter((option) =>
+                                productSearchTerms[index]
+                                  ? option.label
+                                      .toLowerCase()
+                                      .includes(
+                                        productSearchTerms[index].toLowerCase(),
+                                      )
+                                  : true,
+                              )
+                              .map((option) => (
+                                <SelectItem
+                                  key={option.value}
+                                  value={option.value.toString()}
+                                >
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                          </div>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Get Amount Input */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t("table.get_amount")} *
+                      </label>
+                      <input
+                        type="text"
+                        value={output.get_amount || ""}
+                        onChange={(e) =>
+                          handleOutputChange(
+                            index,
+                            "get_amount",
+                            e.target.value,
+                          )
+                        }
+                        placeholder={t("placeholders.enter_quantity")}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Remove Button */}
+                  {outputs.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveOutput(index)}
+                      className="mt-6 px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                      title={t("common.remove") || "Remove"}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Submit Button */}
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={() => form.handleSubmit(handleSubmit)()}
+            disabled={createRecycling.isPending}
+            className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {createRecycling.isPending
+              ? t("common.submitting") || "Submitting..."
+              : t("common.submit") || "Submit"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

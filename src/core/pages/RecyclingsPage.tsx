@@ -12,20 +12,38 @@ const columns = (t: any) => [
     header: t("table.from_stock"),
     accessorKey: "from_to_read",
     cell: (row: any) => {
-      const fromStore = row.from_to_read?.store_read?.name;
-      const fromProduct = row.from_to_read?.product_read?.product_name;
+      const fromStore = row.from_to_read?.store?.name;
+      const fromProduct = row.from_to_read?.product?.product_name;
       return fromStore && fromProduct ? `${fromProduct} (${fromStore})` : "-";
     },
   },
   {
-    header: t("table.to_product"),
-    accessorKey: "to_product_read",
-    cell: (row: any) => row.to_product_read?.product_name || "-",
+    header: t("table.spent_amount"),
+    accessorKey: "spent_amount",
   },
   {
-    header: t("table.to_stock"),
-    accessorKey: "to_stock_read",
-    cell: (row: any) => row.to_stock_read?.store_read?.name || "-",
+    header: t("table.outputs"),
+    accessorKey: "outputs",
+    cell: (row: any) => {
+      const outputs = row.outputs || [];
+      if (outputs.length === 0) return "-";
+
+      return (
+        <div className="space-y-1">
+          {outputs.map((output: any, index: number) => {
+            const productName = output.to_product_read?.product_name || "-";
+            const storeName = output.to_stock_read?.store?.name || "-";
+            const amount = output.get_amount || 0;
+
+            return (
+              <div key={index} className="text-sm">
+                {productName} ({storeName}): {amount}
+              </div>
+            );
+          })}
+        </div>
+      );
+    },
   },
   {
     header: t("table.date"),
@@ -34,14 +52,6 @@ const columns = (t: any) => [
       const date = row.date_of_recycle;
       return date ? format(new Date(date), "dd/MM/yyyy") : "-";
     },
-  },
-  {
-    header: t("table.spent_amount"),
-    accessorKey: "spent_amount",
-  },
-  {
-    header: t("table.get_amount"),
-    accessorKey: "get_amount",
   },
 ];
 
@@ -59,7 +69,7 @@ export default function RecyclingsPage() {
   const { data: recyclingsData, isLoading } = useGetRecyclings({
     params: {
       page,
-      stock_id: id,
+      id: id || undefined,
     },
   });
 

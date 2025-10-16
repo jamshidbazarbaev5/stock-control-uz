@@ -150,6 +150,8 @@
   "common": {
     "stock_name": "Партия",
     "enter_stock_name": "Партия",
+    "with_quantity": "В наличии",
+    "without_quantity": "Нет в наличии",
 
     "select_currency": "Валюта",
     "purchase_unit": "Ед измерения",
@@ -688,7 +690,7 @@
     "actual": "Актуально",
     "expense": "Расходы",
     "expected": "Сумма",
-
+    "outputs": "В товары  ",
     "payments": "Оплаты",
     "total_expected": "Сумма",
     "total_actual": "Актуально",

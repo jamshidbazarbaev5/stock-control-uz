@@ -631,6 +631,28 @@ function CreateSale() {
         return;
       }
 
+      // Validate debt sale fields when on_credit is true
+      if (data.on_credit) {
+        if (!data.sale_debt?.client || data.sale_debt.client === 0) {
+          toast.error(t("validation.required", { field: t("table.client") }));
+          return;
+        }
+        if (!data.sale_debt?.due_date) {
+          toast.error(t("validation.required", { field: t("table.due_date") }));
+          return;
+        }
+      }
+
+      // Validate deposit payment method when deposit has value
+      if (data.sale_debt?.deposit && data.sale_debt.deposit > 0) {
+        if (!data.sale_debt?.deposit_payment_method) {
+          toast.error(
+            t("validation.required", { field: t("table.payment_method") }),
+          );
+          return;
+        }
+      }
+
       // Validate all items meet minimum price requirements
       const hasInvalidPrices = data.sale_items.some((item, index) => {
         const cartProduct = cartProducts[index];
@@ -1373,7 +1395,12 @@ function CreateSale() {
               name="sale_debt.client"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t("table.client")}</FormLabel>
+                  <FormLabel>
+                    {t("table.client")}
+                    {form.watch("on_credit") && (
+                      <span className="text-red-500 ml-1">*</span>
+                    )}
+                  </FormLabel>
                   {/* Search input outside of Select */}
                   <Input
                     type="text"
@@ -1448,7 +1475,10 @@ function CreateSale() {
                   name="sale_debt.due_date"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("table.due_date")}</FormLabel>
+                      <FormLabel>
+                        {t("table.due_date")}
+                        <span className="text-red-500 ml-1">*</span>
+                      </FormLabel>
                       <FormControl>
                         <Input type="date" {...field} />
                       </FormControl>
@@ -1481,7 +1511,13 @@ function CreateSale() {
                   name="sale_debt.deposit_payment_method"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{t("table.payment_method")}</FormLabel>
+                      <FormLabel>
+                        {t("table.payment_method")}
+                        {form.watch("sale_debt.deposit") &&
+                          form.watch("sale_debt.deposit")! > 0 && (
+                            <span className="text-red-500 ml-1">*</span>
+                          )}
+                      </FormLabel>
                       <Select
                         value={field.value || "Наличные"}
                         onValueChange={(value) => {

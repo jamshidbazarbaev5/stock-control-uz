@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RevaluationDialog } from "@/components/dialogs/RevaluationDialog";
 import { useProductRevaluation } from "../api/revaluation";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface PriceEdit {
   productId: number;
@@ -183,15 +184,19 @@ export default function ProductsPage() {
   const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
   const [isRevaluationDialogOpen, setIsRevaluationDialogOpen] = useState(false);
   const [priceEdits, setPriceEdits] = useState<Record<number, PriceEdit>>({});
+  const [productTab, setProductTab] = useState<
+    "with_quantity" | "without_quantity"
+  >("with_quantity");
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
-  }, [searchTerm, selectedCategory, selectedMeasurement]);
+  }, [searchTerm, selectedCategory, selectedMeasurement, productTab]);
 
   const { data: productsData, isLoading } = useGetProducts({
     params: {
       page,
+      non_zero: productTab === "with_quantity" ? 1 : 0,
       ...(searchTerm && { product_name: searchTerm }),
       ...(selectedCategory && { category: selectedCategory }),
       ...(selectedMeasurement && { measurement: selectedMeasurement }),
@@ -417,15 +422,34 @@ export default function ProductsPage() {
           >
             {t("buttons.save")} ({Object.keys(priceEdits).length})
           </Button>
-          <Button
-            variant="secondary"
-            disabled={selectedProducts.length === 0}
-            onClick={() => setIsRevaluationDialogOpen(true)}
-          >
-            {t("buttons.revaluate")} ({selectedProducts.length})
-          </Button>
+          {/*<Button*/}
+          {/*  variant="secondary"*/}
+          {/*  disabled={selectedProducts.length === 0}*/}
+          {/*  onClick={() => setIsRevaluationDialogOpen(true)}*/}
+          {/*>*/}
+          {/*  {t("buttons.revaluate")} ({selectedProducts.length})*/}
+          {/*</Button>*/}
         </div>
       </div>
+      {/* Product Tabs */}
+      <div className="mb-4">
+        <Tabs
+          value={productTab}
+          onValueChange={(value) =>
+            setProductTab(value as "with_quantity" | "without_quantity")
+          }
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="with_quantity">
+              {t("common.with_quantity") || "С количеством"}
+            </TabsTrigger>
+            <TabsTrigger value="without_quantity">
+              {t("common.without_quantity") || "Без количества"}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
         <Input
           type="text"
