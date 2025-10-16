@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+
 import { WriteOffDialog } from "../components/dialogs/WriteOffDialog";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/button";
@@ -71,7 +71,7 @@ const isProductRecyclable = (product: any): boolean => {
 export default function StocksPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
+
   const { data: currentUser } = useCurrentUser();
   // Removed selectedStock state - using dedicated edit page instead
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -410,16 +410,18 @@ export default function StocksPage() {
   const handleDelete = async (id: number) => {
     try {
       await deleteStock.mutateAsync(id);
-      // Explicitly invalidate and refetch stocks query
-      await queryClient.invalidateQueries({ queryKey: ["stocks"] });
       toast.success(
         t("messages.success.deleted", { item: t("table.product") }),
       );
+      // Close modal and reload the page
       setDeleteModalOpen(false);
       setStockToDelete(null);
+      window.location.reload();
     } catch (error) {
       toast.error(t("messages.error.delete", { item: t("table.product") }));
       console.error("Failed to delete stock:", error);
+      setDeleteModalOpen(false);
+      setStockToDelete(null);
     }
   };
 
