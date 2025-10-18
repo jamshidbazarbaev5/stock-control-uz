@@ -15,6 +15,7 @@ import {
   User,
   ChevronDown,
   type LucideIcon,
+  CreditCard,
   // PrinterCheck,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -253,6 +254,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         icon: ArrowLeftRight,
         label: t("navigation.recyclings"),
         href: "/recyclings",
+      },
+      {
+        icon: CreditCard,
+        label: t("navigation.exchange_loans"),
+        href: "/exchange-loans",
       },
     ];
 

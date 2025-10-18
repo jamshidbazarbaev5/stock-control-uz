@@ -242,7 +242,8 @@
     "recyclings": "Qayta ishlew",
     "clients": "Klientler",
     "sale": "Satıwlar",
-    "stock_balance": "Товар қалдығы"
+    "stock_balance": "Товар қалдығы",
+    "exchange_loans": "Valyuta qarizdarları"
   },
   "auth": {
     "login": "Kiriw",
@@ -302,6 +303,11 @@
     "date_from": "Sa'neden",
     "date_to": "Sa'nege",
     "client": "Klient",
+    "total_amount": "Jámi summa",
+    "remaining_balance": "Qalǵan summa",
+    "currency_rate": "Valyuta kursı",
+    "deposit_amount": "Depozit summası",
+    "due_date": "Tólew sánesi",
     "all": "Hamme status",
     "payment_status": "Tólem statusı",
     "min_amount": "Min summa",
@@ -345,6 +351,8 @@
     "store": "Dúkan",
     "remainder": "Qaldıǵı",
     "status": "Status",
+    "paid": "Tólenbegen",
+    "unpaid": "Tólenbegen",
     "date_joined": "Qosılǵan sanesi",
     "payment_method": "Tólew",
     "due_date": "Tólew sánesi",
@@ -463,6 +471,16 @@
     "select_store": "Dúkandı tańlań",
     "select_category": "Kategoriyanı tańlań",
     "select_product": "Ónimdi tańlań",
+    "search_exchange_loans": "Valyuta qarizdarların izdeń",
+    "enter_total_amount": "Jámi summanı kiritiń",
+    "enter_currency_rate": "Valyuta kursın kiritiń",
+    "enter_deposit_amount": "Depozit summasın kiritiń",
+    "enter_notes": "Eskertpelerdi kiritiń",
+    "enter_amount": "Summanı kiritiń",
+    "clear_filters": "Filtrlerdi tazalaw",
+    "payment": "Tólem",
+    "create_payment": "Tólem jaratıw",
+    "view_payments": "Tólemderdi kóriw",
     "select_measurement": "Ólshem birligin tańlań",
     "select_supplier": "Taminleyishini tańlań",
     "select_role": "Lawazımdı tańlań",
@@ -558,7 +576,18 @@
     "debt_payments": "Qarz tólémderi",
     "debt_details": "Qarız maǵlıwmatı",
     "create_expense_name": "Rasxod atın jaratıw",
-    "create_expense": "Rasxod jaratıw"
+    "create_expense": "Rasxod jaratıw",
+    "exchange_loans": {
+      "description": "Valyuta qarizdarların basqarıw",
+      "create_description": "Jańa valyuta qarizdarın jaratıw",
+      "edit_description": "Valyuta qarizdarın ózgertiw",
+      "payment_dialog": {
+        "title": "Qarız tólemderi",
+        "loan_summary": "Qarız maǵlıwmatı",
+        "max_amount": "Maksimal summa",
+        "payment_history": "Tólem tarixi"
+      }
+    }
   },
   "currency_modal": {
     "title": "Valyutani tańlaw",

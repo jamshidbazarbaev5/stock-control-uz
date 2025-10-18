@@ -145,14 +145,27 @@
     "create_expense_name": "Создать название расхода",
     "payment_history": "История платежей",
     "debt_details": "Информация о долге",
-    "create_expense": "Создать расход"
+    "create_expense": "Создать расход",
+    "exchange_loans": {
+      "description": "Управление обменными займами",
+      "create_description": "Создать новый обменный займ",
+      "edit_description": "Редактировать обменный займ",
+      "payment_dialog": {
+        "title": "Платежи по займу",
+        "loan_summary": "Информация о займе",
+        "max_amount": "Максимальная сумма",
+        "payment_history": "История платежей"
+      }
+    }
   },
   "common": {
+    "clear_filters": "Очистить фильтры",
+    "create_payment": "Оплатить",
     "stock_name": "Партия",
     "enter_stock_name": "Партия",
     "with_quantity": "В наличии",
     "without_quantity": "Нет в наличии",
-
+    "payment": "Оплатить",
     "select_currency": "Валюта",
     "purchase_unit": "Ед измерения",
     "select_purchase_unit": "Eд измерения",
@@ -323,6 +336,7 @@
     "create_transfer": "Создать перемещение",
     "recycling": "Переработка",
     "finance": "Финансы",
+    "exchange_loans": "Обменные займы",
     "income": "Доходы",
     "incomes": "Доходы",
     "add_money": "Добавить депозит в кассу",
@@ -417,6 +431,14 @@
     "currency": "Валюта",
     "created_at": "Дата создания",
     "is_paid": "Оплачено",
+    "total_amount": "Общая сумма",
+    "remaining_balance": "Остаток",
+    "currency_rate": "Курс валюты",
+    "deposit_amount": "Сумма депозита",
+    "due_date": "Дата погашения",
+    "amount": "Сумма",
+    "date_from": "Дата с",
+    "date_to": "Дата по",
     "sponsor": "Спонсор",
     "select_payment_method": "Выберите способ оплаты",
     "total_amount4": "Общая сумма долгов",
@@ -491,6 +513,7 @@
     "store_type": "Тип магазина",
     "payment_method": "Тип оплаты",
     "store": "Магазин",
+    "store_budget": "Бюджет магазина",
     "actions": "Действия",
 
     "due_date": "Срок оплаты",
@@ -543,6 +566,8 @@
     "edit_profile": "Редактировать профиль",
     "balance": "Баланс",
     "status": "Статус",
+    "paid": "Оплачено",
+    "unpaid": "Не оплачено",
     "user": "Пользователь",
     "client_info": "Информация о клиенте",
     "debt_info": "Информация о долге",
@@ -573,7 +598,7 @@
   },
   "messages": {
     "create": "Создать",
-
+    "no_payments_found": "Нет платежи",
     "created_successfully": " успешно создан",
     "success": {
       "created": " успешно создан",
@@ -585,6 +610,7 @@
       "payment_created": "Платеж успешно создан"
     },
     "error": {
+      "payment_exceeds_budget": "Вы не можете оплатить этот долг бюджет магазина не хватет",
       "add_money": "Пополните все поля",
       "negative": "Невозможно создать: прибыль не может быть отрицательной.",
       "delete_budget_negative": "Невозможно удалить: бюджет магазина станет отрицательным.",
@@ -603,6 +629,9 @@
       "delete": "Вы уверены, что хотите удалить это?"
     },
     "edit": "Изменить"
+  },
+  "status": {
+    "unpaid": "Не погашен"
   },
   "placeholders": {
     "search_products": "Поиск товаров",
@@ -625,6 +654,16 @@
     "enter_static_weight": "Введите метр",
     "select_is_list": "Выберите это лист?",
     "enter_kub": "Введите куб",
+    "search_exchange_loans": "Поиск обменных займов",
+    "enter_total_amount": "Введите общую сумму",
+    "enter_currency_rate": "Введите курс валюты",
+    "enter_deposit_amount": "Введите сумму депозита",
+    "enter_notes": "Введите заметки",
+    "enter_amount": "Введите сумму",
+    "clear_filters": "Очистить фильтры",
+    "payment": "Платеж",
+    "create_payment": "Создать платеж",
+    "view_payments": "Просмотр платежей",
     "select_has_recycling": "Выберите, имеет ли товар переработку",
     "select_categories": "Выберите категории",
     "select_seller": "Выберите продавца",
@@ -782,6 +821,7 @@
     "price_history": "Детальная информация:"
   },
   "messages": {
+    "no_payments_found": "Нет платежи",
     "create": "Создать",
     "no_data_to_display": "Нет данных для отображения",
     "success": {
@@ -798,6 +838,7 @@
       "attribute_created": "Атрибут успешно создан"
     },
     "error": {
+      "payment_exceeds_budget": "Вы не можете оплатить этот долг бюджет магазина не хватет",
       "add_money": "Пополните все поля",
       "negative": "Невозможно создать: прибыль не может быть отрицательной.",
       "delete_budget_negative": "Невозможно удалить: бюджет магазина станет отрицательным.",

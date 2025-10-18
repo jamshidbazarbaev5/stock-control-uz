@@ -81,6 +81,10 @@ import AttributesPage from "@/pages/AttributesPage";
 import AttributeFormPage from "@/pages/AttributeFormPage";
 import CloseShiftPage from "./core/pages/CloseShiftPage";
 import { DefaultRedirect } from "./core/components/DefaultRedirect";
+import ExchangeLoansPage from "./core/pages/ExchangeLoansPage";
+import CreateExchangeLoanPage from "./core/pages/CreateExchangeLoanPage";
+import EditExchangeLoanPage from "./core/pages/EditExchangeLoanPage";
+import ExchangeLoanPaymentsPage from "./core/pages/ExchangeLoanPaymentsPage";
 // import CreateSalePos from "./core/pages/create-sale-2";
 
 const queryClient = new QueryClient();
@@ -682,6 +686,38 @@ function App() {
                 element={
                   <PrivateRoute allowedRoles={["Администратор"]}>
                     <RevaluationHistoryPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/exchange-loans"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <ExchangeLoansPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/exchange-loans/create"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <CreateExchangeLoanPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/exchange-loans/:id/edit"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <EditExchangeLoanPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/exchange-loans/:id/payments"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <ExchangeLoanPaymentsPage />
                   </PrivateRoute>
                 }
               />
