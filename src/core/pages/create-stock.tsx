@@ -47,6 +47,9 @@ interface FormValues {
   base_unit_in_uzs?: number | string;
   base_unit_in_currency?: number | string;
   conversion_factor?: number | string;
+  is_debt?: boolean;
+  amount_of_debt?: number | string;
+  advance_of_debt?: number | string;
 }
 
 interface CreateProductForm {
@@ -146,6 +149,9 @@ export default function CreateStock() {
       base_unit_in_currency: "",
       conversion_factor: "",
       quantity: "",
+      is_debt: false,
+      amount_of_debt: "",
+      advance_of_debt: "",
     },
   });
 
@@ -684,6 +690,31 @@ export default function CreateStock() {
           },
         ]
       : []),
+    {
+      name: "is_debt",
+      label: t("common.is_debt"),
+      type: "checkbox",
+      placeholder: t("common.is_debt"),
+      required: false,
+    },
+    ...(form.watch("is_debt")
+      ? [
+          {
+            name: "amount_of_debt",
+            label: t("common.amount_of_debt"),
+            type: "number",
+            placeholder: t("common.enter_amount_of_debt"),
+            required: false,
+          },
+          {
+            name: "advance_of_debt",
+            label: t("common.advance_of_debt"),
+            type: "number",
+            placeholder: t("common.enter_advance_of_debt"),
+            required: false,
+          },
+        ]
+      : []),
   ];
 
   // FIXED: Show dynamic fields in API response order
@@ -744,6 +775,9 @@ export default function CreateStock() {
         supplier: Number(data.supplier),
         date_of_arrived: data.date_of_arrived,
         ...(data.stock_name && { stock_name: data.stock_name }),
+        ...(data.is_debt !== undefined && { is_debt: data.is_debt }),
+        ...(data.amount_of_debt && { amount_of_debt: formatNumberForAPI(data.amount_of_debt) }),
+        ...(data.advance_of_debt && { advance_of_debt: formatNumberForAPI(data.advance_of_debt) }),
       };
 
       // Handle dynamic fields - send both editable and disabled fields with their values

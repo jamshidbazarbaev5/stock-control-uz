@@ -147,11 +147,35 @@ export default function CreateRecycling() {
     ? storesData
     : storesData?.results || [];
 
-  // Fetch products with pagination
+  // Fetch products with pagination and category filtering
   const { data: productsData, isLoading: isLoadingProducts } = useGetProducts({
     params: {
       page: productPage,
       ...(productSearchTerms[0] ? { product_name: productSearchTerms[0] } : {}),
+      // Add category filtering when allowedCategories is available
+      ...(allowedCategories && allowedCategories.length > 0 
+        ? { 
+            category: allowedCategories.map(cat => cat.id)
+          } 
+        : {}
+      ),
+    },
+    // Custom params serializer to handle multiple category parameters correctly
+    paramsSerializer: (params) => {
+      const searchParams = new URLSearchParams();
+      
+      Object.entries(params).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          // For arrays, add multiple parameters with the same key
+          value.forEach(item => {
+            searchParams.append(key, item.toString());
+          });
+        } else if (value !== undefined && value !== null) {
+          searchParams.append(key, value.toString());
+        }
+      });
+      
+      return searchParams.toString();
     },
   });
 
@@ -318,12 +342,6 @@ export default function CreateRecycling() {
   // Get product options for outputs
   const getProductOptions = () => {
     return allProducts
-      .filter((product: any) => {
-        if (!allowedCategories || !product.category_read) return true;
-        return allowedCategories.some(
-          (cat) => cat.id === product?.category_read.id,
-        );
-      })
       .map((product: any) => {
         // Find the category name from allowedCategories
         const categoryInfo = allowedCategories?.find(

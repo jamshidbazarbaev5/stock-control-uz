@@ -19,6 +19,7 @@ import { MoreHorizontal, Settings } from "lucide-react";
 import { useGetStocks, useDeleteStock } from "../api/stock";
 import { useGetStores } from "../api/store";
 import { useGetSuppliers } from "../api/supplier";
+import { useCreateStockDebtPayment } from "../api/stock-debt-payment";
 import { ResourceTable } from "../helpers/ResourseTable";
 import { useTranslation } from "react-i18next";
 import {
@@ -36,6 +37,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 type PaginatedData<T> = { results: T[]; count: number } | T[];
 
@@ -52,6 +55,9 @@ const COLUMN_CONFIG: Record<string, { label: string }> = {
   date_of_arrived: { label: "Дата прихода" },
   quantity: { label: "Количество (базовая единица)" },
   purchase_unit_quantity: { label: "Количество (единица закупки)" },
+  is_debt: { label: "Долг" },
+  amount_of_debt: { label: "Сумма долга" },
+  advance_of_debt: { label: "Аванс долга" },
   actions: { label: "Действия" },
 };
 
@@ -88,6 +94,10 @@ export default function StocksPage() {
   const [productId, setProductId] = useState<string>("");
   const [columnVisibilityDialogOpen, setColumnVisibilityDialogOpen] =
     useState(false);
+  const [debtPaymentDialogOpen, setDebtPaymentDialogOpen] = useState(false);
+  const [selectedStockForPayment, setSelectedStockForPayment] = useState<Stock | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState<string>("");
+  const [paymentComment, setPaymentComment] = useState<string>("");
 
   // Column visibility state - load from localStorage or use defaults
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
@@ -275,6 +285,27 @@ export default function StocksPage() {
           : "-",
     },
     {
+      header: "Долг",
+      accessorKey: "is_debt",
+      cell: (row: any) => (row.is_debt ? "Да" : "Нет"),
+    },
+    {
+      header: "Сумма долга",
+      accessorKey: "amount_of_debt",
+      cell: (row: any) =>
+        row.amount_of_debt
+          ? `${Number(row.amount_of_debt).toLocaleString()} UZS`
+          : "-",
+    },
+    {
+      header: "Аванс долга",
+      accessorKey: "advance_of_debt",
+      cell: (row: any) =>
+        row.advance_of_debt
+          ? `${Number(row.advance_of_debt).toLocaleString()} UZS`
+          : "-",
+    },
+    {
       header: t("table.actions"),
       accessorKey: "actions",
       cell: (row: any) => (
@@ -322,6 +353,31 @@ export default function StocksPage() {
                 {t("common.remove")}
               </DropdownMenuItem>
             ) : null}
+
+            {/* Show pay button if stock has debt */}
+            {row.is_debt && (
+              <DropdownMenuItem
+                onClick={() => handlePayDebt(row)}
+              >
+                <span className="flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 1v6l3-3m-3 3l-3-3" />
+                    <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.35 0 4.5.9 6.1 2.4" />
+                  </svg>
+                  {t("common.pay_debt")}
+                </span>
+              </DropdownMenuItem>
+            )}
 
             {currentUser?.role?.toLowerCase() !== "продавец" && (
               <>
@@ -397,12 +453,52 @@ export default function StocksPage() {
 
   // Mutations
   const deleteStock = useDeleteStock();
+  const createStockDebtPayment = useCreateStockDebtPayment();
 
   // Removed fields configuration - using dedicated edit page instead
 
   // Handlers
   const handleEdit = (stock: Stock) => {
     navigate(`/edit-stock/${stock.id}`);
+  };
+
+  const handlePayDebt = (stock: Stock) => {
+    setSelectedStockForPayment(stock);
+    setPaymentAmount("");
+    setPaymentComment("");
+    setDebtPaymentDialogOpen(true);
+  };
+
+  const handleDebtPaymentSubmit = async () => {
+    if (!selectedStockForPayment || !paymentAmount) {
+      toast.error(t("validation.fill_all_required_fields"));
+      return;
+    }
+
+    const amount = parseFloat(paymentAmount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error(t("validation.amount_must_be_positive"));
+      return;
+    }
+
+    try {
+      await createStockDebtPayment.mutateAsync({
+        stock: selectedStockForPayment.id!,
+        amount: amount,
+        comment: paymentComment || "Таксиден жибердим",
+      });
+      
+      toast.success(t("common.payment_successful"));
+      setDebtPaymentDialogOpen(false);
+      setSelectedStockForPayment(null);
+      setPaymentAmount("");
+      setPaymentComment("");
+      // Refresh the page to update the data
+      window.location.reload();
+    } catch (error) {
+      console.error("Error making debt payment:", error);
+      toast.error(t("common.payment_failed"));
+    }
   };
 
   // Removed inline edit functionality - use dedicated edit page instead
@@ -422,6 +518,7 @@ export default function StocksPage() {
       console.error("Failed to delete stock:", error);
       setDeleteModalOpen(false);
       setStockToDelete(null);
+      window.location.reload();
     }
   };
 
@@ -587,6 +684,74 @@ export default function StocksPage() {
         selectedStocks={selectedStocks}
         stocksData={stocksData}
       />
+
+      {/* Debt Payment Dialog */}
+      <Dialog open={debtPaymentDialogOpen} onOpenChange={setDebtPaymentDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("common.pay_debt")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedStockForPayment && (
+              <div className="space-y-2">
+                <Label>{t("common.product")}</Label>
+                <p className="text-sm text-gray-600">
+                  {selectedStockForPayment.product?.product_name || selectedStockForPayment.product_read?.product_name}
+                </p>
+                <Label>{t("common.amount_of_debt")}</Label>
+                <p className="text-sm text-gray-600">
+                  {selectedStockForPayment.amount_of_debt 
+                    ? `${Number(selectedStockForPayment.amount_of_debt).toLocaleString()} UZS`
+                    : "-"}
+                </p>
+                <Label>{t("common.advance_of_debt")}</Label>
+                <p className="text-sm text-gray-600">
+                  {selectedStockForPayment.advance_of_debt 
+                    ? `${Number(selectedStockForPayment.advance_of_debt).toLocaleString()} UZS`
+                    : "-"}
+                </p>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="paymentAmount">{t("common.payment_amount")}</Label>
+              <Input
+                id="paymentAmount"
+                type="number"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                placeholder={t("common.enter_payment_amount")}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="paymentComment">{t("common.comment")}</Label>
+              <Textarea
+                id="paymentComment"
+                value={paymentComment}
+                onChange={(e) => setPaymentComment(e.target.value)}
+                placeholder={t("common.enter_comment")}
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setDebtPaymentDialogOpen(false)}
+                className="flex-1"
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button
+                onClick={handleDebtPaymentSubmit}
+                className="flex-1"
+                disabled={!paymentAmount || parseFloat(paymentAmount) <= 0}
+              >
+                {t("common.pay")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

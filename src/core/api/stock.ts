@@ -80,6 +80,10 @@ export interface Stock {
   min_price?: number | string;
   purchase_price_in_us?: number | string;
   purchase_price_in_uz?: number | string;
+  // Debt fields
+  is_debt?: boolean;
+  amount_of_debt?: number | string;
+  advance_of_debt?: number | string;
   // Legacy fields for backward compatibility
   product_read?: {
     id: number;

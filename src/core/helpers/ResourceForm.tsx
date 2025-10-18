@@ -11,6 +11,7 @@ import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Checkbox } from '../../components/ui/checkbox';
 import { PlusCircle } from 'lucide-react';
 import { t } from 'i18next';
 
@@ -18,7 +19,7 @@ import { t } from 'i18next';
 export interface FormField {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'textarea' | 'select' | 'searchable-select' | 'file' | 'multiple-files';
+  type: 'text' | 'number' | 'textarea' | 'select' | 'searchable-select' | 'file' | 'multiple-files' | 'checkbox' | 'datetime-local';
   placeholder?: string;
   options?: { value: string | number; label: string }[];
   required?: boolean;
@@ -118,7 +119,7 @@ export function ResourceForm<T extends Record<string, any>>({
                   name={field.name}
                   render={({ field: formField }) => (
                     <FormItem>
-                      <FormLabel>{field.label}</FormLabel>
+                      {field.type !== 'checkbox' && <FormLabel>{field.label}</FormLabel>}
                       <FormControl>
                         {field.type === 'textarea' ? (
                           <Textarea
@@ -291,6 +292,31 @@ export function ResourceForm<T extends Record<string, any>>({
                         ) : field.type === 'number' ? (
                           <Input
                             type="number"
+                            placeholder={field.placeholder}
+                            {...formField}
+                            readOnly={field.readOnly}
+                            className={field.readOnly ? 'bg-gray-100' : ''}
+                          />
+                        ) : field.type === 'checkbox' ? (
+                          <div className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                            <Checkbox
+                              checked={formField.value || false}
+                              onCheckedChange={(checked) => {
+                                formField.onChange(checked);
+                                if (field.onChange) {
+                                  field.onChange(checked);
+                                }
+                              }}
+                              disabled={field.readOnly}
+                              className="h-5 w-5"
+                            />
+                            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
+                              {field.label}
+                            </label>
+                          </div>
+                        ) : field.type === 'datetime-local' ? (
+                          <Input
+                            type="datetime-local"
                             placeholder={field.placeholder}
                             {...formField}
                             readOnly={field.readOnly}

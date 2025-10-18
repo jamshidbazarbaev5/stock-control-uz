@@ -6,11 +6,15 @@ interface BaseResource {
 }
 
 export function createResourceApiHooks<T extends BaseResource, R = T[] | { results: T[], count: number }>(baseUrl: string, queryKey: string) {
-  const useGetResources = (options?: { params?: Record<string, any> }) => {
+  const useGetResources = (options?: { params?: Record<string, any>; paramsSerializer?: (params: Record<string, any>) => string }) => {
     return useQuery({
       queryKey: [queryKey, options?.params],
       queryFn: async () => {
-        const response = await api.get<R>(baseUrl, { params: options?.params });
+        const config: any = { params: options?.params };
+        if (options?.paramsSerializer) {
+          config.paramsSerializer = options.paramsSerializer;
+        }
+        const response = await api.get<R>(baseUrl, config);
         return response.data;
       },
     });
