@@ -181,7 +181,7 @@ function StockDetailsAccordion({ stockEntryId }: { stockEntryId: number }) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="col-span-full">
                 <h4 className="font-semibold text-base">
-                  {stock.product.product_name}
+                  {stock.product?.product_name || 'N/A'}
                   {stock.is_recycled && (
                     <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
                       {t('common.recycled')}
@@ -192,42 +192,42 @@ function StockDetailsAccordion({ stockEntryId }: { stockEntryId: number }) {
               
               <div>
                 <span className="text-sm text-muted-foreground">{t('common.quantity')}:</span>
-                <p className="font-medium">{formatNumber(stock.quantity)} {stock.purchase_unit.short_name}</p>
+                <p className="font-medium">{formatNumber(stock.quantity || 0)} {stock.purchase_unit?.short_name || ''}</p>
               </div>
               
               <div>
                 <span className="text-sm text-muted-foreground">{t('common.purchase_unit_quantity')}:</span>
-                <p className="font-medium">{formatNumber(stock.purchase_unit_quantity)}</p>
+                <p className="font-medium">{formatNumber(stock.purchase_unit_quantity || 0)}</p>
               </div>
               
               <div>
                 <span className="text-sm text-muted-foreground">{t('common.currency')}:</span>
-                <p className="font-medium">{stock.currency.name} ({stock.currency.short_name})</p>
+                <p className="font-medium">{stock.currency?.name || 'N/A'} ({stock.currency?.short_name || ''})</p>
               </div>
               
               <div>
-                <span className="text-sm text-muted-foreground">{t('common.price_per_unit')} ({stock.currency.short_name}):</span>
-                <p className="font-medium">{formatNumber(stock.price_per_unit_currency)}</p>
+                <span className="text-sm text-muted-foreground">{t('common.price_per_unit')} ({stock.currency?.short_name || ''}):</span>
+                <p className="font-medium">{formatNumber(stock.price_per_unit_currency || 0)}</p>
               </div>
               
               <div>
-                <span className="text-sm text-muted-foreground">{t('common.total_price')} ({stock.currency.short_name}):</span>
-                <p className="font-medium">{formatNumber(stock.total_price_in_currency)}</p>
+                <span className="text-sm text-muted-foreground">{t('common.total_price')} ({stock.currency?.short_name || ''}):</span>
+                <p className="font-medium">{formatNumber(stock.total_price_in_currency || 0)}</p>
               </div>
               
               <div>
                 <span className="text-sm text-muted-foreground">{t('common.price_per_unit')} (UZS):</span>
-                <p className="font-medium">{formatNumber(stock.price_per_unit_uz)} {t('common.uzs')}</p>
+                <p className="font-medium">{formatNumber(stock.price_per_unit_uz || 0)} {t('common.uzs')}</p>
               </div>
               
               <div>
                 <span className="text-sm text-muted-foreground">{t('common.total_price')} (UZS):</span>
-                <p className="font-medium text-lg text-primary">{formatNumber(stock.total_price_in_uz)} {t('common.uzs')}</p>
+                <p className="font-medium text-lg text-primary">{formatNumber(stock.total_price_in_uz || 0)} {t('common.uzs')}</p>
               </div>
               
               {stock.base_unit_in_currency && (
                 <div>
-                  <span className="text-sm text-muted-foreground">{t('common.base_unit_price')} ({stock.currency.short_name}):</span>
+                  <span className="text-sm text-muted-foreground">{t('common.base_unit_price')} ({stock.currency?.short_name || ''}):</span>
                   <p className="font-medium">{formatNumber(stock.base_unit_in_currency)}</p>
                 </div>
               )}
@@ -240,7 +240,7 @@ function StockDetailsAccordion({ stockEntryId }: { stockEntryId: number }) {
               )}
 
               {/* Display attribute values if available */}
-              {stock.product.attribute_values && stock.product.attribute_values.length > 0 && (
+              {stock.product?.attribute_values && stock.product.attribute_values.length > 0 && (
                 <div className="col-span-full mt-2 pt-2 border-t">
                   <span className="text-sm text-muted-foreground">{t('common.attributes')}:</span>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-1">

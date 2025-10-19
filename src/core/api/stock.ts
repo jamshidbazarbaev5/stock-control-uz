@@ -48,6 +48,20 @@ export interface Stock {
     id: number;
     product_name: string;
     base_unit: number;
+    attribute_values?: Array<{
+      id: number;
+      attribute: {
+        id: number;
+        name: string;
+        field_type: string;
+        choices: any[];
+        formula: string;
+        translations: { [key: string]: string };
+        related_model: string;
+        related_objects: any[] | null;
+      };
+      value: any;
+    }>;
   };
   currency?: {
     id: number;
@@ -74,6 +88,7 @@ export interface Stock {
   base_unit_in_currency?: string;
   base_unit_in_uzs?: string;
   date_of_arrived?: string;
+  is_recycled?: boolean;
   // Additional fields used in various pages
   exchange_rate?: number | string;
   selling_price?: number | string;
