@@ -226,8 +226,8 @@ export default function StocksPage() {
     {
       header: "Поставщик",
       accessorKey: "supplier",
-      cell: (row: Stock) =>
-        row.supplier?.name || row.supplier_read?.name || "-",
+      cell: (row: any) =>
+        row?.stock_entry?.supplier?.name || row.supplier_read?.name || "-",
     },
 
     {
@@ -266,7 +266,7 @@ export default function StocksPage() {
     {
       header: t("table.date_of_arrived"),
       accessorKey: "date_of_arrived",
-      cell: (row: any) => <p>{formatDate(row.date_of_arrived)}</p>,
+      cell: (row: any) => <p>{formatDate(row?.stock_entry?.date_of_arrived)}</p>,
     },
     {
       header: "Количество (базовая единица)",

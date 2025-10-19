@@ -335,7 +335,22 @@
     "unpaid": "Неоплачено",
     "add_attribute": "Добавить атрибут",
     "back_to_list": "Назад к списку",
-    "saving": "Сохранение..."
+    "saving": "Сохранение...",
+    "stock_entries": "Поступления товаров",
+    "no_data": "Нет данных",
+    "date": "Дата",
+    "total_amount": "Общая сумма",
+    "stock_count": "Количество товаров",
+    "debt_status": "Статус долга",
+    "debt": "Долг",
+    "advance_payment": "Предоплата",
+    "no_stock_items": "Нет товаров",
+    "recycled": "Переработано",
+    "purchase_unit_quantity": "Количество в единицах закупки",
+    "total_price": "Общая цена",
+    "base_unit_price": "Цена за базовую единицу",
+    "attributes": "Атрибуты",
+    "uzs": "сум"
   },
   "navigation": {
     "writeoff": "Списание",
@@ -661,6 +676,7 @@
     "edit": "Изменить"
   },
   "status": {
+    "paid": "Оплачен",
     "unpaid": "Не погашен"
   },
   "placeholders": {

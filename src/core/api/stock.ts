@@ -262,6 +262,40 @@ export interface BulkStockEntryRequest {
   stocks: StockItemEntry[];
 }
 
+// Stock Entry types
+export interface StockEntry {
+  id: number;
+  supplier: {
+    id: number;
+    name: string;
+  };
+  store: {
+    id: number;
+    name: string;
+  };
+  total_amount: string;
+  is_debt: boolean;
+  stock_count: number;
+  amount_of_debt: string | null;
+  advance_of_debt: string | null;
+  date_of_arrived: string;
+}
+
+export interface StockEntryResponse {
+  links: {
+    first: string | null;
+    last: string | null;
+    next: string | null;
+    previous: string | null;
+  };
+  total_pages: number;
+  current_page: number;
+  page_range: number[];
+  page_size: number;
+  results: StockEntry[];
+  count: number;
+}
+
 // API endpoints
 const STOCK_URL = "items/stock/";
 const STOCK_CALCULATE_URL = "items/stock/calculate/";
@@ -307,3 +341,9 @@ export const fetchStockByProduct = async (
     return [];
   }
 };
+
+// Create stock entry API hooks
+export const {
+  useGetResources: useGetStockEntries,
+  useGetResource: useGetStockEntry,
+} = createResourceApiHooks<StockEntry, StockEntryResponse>(STOCK_ENTRIES_URL, "stock-entries");

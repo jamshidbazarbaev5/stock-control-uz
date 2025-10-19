@@ -27,6 +27,7 @@ import CurrenciesPage from "./core/pages/CurrenciesPage";
 import CreateCurrency from "./core/pages/create-currency";
 import SuppliersPage from "./core/pages/SuppliersPage";
 import CreateSupplier from "./core/pages/create-supplier";
+import SupplierDetailPage from "./core/pages/SupplierDetailPage";
 import TransfersPage from "./core/pages/TransfersPage";
 import CreateTransfer from "./core/pages/create-transfer";
 import RecyclingsPage from "./core/pages/RecyclingsPage";
@@ -268,6 +269,14 @@ function App() {
                 element={
                   <PrivateRoute allowedRoles={["Администратор"]}>
                     <CreateSupplier />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/suppliers/:id"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <SupplierDetailPage />
                   </PrivateRoute>
                 }
               />

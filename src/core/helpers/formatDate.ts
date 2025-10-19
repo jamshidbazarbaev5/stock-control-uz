@@ -1,7 +1,7 @@
 export const formatDate = (date: Date | string): string => {
   const dateObject = typeof date === 'string' ? new Date(date) : date;
   
-  return new Intl.DateTimeFormat('en-US', {
+  return new Intl.DateTimeFormat('ru-RU', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

@@ -80,6 +80,10 @@ export default function SuppliersPage() {
     });
   };
 
+  const handleRowClick = (supplier: Supplier) => {
+    navigate(`/suppliers/${supplier.id}`);
+  };
+
   return (
     <div className="container mx-auto py-6">
          <div className="flex justify-between items-center mb-6">
@@ -95,6 +99,7 @@ export default function SuppliersPage() {
         onEdit={handleEdit}
         onDelete={handleDelete}
         onAdd={() => navigate('/create-supplier')}
+        onRowClick={handleRowClick}
         totalCount={totalCount}
         pageSize={10}
         currentPage={page}
