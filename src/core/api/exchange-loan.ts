@@ -49,10 +49,22 @@ const EXCHANGE_LOAN_CREATE_URL = 'exchange-loans/create/';
 // Create exchange loan API hooks using the factory function
 export const {
   useGetResources: useGetExchangeLoans,
-  useGetResource: useGetExchangeLoan,
+  useGetResource: useGetExchangeLoanWithSlash, // Keep original with slash
   useUpdateResource: useUpdateExchangeLoan,
   useDeleteResource: useDeleteExchangeLoan,
 } = createResourceApiHooks<ExchangeLoan>(EXCHANGE_LOAN_URL, 'exchange-loans');
+
+// Custom hook for getting single exchange loan without trailing slash
+export const useGetExchangeLoan = (id: number) => {
+  return useQuery({
+    queryKey: ['exchange-loans', id],
+    queryFn: async () => {
+      const response = await api.get<ExchangeLoan>(`${EXCHANGE_LOAN_URL}${id}`);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+};
 
 // Custom create hook using the correct create endpoint
 export const useCreateExchangeLoan = () => {
