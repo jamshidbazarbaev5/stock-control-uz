@@ -848,14 +848,23 @@ export default function CreateStock() {
                     </Label>
                     <Select
                       value={tab.form.product?.toString()}
-                      onValueChange={(value) =>
-                        handleProductChange(tab.id, value)
-                      }
+                      onValueChange={(value) => handleProductChange(tab.id, value)}
+                      onOpenChange={(open) => {
+                        if (!open) setProductSearchTerm("");
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder={t("common.product")} />
                       </SelectTrigger>
                       <SelectContent>
+                        <div className="p-2 sticky top-0 bg-white">
+                          <Input
+                            placeholder="Search product"
+                            value={productSearchTerm}
+                            onChange={(e) => setProductSearchTerm(e.target.value)}
+                            onKeyDown={(e) => e.stopPropagation()}
+                          />
+                        </div>
                         {allProducts.map((product) => (
                           <SelectItem key={product.id} value={String(product.id)}>
                             {product.product_name}

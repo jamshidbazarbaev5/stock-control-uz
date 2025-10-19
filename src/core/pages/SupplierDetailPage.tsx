@@ -1,23 +1,87 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { useGetStockEntries, useGetStocks } from '../api/stock';
+import { useGetStockEntries, useGetStocks, usePayStockDebt } from '../api/stock';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, DollarSign } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 
 export default function SupplierDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { t } = useTranslation();
   const [expandedEntry, setExpandedEntry] = useState<number | null>(null);
-
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<any>(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentType, setPaymentType] = useState('Наличные');
+  const [paymentComment, setPaymentComment] = useState('');
+  
   // Fetch stock entries for this supplier
   const { data: stockEntriesData, isLoading: isLoadingEntries } = useGetStockEntries({
     params: { supplier: id },
   });
 
+  const payStockDebt = usePayStockDebt();
+
   const stockEntries = stockEntriesData?.results || [];
+
+  const handlePaymentClick = (entry: any) => {
+    setSelectedEntry(entry);
+    setPaymentAmount('');
+    setPaymentType('Наличные');
+    setPaymentComment('');
+    setPaymentDialogOpen(true);
+  };
+
+  const handlePaymentSubmit = () => {
+    if (!selectedEntry || !paymentAmount) {
+      toast.error(t('common.enter_payment_amount'));
+      return;
+    }
+
+    const amount = Number(paymentAmount);
+    if (amount <= 0) {
+      toast.error(t('validation.amount_must_be_positive'));
+      return;
+    }
+
+    if (amount > Number(selectedEntry.remaining_debt)) {
+      toast.error(t('validation.amount_exceeds_remainder'));
+      return;
+    }
+
+    payStockDebt.mutate(
+      {
+        stock_entry: selectedEntry.id,
+        amount,
+        payment_type: paymentType,
+        comment: paymentComment,
+      },
+      {
+        onSuccess: () => {
+          toast.success(t('common.payment_successful'));
+          setPaymentDialogOpen(false);
+          setSelectedEntry(null);
+          setPaymentAmount('');
+          setPaymentComment('');
+        },
+        onError: () => {
+          toast.error(t('common.payment_failed'));
+        },
+      }
+    );
+  };
 
   // Fetch stock details for an expanded entry
 
@@ -98,13 +162,25 @@ export default function SupplierDetailPage() {
                       </div>
                       <div>
                         <span className="text-muted-foreground">{t('common.debt_status')}:</span>{' '}
-                        <span className={`font-medium ${entry.is_debt ? 'text-red-500' : 'text-green-500'}`}>
-                          {entry.is_debt ? t('common.debt') : t('common.paid')}
+                        <span
+                          className={`font-medium ${
+                            !entry.is_debt
+                              ? 'text-green-500'
+                              : entry.is_paid
+                              ? 'text-green-500'
+                              : 'text-red-500'
+                          }`}
+                        >
+                          {!entry.is_debt
+                            ? t('common.paid2') // Not for debt
+                            : entry.is_paid
+                            ? t('common.paid') // Debt paid
+                            : t('common.unpaid')}
                         </span>
                       </div>
                     </div>
-                    {entry.is_debt && (entry.amount_of_debt || entry.advance_of_debt) && (
-                      <div className="grid grid-cols-2 gap-4 mt-2 text-sm">
+                    {entry.is_debt && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 text-sm">
                         {entry.amount_of_debt && (
                           <div>
                             <span className="text-muted-foreground">{t('common.amount_of_debt')}:</span>{' '}
@@ -117,12 +193,36 @@ export default function SupplierDetailPage() {
                             <span className="font-medium text-green-500">{formatNumber(entry.advance_of_debt)} {t('common.uzs')}</span>
                           </div>
                         )}
+                        <div>
+                          <span className="text-muted-foreground">{t('dashboard.total_paid')}:</span>{' '}
+                          <span className="font-medium text-blue-500">{formatNumber(entry.total_paid)} {t('common.uzs')}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">{t('dashboard.remaining_debt')}:</span>{' '}
+                          <span className="font-medium text-orange-500">{formatNumber(entry.remaining_debt)} {t('common.uzs')}</span>
+                        </div>
                       </div>
                     )}
                   </div>
-                  <Button variant="ghost" size="icon">
-                    {expandedEntry === entry.id ? <ChevronUp /> : <ChevronDown />}
-                  </Button>
+                  <div className="flex gap-2">
+                    {entry.is_debt && Number(entry.remaining_debt) > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePaymentClick(entry);
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <DollarSign className="h-4 w-4" />
+                        {t('common.pay_debt')}
+                      </Button>
+                    )}
+                    <Button variant="ghost" size="icon">
+                      {expandedEntry === entry.id ? <ChevronUp /> : <ChevronDown />}
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               
@@ -135,6 +235,87 @@ export default function SupplierDetailPage() {
           ))}
         </div>
       )}
+
+      {/* Payment Dialog */}
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('common.pay_debt')}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedEntry && (
+              <div className="space-y-2 p-4 bg-muted rounded-lg">
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">{t('common.total_amount')}:</span>
+                  <span className="font-medium">{formatNumber(selectedEntry.total_amount)} {t('common.uzs')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">{t('dashboard.total_paid')}:</span>
+                  <span className="font-medium text-blue-500">{formatNumber(selectedEntry.total_paid)} {t('common.uzs')}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">{t('dashboard.remaining_debt')}:</span>
+                  <span className="font-medium text-orange-500">{formatNumber(selectedEntry.remaining_debt)} {t('common.uzs')}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="payment-amount">{t('common.payment_amount')}</Label>
+              <Input
+                id="payment-amount"
+                type="number"
+                placeholder={t('common.enter_payment_amount')}
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                max={selectedEntry?.remaining_debt}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="payment-type">{t('forms.payment_method')}</Label>
+              <select
+                id="payment-type"
+                className="w-full px-3 py-2 border rounded-md"
+                value={paymentType}
+                onChange={(e) => setPaymentType(e.target.value)}
+              >
+                <option value="Наличные">{t('payment_types.cash')}</option>
+                <option value="Карта">{t('payment_types.card')}</option>
+                <option value="Click">{t('payment_types.click')}</option>
+                <option value="Перечисление">{t('payment.per')}</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="payment-comment">{t('common.comment')}</Label>
+              <Textarea
+                id="payment-comment"
+                placeholder={t('common.enter_comment')}
+                value={paymentComment}
+                onChange={(e) => setPaymentComment(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setPaymentDialogOpen(false)}
+                disabled={payStockDebt.isPending}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                onClick={handlePaymentSubmit}
+                disabled={payStockDebt.isPending}
+              >
+                {payStockDebt.isPending ? t('common.processing') : t('common.pay')}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -178,90 +359,20 @@ function StockDetailsAccordion({ stockEntryId }: { stockEntryId: number }) {
       {stocks.map((stock) => (
         <Card key={stock.id} className="border-l-4 border-l-primary">
           <CardContent className="pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="col-span-full">
-                <h4 className="font-semibold text-base">
-                  {stock.product?.product_name || 'N/A'}
-                  {stock.is_recycled && (
-                    <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                      {t('common.recycled')}
-                    </span>
-                  )}
-                </h4>
-              </div>
-              
-              <div>
-                <span className="text-sm text-muted-foreground">{t('common.quantity')}:</span>
-                <p className="font-medium">{formatNumber(stock.quantity || 0)} {stock.purchase_unit?.short_name || ''}</p>
-              </div>
-              
-              <div>
-                <span className="text-sm text-muted-foreground">{t('common.purchase_unit_quantity')}:</span>
-                <p className="font-medium">{formatNumber(stock.purchase_unit_quantity || 0)}</p>
-              </div>
-              
-              <div>
-                <span className="text-sm text-muted-foreground">{t('common.currency')}:</span>
-                <p className="font-medium">{stock.currency?.name || 'N/A'} ({stock.currency?.short_name || ''})</p>
-              </div>
-              
-              <div>
-                <span className="text-sm text-muted-foreground">{t('common.price_per_unit')} ({stock.currency?.short_name || ''}):</span>
-                <p className="font-medium">{formatNumber(stock.price_per_unit_currency || 0)}</p>
-              </div>
-              
-              <div>
-                <span className="text-sm text-muted-foreground">{t('common.total_price')} ({stock.currency?.short_name || ''}):</span>
-                <p className="font-medium">{formatNumber(stock.total_price_in_currency || 0)}</p>
-              </div>
-              
-              <div>
-                <span className="text-sm text-muted-foreground">{t('common.price_per_unit')} (UZS):</span>
-                <p className="font-medium">{formatNumber(stock.price_per_unit_uz || 0)} {t('common.uzs')}</p>
-              </div>
-              
-              <div>
-                <span className="text-sm text-muted-foreground">{t('common.total_price')} (UZS):</span>
-                <p className="font-medium text-lg text-primary">{formatNumber(stock.total_price_in_uz || 0)} {t('common.uzs')}</p>
-              </div>
-              
-              {stock.base_unit_in_currency && (
+            <div className="space-y-2">
+              <h4 className="font-semibold text-base">
+                {stock.product?.product_name || 'N/A'}
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <span className="text-sm text-muted-foreground">{t('common.base_unit_price')} ({stock.currency?.short_name || ''}):</span>
-                  <p className="font-medium">{formatNumber(stock.base_unit_in_currency)}</p>
+                  <span className="text-sm text-muted-foreground">{t('common.quantity')}:</span>
+                  <p className="font-medium">{formatNumber(stock.quantity || 0)} {stock.purchase_unit?.short_name || ''}</p>
                 </div>
-              )}
-              
-              {stock.base_unit_in_uzs && (
                 <div>
-                  <span className="text-sm text-muted-foreground">{t('common.base_unit_price')} (UZS):</span>
-                  <p className="font-medium">{formatNumber(stock.base_unit_in_uzs)} {t('common.uzs')}</p>
+                  <span className="text-sm text-muted-foreground">{t('common.total_price')} (UZS):</span>
+                  <p className="font-medium text-lg text-primary">{formatNumber(stock.total_price_in_uz || 0)} {t('common.uzs')}</p>
                 </div>
-              )}
-
-              {/* Display attribute values if available */}
-              {stock.product?.attribute_values && stock.product.attribute_values.length > 0 && (
-                <div className="col-span-full mt-2 pt-2 border-t">
-                  <span className="text-sm text-muted-foreground">{t('common.attributes')}:</span>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-1">
-                    {stock.product.attribute_values.map((attr: any) => (
-                      <div key={attr.id} className="text-sm">
-                        <span className="font-medium">
-                          {attr.attribute.translations?.ru || attr.attribute.name}:
-                        </span>{' '}
-                        {typeof attr.value === 'boolean' 
-                          ? (attr.value ? t('common.yes') : t('common.no'))
-                          : Array.isArray(attr.value)
-                          ? attr.attribute.related_objects
-                              ?.filter((obj: any) => attr.value.includes(obj.id))
-                              .map((obj: any) => obj.name)
-                              .join(', ')
-                          : attr.value}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
           </CardContent>
         </Card>

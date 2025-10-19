@@ -280,6 +280,7 @@ export interface BulkStockEntryRequest {
 // Stock Entry types
 export interface StockEntry {
   id: number;
+  is_paid: boolean;
   supplier: {
     id: number;
     name: string;
@@ -294,6 +295,8 @@ export interface StockEntry {
   amount_of_debt: string | null;
   advance_of_debt: string | null;
   date_of_arrived: string;
+  total_paid: string;
+  remaining_debt: string;
 }
 
 export interface StockEntryResponse {
@@ -311,10 +314,19 @@ export interface StockEntryResponse {
   count: number;
 }
 
+// Stock Debt Payment types
+export interface StockDebtPaymentRequest {
+  stock_entry: number;
+  amount: number;
+  payment_type: string;
+  comment?: string;
+}
+
 // API endpoints
 const STOCK_URL = "items/stock/";
 const STOCK_CALCULATE_URL = "items/stock/calculate/";
 const STOCK_ENTRIES_URL = "items/stock-entries/";
+const STOCK_DEBT_PAYMENT_URL = "stock_debt_payment/pay/";
 
 // Stock calculation API function
 export const calculateStock = async (
@@ -362,3 +374,20 @@ export const {
   useGetResources: useGetStockEntries,
   useGetResource: useGetStockEntry,
 } = createResourceApiHooks<StockEntry, StockEntryResponse>(STOCK_ENTRIES_URL, "stock-entries");
+
+// Stock debt payment mutation
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+export const usePayStockDebt = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (data: StockDebtPaymentRequest) => {
+      const response = await api.post(STOCK_DEBT_PAYMENT_URL, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stock-entries'] });
+    },
+  });
+};
