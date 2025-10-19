@@ -738,13 +738,7 @@ export default function CreateStock() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setCreateSupplierOpen(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+
               </div>
             </div>
 
