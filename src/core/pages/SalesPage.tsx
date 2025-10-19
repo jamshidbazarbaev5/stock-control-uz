@@ -1462,7 +1462,7 @@ export default function SalesPage() {
                 setRefundQuantities({});
                 setRefundNotes("");
                 setRefundPayments([]);
-              }}
+                }}
             >
               {t("common.cancel")}
             </Button>

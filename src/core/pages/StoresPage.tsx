@@ -200,7 +200,7 @@ export default function StoresPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {stores.map((store) => (
+              {stores.map((store:any) => (
                 <Card 
                   key={store.id} 
                   className="bg-white dark:bg-card shadow-md hover:shadow-lg transition-shadow"
@@ -239,7 +239,7 @@ export default function StoresPage() {
                       </div>
                       {store.budgets && store.budgets.length > 0 ? (
                         <div className="space-y-1 ml-6">
-                          {store.budgets.map((budget) => (
+                          {store.budgets.map((budget:any) => (
                             <div key={budget.id} className="flex justify-between items-center text-xs">
                               <span className="text-gray-600">{budget.budget_type}:</span>
                               <span className="font-medium">{Number(budget.amount).toLocaleString()} UZS</span>

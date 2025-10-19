@@ -236,15 +236,50 @@ export interface StockCalculationResponse {
   };
 }
 
+// Bulk stock entry types
+export interface StockItemEntry {
+  product: number;
+  purchase_unit: number;
+  currency: number;
+  exchange_rate: number;
+  quantity: number;
+  purchase_unit_quantity: number;
+  price_per_unit_uz: number;
+  total_price_in_uz: number;
+  price_per_unit_currency: number;
+  total_price_in_currency: number;
+  base_unit_in_uzs?: number;
+  base_unit_in_currency?: number;
+}
+
+export interface BulkStockEntryRequest {
+  store: number;
+  supplier: number;
+  date_of_arrived: string;
+  is_debt?: boolean;
+  amount_of_debt?: number;
+  advance_of_debt?: number;
+  stocks: StockItemEntry[];
+}
+
 // API endpoints
 const STOCK_URL = "items/stock/";
 const STOCK_CALCULATE_URL = "items/stock/calculate/";
+const STOCK_ENTRIES_URL = "items/stock-entries/";
 
 // Stock calculation API function
 export const calculateStock = async (
   data: StockCalculationRequest,
 ): Promise<StockCalculationResponse> => {
   const response = await api.post(STOCK_CALCULATE_URL, data);
+  return response.data;
+};
+
+// Bulk stock entry API function
+export const createBulkStockEntry = async (
+  data: BulkStockEntryRequest,
+): Promise<any> => {
+  const response = await api.post(STOCK_ENTRIES_URL, data);
   return response.data;
 };
 
