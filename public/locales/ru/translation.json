@@ -771,6 +771,10 @@
     "complex": "Сложная оплата"
   },
   "table": {
+    "total_debt": "Долг",
+    "remaining_debt":"Остаток",
+    "total_paid": "Всего оплачено",
+
     "income": "Доход",
     "actual": "Актуально",
     "expense": "Расходы",

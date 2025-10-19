@@ -33,6 +33,18 @@ const columns = (t: any) => [
     header: t('table.phone'),
     accessorKey: 'phone_number',
   },
+  {
+    header: t('table.total_debt'),
+    accessorKey: 'total_debt',
+  },
+  {
+    header: t('table.total_paid'),
+    accessorKey: 'total_paid',
+  },
+  {
+    header: t('table.remaining_debt'),
+    accessorKey: 'remaining_debt',
+  },
 ];
 
 export default function SuppliersPage() {
