@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import api  from './api';
 
 export type WriteOffItem = {
@@ -20,6 +20,27 @@ export const WRITEOFF_REASONS = {
   'Другое': 'Другое',
 } as const;
 
+export const useGetWriteoffs = () => {
+  return useQuery({
+    queryKey: ['writeoffs'],
+    queryFn: async () => {
+      const response = await api.get('/writeoffs/');
+      return response.data;
+    },
+  });
+};
+
+export const useGetWriteoff = (id: number) => {
+  return useQuery({
+    queryKey: ['writeoffs', id],
+    queryFn: async () => {
+      const response = await api.get(`/writeoffs/${id}`);
+      return response.data;
+    },
+    enabled: !!id,
+  });
+};
+
 export const useCreateWriteOff = () => {
   const queryClient = useQueryClient();
 
@@ -30,6 +51,7 @@ export const useCreateWriteOff = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stocks'] });
+      queryClient.invalidateQueries({ queryKey: ['writeoffs'] });
     },
   });
 };

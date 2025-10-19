@@ -85,6 +85,8 @@ import ExchangeLoansPage from "./core/pages/ExchangeLoansPage";
 import CreateExchangeLoanPage from "./core/pages/CreateExchangeLoanPage";
 import EditExchangeLoanPage from "./core/pages/EditExchangeLoanPage";
 import ExchangeLoanPaymentsPage from "./core/pages/ExchangeLoanPaymentsPage";
+import WriteOffsPage from "@/core/pages/WriteOffsPage.tsx";
+import WriteoffDetailPage from "@/core/pages/WriteoffDetailPage.tsx";
 // import CreateSalePos from "./core/pages/create-sale-2";
 
 const queryClient = new QueryClient();
@@ -486,6 +488,23 @@ function App() {
                   </PrivateRoute>
                 }
               />
+                <Route
+                    path="/writeoffs"
+                    element={
+                        <PrivateRoute allowedRoles={["Администратор"]}>
+                            <WriteOffsPage />
+                        </PrivateRoute>
+                    }
+                />
+                <Route
+                    path="/writeoffs/:id"
+                    element={
+                        <PrivateRoute allowedRoles={["Администратор"]}>
+                            <WriteoffDetailPage />
+                        </PrivateRoute>
+                    }
+                />
+
 
               {/* Routes accessible by both Администратор and Продавец */}
               <Route

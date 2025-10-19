@@ -31,7 +31,7 @@ import {
 import type { Product } from "@/core/api/product";
 import { useCurrentUser } from "@/core/hooks/useCurrentUser";
 import { useGetUsers } from "@/core/api/user";
-import { useGetClients } from "@/core/api/client";
+import { useGetClients, useCreateClient } from "@/core/api/client";
 import type { User } from "@/core/api/user";
 import { OpenShiftForm } from "./OpenShiftForm";
 import { useCreateSale, type Sale } from "@/core/api/sale";
@@ -246,6 +246,7 @@ const POSInterfaceCore = () => {
   // Sale API
   const createSaleMutation = useCreateSale();
   const [isProcessingSale, setIsProcessingSale] = useState(false);
+  const createClientMutation = useCreateClient();
 
   // Product selection state
   const [selectedProducts, setSelectedProducts] = useState<Set<number>>(
@@ -259,6 +260,17 @@ const POSInterfaceCore = () => {
   const [isStockModalOpen, setIsStockModalOpen] = useState(false);
   const [productForStockSelection, setProductForStockSelection] =
     useState<Product | null>(null);
+
+  // Client creation modal state
+  const [isCreateClientModalOpen, setIsCreateClientModalOpen] = useState(false);
+  const [newClientData, setNewClientData] = useState({
+    type: 'Физ.лицо' as 'Физ.лицо' | 'Юр.лицо',
+    name: '',
+    phone_number: '+998',
+    address: '',
+    ceo_name: '',
+    balance: 0,
+  });
 
   // Price modal state
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
@@ -2436,9 +2448,21 @@ const POSInterfaceCore = () => {
 
             {/* Client Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Клиент
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Клиент
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsCreateClientModalOpen(true)}
+                  className="h-8 text-xs"
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Создать клиента
+                </Button>
+              </div>
               <Input
                 type="text"
                 placeholder="Поиск клиентов..."
@@ -3405,6 +3429,177 @@ const POSInterfaceCore = () => {
           onStockSelect={handleStockSelect}
         />
       )}
+
+      {/* Client Creation Modal */}
+      <WideDialog open={isCreateClientModalOpen} onOpenChange={setIsCreateClientModalOpen}>
+        <WideDialogContent className="max-h-[90vh] overflow-auto">
+          <WideDialogHeader>
+            <WideDialogTitle>Создать клиента</WideDialogTitle>
+          </WideDialogHeader>
+
+          <div className="p-6 space-y-4">
+            {/* Client Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Тип клиента *
+              </label>
+              <Select
+                value={newClientData.type}
+                onValueChange={(value: 'Физ.лицо' | 'Юр.лицо') => 
+                  setNewClientData({ ...newClientData, type: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Физ.лицо">Физ.лицо</SelectItem>
+                  <SelectItem value="Юр.лицо">Юр.лицо</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {newClientData.type === 'Юр.лицо' ? 'Название компании' : 'Имя'} *
+              </label>
+              <Input
+                type="text"
+                placeholder={newClientData.type === 'Юр.лицо' ? 'Введите название компании' : 'Введите имя'}
+                value={newClientData.name}
+                onChange={(e) => setNewClientData({ ...newClientData, name: e.target.value })}
+                onFocus={(e) => e.stopPropagation()}
+                onBlur={(e) => e.stopPropagation()}
+              />
+            </div>
+
+            {/* Phone Number */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Телефон *
+              </label>
+              <Input
+                type="tel"
+                placeholder="+998970953905"
+                value={newClientData.phone_number}
+                onChange={(e) => {
+                  let value = e.target.value.replace(/\D/g, '');
+                  if (value.startsWith('998')) value = value.slice(3);
+                  value = value.slice(0, 9);
+                  setNewClientData({ ...newClientData, phone_number: '+998' + value });
+                }}
+                onFocus={(e) => e.stopPropagation()}
+                onBlur={(e) => e.stopPropagation()}
+                maxLength={13}
+              />
+            </div>
+
+            {/* Address */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Адрес *
+              </label>
+              <Input
+                type="text"
+                placeholder="Введите адрес"
+                value={newClientData.address}
+                onChange={(e) => setNewClientData({ ...newClientData, address: e.target.value })}
+                onFocus={(e) => e.stopPropagation()}
+                onBlur={(e) => e.stopPropagation()}
+              />
+            </div>
+
+            {/* Corporate fields */}
+            {newClientData.type === 'Юр.лицо' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Имя генерального директора *
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder="Введите имя генерального директора"
+                    value={newClientData.ceo_name}
+                    onChange={(e) => setNewClientData({ ...newClientData, ceo_name: e.target.value })}
+                    onFocus={(e) => e.stopPropagation()}
+                    onBlur={(e) => e.stopPropagation()}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Баланс *
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="Введите баланс"
+                    value={newClientData.balance}
+                    onChange={(e) => setNewClientData({ ...newClientData, balance: Number(e.target.value) })}
+                    onFocus={(e) => e.stopPropagation()}
+                    onBlur={(e) => e.stopPropagation()}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex space-x-3 pt-4">
+              <Button
+                onClick={() => {
+                  setIsCreateClientModalOpen(false);
+                  setNewClientData({
+                    type: 'Физ.лицо',
+                    name: '',
+                    phone_number: '+998',
+                    address: '',
+                    ceo_name: '',
+                    balance: 0,
+                  });
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                Отмена
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    const dataToSubmit = newClientData.type === 'Физ.лицо'
+                      ? {
+                          type: newClientData.type,
+                          name: newClientData.name,
+                          phone_number: newClientData.phone_number,
+                          address: newClientData.address,
+                        }
+                      : newClientData;
+
+                    const createdClient = await createClientMutation.mutateAsync(dataToSubmit as any);
+                    toast.success('Клиент успешно создан');
+                    setSelectedClient(createdClient.id);
+                    setIsCreateClientModalOpen(false);
+                    setNewClientData({
+                      type: 'Физ.лицо',
+                      name: '',
+                      phone_number: '+998',
+                      address: '',
+                      ceo_name: '',
+                      balance: 0,
+                    });
+                  } catch (error) {
+                    toast.error('Ошибка при создании клиента');
+                    console.error('Error creating client:', error);
+                  }
+                }}
+                className="flex-1"
+                disabled={!newClientData.name || !newClientData.phone_number || !newClientData.address ||
+                  (newClientData.type === 'Юр.лицо' && (!newClientData.ceo_name || newClientData.balance === undefined))}
+              >
+                Создать
+              </Button>
+            </div>
+          </div>
+        </WideDialogContent>
+      </WideDialog>
     </div>
   );
 };

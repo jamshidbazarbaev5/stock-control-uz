@@ -220,6 +220,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         href: "/revaluations",
       },
       {
+        icon: Package,
+        label: t("navigation.writeoff"),
+        href: "/writeoffs",
+      },
+      {
         icon: ArrowLeftRight,
         label: t("navigation.transfers"),
         href: "/transfers",

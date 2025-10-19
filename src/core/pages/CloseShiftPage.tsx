@@ -278,43 +278,49 @@ const CloseShiftPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-2 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+        <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-4 md:p-6 mb-4 md:mb-6 border border-gray-100">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
               <Button
                 onClick={() => navigate("/pos")}
                 variant="outline"
                 size="sm"
-                className="rounded-full border-2 hover:bg-gray-50"
+                className="rounded-full border-2 hover:bg-gray-50 flex-shrink-0"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Назад
+                <span className="hidden sm:inline">Назад</span>
               </Button>
-              <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse flex-shrink-0"></div>
+                <div className="min-w-0">
+                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent truncate">
                     ЗАКРЫТИЕ КАССЫ
                   </h1>
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-gray-500 text-xs sm:text-sm truncate">
                     Магазин {summary.store} • Открыта{" "}
                     {new Date(summary.opened_at).toLocaleString("ru-RU")}
                   </p>
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 w-full sm:w-auto">
               {/* Printer Status Indicator */}
-              <div className="flex items-center space-x-2 px-3 py-2 rounded-full bg-gray-100">
-                <Printer className="w-4 h-4" />
-                <span className="text-sm font-medium">
-                  {printerStatus === "checking" && "🔄 Проверка..."}
-                  {printerStatus === "ready" && "✅ Готов"}
-                  {printerStatus === "not-ready" && "❌ Не готов"}
-                  {printerStatus === "unknown" && "❓ Неизвестно"}
+              <div className="flex items-center space-x-2 px-2 sm:px-3 py-1 sm:py-2 rounded-full bg-gray-100">
+                <Printer className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="text-xs sm:text-sm font-medium">
+                  {printerStatus === "checking" && "🔄"}
+                  {printerStatus === "ready" && "✅"}
+                  {printerStatus === "not-ready" && "❌"}
+                  {printerStatus === "unknown" && "❓"}
+                  <span className="hidden sm:inline ml-1">
+                    {printerStatus === "checking" && "Проверка..."}
+                    {printerStatus === "ready" && "Готов"}
+                    {printerStatus === "not-ready" && "Не готов"}
+                    {printerStatus === "unknown" && "Неизвестно"}
+                  </span>
                 </span>
               </div>
 
@@ -324,59 +330,59 @@ const CloseShiftPage = () => {
                 disabled={printing || printerStatus !== "ready"}
                 variant="outline"
                 size="sm"
-                className="rounded-full"
+                className="rounded-full text-xs sm:text-sm px-2 sm:px-4"
               >
-                <Printer className="w-4 h-4 mr-2" />
-                {printing ? "Печать..." : "Тест"}
+                <Printer className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                <span className="hidden sm:inline">{printing ? "Печать..." : "Тест"}</span>
               </Button>
 
               {/* Close Shift Button */}
               <Button
                 onClick={handleSubmit}
                 disabled={submitting || printing}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-4 sm:px-8 py-2 sm:py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all duration-200 text-xs sm:text-base flex-1 sm:flex-none"
               >
-                <Save className="w-5 h-5 mr-2" />
+                <Save className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                 {submitting
                   ? "Закрытие..."
                   : printing
-                    ? "Печать чека..."
+                    ? "Печать..."
                     : "Закрыть кассу"}
               </Button>
             </div>
           </div>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Payment Methods */}
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-6">
-              <h2 className="text-xl font-bold text-white flex items-center">
-                <Calculator className="w-6 h-6 mr-3" />
+            <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 sm:p-4 md:p-6">
+              <h2 className="text-base sm:text-lg md:text-xl font-bold text-white flex items-center">
+                <Calculator className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 mr-2 sm:mr-3" />
                 Способы оплаты
               </h2>
             </div>
-            <div className="p-6">
-              <div className="overflow-x-auto">
-                <table className="w-full">
+            <div className="p-3 sm:p-4 md:p-6">
+              <div className="overflow-x-auto -mx-3 sm:mx-0">
+                <table className="w-full min-w-[800px]">
                   <thead>
                     <tr className="bg-gray-50 rounded-lg">
-                      <th className="text-left py-4 px-6 font-semibold text-gray-700 rounded-l-lg">
+                      <th className="text-left py-2 sm:py-3 md:py-4 px-2 sm:px-4 md:px-6 font-semibold text-gray-700 rounded-l-lg text-xs sm:text-sm">
                         Тип
                       </th>
-                      <th className="text-right py-4 px-4 font-semibold text-gray-700">
+                      <th className="text-right py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 font-semibold text-gray-700 text-xs sm:text-sm">
                         Поступило
                       </th>
-                      <th className="text-right py-4 px-4 font-semibold text-gray-700">
+                      <th className="text-right py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 font-semibold text-gray-700 text-xs sm:text-sm">
                         Ушло
                       </th>
-                      <th className="text-right py-4 px-4 font-semibold text-gray-700">
+                      <th className="text-right py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 font-semibold text-gray-700 text-xs sm:text-sm">
                         Ожидается
                       </th>
-                      <th className="text-right py-4 px-4 font-semibold text-gray-700">
+                      <th className="text-right py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 font-semibold text-gray-700 text-xs sm:text-sm">
                         Фактически
                       </th>
-                      <th className="text-right py-4 px-6 font-semibold text-gray-700 rounded-r-lg">
+                      <th className="text-right py-2 sm:py-3 md:py-4 px-2 sm:px-4 md:px-6 font-semibold text-gray-700 rounded-r-lg text-xs sm:text-sm">
                         Разница
                       </th>
                     </tr>
@@ -394,25 +400,25 @@ const CloseShiftPage = () => {
                           key={payment.payment_method}
                           className="hover:bg-blue-50 transition-colors duration-200 border-b border-gray-100"
                         >
-                          <td className="py-4 px-6 font-semibold text-gray-800">
+                          <td className="py-2 sm:py-3 md:py-4 px-2 sm:px-4 md:px-6 font-semibold text-gray-800 text-xs sm:text-sm">
                             {payment.payment_method_display}
                           </td>
-                          <td className="py-4 px-4 text-right text-gray-600">
-                            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                              {payment.income.toLocaleString()} UZS
+                          <td className="py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 text-right text-gray-600">
+                            <span className="bg-blue-100 text-blue-800 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap">
+                              {payment.income.toLocaleString()}
                             </span>
                           </td>
-                          <td className="py-4 px-4 text-right text-gray-600">
-                            <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
-                              {payment.expense.toLocaleString()} UZS
+                          <td className="py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 text-right text-gray-600">
+                            <span className="bg-orange-100 text-orange-800 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap">
+                              {payment.expense.toLocaleString()}
                             </span>
                           </td>
-                          <td className="py-4 px-4 text-right">
-                            <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-bold">
-                              {payment.expected.toLocaleString()} UZS
+                          <td className="py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 text-right">
+                            <span className="bg-purple-100 text-purple-800 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap">
+                              {payment.expected.toLocaleString()}
                             </span>
                           </td>
-                          <td className="py-4 px-4 text-right">
+                          <td className="py-2 sm:py-3 md:py-4 px-2 sm:px-3 md:px-4 text-right">
                             <Input
                               type="number"
                               value={actualValue}
@@ -422,13 +428,13 @@ const CloseShiftPage = () => {
                                   parseFloat(e.target.value) || 0,
                                 )
                               }
-                              className="w-36 text-right border-2 border-blue-200 focus:border-blue-500 rounded-xl bg-blue-50 font-semibold"
+                              className="w-24 sm:w-32 md:w-36 text-right border-2 border-blue-200 focus:border-blue-500 rounded-xl bg-blue-50 font-semibold text-xs sm:text-sm"
                               step="0.01"
                             />
                           </td>
-                          <td className="py-4 px-6 text-right">
+                          <td className="py-2 sm:py-3 md:py-4 px-2 sm:px-4 md:px-6 text-right">
                             <span
-                              className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold shadow-md ${
+                              className={`inline-flex items-center px-2 py-1 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold shadow-md whitespace-nowrap ${
                                 difference.isZero
                                   ? "bg-green-500 text-white"
                                   : difference.isPositive
@@ -452,15 +458,15 @@ const CloseShiftPage = () => {
           </div>
 
           {/* Closing Cash and Comments in a row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {/* Closing Cash */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-              <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-4">
-                <h3 className="text-lg font-bold text-white">
+              <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-3 sm:p-4">
+                <h3 className="text-base sm:text-lg font-bold text-white">
                   💰 Наличные в кассе
                 </h3>
               </div>
-              <div className="p-6">
+              <div className="p-3 sm:p-4 md:p-6">
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-3">
@@ -483,10 +489,10 @@ const CloseShiftPage = () => {
 
             {/* Comments */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-              <div className="bg-gradient-to-r from-orange-500 to-red-600 p-4">
-                <h3 className="text-lg font-bold text-white">📝 Комментарий</h3>
+              <div className="bg-gradient-to-r from-orange-500 to-red-600 p-3 sm:p-4">
+                <h3 className="text-base sm:text-lg font-bold text-white">📝 Комментарий</h3>
               </div>
-              <div className="p-6">
+              <div className="p-3 sm:p-4 md:p-6">
                 <Textarea
                   value={closingComment}
                   onChange={(e) => setClosingComment(e.target.value)}
@@ -500,43 +506,43 @@ const CloseShiftPage = () => {
 
           {/* Totals Summary - Moved to bottom */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-6">
-              <h2 className="text-2xl font-bold text-white flex items-center">
+            <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-3 sm:p-4 md:p-6">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white flex items-center">
                 📊 Итоги смены
               </h2>
             </div>
-            <div className="p-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div className="bg-blue-50 rounded-xl p-4 border-l-4 border-blue-500">
-                  <div className="text-sm text-blue-600 font-medium">
+            <div className="p-4 sm:p-6 md:p-8">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
+                <div className="bg-blue-50 rounded-xl p-2 sm:p-3 md:p-4 border-l-4 border-blue-500">
+                  <div className="text-xs sm:text-sm text-blue-600 font-medium">
                     Всего продаж
                   </div>
-                  <div className="text-2xl font-bold text-blue-800">
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-blue-800">
                     {summary.total_sales_count}
                   </div>
                 </div>
-                <div className="bg-green-50 rounded-xl p-4 border-l-4 border-green-500">
-                  <div className="text-sm text-green-600 font-medium">
+                <div className="bg-green-50 rounded-xl p-2 sm:p-3 md:p-4 border-l-4 border-green-500">
+                  <div className="text-xs sm:text-sm text-green-600 font-medium">
                     Сумма продаж
                   </div>
-                  <div className="text-2xl font-bold text-green-800">
-                    {summary.total_sales_amount.toLocaleString()} UZS
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-green-800 truncate">
+                    {summary.total_sales_amount.toLocaleString()}
                   </div>
                 </div>
-                <div className="bg-orange-50 rounded-xl p-4 border-l-4 border-orange-500">
-                  <div className="text-sm text-orange-600 font-medium">
+                <div className="bg-orange-50 rounded-xl p-2 sm:p-3 md:p-4 border-l-4 border-orange-500">
+                  <div className="text-xs sm:text-sm text-orange-600 font-medium">
                     Возвратов
                   </div>
-                  <div className="text-2xl font-bold text-orange-800">
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-orange-800">
                     {summary.total_returns_count}
                   </div>
                 </div>
-                <div className="bg-red-50 rounded-xl p-4 border-l-4 border-red-500">
-                  <div className="text-sm text-red-600 font-medium">
+                <div className="bg-red-50 rounded-xl p-2 sm:p-3 md:p-4 border-l-4 border-red-500">
+                  <div className="text-xs sm:text-sm text-red-600 font-medium">
                     Сумма возвратов
                   </div>
-                  <div className="text-2xl font-bold text-red-800">
-                    {summary.total_returns_amount.toLocaleString()} UZS
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-red-800 truncate">
+                    {summary.total_returns_amount.toLocaleString()}
                   </div>
                 </div>
               </div>

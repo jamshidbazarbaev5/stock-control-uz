@@ -16,6 +16,12 @@ import { useGetProducts } from "../api/product";
 import { OpenShiftForm } from "@/components/OpenShiftForm";
 import type { Stock } from "../api/stock";
 import { StockSelectionModal } from "@/components/StockSelectionModal";
+import {
+  WideDialog,
+  WideDialogContent,
+  WideDialogHeader,
+  WideDialogTitle,
+} from "@/components/ui/wide-dialog";
 
 interface ProductInCart {
   id: number;
@@ -58,7 +64,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useGetStores } from "../api/store";
-import { useGetClients } from "../api/client";
+import { useGetClients, useCreateClient } from "../api/client";
 import { useGetUsers } from "../api/user";
 import { useCreateSale } from "@/core/api/sale";
 import { useCurrentUser } from "../hooks/useCurrentUser";
@@ -143,6 +149,18 @@ function CreateSale() {
   const [productForStockSelection, setProductForStockSelection] =
     useState<Product | null>(null);
   const [pendingProductIndex, setPendingProductIndex] = useState<number>(-1);
+
+  // Client creation modal state
+  const [isCreateClientModalOpen, setIsCreateClientModalOpen] = useState(false);
+  const [newClientData, setNewClientData] = useState({
+    type: 'Физ.лицо' as 'Физ.лицо' | 'Юр.лицо',
+    name: '',
+    phone_number: '+998',
+    address: '',
+    ceo_name: '',
+    balance: 0,
+  });
+  const createClientMutation = useCreateClient();
 
   // Effect for enforcing seller's store
   useEffect(() => {
@@ -1395,12 +1413,36 @@ function CreateSale() {
               name="sale_debt.client"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    {t("table.client")}
-                    {form.watch("on_credit") && (
-                      <span className="text-red-500 ml-1">*</span>
-                    )}
-                  </FormLabel>
+                  <div className="flex items-center justify-between mb-2">
+                    <FormLabel>
+                      {t("table.client")}
+                      {form.watch("on_credit") && (
+                        <span className="text-red-500 ml-1">*</span>
+                      )}
+                    </FormLabel>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsCreateClientModalOpen(true)}
+                      className="h-8 text-xs"
+                    >
+                      <svg
+                        className="w-3 h-3 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                      Создать клиента
+                    </Button>
+                  </div>
                   {/* Search input outside of Select */}
                   <Input
                     type="text"
@@ -1587,6 +1629,169 @@ function CreateSale() {
           onStockSelect={handleStockSelect}
         />
       )}
+
+      {/* Client Creation Modal */}
+      <WideDialog open={isCreateClientModalOpen} onOpenChange={setIsCreateClientModalOpen}>
+        <WideDialogContent className="max-h-[90vh] overflow-auto">
+          <WideDialogHeader>
+            <WideDialogTitle>Создать клиента</WideDialogTitle>
+          </WideDialogHeader>
+
+          <div className="p-6 space-y-4">
+            {/* Client Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Тип клиента *
+              </label>
+              <Select
+                value={newClientData.type}
+                onValueChange={(value: 'Физ.лицо' | 'Юр.лицо') => 
+                  setNewClientData({ ...newClientData, type: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Физ.лицо">Физ.лицо</SelectItem>
+                  <SelectItem value="Юр.лицо">Юр.лицо</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {newClientData.type === 'Юр.лицо' ? 'Название компании' : 'Имя'} *
+              </label>
+              <Input
+                type="text"
+                placeholder={newClientData.type === 'Юр.лицо' ? 'Введите название компании' : 'Введите имя'}
+                value={newClientData.name}
+                onChange={(e) => setNewClientData({ ...newClientData, name: e.target.value })}
+              />
+            </div>
+
+            {/* Phone Number */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Телефон *
+              </label>
+              <Input
+                type="tel"
+                placeholder="+998970953905"
+                value={newClientData.phone_number}
+                onChange={(e) => {
+                  let value = e.target.value.replace(/\D/g, '');
+                  if (value.startsWith('998')) value = value.slice(3);
+                  value = value.slice(0, 9);
+                  setNewClientData({ ...newClientData, phone_number: '+998' + value });
+                }}
+                maxLength={13}
+              />
+            </div>
+
+            {/* Address */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Адрес *
+              </label>
+              <Input
+                type="text"
+                placeholder="Введите адрес"
+                value={newClientData.address}
+                onChange={(e) => setNewClientData({ ...newClientData, address: e.target.value })}
+              />
+            </div>
+
+            {/* Corporate fields */}
+            {newClientData.type === 'Юр.лицо' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Имя генерального директора *
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder="Введите имя генерального директора"
+                    value={newClientData.ceo_name}
+                    onChange={(e) => setNewClientData({ ...newClientData, ceo_name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Баланс *
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="Введите баланс"
+                    value={newClientData.balance}
+                    onChange={(e) => setNewClientData({ ...newClientData, balance: Number(e.target.value) })}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex space-x-3 pt-4">
+              <Button
+                type="button"
+                onClick={() => {
+                  setIsCreateClientModalOpen(false);
+                  setNewClientData({
+                    type: 'Физ.лицо',
+                    name: '',
+                    phone_number: '+998',
+                    address: '',
+                    ceo_name: '',
+                    balance: 0,
+                  });
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                Отмена
+              </Button>
+              <Button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const dataToSubmit = newClientData.type === 'Физ.лицо'
+                      ? {
+                          type: newClientData.type,
+                          name: newClientData.name,
+                          phone_number: newClientData.phone_number,
+                          address: newClientData.address,
+                        }
+                      : newClientData;
+
+                    const createdClient = await createClientMutation.mutateAsync(dataToSubmit as any);
+                    toast.success(t('messages.success.created', { item: t('navigation.clients') }));
+                    form.setValue('sale_debt.client', createdClient.id);
+                    setIsCreateClientModalOpen(false);
+                    setNewClientData({
+                      type: 'Физ.лицо',
+                      name: '',
+                      phone_number: '+998',
+                      address: '',
+                      ceo_name: '',
+                      balance: 0,
+                    });
+                  } catch (error) {
+                    toast.error(t('messages.error.create', { item: t('navigation.clients') }));
+                    console.error('Error creating client:', error);
+                  }
+                }}
+                className="flex-1"
+                disabled={!newClientData.name || !newClientData.phone_number || !newClientData.address ||
+                  (newClientData.type === 'Юр.лицо' && (!newClientData.ceo_name || newClientData.balance === undefined))}
+              >
+                Создать
+              </Button>
+            </div>
+          </div>
+        </WideDialogContent>
+      </WideDialog>
     </div>
   );
 }
