@@ -166,6 +166,8 @@ export interface Debt {
   is_paid: boolean;
   created_at: string;
   remainder: number;
+  last_usd_rate?: string;
+  usd_rate_at_creation?: string;
 }
 
 export interface DebtPayment {

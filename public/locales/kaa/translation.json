@@ -119,6 +119,9 @@
     "complex": "Quramalı tólem"
   },
   "common": {
+    "status": "Status",
+    "max_amount": "Maksimal summa",
+    "saving": "Saqlaw",
     "price_per_tone": "Tonna bahası",
     "enter_price_per_tone": "Tonna bahasın kiritiń",
     "enter_seeling_price_usd": "Satıw bahasın USD da kiritiń",
@@ -282,9 +285,16 @@
   },
   "validation": {
     "amount_exceeds_budget": "Summa byudjetten artıq bolmawı kerek",
-    "amount_exceeds_remainder": "Summa qalǵan summadan artıq bolmawı kerek"
+    "amount_exceeds_remainder": "Summa qalǵan summadan artıq bolmawı kerek",
+    "fill_all_required_fields": "Barlıq tiyisti jaylardı toltırıń"
   },
   "forms": {
+    "loan_details": "Qarız maǵlıwmatı",
+    "store_budgets": "Dúkan byudjetleri",
+    "total_budget": "Jámi byudjet",
+    "payable_amount": "Tólew summası",
+    "usd_rate_at_creation": "Jaratilgćanda USD kursi",
+    "last_usd_rate": "Ańġi USD kursi",
     "type": "Túr",
     "type_product_id": "Prixod Id jazin",
     "sponsor_name": "Sponsor atı",

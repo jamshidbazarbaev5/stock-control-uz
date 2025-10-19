@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Card } from '@/components/ui/card';
 import { useGetExchangeLoans, useDeleteExchangeLoan, type ExchangeLoan } from '../api/exchange-loan';
 import { useGetStores } from '../api/store';
 import { useGetCurrencies } from '../api/currency';
@@ -19,6 +21,7 @@ import { formatDate } from '../helpers/formatDate';
 export default function ExchangeLoansPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedStore, setSelectedStore] = useState<string>('all');
@@ -31,6 +34,7 @@ export default function ExchangeLoansPage() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [localLoans, setLocalLoans] = useState<ExchangeLoan[]>([]);
   const pageSize = 10;
 
   const { data: exchangeLoansData, isLoading } = useGetExchangeLoans({
@@ -61,7 +65,10 @@ export default function ExchangeLoansPage() {
     ? exchangeLoansData.length
     : exchangeLoansData?.count || 0;
 
-  const exchangeLoans = results.map((loan, index) => ({
+  // Use local loans if available, otherwise use API data
+  const dataToDisplay = localLoans.length > 0 ? localLoans : results;
+  
+  const exchangeLoans = dataToDisplay.map((loan, index) => ({
     ...loan,
     displayId: (currentPage - 1) * pageSize + index + 1,
   }));
@@ -254,7 +261,7 @@ export default function ExchangeLoansPage() {
     e.preventDefault();
     
     if (!selectedLoan || !paymentAmount || parseFloat(paymentAmount) <= 0) {
-      toast.error(t('messages.error.amount_required'));
+      toast.error(t('validation.fill_all_required_fields'));
       return;
     }
 
@@ -263,21 +270,14 @@ export default function ExchangeLoansPage() {
       ? parseFloat(selectedLoan.remaining_balance) 
       : selectedLoan.remaining_balance || 0;
     
-    if (paymentAmountNum > remaining) {
-      toast.error(t('messages.error.payment_exceeds_remaining'));
-      return;
-    }
+    const currencyRate = typeof selectedLoan.currency_rate === 'string'
+      ? parseFloat(selectedLoan.currency_rate)
+      : selectedLoan.currency_rate || 1;
 
-    // Check if payment exceeds store budget
-    const storeBudget = typeof selectedLoan.store?.budget === 'string' 
-      ? parseFloat(selectedLoan.store.budget) 
-      : selectedLoan.store?.budget || 0;
+    const maxPayableAmount = remaining * currencyRate;
     
-    if (paymentAmountNum > storeBudget) {
-      toast.error(t('messages.error.payment_exceeds_budget', { 
-        budget: storeBudget.toLocaleString(),
-        store: selectedLoan.store?.name || 'Unknown Store'
-      }));
+    if (paymentAmountNum > maxPayableAmount) {
+      toast.error(t('validation.amount_exceeds_remainder'));
       return;
     }
 
@@ -290,13 +290,35 @@ export default function ExchangeLoansPage() {
       };
 
       await createPayment.mutateAsync(paymentData);
-      toast.success(t('messages.success.payment_created'));
+      
+      // Update local state
+      const newRemainingBalance = remaining - (paymentAmountNum / currencyRate);
+      const isPaid = newRemainingBalance <= 0;
+      
+      // Update local loans to reflect new status
+      const updatedLoans = results.map(loan => {
+        if (loan.id === selectedLoan.id) {
+          return {
+            ...loan,
+            remaining_balance: newRemainingBalance,
+            is_paid: isPaid,
+          };
+        }
+        return loan;
+      });
+      
+      setLocalLoans(updatedLoans as ExchangeLoan[]);
+      
+      // Invalidate query to refetch
+      await queryClient.invalidateQueries({ queryKey: ['exchange-loans'] });
+      
+      toast.success(t('common.payment_successful'));
       setPaymentAmount('');
       setPaymentNotes('');
       setPaymentModalOpen(false);
       setSelectedLoan(null);
     } catch (error) {
-      toast.error(t('messages.error.payment_create'));
+      toast.error(t('common.payment_failed'));
       console.error('Failed to create payment:', error);
     } finally {
       setIsSubmittingPayment(false);
@@ -412,22 +434,70 @@ export default function ExchangeLoansPage() {
           </DialogHeader>
           
           {selectedLoan && (
-            <div className="mb-4 p-3 bg-gray-50 rounded">
-              <div className="text-sm text-gray-600 mb-2">{t('pages.exchange_loans.payment_dialog.loan_summary')}</div>
-              <div className="text-sm space-y-1">
-                <div>{t('forms.store')}: {selectedLoan.store?.name || '-'}</div>
-                <div>{t('forms.total_amount')}: {typeof selectedLoan.total_amount === 'number' ? selectedLoan.total_amount.toLocaleString() : selectedLoan.total_amount}</div>
-                <div>{t('forms.remaining_balance')}: {typeof selectedLoan.remaining_balance === 'number' ? selectedLoan.remaining_balance.toLocaleString() : selectedLoan.remaining_balance}</div>
-                <div className="font-medium text-blue-600">
-                  {t('forms.store_budget')}: {selectedLoan.store?.budget ? String(selectedLoan.store.budget).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '0'}
+            <div className="space-y-4">
+              <Card className="p-4 bg-gray-50">
+                <div className="text-sm font-semibold text-gray-700 mb-3">{t('pages.exchange_loans.payment_dialog.loan_summary')}</div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">{t('forms.store')}:</span>
+                    <span className="font-medium">{selectedLoan.store?.name || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">{t('forms.total_amount')}:</span>
+                    <span className="font-medium">
+                      {typeof selectedLoan.total_amount === 'number' ? selectedLoan.total_amount.toLocaleString() : selectedLoan.total_amount} {selectedLoan.currency?.short_name}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">{t('forms.remaining_balance')}:</span>
+                    <span className="font-medium text-red-600">
+                      {typeof selectedLoan.remaining_balance === 'number' ? selectedLoan.remaining_balance.toLocaleString() : selectedLoan.remaining_balance} {selectedLoan.currency?.short_name}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">{t('forms.currency_rate')}:</span>
+                    <span className="font-medium">
+                      {typeof selectedLoan.currency_rate === 'number' ? selectedLoan.currency_rate.toLocaleString() : selectedLoan.currency_rate} UZS
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2">
+                    <span className="text-gray-600 font-semibold">{t('forms.payable_amount')}:</span>
+                    <span className="font-bold text-blue-600">
+                      {(() => {
+                        const remaining = typeof selectedLoan.remaining_balance === 'number' ? selectedLoan.remaining_balance : parseFloat(selectedLoan.remaining_balance || '0');
+                        const rate = typeof selectedLoan.currency_rate === 'number' ? selectedLoan.currency_rate : parseFloat(selectedLoan.currency_rate || '1');
+                        return (remaining * rate).toLocaleString();
+                      })()} UZS
+                    </span>
+                  </div>
                 </div>
-              </div>
+              </Card>
+              
+              {selectedLoan.store?.budgets && (
+                <Card className="p-4">
+                  <div className="text-sm font-semibold text-gray-700 mb-3">{t('forms.store_budgets')}</div>
+                  <div className="space-y-2 text-sm">
+                    {selectedLoan.store.budgets.map((budget) => (
+                      <div key={budget.id} className="flex justify-between">
+                        <span className="text-gray-600">{budget.budget_type}:</span>
+                        <span className="font-medium">{parseFloat(budget.amount).toLocaleString()} UZS</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between border-t pt-2">
+                      <span className="text-gray-600 font-semibold">{t('forms.total_budget')}:</span>
+                      <span className="font-bold text-green-600">
+                        {selectedLoan.store.budget ? parseFloat(String(selectedLoan.store.budget)).toLocaleString() : '0'} UZS
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              )}
             </div>
           )}
           
           <form onSubmit={handleCreatePayment} className="space-y-4">
             <div>
-              <Label htmlFor="paymentAmount">{t('forms.amount')} *</Label>
+              <Label htmlFor="paymentAmount">{t('forms.amount')} (UZS) *</Label>
               <Input
                 id="paymentAmount"
                 type="number"
@@ -435,13 +505,21 @@ export default function ExchangeLoansPage() {
                 onChange={(e) => setPaymentAmount(e.target.value)}
                 placeholder={t('placeholders.enter_amount')}
                 min="0"
-                max={selectedLoan ? (typeof selectedLoan.remaining_balance === 'number' ? selectedLoan.remaining_balance : parseFloat(selectedLoan.remaining_balance || '0')) : 0}
+                max={selectedLoan ? (() => {
+                  const remaining = typeof selectedLoan.remaining_balance === 'number' ? selectedLoan.remaining_balance : parseFloat(selectedLoan.remaining_balance || '0');
+                  const rate = typeof selectedLoan.currency_rate === 'number' ? selectedLoan.currency_rate : parseFloat(selectedLoan.currency_rate || '1');
+                  return remaining * rate;
+                })() : 0}
                 step="0.01"
                 required
               />
               {selectedLoan && (
                 <p className="text-sm text-gray-500 mt-1">
-                  {t('pages.exchange_loans.payment_dialog.max_amount')}: {typeof selectedLoan.remaining_balance === 'number' ? selectedLoan.remaining_balance.toLocaleString() : selectedLoan.remaining_balance}
+                  {t('common.max_amount')}: {(() => {
+                    const remaining = typeof selectedLoan.remaining_balance === 'number' ? selectedLoan.remaining_balance : parseFloat(selectedLoan.remaining_balance || '0');
+                    const rate = typeof selectedLoan.currency_rate === 'number' ? selectedLoan.currency_rate : parseFloat(selectedLoan.currency_rate || '1');
+                    return (remaining * rate).toLocaleString();
+                  })()} UZS
                 </p>
               )}
             </div>

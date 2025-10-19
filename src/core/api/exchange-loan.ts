@@ -23,6 +23,11 @@ export interface ExchangeLoan {
     is_main: boolean;
     color: string;
     parent_store: number | null;
+    budgets?: {
+      id: number;
+      budget_type: string;
+      amount: string;
+    }[];
   };
   currency?: {
     id: number;

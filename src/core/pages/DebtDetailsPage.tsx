@@ -485,6 +485,36 @@ export default function DebtDetailsPage() {
                           </div>
                         </div>
                       </div>
+                      {debt.usd_rate_at_creation && (
+                        <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+                          <div className="flex items-start gap-3">
+                            <DollarSign className="w-5 h-5 text-blue-500 mt-1" />
+                            <div>
+                              <dt className="text-sm text-gray-500">
+                                {t("forms.usd_rate_at_creation")}
+                              </dt>
+                              <dd className="text-2xl font-semibold text-gray-900">
+                                {formatCurrency(debt.usd_rate_at_creation)} UZS
+                              </dd>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {debt.last_usd_rate && (
+                        <div className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+                          <div className="flex items-start gap-3">
+                            <DollarSign className="w-5 h-5 text-purple-500 mt-1" />
+                            <div>
+                              <dt className="text-sm text-gray-500">
+                                {t("forms.last_usd_rate")}
+                              </dt>
+                              <dd className="text-2xl font-semibold text-gray-900">
+                                {formatCurrency(debt.last_usd_rate)} UZS
+                              </dd>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </dl>
                   </div>
                 </div>

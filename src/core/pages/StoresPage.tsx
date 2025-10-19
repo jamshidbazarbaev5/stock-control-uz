@@ -230,9 +230,31 @@ export default function StoresPage() {
                       <Building2 className="h-4 w-4 text-primary/60" />
                       <span className="text-sm">{store.is_main ? t('common.yes') : t('common.no')}</span>
                     </div>
-                    <div className="flex items-center gap-3 text-gray-600">
-                      <DollarSign className="h-4 w-4 text-primary/60" />
-                      <span className="text-sm">{Number(store.budget).toLocaleString()} </span>
+                    
+                    {/* Budget Breakdown */}
+                    <div className="border-t pt-3 mt-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <DollarSign className="h-4 w-4 text-primary/60" />
+                        <span className="text-sm font-semibold text-gray-700">{t('forms.store_budgets')}</span>
+                      </div>
+                      {store.budgets && store.budgets.length > 0 ? (
+                        <div className="space-y-1 ml-6">
+                          {store.budgets.map((budget) => (
+                            <div key={budget.id} className="flex justify-between items-center text-xs">
+                              <span className="text-gray-600">{budget.budget_type}:</span>
+                              <span className="font-medium">{Number(budget.amount).toLocaleString()} UZS</span>
+                            </div>
+                          ))}
+                          <div className="flex justify-between items-center text-sm font-semibold border-t pt-1 mt-1">
+                            <span className="text-gray-700">{t('forms.total_budget')}:</span>
+                            <span className="text-green-600">{Number(store.budget).toLocaleString()} UZS</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-gray-600 ml-6">
+                          {Number(store.budget).toLocaleString()} UZS
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-end gap-3 pt-4 border-t">

@@ -2,7 +2,8 @@
   "validation": {
     "amount_must_be_positive": "Сумма должна быть положительной",
     "amount_exceeds_total": "Сумма не может превышать общую сумму долга",
-    "selling_price_greater_than_min_price": "Цена продажи не может быть ниже минимальной цены"
+    "selling_price_greater_than_min_price": "Цена продажи не может быть ниже минимальной цены",
+    "fill_all_required_fields": "Заполните все обязательные поля"
   },
   "errors": {
     "no_sale_selected": "Продажа не выбрана",
@@ -159,6 +160,9 @@
     }
   },
   "common": {
+    "status": "Статус",
+    "max_amount": "Максимальная сумма",
+    "saving": "Сохранение",
     "reason": "Причина",
     "clear_filters": "Очистить фильтры",
     "create_payment": "Оплатить",
@@ -418,6 +422,12 @@
   },
 
   "forms": {
+    "loan_details": "Детали займа",
+    "store_budgets": "Бюджеты магазина",
+    "total_budget": "Общий бюджет",
+    "payable_amount": "Сумма к оплате",
+    "usd_rate_at_creation": "Курс USD при создании",
+    "last_usd_rate": "Последний курс USD",
     "generate_barcode": "Генерировать баркод",
     "is_base": "Базовый",
     "base_unit": "Базовая единица",

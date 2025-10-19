@@ -76,7 +76,7 @@ export default function DebtPaymentsPage() {
                     <p className="font-medium">{payment.worker_read.name}</p>
                     <div className="flex items-center space-x-2 text-sm text-gray-500">
                       <Store className="w-4 h-4" />
-                      <span>{payment.worker_read.store_read.name}</span>
+                      <span>{payment?.worker_read?.store_read?.name}</span>
                     </div>
                   </div>
                 </div>
