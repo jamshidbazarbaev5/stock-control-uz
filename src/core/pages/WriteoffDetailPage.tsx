@@ -1,12 +1,10 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { useGetWriteoff } from "../api/writeoff";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 
 export default function WriteoffDetailPage() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const writeoffId = parseInt(id || "0");
@@ -129,7 +127,7 @@ export default function WriteoffDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {writeoff.items?.map((item, index) => (
+                {writeoff.items?.map((item:any, index:number) => (
                   <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="p-2 sm:p-3 text-xs sm:text-sm text-gray-600">
                       {index + 1}
@@ -165,7 +163,7 @@ export default function WriteoffDetailPage() {
         </Card>
 
         {/* Stock Details */}
-        {writeoff.items?.map((item) => (
+        {writeoff.items?.map((item:any) => (
           <Card key={item.id} className="p-4 sm:p-6">
             <h3 className="text-base sm:text-lg font-semibold mb-4">
               Детали склада: {item.stock_read.product.product_name}

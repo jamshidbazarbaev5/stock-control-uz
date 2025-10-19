@@ -8,7 +8,7 @@ interface RevaluationProduct {
   old_min_price: string;
 }
 
-interface RevaluationHistoryItem {
+export interface RevaluationHistoryItem {
   id: number;
   created_at: string;
   comment: string;
@@ -25,6 +25,20 @@ interface RevaluationData {
   product_ids: number[];
 }
 
+export interface PaginatedResponse<T> {
+  links?: {
+    first: string | number | null;
+    last: string | number | null;
+    next: string | null;
+    previous: string | null;
+  };
+  total_pages: number;
+  current_page: number;
+  page_range: number[];
+  page_size: number;
+  results: T[];
+}
+
 export const useProductRevaluation = () => {
   const queryClient = useQueryClient();
 
@@ -37,9 +51,18 @@ export const useProductRevaluation = () => {
   });
 };
 
-export const useRevaluationHistory = () => {
-  return useQuery<RevaluationHistoryItem[]>({
-    queryKey: ["revaluation-history"],
-    queryFn: () => api.get("revaluation/").then((res) => res.data),
+export const useRevaluationHistory = ({
+  page = 1,
+  product_name,
+}: { page?: number; product_name?: string }) => {
+  return useQuery<PaginatedResponse<RevaluationHistoryItem>>({
+    queryKey: ["revaluation-history", page, product_name ?? ""],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: String(page) });
+      if (product_name) params.append("product_name", product_name);
+      const res = await api.get(`revaluation/?${params.toString()}`);
+      return res.data;
+    },
+    placeholderData: (prev) => prev as any,
   });
 };

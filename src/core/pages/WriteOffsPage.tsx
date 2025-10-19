@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useGetWriteoffs } from "../api/writeoff";
@@ -64,58 +64,58 @@ export default function WriteOffsPage() {
 
   const writeoffs = Array.isArray(writeoffsData) ? writeoffsData : writeoffsData?.results || [];
 
-  const columns = [
+  const columns: Array<{ header: string; accessorKey: string; cell: (row: WriteOff) => React.ReactNode }> = [
     {
       header: "№",
       accessorKey: "id",
-      cell: (writeoff: WriteOff) => writeoff.id,
+      cell: (row: WriteOff) => row.id,
     },
     {
       header: t("table.store"),
       accessorKey: "store",
-      cell: (writeoff: WriteOff) => {
-        const item = writeoff.items?.[0];
+      cell: (row: WriteOff) => {
+        const item = row.items?.[0];
         return item?.stock_read?.store?.name || "-";
       },
     },
     {
       header: t("common.reason"),
       accessorKey: "reason",
-      cell: (writeoff: WriteOff) => writeoff.reason,
+      cell: (row: WriteOff) => row.reason,
     },
     {
       header: t("common.notes"),
       accessorKey: "notes",
-      cell: (writeoff: WriteOff) => (
-        <div className="max-w-xs truncate" title={writeoff.notes}>
-          {writeoff.notes || "-"}
+      cell: (row: WriteOff) => (
+        <div className="max-w-xs truncate" title={row.notes}>
+          {row.notes || "-"}
         </div>
       ),
     },
     {
       header: "Количество товаров",
       accessorKey: "items_count",
-      cell: (writeoff: WriteOff) => writeoff.items?.length || 0,
+      cell: (row: WriteOff) => row.items?.length || 0,
     },
     {
       header: t("table.date"),
       accessorKey: "created_at",
-      cell: (writeoff: WriteOff) => {
+      cell: (row: WriteOff) => {
         try {
-          return new Date(writeoff.created_at).toLocaleString("ru-RU");
+          return new Date(row.created_at).toLocaleString("ru-RU");
         } catch {
-          return writeoff.created_at;
+          return row.created_at;
         }
       },
     },
     {
       header: "Действия",
       accessorKey: "actions",
-      cell: (writeoff: WriteOff) => (
+      cell: (row: WriteOff) => (
         <Button
           onClick={(e) => {
             e.stopPropagation();
-            navigate(`/writeoffs/${writeoff.id}`);
+            navigate(`/writeoffs/${row.id}`);
           }}
           variant="outline"
           size="sm"
@@ -188,6 +188,7 @@ export default function WriteOffsPage() {
     );
   }
 
+  // @ts-ignore
   return (
     <div className="container mx-auto py-4 sm:py-8 px-2 sm:px-4">
       <div className="mb-4 sm:mb-6">
@@ -198,15 +199,14 @@ export default function WriteOffsPage() {
       </div>
 
       <Card className="p-3 sm:p-4 md:p-6">
-        <ResourceTable
+        <ResourceTable<WriteOff>
           data={writeoffs}
           columns={columns}
+          isLoading={isLoading}
           onRowClick={(writeoff) => {
-            setExpandedRowId(expandedRowId === writeoff.id ? null : writeoff.id);
+            setExpandedRowId(expandedRowId === writeoff.id ? null : writeoff.id ?? null);
           }}
-          expandedRowId={expandedRowId}
-          renderExpandedRow={renderExpandedRow}
-          emptyMessage="Нет списаний"
+          expandedRowRenderer={expandedRowId !== null ? renderExpandedRow : undefined}
         />
       </Card>
     </div>

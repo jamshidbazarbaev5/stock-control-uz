@@ -12,6 +12,10 @@ export interface Refund {
   sale: number;
   notes?: string;
   refund_items: RefundItem[];
+  refund_payments: Array<{
+    payment_method: string;
+    amount: string;
+  }>;
   total_amount?: string;
   created_at?: string;
   sale_read?: {

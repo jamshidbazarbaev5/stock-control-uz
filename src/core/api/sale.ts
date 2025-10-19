@@ -106,6 +106,10 @@ export interface SaleRefund {
     quantity: string;
     subtotal: string;
   }>;
+  refund_payments?: Array<{
+    payment_method: string;
+    amount: string;
+  }>;
   total_refund_amount: string;
   notes: string;
   refunded_by: number;

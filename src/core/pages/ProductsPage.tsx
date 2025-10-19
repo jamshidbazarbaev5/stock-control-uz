@@ -18,6 +18,16 @@ import { Button } from "@/components/ui/button";
 import { RevaluationDialog } from "@/components/dialogs/RevaluationDialog";
 import { useProductRevaluation } from "../api/revaluation";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import api from "../api/api";
 
 interface PriceEdit {
   productId: number;
@@ -187,6 +197,19 @@ export default function ProductsPage() {
   const [productTab, setProductTab] = useState<
     "with_quantity" | "without_quantity"
   >("with_quantity");
+
+  // Import dialog state
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [generateBarcode, setGenerateBarcode] = useState(false);
+  const [importResult, setImportResult] = useState<
+    | null
+    | {
+        message: string;
+        imported: number;
+        updated: number;
+      }
+  >(null);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -415,6 +438,136 @@ export default function ProductsPage() {
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-2xl font-bold">{t("navigation.products")}</h1>
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                const res = await api.get("items/generate-template/", {
+                  responseType: "blob",
+                });
+                const url = window.URL.createObjectURL(new Blob([res.data]));
+                const link = document.createElement("a");
+                link.href = url;
+                link.setAttribute("download", "items_template.xlsx");
+                document.body.appendChild(link);
+                link.click();
+                link.parentNode?.removeChild(link);
+              } catch (e) {
+                toast.error("Не удалось скачать шаблон");
+              }
+            }}
+          >
+            Скачать шаблон
+          </Button>
+
+          <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+            <DialogTrigger asChild>
+              <Button variant="secondary">Импорт товаров</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t("dialogs.new_import", "Новый импорт")}</DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-sm font-medium">
+                    {t("forms.generate_barcode", "Генерировать штрихкоды")}
+                  </label>
+                  <div className="flex items-center gap-2 h-9">
+                    <Checkbox
+                      checked={generateBarcode}
+                      onCheckedChange={(v) => setGenerateBarcode(Boolean(v))}
+                      id="gen_barcode"
+                    />
+                    <label htmlFor="gen_barcode" className="text-sm text-muted-foreground">
+                      generate_barcode: {String(generateBarcode)}
+                    </label>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="font-medium text-foreground">
+                        Загрузите файл (XLSX, XLS или CSV)
+                      </div>
+                      <div className="text-xs">Ключи формы (multipart/form-data):</div>
+                      <ul className="text-xs list-disc pl-5">
+                        <li>
+                          file: файл Excel/CSV
+                        </li>
+                        <li>
+                          generate_barcode: true | false
+                        </li>
+                      </ul>
+                    </div>
+                    <Input
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                      className="max-w-xs"
+                    />
+                  </div>
+                </div>
+
+                {importResult && (
+                  <div className="rounded-lg border p-3 bg-green-50 text-sm">
+                    <div className="font-medium text-green-800">
+                      {importResult.message}
+                    </div>
+                    <div className="text-green-700 mt-1">
+                      {t("import.imported", "Импортировано")}: {importResult.imported}
+                      {" · "}
+                      {t("import.updated", "Обновлено")}: {importResult.updated}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setIsImportOpen(false);
+                    setImportFile(null);
+                    setImportResult(null);
+                  }}
+                >
+                  {t("common.cancel", "Отмена")}
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (!importFile) {
+                      toast.error(t("errors.no_file", "Выберите файл для импорта"));
+                      return;
+                    }
+                    try {
+                      const form = new FormData();
+                      form.append("file", importFile);
+                      form.append("generate_barcode", String(generateBarcode));
+                      const { data } = await api.post("items/import-items/", form, {
+                        headers: { "Content-Type": "multipart/form-data" },
+                      });
+                      setImportResult(data);
+                      // Auto-close dialog after 3s
+                      setTimeout(() => {
+                        setIsImportOpen(false);
+                        setImportFile(null);
+                        setImportResult(null);
+                      }, 3000);
+                    } catch (e) {
+                      toast.error(t("errors.import_failed", "Не удалось импортировать товары"));
+                    }
+                  }}
+                  disabled={!importFile}
+                >
+                  {t("common.continue", "Продолжить")}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           <Button
             variant="default"
             disabled={Object.keys(priceEdits).length === 0}

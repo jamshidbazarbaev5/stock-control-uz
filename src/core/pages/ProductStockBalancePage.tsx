@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { useGetStores } from "../api/store";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
@@ -48,11 +49,12 @@ export default function ProductStockBalancePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [showZeroStock, setShowZeroStock] = useState<"true" | "false">("false");
+  const [productName, setProductName] = useState("");
 
   // Reset to page 1 when any filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedStore, showZeroStock]);
+  }, [selectedStore, showZeroStock, productName]);
 
   const { data: storesData } = useGetStores({});
   const stores = Array.isArray(storesData)
@@ -60,7 +62,13 @@ export default function ProductStockBalancePage() {
     : storesData?.results || [];
   const { data: currentUser } = useCurrentUser();
   const { data, isLoading } = useQuery<StockBalanceResponse>({
-    queryKey: ["stockBalance", currentPage, selectedStore, showZeroStock],
+    queryKey: [
+      "stockBalance",
+      currentPage,
+      selectedStore,
+      showZeroStock,
+      productName,
+    ],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: currentPage.toString(),
@@ -69,11 +77,13 @@ export default function ProductStockBalancePage() {
         params.append("store", selectedStore);
       }
       params.append("product_zero", showZeroStock);
+      if (productName) params.append("product_name", productName);
       const response = await api.get(
         `/dashboard/item_dashboard/?${params.toString()}`,
       );
       return response.data;
     },
+    placeholderData: (prev) => prev as any,
   });
 
   const columns = [
@@ -124,6 +134,7 @@ export default function ProductStockBalancePage() {
       params.append("store", selectedStore);
     }
     params.append("product_zero", showZeroStock);
+    if (productName) params.append("product_name", productName);
     try {
       const response = await api.get(
         `/dashboard/excel_export/?${params.toString()}`,
@@ -178,6 +189,13 @@ export default function ProductStockBalancePage() {
               </SelectItem>
             </SelectContent>
           </Select>
+          <div className="w-full sm:w-64">
+            <Input
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              placeholder={t("forms.search_by_product_name", "Поиск по названию товара")}
+            />
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-bold">

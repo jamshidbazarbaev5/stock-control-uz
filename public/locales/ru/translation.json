@@ -418,6 +418,7 @@
   },
 
   "forms": {
+    "generate_barcode": "Генерировать баркод",
     "is_base": "Базовый",
     "base_unit": "Базовая единица",
     "price_per_unit": "Цена за едииницу",

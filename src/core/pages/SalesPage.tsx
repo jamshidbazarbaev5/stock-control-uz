@@ -112,6 +112,7 @@ export default function SalesPage() {
     Record<number, string>
   >({});
   const [refundNotes, setRefundNotes] = useState("");
+  const [refundPayments, setRefundPayments] = useState<Array<{payment_method: string; amount: string}>>([]);
   const createRefund = useCreateRefund();
 
   // Save column visibility to localStorage
@@ -356,6 +357,7 @@ export default function SalesPage() {
     setSelectedSaleForRefund(sale);
     setRefundQuantities({});
     setRefundNotes("");
+    setRefundPayments([{ payment_method: "Наличные", amount: "" }]);
     setIsRefundModalOpen(true);
   };
 
@@ -388,10 +390,23 @@ export default function SalesPage() {
       return;
     }
 
+    // Validate refund payments
+    if (refundPayments.length === 0) {
+      toast.error(t("errors.refund_payments_required", "Добавьте хотя бы один способ возврата"));
+      return;
+    }
+
+    const invalidPayments = refundPayments.some(p => !p.amount || parseFloat(p.amount) <= 0);
+    if (invalidPayments) {
+      toast.error(t("errors.invalid_payment_amounts", "Укажите корректные суммы для всех способов возврата"));
+      return;
+    }
+
     const refundData = {
       sale: selectedSaleForRefund.id,
       notes: refundNotes,
       refund_items: refundItems,
+      refund_payments: refundPayments,
     } as Refund;
 
     try {
@@ -403,6 +418,7 @@ export default function SalesPage() {
       setSelectedSaleForRefund(null);
       setRefundQuantities({});
       setRefundNotes("");
+      setRefundPayments([]);
     } catch (error: any) {
       toast.error(
         error?.response?.data?.detail ||
@@ -599,6 +615,28 @@ export default function SalesPage() {
                       <p className="text-xs text-gray-600 italic bg-white p-1 rounded">
                         "{refund.notes}"
                       </p>
+                    )}
+                    {refund.refund_payments && refund.refund_payments.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {refund.refund_payments.map((p: any, i: number) => (
+                          <div key={i} className="inline-flex items-center gap-1 bg-white border border-red-200 px-2 py-0.5 rounded text-xs">
+                            {p.payment_method === "Наличные" && (
+                              <Wallet className="h-3.5 w-3.5 text-green-600" />
+                            )}
+                            {p.payment_method === "Карта" && (
+                              <CreditCard className="h-3.5 w-3.5 text-blue-600" />
+                            )}
+                            {p.payment_method === "Click" && (
+                              <SmartphoneNfc className="h-3.5 w-3.5 text-purple-600" />
+                            )}
+                            {p.payment_method === "Перечисление" && (
+                              <Landmark className="h-3.5 w-3.5 text-orange-500" />
+                            )}
+                            <span className="text-gray-700">{p.payment_method}:</span>
+                            <span className="font-medium text-red-700">- {formatCurrency(p.amount)}</span>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
                   <div className="space-y-1">
@@ -1319,6 +1357,84 @@ export default function SalesPage() {
                   </div>
                 </div>
 
+                {/* Refund Payments */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium text-gray-700">
+                      {t("common.refund_payments", "Методы возврата")} 
+                      <span className="text-red-500">*</span>
+                    </h3>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRefundPayments([...refundPayments, { payment_method: "Наличные", amount: "" }])}
+                    >
+                      + Добавить платёж
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    {refundPayments.map((payment, index) => (
+                      <div key={index} className="grid grid-cols-[200px_1fr_auto] gap-3 items-center bg-gray-50 p-4 rounded-lg">
+                        <div>
+                          <label className="text-xs text-gray-500 mb-1 block">Метод платежа</label>
+                          <Select
+                            value={payment.payment_method}
+                            onValueChange={(value) => {
+                              const updated = [...refundPayments];
+                              updated[index].payment_method = value;
+                              setRefundPayments(updated);
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Наличные">Наличные</SelectItem>
+                              <SelectItem value="Карта">Карта</SelectItem>
+                              <SelectItem value="Click">Click</SelectItem>
+                              <SelectItem value="Перечисление">Перечисление</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-500 mb-1 block">Сумма</label>
+                          <Input
+                            type="number"
+                            value={payment.amount}
+                            onChange={(e) => {
+                              const updated = [...refundPayments];
+                              updated[index].amount = e.target.value;
+                              setRefundPayments(updated);
+                            }}
+                            placeholder="Введите сумму возврата"
+                            className="w-full"
+                            min="0"
+                            step="0.01"
+                          />
+                        </div>
+                        <div className="self-end">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (refundPayments.length > 1) {
+                                const updated = refundPayments.filter((_, i) => i !== index);
+                                setRefundPayments(updated);
+                              }
+                            }}
+                            className="text-red-500 hover:text-red-700 h-9 w-9 p-0"
+                            disabled={refundPayments.length === 1}
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Notes */}
                 <div>
                   <label className="font-medium text-gray-700 mb-2 block">
@@ -1345,6 +1461,7 @@ export default function SalesPage() {
                 setSelectedSaleForRefund(null);
                 setRefundQuantities({});
                 setRefundNotes("");
+                setRefundPayments([]);
               }}
             >
               {t("common.cancel")}
