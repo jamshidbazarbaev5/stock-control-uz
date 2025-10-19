@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { Recycling } from "../api/recycling";
@@ -120,6 +120,14 @@ export default function CreateRecycling() {
     Array<{ to_product?: number; get_amount?: string }>
   >([{ to_product: undefined, get_amount: "" }]);
   const [productSearchTerms, setProductSearchTerms] = useState<string[]>([""]);
+  // Track which output select is currently open for server-side searching per-select
+  const [activeOutputIndex, setActiveOutputIndex] = useState<number | null>(null);
+  // Keep labels for selected products so they don't "disappear" when the list is refetched
+  const [selectedProductLabels, setSelectedProductLabels] = useState<Record<number, string>>({});
+  // Track last from_to to avoid clearing outputs on redundant setValue calls
+  const prevFromToRef = useRef<number | undefined>(undefined);
+  // Ensure initial URL-based prefill runs only once after stocks load
+  const initFromUrlRef = useRef<boolean>(false);
 
   // Get URL parameters
   const searchParams = new URLSearchParams(location.search);
@@ -147,34 +155,36 @@ export default function CreateRecycling() {
     ? storesData
     : storesData?.results || [];
 
-  // Fetch products with pagination and category filtering
+  // Fetch products with pagination and category + server-side name filtering
   const { data: productsData, isLoading: isLoadingProducts } = useGetProducts({
     params: {
       page: productPage,
-      ...(productSearchTerms[0] ? { product_name: productSearchTerms[0] } : {}),
+      // Use the active select's search term to query the backend
+      ...(activeOutputIndex !== null && productSearchTerms[activeOutputIndex]
+        ? { product_name: productSearchTerms[activeOutputIndex] }
+        : {}),
       // Add category filtering when allowedCategories is available
-      ...(allowedCategories && allowedCategories.length > 0 
-        ? { 
-            category: allowedCategories.map(cat => cat.id)
-          } 
-        : {}
-      ),
+      ...(allowedCategories && allowedCategories.length > 0
+        ? {
+            category: allowedCategories.map((cat) => cat.id),
+          }
+        : {}),
     },
     // Custom params serializer to handle multiple category parameters correctly
     paramsSerializer: (params) => {
       const searchParams = new URLSearchParams();
-      
+
       Object.entries(params).forEach(([key, value]) => {
         if (Array.isArray(value)) {
           // For arrays, add multiple parameters with the same key
-          value.forEach(item => {
+          value.forEach((item) => {
             searchParams.append(key, item.toString());
           });
         } else if (value !== undefined && value !== null) {
           searchParams.append(key, value.toString());
         }
       });
-      
+
       return searchParams.toString();
     },
   });
@@ -212,9 +222,11 @@ export default function CreateRecycling() {
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
       if (name === "from_to" && value.from_to) {
-        const selectedStock = stocks.find(
-          (stock) => stock.id === Number(value.from_to),
-        );
+        const newFromTo = Number(value.from_to);
+        if (prevFromToRef.current === newFromTo) return; // no real change
+        prevFromToRef.current = newFromTo;
+
+        const selectedStock = stocks.find((stock) => stock.id === newFromTo);
 
         // Check both product and product_read for attribute_values
         const product = selectedStock?.product || selectedStock?.product_read;
@@ -222,7 +234,7 @@ export default function CreateRecycling() {
         if (isProductRecyclable(product)) {
           const categories = getAllowedCategories(product);
           setAllowedCategories(categories);
-          // Clear all output selections when changing from_to
+          // Clear all output selections only when from_to truly changes
           setOutputs([{ to_product: undefined, get_amount: "" }]);
           form.setValue("outputs", [{ to_product: undefined, get_amount: "" }]);
         } else {
@@ -233,44 +245,46 @@ export default function CreateRecycling() {
     return () => subscription.unsubscribe();
   }, [form, stocks]);
 
-  // Set initial values based on URL parameters
+  // Set initial values based on URL parameters (run once after stocks load)
   useEffect(() => {
-    if (stocks.length > 0 && allProducts.length > 0) {
-      if (fromStockId) {
-        form.setValue("from_to", Number(fromStockId));
+    if (initFromUrlRef.current) return;
+    if (stocks.length === 0) return;
 
-        const stockItem = stocks.find(
-          (stock) => stock.id === Number(fromStockId),
-        );
+    if (fromStockId) {
+      const idNum = Number(fromStockId);
+      form.setValue("from_to", idNum);
+      prevFromToRef.current = idNum;
 
-        // Set allowed categories immediately for filtering
-        const product = stockItem?.product || stockItem?.product_read;
+      const stockItem = stocks.find((stock) => stock.id === idNum);
+      const product = stockItem?.product || stockItem?.product_read;
+      if (isProductRecyclable(product)) {
+        const categories = getAllowedCategories(product);
+        setAllowedCategories(categories);
+      }
+      initFromUrlRef.current = true;
+      return;
+    }
+
+    if (fromProductId) {
+      const idNum = Number(fromProductId);
+      const stockWithProduct = stocks.find(
+        (stock) =>
+          (stock.product?.id === idNum || stock.product_read?.id === idNum) &&
+          stock.quantity > 0,
+      );
+
+      if (stockWithProduct) {
+        form.setValue("from_to", stockWithProduct.id);
+        prevFromToRef.current = stockWithProduct.id;
+        const product = stockWithProduct?.product || stockWithProduct?.product_read;
         if (isProductRecyclable(product)) {
           const categories = getAllowedCategories(product);
           setAllowedCategories(categories);
         }
-      } else if (fromProductId) {
-        const stockWithProduct = stocks.find(
-          (stock) =>
-            (stock.product?.id === Number(fromProductId) ||
-              stock.product_read?.id === Number(fromProductId)) &&
-            stock.quantity > 0,
-        );
-
-        if (stockWithProduct) {
-          form.setValue("from_to", stockWithProduct.id);
-
-          // Set allowed categories immediately for filtering
-          const product =
-            stockWithProduct?.product || stockWithProduct?.product_read;
-          if (isProductRecyclable(product)) {
-            const categories = getAllowedCategories(product);
-            setAllowedCategories(categories);
-          }
-        }
       }
+      initFromUrlRef.current = true;
     }
-  }, [fromStockId, fromProductId, stocks, allProducts, form]);
+  }, [stocks, fromStockId, fromProductId]);
 
   const selectedStore = form.watch("store");
 
@@ -339,9 +353,9 @@ export default function CreateRecycling() {
       return true;
     });
 
-  // Get product options for outputs
+  // Get product options for outputs (server-side filtered, but keep selected items visible)
   const getProductOptions = () => {
-    return allProducts
+    const optionsFromApi = allProducts
       .map((product: any) => {
         // Find the category name from allowedCategories
         const categoryInfo = allowedCategories?.find(
@@ -358,14 +372,33 @@ export default function CreateRecycling() {
           categoryName: categoryName,
         };
       })
-      .sort((a: any, b: any) => {
-        // Sort by category name first, then by product name
-        if (a.categoryName !== b.categoryName) {
-          return a.categoryName.localeCompare(b.categoryName, "ru");
-        }
-        return a.label.localeCompare(b.label, "ru");
-      })
       .filter((opt: any) => opt.value);
+
+    // Ensure already-selected products remain in the list even if not in the current API page/search
+    const selectedIds = outputs
+      .map((o) => o.to_product)
+      .filter((id): id is number => Boolean(id));
+
+    const existingIds = new Set(optionsFromApi.map((o: any) => o.value));
+    const missingSelectedOptions = selectedIds
+      .filter((id) => !existingIds.has(id))
+      .map((id) => ({
+        value: id,
+        label: selectedProductLabels[id] || `#${id}`,
+        categoryName: "",
+      }));
+
+    const merged = [...optionsFromApi, ...missingSelectedOptions];
+
+    return merged.sort((a: any, b: any) => {
+      // Sort by category name first (empty category names go last), then by product name
+      if (a.categoryName !== b.categoryName) {
+        if (!a.categoryName) return 1;
+        if (!b.categoryName) return -1;
+        return a.categoryName.localeCompare(b.categoryName, "ru");
+      }
+      return a.label.localeCompare(b.label, "ru");
+    });
   };
 
   // Add new output handler
@@ -396,6 +429,24 @@ export default function CreateRecycling() {
     const newOutputs = [...outputs];
     newOutputs[index] = { ...newOutputs[index], [field]: value };
     setOutputs(newOutputs);
+
+    // If a product was selected, cache its label so it remains visible across searches
+    if (field === "to_product") {
+      const selectedId = Number(value);
+      const product = allProducts.find((p: any) => p.id === selectedId);
+      if (product) {
+        const categoryInfo = allowedCategories?.find(
+          (cat) => cat.id === product.category_read?.id,
+        );
+        const categoryName =
+          categoryInfo?.name || product.category_read?.category_name || "";
+        const label = categoryName
+          ? `${categoryName} - ${product.product_name}`
+          : product.product_name;
+        setSelectedProductLabels((prev) => ({ ...prev, [selectedId]: label }));
+      }
+    }
+
     form.setValue("outputs", newOutputs);
   };
 
@@ -535,6 +586,7 @@ export default function CreateRecycling() {
                         }
                         value={output.to_product?.toString() || ""}
                         disabled={isLoadingProducts}
+                        onOpenChange={(open) => setActiveOutputIndex(open ? index : null)}
                       >
                         <SelectTrigger className="w-full">
                           <SelectValue
@@ -574,24 +626,14 @@ export default function CreateRecycling() {
                             />
                           </div>
                           <div className="max-h-[200px] overflow-y-auto">
-                            {getProductOptions()
-                              .filter((option) =>
-                                productSearchTerms[index]
-                                  ? option.label
-                                      .toLowerCase()
-                                      .includes(
-                                        productSearchTerms[index].toLowerCase(),
-                                      )
-                                  : true,
-                              )
-                              .map((option) => (
-                                <SelectItem
-                                  key={option.value}
-                                  value={option.value.toString()}
-                                >
-                                  {option.label}
-                                </SelectItem>
-                              ))}
+                            {getProductOptions().map((option) => (
+                              <SelectItem
+                                key={option.value}
+                                value={option.value.toString()}
+                              >
+                                {option.label}
+                              </SelectItem>
+                            ))}
                           </div>
                         </SelectContent>
                       </Select>
