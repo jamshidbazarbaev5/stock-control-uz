@@ -360,6 +360,7 @@
     "uzs": "сум"
   },
   "navigation": {
+    "shift": "Смена",
     "writeoff": "Списание",
     "writeoffs": "Списание",
     "currencies": "Валюта",
@@ -448,6 +449,7 @@
   },
 
   "forms": {
+    "lender_name": "Имя",
     "loan_details": "Детали займа",
     "store_budgets": "Бюджеты магазина",
     "total_budget": "Общий бюджет",
@@ -695,6 +697,7 @@
     "unpaid": "Не погашен"
   },
   "placeholders": {
+    "enter_lender_name": "Введите имя",
     "search_products": "Поиск товаров",
     "search_currency": "Поиск валюты",
     "enter_short_name": "Введите короткое название",
@@ -821,11 +824,11 @@
     "new_min_price": "Новая мин цена",
     "revenue_details": "Прибыль",
     "sale_info": "Информация о продаже",
-    "quantity_of_parts": "Количество частей",
+    "quantity_of_parts": "Количество част ей",
     "exchange_rate": "Курс обмена",
     "subtotal": "Сумма за единицу",
     "profit": "Прибыль",
-    "total_pure_revenue": "чистый доход",
+    "total_pure_revenue": "Прибль",
     "total_volume": "Общий объём в кубах",
     "sold_date": "Дата продажи",
     "total_kub_volume": "Объём в кубах",

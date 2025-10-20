@@ -577,7 +577,7 @@ export default function StocksPage() {
             </DialogContent>
           </Dialog>
           <Button variant="outline" onClick={() => setWriteOffDialogOpen(true)}>
-            {t("common.create")} {t("navigation.writeoff")}
+           Списать товар
           </Button>
           <Button onClick={() => navigate("/create-stock")}>
             {t("common.create")}{" "}

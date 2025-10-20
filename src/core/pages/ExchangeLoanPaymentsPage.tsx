@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,13 +19,14 @@ export default function ExchangeLoanPaymentsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: loan, isLoading: loanLoading } = useGetExchangeLoanCustom(Number(id));
-  const { data: payments, isLoading: paymentsLoading, refetch } = useGetExchangeLoanPayments(Number(id));
+  const { data: loan, isLoading: loanLoading, refetch: refetchLoan } = useGetExchangeLoanCustom(Number(id));
+  const { data: payments, isLoading: paymentsLoading, refetch: refetchPayments } = useGetExchangeLoanPayments(Number(id));
   const createPayment = useCreateExchangeLoanPayment(Number(id));
 
   const handleCreatePayment = async (e: React.FormEvent) => {
@@ -60,11 +62,20 @@ export default function ExchangeLoanPaymentsPage() {
       };
 
       await createPayment.mutateAsync(paymentData);
+      
+      // Invalidate and refetch all related queries to get fresh data
+      await queryClient.invalidateQueries({ queryKey: ['exchange-loan', Number(id)] });
+      await queryClient.invalidateQueries({ queryKey: ['exchange-loans'] });
+      await queryClient.invalidateQueries({ queryKey: ['exchange-loan-payments', Number(id)] });
+      
+      // Explicitly refetch loan and payment data
+      await refetchLoan();
+      await refetchPayments();
+      
       toast.success(t('messages.success.payment_created'));
       setAmount('');
       setNotes('');
       setIsCreateModalOpen(false);
-      refetch();
     } catch (error) {
       toast.error(t('messages.error.payment_create'));
       console.error('Failed to create payment:', error);

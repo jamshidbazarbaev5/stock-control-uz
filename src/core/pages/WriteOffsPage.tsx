@@ -194,7 +194,7 @@ export default function WriteOffsPage() {
       <div className="mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">{t("navigation.writeoffs")}</h1>
         <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
-          Список всех списаний товаров
+          Список всех списанных товаров
         </p>
       </div>
 

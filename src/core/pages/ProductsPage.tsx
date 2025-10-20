@@ -195,13 +195,12 @@ export default function ProductsPage() {
   const [isRevaluationDialogOpen, setIsRevaluationDialogOpen] = useState(false);
   const [priceEdits, setPriceEdits] = useState<Record<number, PriceEdit>>({});
   const [productTab, setProductTab] = useState<
-    "with_quantity" | "without_quantity"
+    "with_quantity" | "without_quantity" | "imported"
   >("with_quantity");
 
   // Import dialog state
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
-  const [generateBarcode, setGenerateBarcode] = useState(false);
   const [importResult, setImportResult] = useState<
     | null
     | {
@@ -219,7 +218,10 @@ export default function ProductsPage() {
   const { data: productsData, isLoading } = useGetProducts({
     params: {
       page,
-      non_zero: productTab === "with_quantity" ? 1 : 0,
+      ...(productTab === "imported" ? { is_imported: true } : { 
+        non_zero: productTab === "with_quantity" ? 1 : 0,
+        is_imported: false 
+      }),
       ...(searchTerm && { product_name: searchTerm }),
       ...(selectedCategory && { category: selectedCategory }),
       ...(selectedMeasurement && { measurement: selectedMeasurement }),
@@ -470,22 +472,6 @@ export default function ProductsPage() {
               </DialogHeader>
 
               <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium">
-                    {t("forms.generate_barcode", "Генерировать штрихкоды")}
-                  </label>
-                  <div className="flex items-center gap-2 h-9">
-                    <Checkbox
-                      checked={generateBarcode}
-                      onCheckedChange={(v) => setGenerateBarcode(Boolean(v))}
-                      id="gen_barcode"
-                    />
-                    <label htmlFor="gen_barcode" className="text-sm text-muted-foreground">
-                      generate_barcode: {String(generateBarcode)}
-                    </label>
-                  </div>
-                </div>
-
                 <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
                   <div className="flex items-center justify-between gap-4">
                     <div className="space-y-1">
@@ -496,9 +482,6 @@ export default function ProductsPage() {
                       <ul className="text-xs list-disc pl-5">
                         <li>
                           file: файл Excel/CSV
-                        </li>
-                        <li>
-                          generate_barcode: true | false
                         </li>
                       </ul>
                     </div>
@@ -545,7 +528,6 @@ export default function ProductsPage() {
                     try {
                       const form = new FormData();
                       form.append("file", importFile);
-                      form.append("generate_barcode", String(generateBarcode));
                       const { data } = await api.post("items/import-items/", form, {
                         headers: { "Content-Type": "multipart/form-data" },
                       });
@@ -589,15 +571,18 @@ export default function ProductsPage() {
         <Tabs
           value={productTab}
           onValueChange={(value) =>
-            setProductTab(value as "with_quantity" | "without_quantity")
+            setProductTab(value as "with_quantity" | "without_quantity" | "imported")
           }
         >
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="with_quantity">
-              {t("common.with_quantity") || "С количеством"}
+              {t("common.with_quantity") || "В наличии"}
             </TabsTrigger>
             <TabsTrigger value="without_quantity">
-              {t("common.without_quantity") || "Без количества"}
+              {t("common.without_quantity") || "Нет в наличии"}
+            </TabsTrigger>
+            <TabsTrigger value="imported">
+             Импортированные
             </TabsTrigger>
           </TabsList>
         </Tabs>

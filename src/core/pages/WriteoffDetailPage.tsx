@@ -140,9 +140,7 @@ export default function WriteoffDetailPage() {
                         </div>
                       )}
                     </td>
-                    <td className="p-2 sm:p-3 text-xs sm:text-sm">
-                      {item.stock_read.supplier.name}
-                    </td>
+
                     <td className="p-2 sm:p-3 text-right font-semibold text-xs sm:text-sm">
                       {parseFloat(item.quantity).toFixed(2)}
                     </td>

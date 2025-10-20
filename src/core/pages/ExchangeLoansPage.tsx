@@ -291,26 +291,12 @@ export default function ExchangeLoansPage() {
 
       await createPayment.mutateAsync(paymentData);
       
-      // Update local state
-      const newRemainingBalance = remaining - (paymentAmountNum / currencyRate);
-      const isPaid = newRemainingBalance <= 0;
-      
-      // Update local loans to reflect new status
-      const updatedLoans = results.map(loan => {
-        if (loan.id === selectedLoan.id) {
-          return {
-            ...loan,
-            remaining_balance: newRemainingBalance,
-            is_paid: isPaid,
-          };
-        }
-        return loan;
-      });
-      
-      setLocalLoans(updatedLoans as ExchangeLoan[]);
-      
-      // Invalidate query to refetch
+      // Invalidate and refetch queries to get fresh data
       await queryClient.invalidateQueries({ queryKey: ['exchange-loans'] });
+      await queryClient.refetchQueries({ queryKey: ['exchange-loans'] });
+      
+      // Clear local loans cache to force display of fresh data from API
+      setLocalLoans([]);
       
       toast.success(t('common.payment_successful'));
       setPaymentAmount('');

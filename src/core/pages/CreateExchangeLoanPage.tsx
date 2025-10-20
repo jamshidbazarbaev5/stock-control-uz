@@ -10,6 +10,13 @@ import type { Currency } from '../api/currency';
 
 const exchangeLoanFields = (t: any, stores: Store[], currencies: Currency[]) => [
   {
+    name: 'lender_name',
+    label: t('forms.lender_name') || 'Lender Name',
+    type: 'text',
+    placeholder: t('placeholders.enter_lender_name') || 'Enter lender name',
+    required: true,
+  },
+  {
     name: 'store',
     label: t('forms.store'),
     type: 'select',
