@@ -43,6 +43,11 @@ export interface IncrementBalancePayload {
   amount: number;
 }
 
+export interface CashOutPayload {
+  amount: number;
+  payment_method: "Наличные" | "Карта" | "Click" | "Перечисление";
+}
+
 // API endpoints
 const CLIENT_URL = "clients/";
 
@@ -82,7 +87,7 @@ export const useGetClient = (clientId: number) => {
   return useQuery({
     queryKey: ["clients", clientId],
     queryFn: async () => {
-      const response = await api.get<Client>(`${CLIENT_URL}${clientId}/`);
+      const response = await api.get<Client>(`${CLIENT_URL}${clientId}`);
       return response.data;
     },
     enabled: !!clientId,
@@ -112,6 +117,31 @@ export const useIncrementBalance = () => {
       toast.error(
         error?.response?.data?.detail || "Failed to increment balance",
       );
+    },
+  });
+};
+
+// Cash-out mutation hook
+export const useClientCashOut = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, amount, payment_method }: { id: number } & CashOutPayload) => {
+      const response = await api.post<Client>(
+        `${CLIENT_URL}${id}/cash-out/`,
+        { amount, payment_method },
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["clients"] });
+      if (data.id) {
+        queryClient.invalidateQueries({ queryKey: ["clients", data.id] });
+        queryClient.invalidateQueries({ queryKey: ["clientHistory", data.id] });
+      }
+    },
+    onError: (error: any) => {
+      console.error("Error during cash-out:", error);
+      toast.error(error?.response?.data?.detail || "Failed to cash out");
     },
   });
 };

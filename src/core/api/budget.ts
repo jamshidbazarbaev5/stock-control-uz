@@ -20,6 +20,7 @@ export interface Budget {
     id: number;
     name: string;
   };
+  budget_type?:string;
 }
 
 // API endpoints

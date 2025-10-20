@@ -11,6 +11,7 @@ interface AddMoneyFormData {
   amount: number;
   comment?: string;
   cash_inflow_name: number;
+  budget_type: string;
 }
 
 export default function AddMoney() {
@@ -47,6 +48,19 @@ export default function AddMoney() {
         value: name.id,
         label: name.name,
       })),
+    },
+    {
+      name: "budget_type",
+      label: t("forms.budget_type"),
+      type: "select",
+      placeholder: t("placeholders.select_budget_type"),
+      required: true,
+      options: [
+        { value: "Наличные", label: t("forms.cash") },
+        { value: "Карта", label: t("forms.card") },
+        { value: "Click", label: t("forms.click") },
+        { value: "Перечисление", label: t("forms.transfer") },
+      ],
     },
     {
       name: "amount",
@@ -93,6 +107,7 @@ export default function AddMoney() {
             : data.cash_inflow_name,
         amount: data.amount,
         comment: data.comment,
+        budget_type: data.budget_type,
       });
       toast.success(t("messages.success.money_added"));
       navigate("/finance"); // You'll need to create this route

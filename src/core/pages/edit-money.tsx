@@ -84,6 +84,7 @@ export default function EditMoney() {
         cash_inflow_name: typeof data.cash_inflow_name === 'string' ? parseInt(data.cash_inflow_name, 10) : data.cash_inflow_name,
         amount: data.amount,
         comment: data.comment
+
       });
       toast.success(t('messages.success.money_updated'));
       navigate('/finance');

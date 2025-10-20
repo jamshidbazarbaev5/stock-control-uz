@@ -1,4 +1,4 @@
- import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ResourceTable } from "../helpers/ResourseTable";
 import {
@@ -6,6 +6,7 @@ import {
   useGetClients,
   useDeleteClient,
   useIncrementBalance,
+  useClientCashOut,
 } from "../api/client";
 import { toast } from "sonner";
 import {
@@ -116,11 +117,108 @@ function BalanceIncrementDialog({
   );
 }
 
+// Cash-out dialog
+const cashOutSchema = z.object({
+  amount: z.number().min(0.01, "Amount must be greater than 0"),
+  payment_method: z.enum(["Наличные", "Карта", "Click", "Перечисление"]),
+});
+
+type CashOutForm = z.infer<typeof cashOutSchema>;
+
+interface CashOutDialogProps {
+  clientId: number;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+function CashOutDialog({ clientId, isOpen, onClose }: CashOutDialogProps) {
+  const { t } = useTranslation();
+  const cashOut = useClientCashOut();
+  const form = useForm<CashOutForm>({
+    resolver: zodResolver(cashOutSchema),
+    defaultValues: { amount: 0, payment_method: "Наличные" },
+  });
+
+  const onSubmit = async (data: CashOutForm) => {
+    try {
+      await cashOut.mutateAsync({ id: clientId, ...data });
+      toast.success(t("common.payment_successful", "Успешно"));
+      form.reset();
+      onClose();
+    } catch (error) {
+      toast.error(t("common.payment_failed", "Ошибка"));
+      console.error("Failed to cash out:", error);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Обналичичка</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("common.amount")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="payment_method"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("common.payment_method")}</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("placeholders.select_payment_method")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Наличные">{t("payment_types.cash")}</SelectItem>
+                        <SelectItem value="Карта">{t("payment_types.card")}</SelectItem>
+                        <SelectItem value="Click">{t("payment_types.click")}</SelectItem>
+                        <SelectItem value="Перечисление">Перечисление</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                {t("common.cancel")}
+              </Button>
+              <Button type="submit" disabled={cashOut.isPending}>
+                {t("common.save")}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function ClientsPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [cashOutClientId, setCashOutClientId] = useState<number | null>(null);
   const { data: clientsData, isLoading } = useGetClients({
     params: selectedType === "all" ? {} : { type: selectedType },
   });
@@ -171,12 +269,20 @@ export default function ClientsPage() {
               {t("common.history")}
             </Button>
             {currentUser?.is_superuser && (
-              <Button
-                variant="outline"
-                onClick={() => row.id && setSelectedClientId(row.id)}
-              >
-                {t("common.increment_balance")}
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => row.id && setSelectedClientId(row.id)}
+                >
+                  {t("common.increment_balance")}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => row.id && setCashOutClientId(row.id)}
+                >
+                  Обналичичка
+                </Button>
+              </>
             )}
           </div>
         ) : null,
@@ -227,6 +333,13 @@ export default function ClientsPage() {
           clientId={selectedClientId}
           isOpen={!!selectedClientId}
           onClose={() => setSelectedClientId(null)}
+        />
+      )}
+      {cashOutClientId && (
+        <CashOutDialog
+          clientId={cashOutClientId}
+          isOpen={!!cashOutClientId}
+          onClose={() => setCashOutClientId(null)}
         />
       )}
     </div>

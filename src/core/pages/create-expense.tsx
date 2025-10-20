@@ -7,64 +7,77 @@ import type { Expense } from '../api/expense';
 import { useCreateExpense } from '../api/expense';
 import { useGetStores } from '../api/store';
 import { useGetExpenseNames } from '../api/expense-name';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 
-const expenseFields = (t: (key: string) => string, storeBudget: number, onStoreChange: (storeId: number) => void) => [
-  {
-    name: 'store',
-    label: t('forms.store'),
-    type: 'select',
-    placeholder: t('placeholders.select_store'),
-    required: true,
-    options: [], // Will be populated with stores,
-    onChange: (value: string) => onStoreChange(parseInt(value, 10))
-  },
-  {
-    name: 'expense_name',
-    label: t('forms.expense_name'),
-    type: 'select',
-    placeholder: t('placeholders.select_expense_name'),
-    required: true,
-    options: [], // Will be populated with expense names
-  },
-  {
-    name: 'amount',
-    label: `${t('forms.amount3')} (${t('table.budget')}: ${storeBudget.toLocaleString()} UZS)`,
-    type: 'text',
-    placeholder: t('placeholders.enter_amount'),
-    required: true,
-    validation: {
-      max: {
-        value: storeBudget,
-        message: t('validation.amount_exceeds_budget')
+const expenseFields = (t: (key: string) => string, storeBudget: number, onStoreChange: (storeId: number) => void, isSuperuser: boolean) => {
+  const fields = [];
+  
+  // Only show store field if user is superuser
+  if (isSuperuser) {
+    fields.push({
+      name: 'store',
+      label: t('forms.store'),
+      type: 'select',
+      placeholder: t('placeholders.select_store'),
+      required: true,
+      options: [], // Will be populated with stores,
+      onChange: (value: string) => onStoreChange(parseInt(value, 10))
+    });
+  }
+  
+  fields.push(
+    {
+      name: 'expense_name',
+      label: t('forms.expense_name'),
+      type: 'select',
+      placeholder: t('placeholders.select_expense_name'),
+      required: true,
+      options: [], // Will be populated with expense names
+    },
+    {
+      name: 'amount',
+      label: `${t('forms.amount3')} (${t('table.budget')}: ${storeBudget.toLocaleString()} UZS)`,
+      type: 'text',
+      placeholder: t('placeholders.enter_amount'),
+      required: true,
+      validation: {
+        max: {
+          value: storeBudget,
+          message: t('validation.amount_exceeds_budget')
+        }
       }
+    },
+    {
+      name: 'payment_type',
+      label: t('forms.payment_method'),
+      type: 'select',
+      placeholder: t('placeholders.select_payment_method'),
+      required: true,
+      options: [
+        { value: 'Наличные', label: t('forms.cash') },
+        { value: 'Карта', label: t('forms.card') },
+        { value: 'Click', label: t('forms.click') },
+        { value: 'Перечисление', label: t('forms.transfer') },
+      ],
+    },
+    {
+      name: 'comment',
+      label: t('forms.comment'),
+      type: 'text',
+      placeholder: t('placeholders.enter_comment'),
+      required: false,
     }
-  },
-  {
-    name: 'payment_type',
-    label: t('forms.payment_method'),
-    type: 'select',
-    placeholder: t('placeholders.select_payment_method'),
-    required: true,
-    options: [
-      { value: 'Наличные', label: t('forms.cash') },
-      { value: 'Карта', label: t('forms.card') },
-      { value: 'Click', label: t('forms.click') },
-    ],
-  },
-  {
-    name: 'comment',
-    label: t('forms.comment'),
-    type: 'text',
-    placeholder: t('placeholders.enter_comment'),
-    required: false,
-  },
-];
+  );
+  
+  return fields;
+};
 
 export default function CreateExpense() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const createExpense = useCreateExpense();
   const [storeBudget, setStoreBudget] = useState(0);
+  const { data: currentUser } = useCurrentUser();
 
   // Fetch stores and expense names for select inputs
   const { data: storesData } = useGetStores({});
@@ -80,7 +93,8 @@ export default function CreateExpense() {
   };
 
   // Update fields with dynamic data
-  const fields = expenseFields(t, storeBudget, handleStoreChange).map(field => {
+  const isSuperuser = currentUser?.is_superuser || false;
+  const fields = expenseFields(t, storeBudget, handleStoreChange, isSuperuser).map(field => {
     if (field.name === 'store') {
       return {
         ...field,
@@ -112,10 +126,17 @@ export default function CreateExpense() {
         return;
       }
 
-      await createExpense.mutateAsync({
+      // If user is not superuser, use their store_read.id
+      const submissionData = {
         ...data,
         amount: data.amount.toString()
-      });
+      };
+      
+      if (!isSuperuser && currentUser?.store_read?.id) {
+        submissionData.store = currentUser.store_read.id;
+      }
+
+      await createExpense.mutateAsync(submissionData);
       toast.success(t('messages.success.expense_created'));
       navigate('/expense'); // navigate to expenses list page
     } catch (error) {

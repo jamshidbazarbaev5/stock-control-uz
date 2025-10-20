@@ -452,6 +452,8 @@
   },
 
   "forms": {
+    "budget_type": "Тип оплаты",
+    "transfer": "Перечисление",
     "lender_name": "Имя",
     "loan_details": "Детали займа",
     "store_budgets": "Бюджеты магазина",
@@ -700,6 +702,7 @@
     "unpaid": "Не погашен"
   },
   "placeholders": {
+    "select_budget_type": "Тип",
     "enter_lender_name": "Введите имя",
     "search_products": "Поиск товаров",
     "search_currency": "Поиск валюты",
