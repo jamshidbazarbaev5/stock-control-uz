@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGetStockEntries, useGetStocks, usePayStockDebt } from '../api/stock';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, DollarSign } from 'lucide-react';
+import { ChevronDown, ChevronUp, DollarSign, History } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
@@ -205,19 +205,34 @@ export default function SupplierDetailPage() {
                     )}
                   </div>
                   <div className="flex gap-2">
-                    {entry.is_debt && Number(entry.remaining_debt) > 0 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePaymentClick(entry);
-                        }}
-                        className="flex items-center gap-2"
-                      >
-                        <DollarSign className="h-4 w-4" />
-                        {t('common.pay_debt')}
-                      </Button>
+                    {entry.is_debt && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Link to={`/suppliers/${id}/stock-entries/${entry.id}/payments`}>
+                            <History className="h-4 w-4 mr-2" />
+                            {t('common.payment_history')}
+                          </Link>
+                        </Button>
+                        {Number(entry.remaining_debt) > 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePaymentClick(entry);
+                            }}
+                            className="flex items-center gap-2"
+                          >
+                            <DollarSign className="h-4 w-4" />
+                            {t('common.pay_debt')}
+                          </Button>
+                        )}
+                      </>
                     )}
                     <Button variant="ghost" size="icon">
                       {expandedEntry === entry.id ? <ChevronUp /> : <ChevronDown />}

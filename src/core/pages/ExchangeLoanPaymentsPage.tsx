@@ -31,30 +31,23 @@ export default function ExchangeLoanPaymentsPage() {
     e.preventDefault();
     
     if (!amount || parseFloat(amount) <= 0) {
-      toast.error(t('messages.error.amount_required'));
+      toast.error(t('validation.fill_all_required_fields'));
       return;
     }
 
-    const paymentAmount = parseFloat(amount);
+    const paymentAmountNum = parseFloat(amount);
     const remaining = typeof loan?.remaining_balance === 'string' 
       ? parseFloat(loan.remaining_balance) 
       : loan?.remaining_balance || 0;
-    
-    if (paymentAmount > remaining) {
-      toast.error(t('messages.error.payment_exceeds_remaining'));
-      return;
-    }
 
-    // Check if payment exceeds store budget
-    const storeBudget = typeof loan?.store?.budget === 'string' 
-      ? parseFloat(loan.store.budget) 
-      : loan?.store?.budget || 0;
+    const currencyRate = typeof loan?.currency_rate === 'string'
+      ? parseFloat(loan.currency_rate)
+      : loan?.currency_rate || 1;
+
+    const maxPayableAmount = remaining * currencyRate;
     
-    if (paymentAmount > storeBudget) {
-      toast.error(t('messages.error.payment_exceeds_budget', { 
-        budget: storeBudget.toLocaleString(),
-        store: loan?.store?.name || 'Unknown Store'
-      }));
+    if (paymentAmountNum > maxPayableAmount) {
+      toast.error(t('validation.amount_exceeds_remainder'));
       return;
     }
 
@@ -62,7 +55,7 @@ export default function ExchangeLoanPaymentsPage() {
     
     try {
       const paymentData: CreateExchangeLoanPaymentDTO = {
-        amount: paymentAmount,
+        amount: paymentAmountNum,
         notes: notes || undefined,
       };
 
@@ -335,24 +328,81 @@ export default function ExchangeLoanPaymentsPage() {
           </CardContent>
         </Card>
 
-        {/* Create Payment Modal - Enhanced */}
+        {/* Create Payment Modal */}
         <Dialog open={isCreateModalOpen} onOpenChange={handleCloseModal}>
-        <DialogContent className="max-w-md border-none shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl flex items-center gap-2">
-              <Plus className="h-6 w-6 text-blue-600" />
-              {t('common.create_payment')}
-            </DialogTitle>
-          </DialogHeader>
-          
-          <form onSubmit={handleCreatePayment} className="space-y-5">
-            {/* Amount Input */}
-            <div className="space-y-2">
-              <Label htmlFor="amount" className="text-base font-semibold">
-                {t('forms.amount')} *
-              </Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>{t('common.create_payment')}</DialogTitle>
+            </DialogHeader>
+
+            {/* Loan Summary */}
+            <div className="space-y-4">
+              <Card className="p-4 bg-gray-50">
+                <div className="text-sm font-semibold text-gray-700 mb-3">{t('pages.exchange_loans.payment_dialog.loan_summary')}</div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">{t('forms.store')}:</span>
+                    <span className="font-medium">{loan.store?.name || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">{t('forms.total_amount')}:</span>
+                    <span className="font-medium">
+                      {typeof total === 'number' ? total.toLocaleString() : total} {loan.currency?.short_name}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">{t('forms.remaining_balance')}:</span>
+                    <span className="font-medium text-red-600">
+                      {typeof remaining === 'number' ? remaining.toLocaleString() : remaining} {loan.currency?.short_name}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">{t('forms.currency_rate')}:</span>
+                    <span className="font-medium">
+                      {(() => {
+                        const rate = typeof loan.currency_rate === 'number' ? loan.currency_rate : parseFloat(String(loan.currency_rate || '1'));
+                        return rate.toLocaleString();
+                      })()} UZS
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2">
+                    <span className="text-gray-600 font-semibold">{t('forms.payable_amount')}:</span>
+                    <span className="font-bold text-blue-600">
+                      {(() => {
+                        const remainingVal = typeof loan.remaining_balance === 'number' ? loan.remaining_balance : parseFloat(String(loan.remaining_balance || '0'));
+                        const rate = typeof loan.currency_rate === 'number' ? loan.currency_rate : parseFloat(String(loan.currency_rate || '1'));
+                        return (remainingVal * rate).toLocaleString();
+                      })()} UZS
+                    </span>
+                  </div>
+                </div>
+              </Card>
+
+              {loan.store?.budgets && (
+                <Card className="p-4">
+                  <div className="text-sm font-semibold text-gray-700 mb-3">{t('forms.store_budgets')}</div>
+                  <div className="space-y-2 text-sm">
+                    {loan.store.budgets.map((budget: any) => (
+                      <div key={budget.id} className="flex justify-between">
+                        <span className="text-gray-600">{budget.budget_type}:</span>
+                        <span className="font-medium">{parseFloat(String(budget.amount)).toLocaleString()} UZS</span>
+                      </div>
+                    ))}
+                    <div className="flex justify-between border-t pt-2">
+                      <span className="text-gray-600 font-semibold">{t('forms.total_budget')}:</span>
+                      <span className="font-bold text-green-600">
+                        {loan.store.budget ? parseFloat(String(loan.store.budget)).toLocaleString() : '0'} UZS
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              )}
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleCreatePayment} className="space-y-4 mt-4">
+              <div>
+                <Label htmlFor="amount">{t('forms.amount')} (UZS) *</Label>
                 <Input
                   id="amount"
                   type="number"
@@ -360,68 +410,45 @@ export default function ExchangeLoanPaymentsPage() {
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder={t('placeholders.enter_amount')}
                   min="0"
-                  max={remaining}
+                  max={(() => {
+                    const remainingVal = typeof loan.remaining_balance === 'number' ? loan.remaining_balance : parseFloat(String(loan.remaining_balance || '0'));
+                    const rate = typeof loan.currency_rate === 'number' ? loan.currency_rate : parseFloat(String(loan.currency_rate || '1'));
+                    return remainingVal * rate;
+                  })()}
                   step="0.01"
                   required
-                  className="pl-10 h-12 text-lg"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  {t('common.max_amount')}: {(() => {
+                    const remainingVal = typeof loan.remaining_balance === 'number' ? loan.remaining_balance : parseFloat(String(loan.remaining_balance || '0'));
+                    const rate = typeof loan.currency_rate === 'number' ? loan.currency_rate : parseFloat(String(loan.currency_rate || '1'));
+                    return (remainingVal * rate).toLocaleString();
+                  })()} UZS
+                </p>
+              </div>
+
+              <div>
+                <Label htmlFor="notes">{t('forms.notes')}</Label>
+                <Textarea
+                  id="notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder={t('placeholders.enter_notes')}
+                  rows={3}
                 />
               </div>
-              <div className="flex items-center justify-between bg-blue-50 p-3 rounded-lg">
-                <span className="text-sm text-blue-900 font-medium">
-                  {t('pages.exchange_loans.payment_dialog.max_amount')}:
-                </span>
-                <span className="text-sm font-bold text-blue-700">
-                  {remaining.toLocaleString()} {loan.currency?.short_name}
-                </span>
+
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={handleCloseModal}>
+                  {t('common.cancel')}
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? t('common.submitting') : t('common.create_payment')}
+                </Button>
               </div>
-            </div>
-
-            {/* Notes Input */}
-            <div className="space-y-2">
-              <Label htmlFor="notes" className="text-base font-semibold">
-                {t('forms.notes')}
-              </Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder={t('placeholders.enter_notes')}
-                rows={4}
-                className="resize-none"
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handleCloseModal}
-                className="flex-1 h-11"
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isSubmitting}
-                className="flex-1 h-11 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg shadow-blue-500/30"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    {t('common.submitting')}
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    {t('common.create_payment')}
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

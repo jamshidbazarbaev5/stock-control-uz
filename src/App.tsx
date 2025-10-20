@@ -88,6 +88,7 @@ import EditExchangeLoanPage from "./core/pages/EditExchangeLoanPage";
 import ExchangeLoanPaymentsPage from "./core/pages/ExchangeLoanPaymentsPage";
 import WriteOffsPage from "@/core/pages/WriteOffsPage.tsx";
 import WriteoffDetailPage from "@/core/pages/WriteoffDetailPage.tsx";
+import StockDebtPaymentHistoryPage from "@/core/pages/StockDebtPaymentHistoryPage.tsx";
 // import CreateSalePos from "./core/pages/create-sale-2";
 
 const queryClient = new QueryClient();
@@ -277,6 +278,14 @@ function App() {
                 element={
                   <PrivateRoute allowedRoles={["Администратор"]}>
                     <SupplierDetailPage />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/suppliers/:supplierId/stock-entries/:stockEntryId/payments"
+                element={
+                  <PrivateRoute allowedRoles={["Администратор"]}>
+                    <StockDebtPaymentHistoryPage />
                   </PrivateRoute>
                 }
               />

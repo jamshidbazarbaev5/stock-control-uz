@@ -93,8 +93,7 @@ const formatNumberDisplay = (value: any): string => {
   if (isNaN(num)) {
     return "";
   }
-  const rounded = Math.round(num * 100) / 100;
-  return String(rounded);
+  return num.toFixed(2);
 };
 
 const formatNumberForAPI = (value: any): number | undefined => {
@@ -393,14 +392,17 @@ export default function CreateStock() {
     setStockTabs((tabs) =>
       tabs.map((tab) => {
         if (tab.id === tabId) {
+          const updatedForm = {
+            ...tab.form,
+            product: productId,
+            purchase_unit: "", // Reset purchase unit
+          };
+          
           return {
             ...tab,
             selectedProduct: product,
-            form: {
-              ...tab.form,
-              product: productId,
-              purchase_unit: "", // Reset purchase unit
-            },
+            form: updatedForm,
+            isCalculated: false, // Reset calculation status
           };
         }
         return tab;
@@ -427,13 +429,15 @@ export default function CreateStock() {
         qty &&
         !tab.dynamicFields.quantity?.editable
       ) {
-        currentForm.quantity = String(qty * conversion_factor);
+        currentForm.quantity = formatNumberDisplay(qty * conversion_factor);
       } else if (
         changedField === "quantity" &&
         quantity &&
         !tab.dynamicFields.purchase_unit_quantity?.editable
       ) {
-        currentForm.purchase_unit_quantity = String(quantity * conversion_factor);
+        currentForm.purchase_unit_quantity = formatNumberDisplay(
+          quantity * conversion_factor,
+        );
       }
 
       const currentQty =
@@ -444,30 +448,30 @@ export default function CreateStock() {
       // Price calculations
       if (!is_base_currency && currentQty) {
         if (changedField === "price_per_unit_currency") {
-          currentForm.total_price_in_currency = String(
-            Number(currentForm.price_per_unit_currency) * currentQty,
+          currentForm.total_price_in_currency = formatNumberDisplay(
+            (Number(currentForm.price_per_unit_currency) || 0) * currentQty,
           );
         }
         if (changedField === "total_price_in_currency") {
-          currentForm.price_per_unit_currency = String(
-            Number(currentForm.total_price_in_currency) / currentQty,
+          currentForm.price_per_unit_currency = formatNumberDisplay(
+            (Number(currentForm.total_price_in_currency) || 0) / currentQty,
           );
         }
-        currentForm.price_per_unit_uz = String(
+        currentForm.price_per_unit_uz = formatNumberDisplay(
           (Number(currentForm.price_per_unit_currency) || 0) * exchange_rate,
         );
-        currentForm.total_price_in_uz = String(
+        currentForm.total_price_in_uz = formatNumberDisplay(
           (Number(currentForm.total_price_in_currency) || 0) * exchange_rate,
         );
       } else if (is_base_currency && currentQty) {
         if (changedField === "price_per_unit_uz") {
-          currentForm.total_price_in_uz = String(
-            Number(currentForm.price_per_unit_uz) * currentQty,
+          currentForm.total_price_in_uz = formatNumberDisplay(
+            (Number(currentForm.price_per_unit_uz) || 0) * currentQty,
           );
         }
         if (changedField === "total_price_in_uz") {
-          currentForm.price_per_unit_uz = String(
-            Number(currentForm.total_price_in_uz) / currentQty,
+          currentForm.price_per_unit_uz = formatNumberDisplay(
+            (Number(currentForm.total_price_in_uz) || 0) / currentQty,
           );
         }
       }
@@ -475,10 +479,10 @@ export default function CreateStock() {
       // Base unit cost
       const finalQuantity = Number(currentForm.quantity) || 0;
       if (finalQuantity) {
-        currentForm.base_unit_in_currency = String(
+        currentForm.base_unit_in_currency = formatNumberDisplay(
           (Number(currentForm.total_price_in_currency) || 0) / finalQuantity,
         );
-        currentForm.base_unit_in_uzs = String(
+        currentForm.base_unit_in_uzs = formatNumberDisplay(
           (Number(currentForm.total_price_in_uz) || 0) / finalQuantity,
         );
       }
@@ -647,6 +651,51 @@ export default function CreateStock() {
       setIsSubmitting(false);
     }
   };
+
+  // Auto-set debt amount to sum of total UZS if is_debt is true
+  const isDebt = commonForm.watch("is_debt");
+  useEffect(() => {
+    if (!isDebt) return;
+    
+    // Sum all calculated tabs' total_price_in_uz
+    const totalUZS = stockTabs.reduce((sum, tab) => {
+      if (tab.isCalculated && tab.form.total_price_in_uz) {
+        const v = Number(tab.form.total_price_in_uz) || 0;
+        return sum + v;
+      }
+      return sum;
+    }, 0);
+    
+    if (totalUZS > 0) {
+      const currentDebt = commonForm.getValues("amount_of_debt");
+      // Only auto-set if user hasn't manually entered a value
+      if (!currentDebt || Number(currentDebt) === 0 || Number(currentDebt) < totalUZS) {
+        commonForm.setValue(
+          "amount_of_debt",
+          totalUZS.toFixed(2),
+        );
+      }
+    }
+  }, [isDebt, stockTabs]);
+
+  // Auto-trigger calculation when all required fields are filled
+  useEffect(() => {
+    const commonValues = commonForm.getValues();
+    
+    stockTabs.forEach((tab) => {
+      if (
+        commonValues.store &&
+        commonValues.supplier &&
+        commonValues.date_of_arrived &&
+        tab.form.product &&
+        tab.form.currency &&
+        tab.form.purchase_unit &&
+        !tab.isCalculated
+      ) {
+        getFieldConfiguration(tab.id);
+      }
+    });
+  }, [stockTabs, commonForm.watch("store"), commonForm.watch("supplier"), commonForm.watch("date_of_arrived")]);
 
   const handleCreateProductSubmit = async (data: CreateProductForm) => {
     try {
@@ -900,9 +949,9 @@ export default function CreateStock() {
                     </Label>
                     <Select
                       value={tab.form.purchase_unit?.toString()}
-                      onValueChange={(value) =>
-                        updateStockTabField(tab.id, "purchase_unit", value)
-                      }
+                      onValueChange={(value) => {
+                        updateStockTabField(tab.id, "purchase_unit", value);
+                      }}
                       disabled={measurementsLoading || !tab.selectedProduct}
                     >
                       <SelectTrigger>
@@ -924,20 +973,6 @@ export default function CreateStock() {
                   </div>
                 </div>
 
-                {/* Calculate Button */}
-                <Button
-                  type="button"
-                  onClick={() => getFieldConfiguration(tab.id)}
-                  disabled={
-                    !commonForm.watch("store") ||
-                    !commonForm.watch("supplier") ||
-                    !tab.form.product ||
-                    !tab.form.currency ||
-                    !tab.form.purchase_unit
-                  }
-                >
-                  {t("common.calculate")}
-                </Button>
 
                 {/* Dynamic Fields */}
                 {tab.isCalculated && (

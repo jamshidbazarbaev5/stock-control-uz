@@ -14,6 +14,30 @@ export interface StockDebtPayment {
   };
 }
 
+export interface StockEntryPayment {
+  id: number;
+  stock_entry: number;
+  amount: string;
+  comment: string;
+  payment_type: string;
+  payment_date: string;
+}
+
+export interface StockEntryPaymentResponse {
+  links: {
+    first: string | null;
+    last: string | null;
+    next: string | null;
+    previous: string | null;
+  };
+  total_pages: number;
+  current_page: number;
+  page_range: number[];
+  page_size: number;
+  results: StockEntryPayment[];
+  count: number;
+}
+
 export interface StockDebtPaymentRequest {
   stock: number;
   amount: number;
@@ -78,6 +102,20 @@ export const useGetStockDebtPayments = (stockId: number) => {
       return Array.isArray(data) ? data : data.results || [];
     },
     enabled: !!stockId,
+  });
+};
+
+// Get stock entry payments (for payment history page)
+export const useGetStockEntryPayments = (stockEntryId: number | string) => {
+  return useQuery({
+    queryKey: ["stockEntryPayments", stockEntryId],
+    queryFn: async () => {
+      const { data } = await api.get<StockEntryPaymentResponse>(
+        `${STOCK_DEBT_PAYMENT_URL}pay/?stock_entry=${stockEntryId}`,
+      );
+      return data;
+    },
+    enabled: !!stockEntryId,
   });
 };
 
