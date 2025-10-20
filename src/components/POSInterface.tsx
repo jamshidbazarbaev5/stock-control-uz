@@ -234,6 +234,8 @@ const POSInterfaceCore = () => {
   const [isQuantityModalOpen, setIsQuantityModalOpen] = useState(false);
   const [selectedProductForQuantity, setSelectedProductForQuantity] =
     useState<ProductInCart | null>(null);
+  const [selectedProductIndexForQuantity, setSelectedProductIndexForQuantity] =
+    useState<number | null>(null);
   const [isManualQuantityMode, setIsManualQuantityMode] = useState(false);
   const [manualQuantityInput, setManualQuantityInput] = useState("");
 
@@ -247,6 +249,13 @@ const POSInterfaceCore = () => {
   const createSaleMutation = useCreateSale();
   const [isProcessingSale, setIsProcessingSale] = useState(false);
   const createClientMutation = useCreateClient();
+
+  // Unique cart item id generator to avoid collisions when adding multiple items at once
+  const cartItemIdRef = useRef<number>(Date.now());
+  const generateCartItemId = () => {
+    cartItemIdRef.current += 1;
+    return cartItemIdRef.current;
+  };
 
   // Product selection state
   const [selectedProducts, setSelectedProducts] = useState<Set<number>>(
@@ -276,6 +285,8 @@ const POSInterfaceCore = () => {
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
   const [selectedProductForPrice, setSelectedProductForPrice] =
     useState<ProductInCart | null>(null);
+  const [selectedProductIndexForPrice, setSelectedProductIndexForPrice] =
+    useState<number | null>(null);
   const [priceInput, setPriceInput] = useState("");
 
   // Calculator visibility state
@@ -466,7 +477,7 @@ const POSInterfaceCore = () => {
         } else {
           // Add new product to cart with quantity 1
           const newProduct: ProductInCart = {
-            id: Date.now(), // Unique ID for the cart item
+            id: generateCartItemId(),
             productId: product.id,
             name: product.product_name,
             price: price,
@@ -985,15 +996,15 @@ const POSInterfaceCore = () => {
   };
 
   const updateProductQuantity = useCallback(
-    (productId: number, newQuantity: number) => {
+    (productId: number, newQuantity: number, atIndex?: number | null) => {
       // Prevent negative or zero quantities
       if (newQuantity <= 0) {
         return;
       }
 
       setCartProducts((prev) =>
-        prev.map((p) => {
-          if (p.id === productId) {
+        prev.map((p, idx) => {
+          if ((atIndex ?? -1) === idx || p.id === productId) {
             // Check available quantity
             const availableQuantity = p.product.quantity
               ? parseFloat(String(p.product.quantity))
@@ -1022,8 +1033,9 @@ const POSInterfaceCore = () => {
   }, []);
 
   // Handle quantity modal
-  const handleQuantityClick = (product: ProductInCart) => {
+  const handleQuantityClick = (product: ProductInCart, index?: number) => {
     setSelectedProductForQuantity(product);
+    setSelectedProductIndexForQuantity(index ?? null);
     setIsQuantityModalOpen(true);
     setIsManualQuantityMode(false);
     setManualQuantityInput("");
@@ -1046,8 +1058,8 @@ const POSInterfaceCore = () => {
   const handlePriceSubmit = () => {
     if (selectedProductForPrice && priceInput) {
       const newPrice = parseFloat(priceInput) || 0;
-      const updatedProducts = cartProducts.map((p) =>
-        p.id === selectedProductForPrice.id
+      const updatedProducts = cartProducts.map((p, idx) =>
+        (selectedProductIndexForPrice ?? -1) === idx || p.id === selectedProductForPrice.id
           ? {
               ...p,
               price: newPrice,
@@ -1058,16 +1070,22 @@ const POSInterfaceCore = () => {
       setCartProducts(updatedProducts);
       setIsPriceModalOpen(false);
       setSelectedProductForPrice(null);
+      setSelectedProductIndexForPrice(null);
       setPriceInput("");
     }
   };
 
   const handleQuantitySelect = (quantity: number) => {
     if (selectedProductForQuantity) {
-      updateProductQuantity(selectedProductForQuantity.id, quantity);
+      updateProductQuantity(
+        selectedProductForQuantity.id,
+        quantity,
+        selectedProductIndexForQuantity,
+      );
     }
     setIsQuantityModalOpen(false);
     setSelectedProductForQuantity(null);
+    setSelectedProductIndexForQuantity(null);
     setIsManualQuantityMode(false);
     setManualQuantityInput("");
   };
@@ -1082,9 +1100,14 @@ const POSInterfaceCore = () => {
   const handleManualQuantitySubmit = () => {
     const quantity = parseFloat(manualQuantityInput);
     if (quantity > 0 && selectedProductForQuantity) {
-      updateProductQuantity(selectedProductForQuantity.id, quantity);
+      updateProductQuantity(
+        selectedProductForQuantity.id,
+        quantity,
+        selectedProductIndexForQuantity,
+      );
       setIsQuantityModalOpen(false);
       setSelectedProductForQuantity(null);
+      setSelectedProductIndexForQuantity(null);
       setIsManualQuantityMode(false);
       setManualQuantityInput("");
     }
@@ -1233,7 +1256,7 @@ const POSInterfaceCore = () => {
           e.preventDefault();
           if (focusedProductIndex >= 0) {
             const product = cartProducts[focusedProductIndex];
-            updateProductQuantity(product.id, product.quantity + 1);
+            updateProductQuantity(product.id, product.quantity + 1, focusedProductIndex);
           }
           break;
         case "-":
@@ -1242,7 +1265,7 @@ const POSInterfaceCore = () => {
             const product = cartProducts[focusedProductIndex];
             const newQuantity = product.quantity - 1;
             if (newQuantity > 0) {
-              updateProductQuantity(product.id, newQuantity);
+              updateProductQuantity(product.id, newQuantity, focusedProductIndex);
             }
           }
           break;
@@ -1690,6 +1713,7 @@ const POSInterfaceCore = () => {
                               <button
                                 onClick={() => {
                                   setSelectedProductForPrice(product);
+                                  setSelectedProductIndexForPrice(index);
                                   setPriceInput(product.price.toString());
                                   setIsPriceModalOpen(true);
                                 }}
@@ -1754,6 +1778,7 @@ const POSInterfaceCore = () => {
                                       updateProductQuantity(
                                         product.id,
                                         newQuantity,
+                                        index,
                                       );
                                     }
                                   }}
@@ -1767,7 +1792,7 @@ const POSInterfaceCore = () => {
                                   −
                                 </button>
                                 <button
-                                  onClick={() => handleQuantityClick(product)}
+                                  onClick={() => handleQuantityClick(product, index)}
                                   className={`min-w-[80px] min-h-[50px] text-center border rounded-lg px-3 py-2 text-lg font-semibold transition-all ${
                                     index === focusedProductIndex
                                       ? "border-blue-500 bg-blue-50 text-blue-700 hover:bg-blue-100"
@@ -1781,6 +1806,7 @@ const POSInterfaceCore = () => {
                                     updateProductQuantity(
                                       product.id,
                                       product.quantity + 1,
+                                      index,
                                     )
                                   }
                                   disabled={

@@ -189,7 +189,7 @@ export default function ProductStockBalancePage() {
               </SelectItem>
             </SelectContent>
           </Select>
-          <div className="w-full sm:w-64">
+          <div className="w-full sm:w-96 md:w-[28rem] lg:w-[36rem] flex-1">
             <Input
               value={productName}
               onChange={(e) => setProductName(e.target.value)}

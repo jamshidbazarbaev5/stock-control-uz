@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { useGetMeasurements } from "../api/measurement";
 
 interface FormValues extends Partial<Recycling> {
   outputs?: Array<{
@@ -194,6 +195,12 @@ export default function CreateRecycling() {
     ? productsData
     : productsData?.results || [];
 
+  // Measurements for unit placeholders
+  const { data: measurementsData } = useGetMeasurements({});
+  const measurements = Array.isArray(measurementsData)
+    ? measurementsData
+    : measurementsData?.results || [];
+
   // Effect to ensure store is set and locked for admin or if storeIdFromUrl is present
   useEffect(() => {
     if (storeIdFromUrl) {
@@ -288,6 +295,18 @@ export default function CreateRecycling() {
 
   const selectedStore = form.watch("store");
 
+  // Determine base unit placeholder for spent_amount
+  const selectedFromTo = form.watch("from_to");
+  const selectedStock = stocks.find((s) => s.id === Number(selectedFromTo));
+  const selectedProduct = selectedStock?.product || selectedStock?.product_read;
+  const baseUnitId: number | undefined = selectedProduct?.base_unit;
+  const baseMeasurement = baseUnitId
+    ? measurements.find((m: any) => m.id === baseUnitId)
+    : undefined;
+  const unitPlaceholder = baseMeasurement?.measurement_name
+    ? `${t("placeholders.enter_quantity")}: ${baseMeasurement.measurement_name.toLowerCase()}`
+    : t("placeholders.enter_quantity");
+
   // Update fields with dynamic options
   const fields = recyclingFields(t)
     .map((field) => {
@@ -340,6 +359,14 @@ export default function CreateRecycling() {
                   : opt.value,
             ),
           disabled: isAdmin || isStoreIdLocked,
+        };
+      }
+
+      // Inject dynamic placeholder for spent_amount based on product base unit
+      if (field.name === "spent_amount") {
+        return {
+          ...field,
+          placeholder: unitPlaceholder as any,
         };
       }
 

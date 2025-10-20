@@ -906,13 +906,23 @@ export default function CreateStock() {
                             value={productSearchTerm}
                             onChange={(e) => setProductSearchTerm(e.target.value)}
                             onKeyDown={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
+                            autoFocus
                           />
                         </div>
-                        {allProducts.map((product) => (
-                          <SelectItem key={product.id} value={String(product.id)}>
-                            {product.product_name}
-                          </SelectItem>
-                        ))}
+                        {(() => {
+                          const options = [...allProducts];
+                          const sel = tab.selectedProduct as any;
+                          if (sel && !options.some((p: any) => p.id === sel.id)) {
+                            options.unshift(sel);
+                          }
+                          return options.map((product: any) => (
+                            <SelectItem key={product.id} value={String(product.id)}>
+                              {product.product_name}
+                            </SelectItem>
+                          ));
+                        })()}
                       </SelectContent>
                     </Select>
                   </div>
