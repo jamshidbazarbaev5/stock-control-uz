@@ -10,13 +10,15 @@ i18n
   .init({
     fallbackLng: 'ru',
     supportedLngs: ['ru', 'kaa'],
-    debug: process.env.NODE_ENV === 'development',
+    debug: false, // Set to false to hide missing translation warnings
     interpolation: {
       escapeValue: false,
     },
     backend: {
       loadPath: '/locales/{{lng}}/translation.json',
     },
+    saveMissing: false,
+    missingKeyHandler: false,
   });
 
 export default i18n;

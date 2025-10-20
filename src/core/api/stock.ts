@@ -253,6 +253,7 @@ export interface StockCalculationResponse {
 
 // Bulk stock entry types
 export interface StockItemEntry {
+  id?: number; // Optional for new items, required for editing existing ones
   product: number;
   purchase_unit: number;
   currency: number;
@@ -275,6 +276,10 @@ export interface BulkStockEntryRequest {
   amount_of_debt?: number;
   advance_of_debt?: number;
   stocks: StockItemEntry[];
+}
+
+export interface UpdateStockEntryRequest extends BulkStockEntryRequest {
+  deleted_stocks?: number[]; // Array of stock IDs to delete
 }
 
 // Stock Entry types
@@ -344,6 +349,15 @@ export const createBulkStockEntry = async (
   return response.data;
 };
 
+// Update stock entry API function
+export const updateStockEntry = async (
+  id: number,
+  data: UpdateStockEntryRequest,
+): Promise<any> => {
+  const response = await api.put(`${STOCK_ENTRIES_URL}${id}/`, data);
+  return response.data;
+};
+
 // Create stock API hooks using the factory function
 export const {
   useGetResources: useGetStocks,
@@ -374,6 +388,21 @@ export const {
   useGetResources: useGetStockEntries,
   useGetResource: useGetStockEntry,
 } = createResourceApiHooks<StockEntry, StockEntryResponse>(STOCK_ENTRIES_URL, "stock-entries");
+
+// Update stock entry mutation hook
+export const useUpdateStockEntry = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: UpdateStockEntryRequest }) => {
+      return updateStockEntry(id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stock-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['stocks'] });
+    },
+  });
+};
 
 // Stock debt payment mutation
 import { useMutation, useQueryClient } from '@tanstack/react-query';

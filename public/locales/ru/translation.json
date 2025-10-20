@@ -163,6 +163,7 @@
     }
   },
   "common": {
+    "edit_stock_entry": "Изменить приход",
     "payment_date": "Дата",
         "status": "Статус",
     "payment_details": "Детали",
