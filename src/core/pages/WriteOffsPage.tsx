@@ -1,11 +1,20 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useGetWriteoffs } from "../api/writeoff";
+import { useGetWriteoffs, WRITEOFF_REASONS } from "../api/writeoff";
 import { ResourceTable } from "../helpers/ResourseTable";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Eye } from "lucide-react";
+import { useGetStores } from "../api/store";
 
 interface WriteOffItem {
   id: number;
@@ -59,10 +68,25 @@ interface WriteOff {
 export default function WriteOffsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data: writeoffsData, isLoading } = useGetWriteoffs();
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null);
+  
+  // Filter states
+  const [selectedStore, setSelectedStore] = useState<string>("");
+  const [selectedReason, setSelectedReason] = useState<string>("");
+  const [createdAtAfter, setCreatedAtAfter] = useState<string>("");
+  const [createdAtBefore, setCreatedAtBefore] = useState<string>("");
+  
+  const { data: writeoffsData, isLoading } = useGetWriteoffs({
+    ...(selectedStore && selectedStore !== "all" && { store: selectedStore }),
+    ...(selectedReason && selectedReason !== "all" && { reason: selectedReason }),
+    ...(createdAtAfter && { created_at_after: createdAtAfter }),
+    ...(createdAtBefore && { created_at_before: createdAtBefore }),
+  });
+  
+  const { data: storesData } = useGetStores({});
 
   const writeoffs = Array.isArray(writeoffsData) ? writeoffsData : writeoffsData?.results || [];
+  const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
 
   const columns: Array<{ header: string; accessorKey: string; cell: (row: WriteOff) => React.ReactNode }> = [
     {
@@ -196,6 +220,51 @@ export default function WriteOffsPage() {
         <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
           Список всех списанных товаров
         </p>
+      </div>
+
+      {/* Filters */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+        <Select value={selectedStore} onValueChange={setSelectedStore}>
+          <SelectTrigger>
+            <SelectValue placeholder={t("placeholders.select_store") || "Выберите склад"} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Все склады</SelectItem>
+            {stores.map((store) => (
+              <SelectItem key={store.id} value={String(store.id)}>
+                {store.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={selectedReason} onValueChange={setSelectedReason}>
+          <SelectTrigger>
+            <SelectValue placeholder="Причина списания" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Все причины</SelectItem>
+            {Object.entries(WRITEOFF_REASONS).map(([key, value]) => (
+              <SelectItem key={key} value={key}>
+                {value}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Input
+          type="date"
+          value={createdAtAfter}
+          onChange={(e) => setCreatedAtAfter(e.target.value)}
+          placeholder="Дата от"
+        />
+
+        <Input
+          type="date"
+          value={createdAtBefore}
+          onChange={(e) => setCreatedAtBefore(e.target.value)}
+          placeholder="Дата до"
+        />
       </div>
 
       <Card className="p-3 sm:p-4 md:p-6">

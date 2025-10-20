@@ -20,11 +20,16 @@ export const WRITEOFF_REASONS = {
   'Другое': 'Другое',
 } as const;
 
-export const useGetWriteoffs = () => {
+export const useGetWriteoffs = (params?: {
+  store?: string;
+  reason?: string;
+  created_at_after?: string;
+  created_at_before?: string;
+}) => {
   return useQuery({
-    queryKey: ['writeoffs'],
+    queryKey: ['writeoffs', params],
     queryFn: async () => {
-      const response = await api.get('/writeoffs/');
+      const response = await api.get('/writeoffs/', { params });
       return response.data;
     },
   });

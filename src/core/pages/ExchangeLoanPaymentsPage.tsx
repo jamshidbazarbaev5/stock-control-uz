@@ -126,7 +126,7 @@ export default function ExchangeLoanPaymentsPage() {
   const progressPercent = total > 0 ? (paidAmount / total) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto py-8 px-4 max-w-7xl">
         {/* Header */}
         <div className="mb-8">
@@ -136,7 +136,7 @@ export default function ExchangeLoanPaymentsPage() {
                 <Building2 className="h-4 w-4" />
                 <span>{loan.store?.name || '-'}</span>
               </div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent flex items-center gap-3">
+              <h1 className="text-4xl font-bold flex items-center gap-3">
                 <Sparkles className="h-8 w-8 text-blue-600 dark:text-blue-400" />
                 {t('pages.exchange_loans.payment_dialog.title')}
               </h1>
@@ -168,67 +168,73 @@ export default function ExchangeLoanPaymentsPage() {
         {/* Loan Summary - Enhanced Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {/* Total Amount Card */}
-          <Card className="border-none shadow-lg bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:shadow-xl transition-all">
+          <Card className="shadow-lg hover:shadow-xl transition-all bg-white text-slate-900 border border-blue-100 dark:border-none dark:bg-gradient-to-br dark:from-blue-500 dark:to-blue-600 dark:text-white">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <DollarSign className="h-8 w-8 opacity-80" />
-                <Badge variant="secondary" className="bg-white/20 text-white border-none">
+                <DollarSign className="h-8 w-8 opacity-80 text-blue-600 dark:text-white" />
+                <Badge variant="secondary" className="border border-blue-100 bg-blue-50 text-blue-700 dark:border-none dark:bg-white/20 dark:text-white">
                   {loan.currency?.short_name || 'USD'}
                 </Badge>
               </div>
               <div className="space-y-1">
-                <p className="text-sm opacity-90">{t('forms.total_amount')}</p>
+                <p className="text-sm text-slate-600 dark:text-white/90">{t('forms.total_amount')}</p>
                 <p className="text-3xl font-bold">{total.toLocaleString()}</p>
               </div>
             </CardContent>
           </Card>
 
           {/* Remaining Balance Card */}
-          <Card className="border-none shadow-lg bg-gradient-to-br from-orange-500 to-orange-600 text-white hover:shadow-xl transition-all">
+          <Card className="shadow-lg hover:shadow-xl transition-all bg-white text-slate-900 border border-orange-100 dark:border-none dark:bg-gradient-to-br dark:from-orange-500 dark:to-orange-600 dark:text-white">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <Wallet className="h-8 w-8 opacity-80" />
+                <Wallet className="h-8 w-8 opacity-80 text-orange-600 dark:text-white" />
                 <Badge 
                   variant="secondary" 
-                  className={`border-none ${
-                    loan.is_paid 
-                      ? 'bg-green-500/80 text-white' 
-                      : 'bg-white/20 text-white'
-                  }`}
+                  className={`${loan.is_paid 
+                    ? 'border border-green-200 bg-green-50 text-green-700' 
+                    : 'border border-amber-200 bg-amber-50 text-amber-700'
+                  } dark:border-none ${loan.is_paid ? 'dark:bg-green-500/80 dark:text-white' : 'dark:bg-white/20 dark:text-white'}`}
                 >
                   {loan.is_paid ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                 </Badge>
               </div>
               <div className="space-y-1">
-                <p className="text-sm opacity-90">{t('forms.remaining_balance')}</p>
+                <p className="text-sm text-slate-600 dark:text-white/90">{t('forms.remaining_balance')}</p>
                 <p className="text-3xl font-bold">{remaining.toLocaleString()}</p>
               </div>
             </CardContent>
           </Card>
 
           {/* Due Date Card */}
-          <Card className="border-none shadow-lg bg-gradient-to-br from-purple-500 to-purple-600 text-white hover:shadow-xl transition-all">
+          <Card className="shadow-lg hover:shadow-xl transition-all bg-white text-slate-900 border border-purple-100 dark:border-none dark:bg-gradient-to-br dark:from-purple-500 dark:to-purple-600 dark:text-white">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <Calendar className="h-8 w-8 opacity-80" />
+                <Calendar className="h-8 w-8 opacity-80 text-purple-600 dark:text-white" />
               </div>
               <div className="space-y-1">
-                <p className="text-sm opacity-90">{t('forms.due_date')}</p>
+                <p className="text-sm text-slate-600 dark:text-white/90">{t('forms.due_date')}</p>
                 <p className="text-2xl font-bold">{loan.due_date ? formatDate(loan.due_date) : '-'}</p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Store Budget Card */}
-          <Card className="border-none shadow-lg bg-gradient-to-br from-emerald-500 to-emerald-600 text-white hover:shadow-xl transition-all">
+          {/* Loan Amount in UZS Card */}
+          <Card className="shadow-lg hover:shadow-xl transition-all bg-white text-slate-900 border border-emerald-100 dark:border-none dark:bg-gradient-to-br dark:from-emerald-500 dark:to-emerald-600 dark:text-white">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-2">
-                <TrendingUp className="h-8 w-8 opacity-80" />
+                <TrendingUp className="h-8 w-8 opacity-80 text-emerald-600 dark:text-white" />
+                <Badge variant="secondary" className="border border-emerald-100 bg-emerald-50 text-emerald-700 dark:border-none dark:bg-white/20 dark:text-white">
+                  UZS
+                </Badge>
               </div>
               <div className="space-y-1">
-                <p className="text-sm opacity-90">{t('forms.store_budget')}</p>
+                <p className="text-sm text-slate-600 dark:text-white/90">Сумма к оплате</p>
                 <p className="text-2xl font-bold">
-                  {loan.store?.budget ? String(loan.store.budget).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '0'}
+                  {(() => {
+                    const remainingVal = typeof loan.remaining_balance === 'number' ? loan.remaining_balance : parseFloat(String(loan.remaining_balance || '0'));
+                    const rate = typeof loan.currency_rate === 'number' ? loan.currency_rate : parseFloat(String(loan.currency_rate || '1'));
+                    return (remainingVal * rate).toLocaleString();
+                  })()}
                 </p>
               </div>
             </CardContent>
@@ -236,7 +242,7 @@ export default function ExchangeLoanPaymentsPage() {
         </div>
 
         {/* Progress Card */}
-        <Card className="mb-8 border-none shadow-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur">
+        <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center gap-2">
@@ -258,7 +264,7 @@ export default function ExchangeLoanPaymentsPage() {
                 <span className="text-muted-foreground">Оплачено: {paidAmount.toLocaleString()} {loan.currency?.short_name}</span>
                 <span className="font-semibold">{progressPercent.toFixed(1)}%</span>
               </div>
-              <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 overflow-hidden">
+              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500 rounded-full transition-all duration-500 shadow-lg"
                   style={{ width: `${progressPercent}%` }}
@@ -273,7 +279,7 @@ export default function ExchangeLoanPaymentsPage() {
         </Card>
 
         {/* Payments List */}
-        <Card className="border-none shadow-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Wallet className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -293,17 +299,16 @@ export default function ExchangeLoanPaymentsPage() {
                 {payments.map((payment: ExchangeLoanPayment, index: number) => (
                   <div 
                     key={payment.id} 
-                    className="group relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-r from-white to-slate-50/50 dark:from-slate-800 dark:to-slate-850 p-5 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-200"
+                    className="rounded-xl border border-gray-200 p-5 hover:bg-gray-50 transition-colors"
                   >
-                    <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-500/5 dark:from-blue-400/10 to-transparent rounded-bl-full" />
                     <div className="relative flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                       <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-400 dark:to-blue-500 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/30">
+                        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
                           #{payments.length - index}
                         </div>
                         <div className="flex-1 space-y-1">
                           <div className="flex items-center gap-3 flex-wrap">
-                            <span className="text-2xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
+                            <span className="text-2xl font-bold text-slate-900">
                               {typeof payment.amount === 'number' 
                                 ? payment.amount.toLocaleString() 
                                 : payment.amount}
@@ -313,9 +318,8 @@ export default function ExchangeLoanPaymentsPage() {
                             </Badge>
                           </div>
                           {payment.notes && (
-                            <p className="text-sm text-muted-foreground mt-2 flex items-start gap-2">
-                              <span className="text-blue-600 dark:text-blue-400">💬</span>
-                              <span>{payment.notes}</span>
+                            <p className="text-sm text-gray-600 mt-2">
+                              {payment.notes}
                             </p>
                           )}
                         </div>
@@ -330,8 +334,8 @@ export default function ExchangeLoanPaymentsPage() {
               </div>
             ) : (
               <div className="text-center py-12">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 mb-4">
-                  <Wallet className="h-8 w-8 text-slate-400 dark:text-slate-500" />
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                  <Wallet className="h-8 w-8 text-gray-400" />
                 </div>
                 <p className="text-muted-foreground">{t('messages.no_payments_found')}</p>
               </div>
@@ -348,27 +352,27 @@ export default function ExchangeLoanPaymentsPage() {
 
             {/* Loan Summary */}
             <div className="space-y-4">
-              <Card className="p-4 bg-gray-50 dark:bg-slate-800">
-                <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">{t('pages.exchange_loans.payment_dialog.loan_summary')}</div>
+              <Card className="p-4 bg-gray-50">
+                <div className="text-sm font-semibold text-gray-700 mb-3">{t('pages.exchange_loans.payment_dialog.loan_summary')}</div>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">{t('forms.store')}:</span>
+                    <span className="text-gray-600">{t('forms.store')}:</span>
                     <span className="font-medium">{loan.store?.name || '-'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">{t('forms.total_amount')}:</span>
+                    <span className="text-gray-600">{t('forms.total_amount')}:</span>
                     <span className="font-medium">
                       {typeof total === 'number' ? total.toLocaleString() : total} {loan.currency?.short_name}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">{t('forms.remaining_balance')}:</span>
-                    <span className="font-medium text-red-600 dark:text-red-400">
+                    <span className="text-gray-600">{t('forms.remaining_balance')}:</span>
+                    <span className="font-medium text-red-600">
                       {typeof remaining === 'number' ? remaining.toLocaleString() : remaining} {loan.currency?.short_name}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">{t('forms.currency_rate')}:</span>
+                    <span className="text-gray-600">{t('forms.currency_rate')}:</span>
                     <span className="font-medium">
                       {(() => {
                         const rate = typeof loan.currency_rate === 'number' ? loan.currency_rate : parseFloat(String(loan.currency_rate || '1'));
@@ -376,9 +380,9 @@ export default function ExchangeLoanPaymentsPage() {
                       })()} UZS
                     </span>
                   </div>
-                  <div className="flex justify-between border-t dark:border-slate-700 pt-2">
-                    <span className="text-gray-600 dark:text-gray-400 font-semibold">{t('forms.payable_amount')}:</span>
-                    <span className="font-bold text-blue-600 dark:text-blue-400">
+                  <div className="flex justify-between border-t border-gray-200 pt-2">
+                    <span className="text-gray-600 font-semibold">{t('forms.payable_amount')}:</span>
+                    <span className="font-bold text-blue-600">
                       {(() => {
                         const remainingVal = typeof loan.remaining_balance === 'number' ? loan.remaining_balance : parseFloat(String(loan.remaining_balance || '0'));
                         const rate = typeof loan.currency_rate === 'number' ? loan.currency_rate : parseFloat(String(loan.currency_rate || '1'));
@@ -390,18 +394,18 @@ export default function ExchangeLoanPaymentsPage() {
               </Card>
 
               {loan.store?.budgets && (
-                <Card className="p-4 dark:bg-slate-800">
-                  <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">{t('forms.store_budgets')}</div>
+                <Card className="p-4">
+                  <div className="text-sm font-semibold text-gray-700 mb-3">{t('forms.store_budgets')}</div>
                   <div className="space-y-2 text-sm">
                     {loan.store.budgets.map((budget: any) => (
                       <div key={budget.id} className="flex justify-between">
-                        <span className="text-gray-600 dark:text-gray-400">{budget.budget_type}:</span>
+                        <span className="text-gray-600">{budget.budget_type}:</span>
                         <span className="font-medium">{parseFloat(String(budget.amount)).toLocaleString()} UZS</span>
                       </div>
                     ))}
-                    <div className="flex justify-between border-t dark:border-slate-700 pt-2">
-                      <span className="text-gray-600 dark:text-gray-400 font-semibold">{t('forms.total_budget')}:</span>
-                      <span className="font-bold text-green-600 dark:text-green-400">
+                    <div className="flex justify-between border-t border-gray-200 pt-2">
+                      <span className="text-gray-600 font-semibold">{t('forms.total_budget')}:</span>
+                      <span className="font-bold text-green-600">
                         {loan.store.budget ? parseFloat(String(loan.store.budget)).toLocaleString() : '0'} UZS
                       </span>
                     </div>
@@ -429,7 +433,7 @@ export default function ExchangeLoanPaymentsPage() {
                   step="0.01"
                   required
                 />
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-sm text-gray-500 mt-1">
                   {t('common.max_amount')}: {(() => {
                     const remainingVal = typeof loan.remaining_balance === 'number' ? loan.remaining_balance : parseFloat(String(loan.remaining_balance || '0'));
                     const rate = typeof loan.currency_rate === 'number' ? loan.currency_rate : parseFloat(String(loan.currency_rate || '1'));

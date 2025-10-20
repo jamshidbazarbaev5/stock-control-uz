@@ -441,6 +441,35 @@ export default function ProductsPage() {
         <div className="flex gap-2">
           <Button
             variant="outline"
+            onClick={() => {
+              const currentPageProductIds = products.map(p => p.id).filter(Boolean) as number[];
+              const allSelected = currentPageProductIds.every(id => selectedProducts.includes(id));
+              
+              if (allSelected) {
+                // Deselect all on current page
+                setSelectedProducts(prev => prev.filter(id => !currentPageProductIds.includes(id)));
+              } else {
+                // Select all on current page
+                setSelectedProducts(prev => {
+                  const newSelection = [...prev];
+                  currentPageProductIds.forEach(id => {
+                    if (!newSelection.includes(id)) {
+                      newSelection.push(id);
+                    }
+                  });
+                  return newSelection;
+                });
+              }
+            }}
+          >
+            {(() => {
+              const currentPageProductIds = products.map(p => p.id).filter(Boolean) as number[];
+              const allSelected = currentPageProductIds.every(id => selectedProducts.includes(id));
+              return allSelected ? t("buttons.deselect_all") || "Снять выделение" : t("buttons.select_all") || "Выбрать все";
+            })()}
+          </Button>
+          <Button
+            variant="outline"
             onClick={async () => {
               try {
                 const res = await api.get("items/generate-template/", {
