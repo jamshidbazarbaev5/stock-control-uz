@@ -98,10 +98,10 @@ export default function IncomePage() {
     },
     {
       header: t("forms.amount3"),
-      accessorKey: "description.Amount",
+      accessorKey: "total_amount  ",
       cell: (row: any) => (
         <span className="font-medium text-emerald-600">
-          {formatCurrency(row.description.Amount)} UZS
+          {formatCurrency(row.total_amount)} UZS
         </span>
       ),
     },
