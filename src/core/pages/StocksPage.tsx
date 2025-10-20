@@ -209,13 +209,20 @@ export default function StocksPage() {
         const productName =
           row.product?.product_name || row.product_read?.product_name || "-";
 
-        // If stock_name exists, show: ProductName (stock_name)
-        if (row.stock_name && row.stock_name.trim() !== "") {
-          return `${productName} (${row.stock_name})`;
-        }
+        const label = row.stock_name && row.stock_name.trim() !== ""
+          ? `${productName} (${row.stock_name})`
+          : productName;
 
-        // Otherwise just show the product name
-        return productName;
+        return (
+          <span className="inline-flex items-center gap-2">
+            <span>{label}</span>
+            {row.is_recycled ? (
+              <span className="text-[10px] leading-none px-1.5 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200">
+                {t("stock.recycled")}
+              </span>
+            ) : null}
+          </span>
+        );
       },
     },
     {

@@ -124,6 +124,7 @@
     "no_client_debt_data_available": "Нет данных о долгах клиентов"
   },
   "stock": {
+    "recycled": "Переработан",
     "price_history": "Детальная информация:"
   },
   "payment_types": {
@@ -868,7 +869,8 @@
     "opening_comment": "Комментарий открытия"
   },
   "stock": {
-    "price_history": "Детальная информация:"
+    "price_history": "Детальная информация:",
+    "recycled": "Переработан"
   },
   "messages": {
     "no_payments_found": "Нет платежи",

@@ -594,6 +594,8 @@ export default function CreateRecycling() {
                           />
                         </SelectTrigger>
                         <SelectContent
+                          side="bottom"
+                          avoidCollisions={false}
                           onPointerDownOutside={(e) => {
                             const target = e.target as Node;
                             const selectContent = document.querySelector(
