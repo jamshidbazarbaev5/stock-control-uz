@@ -101,7 +101,7 @@ export default function IncomePage() {
       accessorKey: "total_amount  ",
       cell: (row: any) => (
         <span className="font-medium text-emerald-600">
-          {formatCurrency(row.total_amount)} UZS
+          {formatCurrency(row.total_amount)} uzs
         </span>
       ),
     },
