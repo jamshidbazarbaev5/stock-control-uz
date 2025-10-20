@@ -2990,10 +2990,6 @@ const POSInterfaceCore = () => {
                     return;
                   }
 
-                  if (onCredit && !debtDeposit) {
-                    toast.error("Введите сумму залога!");
-                    return;
-                  }
 
                   if (onCredit && !debtDueDate) {
                     toast.error("Выберите срок погашения!");

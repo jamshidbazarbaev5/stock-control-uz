@@ -661,15 +661,6 @@ function CreateSale() {
         }
       }
 
-      // Validate deposit payment method when deposit has value
-      if (data.sale_debt?.deposit && data.sale_debt.deposit > 0) {
-        if (!data.sale_debt?.deposit_payment_method) {
-          toast.error(
-            t("validation.required", { field: t("table.payment_method") }),
-          );
-          return;
-        }
-      }
 
       // Validate all items meet minimum price requirements
       const hasInvalidPrices = data.sale_items.some((item, index) => {
@@ -1555,10 +1546,6 @@ function CreateSale() {
                     <FormItem>
                       <FormLabel>
                         {t("table.payment_method")}
-                        {form.watch("sale_debt.deposit") &&
-                          form.watch("sale_debt.deposit")! > 0 && (
-                            <span className="text-red-500 ml-1">*</span>
-                          )}
                       </FormLabel>
                       <Select
                         value={field.value || "Наличные"}
