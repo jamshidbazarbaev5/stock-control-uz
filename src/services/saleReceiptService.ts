@@ -7,6 +7,7 @@
 
 export interface SaleData {
   id: number;
+  sale_id?: string;
   store_read: {
     id: number;
     name: string;

@@ -273,7 +273,7 @@ export default function StocksPage() {
     {
       header: t("table.date_of_arrived"),
       accessorKey: "date_of_arrived",
-      cell: (row: any) => <p>{formatDate(row?.stock_entry?.date_of_arrived)}</p>,
+      cell: (row: any) => <p>{formatDate(row?.date_of_arrived)}</p>,
     },
     {
       header: "Количество (базовая единица)",

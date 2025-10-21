@@ -622,7 +622,7 @@ export default function SalesPage() {
                         </span>
                         {refund.refunded_by && (
                           <span className="text-blue-600 text-[10px] bg-blue-100 px-1 py-0.5 rounded">
-                            ID: {refund.refunded_by}
+                            Имя: {refund.refunded_by}
                           </span>
                         )}
                       </div>
