@@ -107,6 +107,7 @@ export interface ShiftSummaryPayment {
 
 export interface ShiftSummary {
   shift_id: number;
+  total_debt_amount: number;
   cashier: string | null;
   store: string;
   opened_at: string;
