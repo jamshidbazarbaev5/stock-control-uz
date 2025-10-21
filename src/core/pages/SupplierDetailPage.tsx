@@ -192,10 +192,10 @@ export default function SupplierDetailPage() {
                     </div>
                     {entry.is_debt && (
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2 text-sm">
-                        {entry.amount_of_debt && (
+                        {entry.amount_of_debt && Number(entry.amount_of_debt) > 0 && (
                           <div>
                             <span className="text-muted-foreground">{t('common.amount_of_debt')}:</span>{' '}
-                            <span className="font-medium text-red-500">{formatNumber(entry.amount_of_debt)} {t('common.uzs')}</span>
+                            <span className="font-medium text-red-500">{Number(entry.amount_of_debt).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {t('common.uzs')}</span>
                           </div>
                         )}
                         {entry.advance_of_debt && (
@@ -428,6 +428,10 @@ function StockDetailsAccordion({ stockEntryId }: { stockEntryId: number }) {
                 <div>
                   <span className="text-sm text-muted-foreground">{t('common.quantity')}:</span>
                   <p className="font-medium">{formatNumber(stock.quantity || 0)} {stock.purchase_unit?.short_name || ''}</p>
+                </div>
+                <div>
+                  <span className="text-sm text-muted-foreground">{t('common.currency')}:</span>
+                  <p className="font-medium">{stock.currency?.name || stock.currency?.short_name || 'UZS'}</p>
                 </div>
                 <div>
                   <span className="text-sm text-muted-foreground">{t('common.total_price')} (UZS):</span>
