@@ -12,7 +12,7 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import type { Product } from "../api/product";
-import { useGetProducts } from "../api/product";
+import { fetchAllProducts } from "../api/fetchAllProducts";
 import { OpenShiftForm } from "@/components/OpenShiftForm";
 import type { Stock } from "../api/stock";
 import { StockSelectionModal } from "@/components/StockSelectionModal";
@@ -138,7 +138,8 @@ function CreateSale() {
   const [cartProducts, setCartProducts] = useState<ProductInCart[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [productSearchTerm, setProductSearchTerm] = useState("");
-  const [productPage, _setProductPage] = useState(1);
+  const [fetchedProducts, setFetchedProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
   const [activeSearchIndex, setActiveSearchIndex] = useState<number | null>(
     null,
   );
@@ -229,32 +230,26 @@ function CreateSale() {
     ? storesData
     : storesData?.results || [];
 
-  // Fetch products with pagination
-  const { data: productsData, isLoading: _isLoadingProducts } = useGetProducts({
-    params: {
-      page: productPage,
-      ...(productSearchTerm.length > 0
-        ? { product_name: productSearchTerm }
-        : {}),
-    },
-  });
+  // Fetch products when search term changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setLoadingProducts(true);
+      fetchAllProducts({
+        product_name: productSearchTerm.length > 0 ? productSearchTerm : undefined,
+      })
+        .then((data) => setFetchedProducts(data))
+        .catch((error) => {
+          console.error("Error fetching products:", error);
+          toast.error("Failed to load products");
+        })
+        .finally(() => setLoadingProducts(false));
+    }, 300);
 
-  // Get products array from API response
-  const allProducts = Array.isArray(productsData)
-    ? productsData
-    : productsData?.results || [];
+    return () => clearTimeout(timeoutId);
+  }, [productSearchTerm]);
 
-  // Filter products by available quantity > 0
-  const filteredProducts = useMemo(() => {
-    return allProducts.filter((product) => {
-      // Filter by available quantity > 0
-      const quantity =
-        typeof product.quantity === "string"
-          ? parseFloat(product.quantity)
-          : product.quantity || 0;
-      return quantity > 0;
-    });
-  }, [allProducts]);
+  // Products are already filtered by non_zero in fetchAllProducts
+  const filteredProducts = fetchedProducts;
 
   // When the component mounts, initialize the form with default values
   useEffect(() => {
@@ -302,7 +297,7 @@ function CreateSale() {
   // Set initial product if we have parameters from URL
   useEffect(() => {
     // Only proceed if data is loaded and we have products data
-    if (!storesLoading && allProducts.length > 0) {
+    if (!storesLoading && fetchedProducts.length > 0) {
       console.log("Setting initial values from URL params:", { productId });
 
       const currentSaleItems = form.getValues("sale_items");
@@ -376,14 +371,14 @@ function CreateSale() {
       // Use a timeout to ensure the component is fully mounted
       setTimeout(() => {
         if (productId) {
-          const product = allProducts.find((p) => p.id === Number(productId));
+          const product = fetchedProducts.find((p) => p.id === Number(productId));
           if (product) {
             handleProduct(product);
           }
         }
       }, 200);
     }
-  }, [productId, allProducts, form, storesLoading]);
+  }, [productId, fetchedProducts, form, storesLoading]);
 
   // Sync form selling_unit values when cartProducts change
   useEffect(() => {
@@ -1006,16 +1001,12 @@ function CreateSale() {
                           />
                           {activeSearchIndex === index && (
                             <div className="absolute z-50 w-full mt-1 bg-white  border-2 border-gray-300  rounded-lg shadow-xl max-h-[300px] overflow-y-auto">
-                              {filteredProducts.length > 0 ? (
-                                filteredProducts
-                                  .filter((product) => {
-                                    const qty =
-                                      typeof product.quantity === "string"
-                                        ? parseFloat(product.quantity)
-                                        : product.quantity || 0;
-                                    return qty > 0;
-                                  })
-                                  .map((product) => (
+                              {loadingProducts ? (
+                                <div className="px-4 py-4 text-center text-gray-600 dark:text-gray-400 text-sm bg-white dark:bg-gray-800">
+                                  Loading...
+                                </div>
+                              ) : filteredProducts.length > 0 ? (
+                                filteredProducts.map((product) => (
                                     <div
                                       key={product.id}
                                       className="px-4 py-3 bg-white hover:bg-blue-50 active:bg-blue-100 dark:bg-gray-800 dark:hover:bg-gray-700 dark:active:bg-gray-600 cursor-pointer border-b border-gray-200 dark:border-gray-700 last:border-b-0 transition-all duration-150"
