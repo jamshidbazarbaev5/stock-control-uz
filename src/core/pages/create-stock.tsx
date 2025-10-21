@@ -57,6 +57,7 @@ interface StockItemFormValues {
   total_price_in_uz?: number | string;
   base_unit_in_uzs?: number | string;
   base_unit_in_currency?: number | string;
+  stock_name?: string;
 }
 
 interface StockItemTab {
@@ -134,6 +135,7 @@ export default function CreateStock() {
         total_price_in_uz: "",
         base_unit_in_uzs: "",
         base_unit_in_currency: "",
+        stock_name: "",
       },
       dynamicFields: {},
       dynamicFieldsOrder: [],
@@ -214,6 +216,7 @@ export default function CreateStock() {
           total_price_in_uz: "",
           base_unit_in_uzs: "",
           base_unit_in_currency: "",
+          stock_name: "",
         },
         dynamicFields: {},
         dynamicFieldsOrder: [],
@@ -634,7 +637,7 @@ export default function CreateStock() {
           exchangeRateId = Number(tab.form.exchange_rate);
         }
 
-        return {
+        const stockEntry: any = {
           product: Number(tab.form.product),
           purchase_unit: Number(tab.form.purchase_unit),
           currency: Number(tab.form.currency),
@@ -653,6 +656,13 @@ export default function CreateStock() {
             tab.form.base_unit_in_currency,
           ),
         };
+
+        // Add stock_name only if it exists
+        if (tab.form.stock_name && tab.form.stock_name.trim()) {
+          stockEntry.stock_name = tab.form.stock_name.trim();
+        }
+
+        return stockEntry;
       });
 
       const payload = {
@@ -1055,6 +1065,23 @@ export default function CreateStock() {
                   </div>
                 </div>
 
+                {/* Stock Name Field - Show only for category Лист (id: 3) */}
+                {tab.selectedProduct?.category_read?.id === 3 && (
+                  <div className="space-y-2 mt-4">
+                    <Label htmlFor={`stock_name-${tab.id}`}>
+                      Партия
+                    </Label>
+                    <Input
+                      id={`stock_name-${tab.id}`}
+                      type="text"
+                      value={tab.form.stock_name || ""}
+                      onChange={(e) => {
+                        updateStockTabField(tab.id, "stock_name", e.target.value);
+                      }}
+                      placeholder="Партия"
+                    />
+                  </div>
+                )}
 
                 {/* Dynamic Fields */}
                 {tab.isCalculated && (

@@ -339,6 +339,7 @@ export default function CreateRecycling() {
             })
             .filter((opt: any) => opt.value),
           isLoading: loadingStocks,
+          disabled: true,
         };
       }
       if (field.name === "store") {
