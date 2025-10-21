@@ -8,7 +8,7 @@ import {
   useIncrementBalance,
   useClientCashOut,
 } from "../api/client";
-import { useGetStores, type Store } from "../api/store";
+import { useGetStores } from "../api/store";
 import { toast } from "sonner";
 import {
   Select,
