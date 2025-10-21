@@ -159,11 +159,12 @@ export default function SalesPage() {
   const [creditStatus, setCreditStatus] = useState<string>("all");
   const [selectedStore, setSelectedStore] = useState<string>("all");
   const [productName, setProductName] = useState<string>("");
+  const [saleId, setSaleId] = useState<string>("");
 
   // Reset to page 1 when any filter changes
   useEffect(() => {
     setPage(1);
-  }, [startDate, endDate, creditStatus, selectedStore, productName]);
+  }, [startDate, endDate, creditStatus, selectedStore, productName, saleId]);
 
   const { data: storesData } = useGetStores({});
   const { data: salesData, isLoading } = useGetSales({
@@ -175,6 +176,7 @@ export default function SalesPage() {
       product: productName || undefined, // Send as product_name
       end_date: endDate || undefined,
       on_credit: creditStatus !== "all" ? creditStatus === "true" : undefined,
+      sale_id: saleId || undefined,
     },
   });
   const getPaginatedData = <T extends { id?: number }>(
@@ -313,6 +315,11 @@ export default function SalesPage() {
       toast.error(t("messages.error.delete", { item: t("navigation.sales") }));
       return;
     }
+    // Don't allow deletion if on_credit is true
+    if (saleToDelete.on_credit) {
+      toast.error("Нельзя удалить продажу с долгом");
+      return;
+    }
     // Get the store budget and sale total_amount
     // Some store_read objects may not have budget, so fallback to 0 if missing
     const storeBudget = Number(
@@ -350,6 +357,7 @@ export default function SalesPage() {
     setCreditStatus("all");
     setSelectedStore("all");
     setProductName("");
+    setSaleId("");
     setPage(1);
   };
 
@@ -462,36 +470,36 @@ export default function SalesPage() {
             </h3>
             <div className="space-y-1">
               <div className="dark:bg-expanded-row-dark bg-gray-50 p-2 rounded border-l-4 border-purple-400 transition-all duration-200">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                  <div>
-                    <span className="text-gray-500 font-medium">Имя:</span>
-                    <p className="font-medium text-gray-700 text-sm">
-                      {row.worker_read.name}
-                    </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                    <div>
+                      <span className="text-gray-500 font-medium">Имя:</span>
+                      <p className="font-medium text-gray-700 text-sm break-words">
+                        {row.worker_read.name}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 font-medium">Телефон:</span>
+                      <p className="font-medium text-gray-700 text-sm break-words">
+                        {row.worker_read.phone_number}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 font-medium">Роль:</span>
+                      <p className="font-medium text-gray-700 text-sm break-words">
+                        {row.worker_read.role}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 font-medium">Смена:</span>
+                      <p className="font-medium text-sm">
+                        {row.worker_read.has_active_shift ? (
+                          <span className="text-green-600">✓ Активна</span>
+                        ) : (
+                          <span className="text-gray-500">Неактивна</span>
+                        )}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-gray-500 font-medium">Телефон:</span>
-                    <p className="font-medium text-gray-700 text-sm">
-                      {row.worker_read.phone_number}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500 font-medium">Роль:</span>
-                    <p className="font-medium text-gray-700 text-sm">
-                      {row.worker_read.role}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500 font-medium">Смена:</span>
-                    <p className="font-medium text-sm">
-                      {row.worker_read.has_active_shift ? (
-                        <span className="text-green-600">✓ Активна</span>
-                      ) : (
-                        <span className="text-gray-500">Неактивна</span>
-                      )}
-                    </p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -512,15 +520,15 @@ export default function SalesPage() {
                   key={index}
                   className="dark:bg-expanded-row-dark bg-gray-50 p-2 rounded border-l-4 border-blue-400 transition-all duration-200"
                 >
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 text-xs">
-                    <div>
-                      <span className="text-gray-500 font-medium">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 text-xs">
+                    <div className="sm:col-span-1">
+                      <span className="text-gray-500 font-medium text-xs">
                         #{item.id}
                       </span>
                     </div>
-                    <div className="md:col-span-2">
+                    <div className="sm:col-span-1 md:col-span-2">
                       <span
-                        className="font-medium text-gray-800 line-clamp-1 text-sm"
+                        className="font-medium text-gray-800 line-clamp-2 text-xs sm:text-sm break-words"
                         title={
                           item.stock_name
                             ? `${item.product_read?.product_name} (${item.stock_name})`
@@ -532,8 +540,8 @@ export default function SalesPage() {
                           : item.product_read?.product_name || "-"}
                       </span>
                     </div>
-                    <div>
-                      <span className="font-medium text-gray-700">
+                    <div className="sm:col-span-1">
+                      <span className="font-medium text-gray-700 text-xs">
                         {parseFloat(item.quantity).toString()}{" "}
                         <span className="text-gray-500">
                           {item.product_read?.base_unit
@@ -544,8 +552,8 @@ export default function SalesPage() {
                         </span>
                       </span>
                     </div>
-                    <div>
-                      <span className="font-semibold text-emerald-600 text-sm">
+                    <div className="sm:col-span-1">
+                      <span className="font-semibold text-emerald-600 text-xs sm:text-sm">
                         {formatCurrency(item?.price_per_unit)}
                       </span>
                     </div>
@@ -606,6 +614,17 @@ export default function SalesPage() {
                         <span className="text-gray-600">
                           {new Date(refund.created_at).toLocaleDateString()}
                         </span>
+                        <span className="text-gray-500 text-[10px]">
+                          {new Date(refund.created_at).toLocaleTimeString('ru-RU', { 
+                            hour: '2-digit', 
+                            minute: '2-digit' 
+                          })}
+                        </span>
+                        {refund.refunded_by && (
+                          <span className="text-blue-600 text-[10px] bg-blue-100 px-1 py-0.5 rounded">
+                            ID: {refund.refunded_by}
+                          </span>
+                        )}
                       </div>
                       <span className="font-semibold text-red-700 bg-red-200 px-2 py-0.5 rounded text-xs">
                         -{formatCurrency(refund.total_refund_amount)}
@@ -645,21 +664,21 @@ export default function SalesPage() {
                         key={itemIndex}
                         className="bg-white p-1 rounded border border-red-200"
                       >
-                        <div className="grid grid-cols-3 gap-2 text-xs items-center">
-                          <div className="col-span-2">
-                            <span className="font-medium text-gray-800 text-sm line-clamp-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs items-center">
+                          <div className="sm:col-span-2">
+                            <span className="font-medium text-gray-800 text-xs sm:text-sm line-clamp-2 break-words">
                               {refundItem.sale_item.stock_name
                                 ? `${refundItem.sale_item.product_read?.product_name} (${refundItem.sale_item.stock_name})`
                                 : refundItem.sale_item.product_read
                                     ?.product_name || "-"}
                             </span>
                           </div>
-                          <div className="text-right">
-                            <div className="text-gray-600">
+                          <div className="text-left sm:text-right">
+                            <div className="text-gray-600 text-xs">
                               Кол-во:{" "}
                               {parseFloat(refundItem.quantity).toString()}
                             </div>
-                            <div className="font-medium text-red-600">
+                            <div className="font-medium text-red-600 text-xs">
                               {formatCurrency(refundItem.subtotal)}
                             </div>
                           </div>
@@ -923,14 +942,17 @@ export default function SalesPage() {
           <Button
             variant="outline"
             onClick={() => setIsColumnModalOpen(true)}
-            className="w-full sm:w-auto"
+            className="flex-1 sm:flex-none sm:w-auto"
+            size="sm"
           >
-            <Settings className="w-4 h-4 mr-2" />
+            <Settings className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Настройки</span>
           </Button>
           {!currentUser?.is_superuser && (
             <Button
               onClick={() => navigate("/create-sale")}
-              className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
+              className="bg-primary hover:bg-primary/90 flex-1 sm:flex-none sm:w-auto"
+              size="sm"
             >
               {t("common.create")}
             </Button>
@@ -940,15 +962,15 @@ export default function SalesPage() {
 
       {/* Filters */}
       {/* <Card className="p-3 sm:p-4 mb-4 sm:mb-6"> */}
-      <div className="flex justify-between items-center mb-3 sm:mb-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3 sm:mb-4">
         <h2 className="text-base sm:text-lg font-medium">
           {t("common.filters")}
         </h2>
-        <Button variant="outline" size="sm" onClick={handleClearFilters}>
+        <Button variant="outline" size="sm" onClick={handleClearFilters} className="w-full sm:w-auto">
           {t("common.reset") || "Сбросить"}
         </Button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-5">
         <div className="space-y-2">
           <label className="text-sm font-medium">
             {t("forms.type_product_name")}
@@ -958,6 +980,18 @@ export default function SalesPage() {
             value={productName}
             onChange={(e) => setProductName(e.target.value)}
             placeholder={t("forms.type_product_name")}
+            className="w-full"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            ID продажи
+          </label>
+          <Input
+            type="text"
+            value={saleId}
+            onChange={(e) => setSaleId(e.target.value)}
+            placeholder="Введите ID продажи"
             className="w-full"
           />
         </div>
@@ -1025,7 +1059,7 @@ export default function SalesPage() {
       {/* Table */}
       <div className="overflow-hidden rounded-lg mb-4 sm:mb-6">
         <Card className="overflow-x-auto">
-          <div className="min-w-[800px]">
+          <div className="min-w-[320px] sm:min-w-[800px]">
             <ResourceTable
               data={sales}
               columns={columns}
@@ -1036,14 +1070,16 @@ export default function SalesPage() {
                   ? handleDelete
                   : undefined
               }
+              canDelete={(sale: Sale) => !sale.on_credit}
               totalCount={totalCount}
               onRefund={
                 currentUser?.is_mobile_user === false &&
                 (currentUser?.role === "Продавец" ||
                   currentUser?.role === "Админ")
-                  ? (sale: Sale) => handleOpenRefundModal(sale)
+                  ? handleOpenRefundModal
                   : undefined
               }
+              canRefund={(sale: Sale) => !sale.on_credit}
               pageSize={30}
               currentPage={page}
               onPageChange={(newPage) => setPage(newPage)}
@@ -1239,10 +1275,10 @@ export default function SalesPage() {
                   <h3 className="font-medium text-gray-700 mb-2">
                     {t("table.sale_info")}
                   </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <span className="text-gray-500">{t("table.store")}:</span>
-                      <span className="ml-2 font-medium">
+                      <span className="ml-2 font-medium break-words">
                         {selectedSaleForRefund.store_read?.name || "-"}
                       </span>
                     </div>
@@ -1250,7 +1286,7 @@ export default function SalesPage() {
                       <span className="text-gray-500">
                         {t("table.total_amount")}:
                       </span>
-                      <span className="ml-2 font-medium text-emerald-600">
+                      <span className="ml-2 font-medium text-emerald-600 break-words">
                         {formatCurrency(selectedSaleForRefund.total_amount)} UZS
                       </span>
                     </div>
@@ -1269,7 +1305,7 @@ export default function SalesPage() {
                         <span className="text-gray-500">
                           {t("table.client")}:
                         </span>
-                        <span className="ml-2 font-medium">
+                        <span className="ml-2 font-medium break-words">
                           {selectedSaleForRefund.sale_debt.client_read.name}
                         </span>
                       </div>
@@ -1292,7 +1328,7 @@ export default function SalesPage() {
                           key={item.id}
                           className="bg-white border rounded-lg p-4 hover:border-blue-300 transition-colors"
                         >
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
                             <div className="md:col-span-2">
                               <div className="font-medium">
                                 {product?.product_name || "-"}
@@ -1302,6 +1338,16 @@ export default function SalesPage() {
                                 {product?.available_units?.find(
                                   (u: any) => u.id === item.selling_unit,
                                 )?.short_name || ""}
+                              </div>
+                            </div>
+
+                            <div>
+                              <div className="text-sm text-gray-500">
+                                Цена за единицу
+                              </div>
+                              <div className="font-medium text-green-600">
+                                {formatCurrency(item?.price_per_unit || "0")}{" "}
+                                UZS
                               </div>
                             </div>
 
@@ -1341,10 +1387,35 @@ export default function SalesPage() {
                                     return;
                                   }
 
+                                  // Update refund quantities
                                   setRefundQuantities((prev) => ({
                                     ...prev,
                                     [item.id!]: value,
                                   }));
+
+                                  // Auto-calculate and update refund payment amount
+                                  if (numValue > 0) {
+                                    const refundAmount = (parseFloat(item?.price_per_unit || "0") * numValue).toFixed(2);
+                                    setRefundPayments((prev) => {
+                                      const updated = [...prev];
+                                      if (updated.length === 0) {
+                                        updated.push({ payment_method: "Наличные", amount: refundAmount });
+                                      } else {
+                                        // Calculate total from all refund items
+                                        let totalRefundAmount = 0;
+                                        Object.entries(refundQuantities).forEach(([saleItemId, qty]) => {
+                                          const foundItem = selectedSaleForRefund.sale_items?.find(si => si.id?.toString() === saleItemId);
+                                          if (foundItem && qty) {
+                                            totalRefundAmount += parseFloat(foundItem.price_per_unit || "0") * parseFloat(qty);
+                                          }
+                                        });
+                                        // Add current item amount
+                                        totalRefundAmount += parseFloat(item?.price_per_unit || "0") * numValue;
+                                        updated[0].amount = totalRefundAmount.toFixed(2);
+                                      }
+                                      return updated;
+                                    });
+                                  }
                                 }}
                                 placeholder={`0 - ${maxQuantity}`}
                                 className="w-full"

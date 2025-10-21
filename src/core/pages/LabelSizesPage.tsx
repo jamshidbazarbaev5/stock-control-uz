@@ -93,7 +93,6 @@ export default function LabelSizesPage() {
                 columns={columns(t)}
                 isLoading={isLoading}
                 onEdit={handleEdit}
-                onDelete={handleDelete}
                 onAdd={() => navigate('/create-label-size')}
                 totalCount={labelSizes.length}
                 pageSize={30}

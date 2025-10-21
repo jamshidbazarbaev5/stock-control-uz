@@ -423,9 +423,9 @@ export default function ClientsPage() {
             data={clients}
             columns={columns}
             isLoading={isLoading}
-            onAdd={() => navigate('/create-client')}
-            onEdit={currentUser?.is_superuser ? (client) => navigate(`/edit-client/${client.id}`) : undefined}
-            onDelete={currentUser?.is_superuser ? handleDelete : undefined}
+            onAdd={!currentUser?.is_superuser ? () => navigate('/create-client') : undefined}
+            onEdit={!currentUser?.is_superuser ? (client) => navigate(`/edit-client/${client.id}`) : undefined}
+            onDelete={!currentUser?.is_superuser ? handleDelete : undefined}
             totalCount={totalCount}
         />
         {selectedClientId && (

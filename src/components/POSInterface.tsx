@@ -222,6 +222,7 @@ const POSInterfaceCore = () => {
   // Global modal states (shared across sessions)
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [barcodeSearchTerm, setBarcodeSearchTerm] = useState("");
   const [fetchedProducts, setFetchedProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -406,6 +407,7 @@ const POSInterfaceCore = () => {
         setLoadingProducts(true);
         fetchAllProducts({
           product_name: searchTerm.length > 0 ? searchTerm : undefined,
+          barcode: barcodeSearchTerm.length > 0 ? barcodeSearchTerm : undefined,
         })
           .then((data) => setFetchedProducts(data))
           .catch((error) => {
@@ -417,7 +419,7 @@ const POSInterfaceCore = () => {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [isSearchModalOpen, searchTerm]);
+  }, [isSearchModalOpen, searchTerm, barcodeSearchTerm]);
 
   // Handle adding product directly to cart
   const handleProductDirectAdd = useCallback(
@@ -642,6 +644,11 @@ const POSInterfaceCore = () => {
   // Keep barcode input always focused
   useEffect(() => {
     const focusInput = () => {
+      // Don't refocus if any modal is open
+      if (isSearchModalOpen || isQuantityModalOpen || isPriceModalOpen || isPaymentModalOpen || isUserModalOpen) {
+        return;
+      }
+      
       // Don't refocus if user is actively typing in an input field
       const activeElement = document.activeElement;
       const isInputFocused =
@@ -668,6 +675,11 @@ const POSInterfaceCore = () => {
 
     // Refocus when clicking anywhere on the document (but respect input focus)
     const handleClick = (event: MouseEvent) => {
+      // Don't refocus if any modal is open
+      if (isSearchModalOpen || isQuantityModalOpen || isPriceModalOpen || isPaymentModalOpen || isUserModalOpen) {
+        return;
+      }
+      
       const target = event.target as HTMLElement;
       // Don't refocus if clicking on an input element or its container
       if (
@@ -686,6 +698,10 @@ const POSInterfaceCore = () => {
 
     // Refocus on window focus
     const handleWindowFocus = () => {
+      // Don't refocus if any modal is open
+      if (isSearchModalOpen || isQuantityModalOpen || isPriceModalOpen || isPaymentModalOpen || isUserModalOpen) {
+        return;
+      }
       focusInput();
     };
 
@@ -696,19 +712,20 @@ const POSInterfaceCore = () => {
       document.removeEventListener("click", handleClick);
       window.removeEventListener("focus", handleWindowFocus);
     };
-  }, [currentSessionIndex]);
+  }, [currentSessionIndex, isSearchModalOpen, isQuantityModalOpen, isPriceModalOpen, isPaymentModalOpen, isUserModalOpen, debugMode]);
 
   // Filter products based on search term
   const filteredProducts = useMemo(() => {
-    return fetchedProducts.filter(
-      (product) =>
-        product.product_name
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        product.barcode?.includes(searchTerm) ||
-        String(product.id).includes(searchTerm),
-    );
-  }, [fetchedProducts, searchTerm]);
+    return fetchedProducts.filter((product) => {
+      const matchesName = !searchTerm || 
+        product.product_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesBarcode = !barcodeSearchTerm || 
+        product.barcode?.includes(barcodeSearchTerm);
+      const matchesId = !searchTerm || String(product.id).includes(searchTerm);
+      
+      return (matchesName || matchesId) && matchesBarcode;
+    });
+  }, [fetchedProducts, searchTerm, barcodeSearchTerm]);
 
   const handleNumberClick = (num: string) => {
     // Pure calculator behavior
@@ -800,6 +817,7 @@ const POSInterfaceCore = () => {
   const handleSearchClick = useCallback(() => {
     setIsSearchModalOpen(true);
     setSearchTerm("");
+    setBarcodeSearchTerm("");
   }, []);
 
   const handleUserClick = () => {
@@ -1593,7 +1611,10 @@ const POSInterfaceCore = () => {
                   if (
                     barcodeInputRef.current &&
                     !isPriceModalOpen &&
-                    !isQuantityModalOpen
+                    !isQuantityModalOpen &&
+                    !isSearchModalOpen &&
+                    !isPaymentModalOpen &&
+                    !isUserModalOpen
                   ) {
                     if (debugMode) {
                       console.log("Input lost focus, refocusing...");
@@ -2166,24 +2187,46 @@ const POSInterfaceCore = () => {
           </WideDialogHeader>
 
           <div className="px-6 pb-4 space-y-4">
-            {/* Search Input */}
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Поиск по товарам..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={(e) => {
-                  e.stopPropagation();
-                }}
-                onBlur={(e) => {
-                  e.stopPropagation();
-                }}
-                className="w-full pl-14 pr-6 py-4 text-lg border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
-                autoComplete="off"
-                autoFocus
-              />
+            {/* Search Inputs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Product Name Search */}
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Поиск по названию товара..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onFocus={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onBlur={(e) => {
+                    e.stopPropagation();
+                  }}
+                  className="w-full pl-14 pr-6 py-4 text-lg border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                  autoComplete="off"
+                  autoFocus
+                />
+              </div>
+              
+              {/* Barcode Search */}
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Поиск по штрихкоду..."
+                  value={barcodeSearchTerm}
+                  onChange={(e) => setBarcodeSearchTerm(e.target.value)}
+                  onFocus={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onBlur={(e) => {
+                    e.stopPropagation();
+                  }}
+                  className="w-full pl-14 pr-6 py-4 text-lg border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                  autoComplete="off"
+                />
+              </div>
             </div>
 
             {/* Selection info and controls */}
@@ -3208,6 +3251,7 @@ const POSInterfaceCore = () => {
             <div className="flex gap-4 mb-8">
               <button
                 onClick={() => {
+                  if (onCredit) return; // Disable when in credit mode
                   const hasNalichnye = paymentMethods.some(
                     (p) => p.payment_method === "Наличные",
                   );
@@ -3226,7 +3270,12 @@ const POSInterfaceCore = () => {
                     ]);
                   }
                 }}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors"
+                disabled={onCredit}
+                className={`flex-1 border-2 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors ${
+                  onCredit 
+                    ? "bg-gray-300 border-gray-400 cursor-not-allowed opacity-50" 
+                    : "bg-gray-100 hover:bg-gray-200 border-gray-300"
+                }`}
               >
                 <svg
                   className="w-6 h-6 text-gray-600"
@@ -3249,6 +3298,7 @@ const POSInterfaceCore = () => {
 
               <button
                 onClick={() => {
+                  if (onCredit) return; // Disable when in credit mode
                   const hasClick = paymentMethods.some(
                     (p) => p.payment_method === "Click",
                   );
@@ -3267,7 +3317,12 @@ const POSInterfaceCore = () => {
                     ]);
                   }
                 }}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors"
+                disabled={onCredit}
+                className={`flex-1 border-2 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors ${
+                  onCredit 
+                    ? "bg-gray-300 border-gray-400 cursor-not-allowed opacity-50" 
+                    : "bg-gray-100 hover:bg-gray-200 border-gray-300"
+                }`}
               >
                 <svg
                   className="w-6 h-6 text-gray-600"
@@ -3290,6 +3345,7 @@ const POSInterfaceCore = () => {
 
               <button
                 onClick={() => {
+                  if (onCredit) return; // Disable when in credit mode
                   const hasKarta = paymentMethods.some(
                     (p) => p.payment_method === "Карта",
                   );
@@ -3308,7 +3364,12 @@ const POSInterfaceCore = () => {
                     ]);
                   }
                 }}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors"
+                disabled={onCredit}
+                className={`flex-1 border-2 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors ${
+                  onCredit 
+                    ? "bg-gray-300 border-gray-400 cursor-not-allowed opacity-50" 
+                    : "bg-gray-100 hover:bg-gray-200 border-gray-300"
+                }`}
               >
                 <svg
                   className="w-6 h-6 text-gray-600"
@@ -3331,6 +3392,7 @@ const POSInterfaceCore = () => {
 
               <button
                 onClick={() => {
+                  if (onCredit) return; // Disable when in credit mode
                   const hasPerechislenie = paymentMethods.some(
                     (p) => p.payment_method === "Перечисление",
                   );
@@ -3349,7 +3411,12 @@ const POSInterfaceCore = () => {
                     ]);
                   }
                 }}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors"
+                disabled={onCredit}
+                className={`flex-1 border-2 rounded-xl p-4 flex items-center justify-center gap-3 transition-colors ${
+                  onCredit 
+                    ? "bg-gray-300 border-gray-400 cursor-not-allowed opacity-50" 
+                    : "bg-gray-100 hover:bg-gray-200 border-gray-300"
+                }`}
               >
                 <svg
                   className="w-6 h-6 text-gray-600"
@@ -3372,6 +3439,7 @@ const POSInterfaceCore = () => {
 
               <button
                 onClick={() => {
+                  if (onCredit) return; // Disable when in credit mode
                   const totalPaid = paymentMethods.reduce(
                     (sum, p) => sum + (p.amount || 0),
                     0,
@@ -3384,7 +3452,12 @@ const POSInterfaceCore = () => {
                     ]);
                   }
                 }}
-                className="bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-xl px-6 flex items-center justify-center transition-colors"
+                disabled={onCredit}
+                className={`border-2 rounded-xl px-6 flex items-center justify-center transition-colors ${
+                  onCredit 
+                    ? "bg-gray-300 border-gray-400 cursor-not-allowed opacity-50" 
+                    : "bg-gray-100 hover:bg-gray-200 border-gray-300"
+                }`}
               >
                 <Plus className="w-6 h-6 text-gray-600" />
               </button>
@@ -3399,13 +3472,19 @@ const POSInterfaceCore = () => {
                 >
                   <button
                     onClick={() => {
+                      if (onCredit) return; // Disable when in credit mode
                       if (paymentMethods.length > 1) {
                         setPaymentMethods((prev) =>
                           prev.filter((_, i) => i !== index),
                         );
                       }
                     }}
-                    className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-white hover:bg-red-50 rounded-lg text-red-500 transition-colors"
+                    disabled={onCredit}
+                    className={`absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
+                      onCredit 
+                        ? "bg-gray-300 text-gray-400 cursor-not-allowed" 
+                        : "bg-white hover:bg-red-50 text-red-500"
+                    }`}
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -3418,6 +3497,7 @@ const POSInterfaceCore = () => {
                     type="number"
                     value={payment.amount || ""}
                     onChange={(e) => {
+                      if (onCredit) return; // Disable editing when in credit mode
                       const updated = [...paymentMethods];
                       updated[index].amount = Number(e.target.value);
                       setPaymentMethods(updated);
@@ -3429,7 +3509,10 @@ const POSInterfaceCore = () => {
                       e.stopPropagation();
                     }}
                     placeholder="0"
-                    className="w-full text-4xl font-bold text-gray-900 bg-transparent border-0 focus:outline-none focus:ring-0 p-0"
+                    disabled={onCredit}
+                    className={`w-full text-4xl font-bold bg-transparent border-0 focus:outline-none focus:ring-0 p-0 ${
+                      onCredit ? "text-gray-400 cursor-not-allowed" : "text-gray-900"
+                    }`}
                   />
                 </div>
               ))}

@@ -32,6 +32,7 @@ export default function ShiftsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [printingShiftId, setPrintingShiftId] = useState<number | null>(null);
+  const [shiftId, setShiftId] = useState<string>("");
 
   // Filter states
   const [storeFilter, setStoreFilter] = useState<string>("");
@@ -74,6 +75,7 @@ export default function ShiftsPage() {
     isApprovedFilter,
     isAwaitingApprovalFilter,
     searchTerm,
+    shiftId,
   ]);
 
   // Build filter params
@@ -100,6 +102,9 @@ export default function ShiftsPage() {
     filterParams.is_approved = isApprovedFilter === "true";
   if (isAwaitingApprovalFilter && isAwaitingApprovalFilter !== "all")
     filterParams.is_awaiting_approval = isAwaitingApprovalFilter === "true";
+  if (shiftId) {
+    (filterParams as any).id = parseInt(shiftId);
+  }
 
   const { data: response, isLoading } = useQuery({
     queryKey: ["shifts", page, searchTerm, filterParams],
@@ -256,12 +261,20 @@ export default function ShiftsPage() {
       </div>
 
       <div className="mb-4 space-y-4">
-        <Input
-          type="text"
-          placeholder={t("placeholders.search_shifts")}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input
+            type="text"
+            placeholder={t("placeholders.search_shifts")}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <Input
+            type="text"
+            placeholder="Поиск по ID смены"
+            value={shiftId}
+            onChange={(e) => setShiftId(e.target.value)}
+          />
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {/* Store Filter */}
@@ -409,6 +422,7 @@ export default function ShiftsPage() {
                 setIsActiveFilter("all");
                 setIsApprovedFilter("all");
                 setIsAwaitingApprovalFilter("all");
+                setShiftId("");
               }}
             >
               {t("common.clear_filters2")}

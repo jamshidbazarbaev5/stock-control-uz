@@ -178,8 +178,8 @@ export default function CreateStock() {
         return date.toISOString().slice(0, 16);
       })(),
       is_debt: false,
-      amount_of_debt: "",
-      advance_of_debt: "",
+      amount_of_debt: undefined,
+      advance_of_debt: undefined,
     },
   });
 
@@ -657,9 +657,10 @@ export default function CreateStock() {
   useEffect(() => {
     if (!isDebt) return;
     
-    // Sum all calculated tabs' total_price_in_uz
+    // Sum all calculated tabs' total_price_in_uzs (NOT total_price_in_uz)
     const totalUZS = stockTabs.reduce((sum, tab) => {
-      if (tab.isCalculated && tab.form.total_price_in_uz) {
+      if (tab.isCalculated) {
+        // Use total_price_in_uzs for consistency with backend
         const v = Number(tab.form.total_price_in_uz) || 0;
         return sum + v;
       }

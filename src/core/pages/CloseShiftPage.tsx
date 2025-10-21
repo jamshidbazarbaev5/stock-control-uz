@@ -512,7 +512,7 @@ const CloseShiftPage = () => {
               </h2>
             </div>
             <div className="p-4 sm:p-6 md:p-8">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6 md:mb-8">
                 <div className="bg-blue-50 rounded-xl p-2 sm:p-3 md:p-4 border-l-4 border-blue-500">
                   <div className="text-xs sm:text-sm text-blue-600 font-medium">
                     Всего продаж
@@ -527,6 +527,14 @@ const CloseShiftPage = () => {
                   </div>
                   <div className="text-lg sm:text-xl md:text-2xl font-bold text-green-800 truncate">
                     {summary.total_sales_amount.toLocaleString()}
+                  </div>
+                </div>
+                <div className="bg-amber-50 rounded-xl p-2 sm:p-3 md:p-4 border-l-4 border-amber-500">
+                  <div className="text-xs sm:text-sm text-amber-600 font-medium">
+                    Сумма долгов
+                  </div>
+                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-amber-800 truncate">
+                    {summary.total_debt_amount?.toLocaleString() || '0'}
                   </div>
                 </div>
                 <div className="bg-orange-50 rounded-xl p-2 sm:p-3 md:p-4 border-l-4 border-orange-500">

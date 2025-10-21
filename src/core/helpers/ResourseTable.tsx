@@ -44,6 +44,7 @@ interface ResourceTableProps<T extends { id?: number }> {
   onRowClick?: (row: T) => void;
   actions?: (row: T) => React.ReactNode;
   canDelete?: (row: T) => boolean;
+  canRefund?: (row: T) => boolean;
 }
 
 export function ResourceTable<T extends { id?: number }>({
@@ -62,6 +63,7 @@ export function ResourceTable<T extends { id?: number }>({
   onRowClick,
   actions,
   canDelete,
+  canRefund,
 }: ResourceTableProps<T>) {
   // Handle case when data is undefined
   const tableData = data || [];
@@ -257,7 +259,7 @@ export function ResourceTable<T extends { id?: number }>({
                               <Edit className="h-4 w-4" />
                             </Button>
                           )}
-                          {onRefund && (
+                          {onRefund && (!canRefund || canRefund(row)) && (
                             <Button
                               variant="ghost"
                               size="sm"

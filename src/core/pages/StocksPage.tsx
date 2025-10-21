@@ -349,8 +349,8 @@ export default function StocksPage() {
             <DropdownMenuItem onClick={() => handleEdit(row)}>
               {t("common.edit")}
             </DropdownMenuItem>
-            {/* Only show remove if superuser */}
-            {currentUser?.is_superuser ? (
+            {/* Only show remove if superuser and stock is not recycled */}
+            {currentUser?.is_superuser && !row.is_recycled ? (
               <DropdownMenuItem
                 onClick={() => {
                   setStockToDelete(row);
@@ -511,6 +511,14 @@ export default function StocksPage() {
   // Removed inline edit functionality - use dedicated edit page instead
 
   const handleDelete = async (id: number) => {
+    // Check if the stock is recycled
+    if (stockToDelete?.is_recycled) {
+      toast.error("Нельзя удалить переработанный товар");
+      setDeleteModalOpen(false);
+      setStockToDelete(null);
+      return;
+    }
+
     try {
       await deleteStock.mutateAsync(id);
       toast.success(

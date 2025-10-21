@@ -52,22 +52,7 @@ export default function CashInflowHistoryPage() {
       </div>
 
       <ResourceTable
-        columns={[
-          ...columns,
-          {
-            header: t('common.actions'),
-            accessorKey: 'actions',
-            cell: (row: any) => (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/edit-money/${row.id}`)}
-              >
-                {t('common.edit')}
-              </Button>
-            ),
-          }
-        ]}
+        columns={columns}
         data={budgets}
         isLoading={isLoading}
         onDelete={handleDelete}
