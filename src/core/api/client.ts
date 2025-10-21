@@ -41,10 +41,13 @@ export interface ClientHistoryEntry {
 
 export interface IncrementBalancePayload {
   amount: number;
+  store: number;
+  payment_method: "Наличные" | "Карта" | "Click" | "Перечисление";
 }
 
 export interface CashOutPayload {
   amount: number;
+  store: number;
   payment_method: "Наличные" | "Карта" | "Click" | "Перечисление";
 }
 
@@ -98,10 +101,10 @@ export const useGetClient = (clientId: number) => {
 export const useIncrementBalance = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, amount }: { id: number; amount: number }) => {
+    mutationFn: async ({ id, amount, store, payment_method }: { id: number; amount: number; store: number; payment_method: string }) => {
       const response = await api.post<Client>(
         `${CLIENT_URL}${id}/increment-balance/`,
-        { amount },
+        { amount, store, payment_method },
       );
       return response.data;
     },
@@ -125,10 +128,10 @@ export const useIncrementBalance = () => {
 export const useClientCashOut = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, amount, payment_method }: { id: number } & CashOutPayload) => {
+    mutationFn: async ({ id, amount, store, payment_method }: { id: number } & CashOutPayload) => {
       const response = await api.post<Client>(
         `${CLIENT_URL}${id}/cash-out/`,
-        { amount, payment_method },
+        { amount, store, payment_method },
       );
       return response.data;
     },

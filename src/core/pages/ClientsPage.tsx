@@ -40,8 +40,8 @@ import { useCurrentUser } from "../hooks/useCurrentUser";
 
 const formSchema = z.object({
   amount: z.number().min(0.01, "Amount must be greater than 0"),
+  store: z.number().min(1, "Store is required"),
   payment_method: z.enum(["Наличные", "Карта", "Click", "Перечисление"]),
-  store: z.number().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -53,35 +53,32 @@ interface BalanceIncrementDialogProps {
 }
 
 function BalanceIncrementDialog({
-  clientId,
-  isOpen,
-  onClose,
-}: BalanceIncrementDialogProps) {
+                                  clientId,
+                                  isOpen,
+                                  onClose,
+                                }: BalanceIncrementDialogProps) {
   const { t } = useTranslation();
   const incrementBalance = useIncrementBalance();
   const { data: currentUser } = useCurrentUser();
   const { data: storesData } = useGetStores({});
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
-  
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       amount: 0,
+      store: undefined,
       payment_method: "Наличные",
-      store: currentUser?.is_superuser ? undefined : currentUser?.store_read?.id,
     },
   });
-  
-  const selectedStore = form.watch("store");
-  const selectedPaymentMethod = form.watch("payment_method");
-  
-  const currentBudget = selectedStore ? 
-    stores.find(s => s.id === selectedStore)?.budgets?.find(b => b.budget_type === selectedPaymentMethod)?.amount || "0" 
-    : "0";
 
   const onSubmit = async (data: FormData) => {
     try {
-      await incrementBalance.mutateAsync({ id: clientId, amount: data.amount });
+      await incrementBalance.mutateAsync({ 
+        id: clientId, 
+        amount: data.amount,
+        store: data.store,
+        payment_method: data.payment_method,
+      });
       toast.success(t("messages.success.balance_incremented"));
       form.reset();
       onClose();
@@ -92,108 +89,102 @@ function BalanceIncrementDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("forms.increment_balance")}</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {currentUser?.is_superuser && (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("forms.increment_balance")}</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {currentUser?.is_superuser && (
+                <FormField
+                  control={form.control}
+                  name="store"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("forms.store")}</FormLabel>
+                      <FormControl>
+                        <Select 
+                          value={field.value?.toString()} 
+                          onValueChange={(val) => field.onChange(parseInt(val))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("placeholders.select_store")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {stores.map((store) => (
+                              <SelectItem key={store.id} value={store.id!.toString()}>
+                                {store.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
-                control={form.control}
-                name="store"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("forms.store")}</FormLabel>
-                    <FormControl>
-                      <Select 
-                        value={field.value?.toString()} 
-                        onValueChange={(val) => field.onChange(parseInt(val))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("placeholders.select_store")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {stores.map(store => (
-                            <SelectItem key={store.id} value={store.id!.toString()}>
-                              {store.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                  </FormItem>
-                )}
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("forms.amount")}</FormLabel>
+                        <FormControl>
+                          <Input
+                              type="number"
+                              step="0.01"
+                              {...field}
+                              onChange={(e) =>
+                                  field.onChange(parseFloat(e.target.value))
+                              }
+                          />
+                        </FormControl>
+                      </FormItem>
+                  )}
               />
-            )}
-            <FormField
-              control={form.control}
-              name="payment_method"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("common.payment_method")}</FormLabel>
-                  <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("placeholders.select_payment_method")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Наличные">{t("payment_types.cash")}</SelectItem>
-                        <SelectItem value="Карта">{t("payment_types.card")}</SelectItem>
-                        <SelectItem value="Click">{t("payment_types.click")}</SelectItem>
-                        <SelectItem value="Перечисление">Перечисление</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            {selectedStore && (
-              <div className="p-3 bg-muted rounded-md">
-                <span className="text-sm text-muted-foreground">Баланс ({selectedPaymentMethod}): </span>
-                <span className="font-semibold">{parseFloat(currentBudget).toLocaleString()} UZS</span>
+              <FormField
+                  control={form.control}
+                  name="payment_method"
+                  render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("common.payment_method")}</FormLabel>
+                        <FormControl>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t("placeholders.select_payment_method")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Наличные">{t("payment_types.cash")}</SelectItem>
+                              <SelectItem value="Карта">{t("payment_types.card")}</SelectItem>
+                              <SelectItem value="Click">{t("payment_types.click")}</SelectItem>
+                              <SelectItem value="Перечисление">Перечисление</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                      </FormItem>
+                  )}
+              />
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  {t("common.cancel")}
+                </Button>
+                <Button type="submit" disabled={incrementBalance.isPending}>
+                  {t("common.save")}
+                </Button>
               </div>
-            )}
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("forms.amount")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...field}
-                      onChange={(e) =>
-                        field.onChange(parseFloat(e.target.value))
-                      }
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onClose}>
-                {t("common.cancel")}
-              </Button>
-              <Button type="submit" disabled={incrementBalance.isPending}>
-                {t("common.save")}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
   );
 }
 
 // Cash-out dialog
 const cashOutSchema = z.object({
   amount: z.number().min(0.01, "Amount must be greater than 0"),
+  store: z.number().min(1, "Store is required"),
   payment_method: z.enum(["Наличные", "Карта", "Click", "Перечисление"]),
-  store: z.number().optional(),
 });
 
 type CashOutForm = z.infer<typeof cashOutSchema>;
@@ -210,26 +201,19 @@ function CashOutDialog({ clientId, isOpen, onClose }: CashOutDialogProps) {
   const { data: currentUser } = useCurrentUser();
   const { data: storesData } = useGetStores({});
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
-  
   const form = useForm<CashOutForm>({
     resolver: zodResolver(cashOutSchema),
-    defaultValues: { 
-      amount: 0, 
-      payment_method: "Наличные",
-      store: currentUser?.is_superuser ? undefined : currentUser?.store_read?.id
-    },
+    defaultValues: { amount: 0, store: undefined, payment_method: "Наличные" },
   });
-  
-  const selectedStore = form.watch("store");
-  const selectedPaymentMethod = form.watch("payment_method");
-  
-  const currentBudget = selectedStore ? 
-    stores.find(s => s.id === selectedStore)?.budgets?.find(b => b.budget_type === selectedPaymentMethod)?.amount || "0" 
-    : "0";
 
   const onSubmit = async (data: CashOutForm) => {
     try {
-      await cashOut.mutateAsync({ id: clientId, ...data });
+      await cashOut.mutateAsync({ 
+        id: clientId, 
+        amount: data.amount,
+        store: data.store,
+        payment_method: data.payment_method,
+      });
       toast.success(t("common.payment_successful", "Успешно"));
       form.reset();
       onClose();
@@ -240,98 +224,92 @@ function CashOutDialog({ clientId, isOpen, onClose }: CashOutDialogProps) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Обналичичка</DialogTitle>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {currentUser?.is_superuser && (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Обналичичка</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {currentUser?.is_superuser && (
+                <FormField
+                  control={form.control}
+                  name="store"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t("forms.store")}</FormLabel>
+                      <FormControl>
+                        <Select 
+                          value={field.value?.toString()} 
+                          onValueChange={(val) => field.onChange(parseInt(val))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("placeholders.select_store")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {stores.map((store) => (
+                              <SelectItem key={store.id} value={store.id!.toString()}>
+                                {store.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
-                control={form.control}
-                name="store"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t("forms.store")}</FormLabel>
-                    <FormControl>
-                      <Select 
-                        value={field.value?.toString()} 
-                        onValueChange={(val) => field.onChange(parseInt(val))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("placeholders.select_store")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {stores.map(store => (
-                            <SelectItem key={store.id} value={store.id!.toString()}>
-                              {store.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                  </FormItem>
-                )}
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("common.amount")}</FormLabel>
+                        <FormControl>
+                          <Input
+                              type="number"
+                              step="0.01"
+                              {...field}
+                              onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                          />
+                        </FormControl>
+                      </FormItem>
+                  )}
               />
-            )}
-            <FormField
-              control={form.control}
-              name="payment_method"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("common.payment_method")}</FormLabel>
-                  <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={t("placeholders.select_payment_method")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Наличные">{t("payment_types.cash")}</SelectItem>
-                        <SelectItem value="Карта">{t("payment_types.card")}</SelectItem>
-                        <SelectItem value="Click">{t("payment_types.click")}</SelectItem>
-                        <SelectItem value="Перечисление">Перечисление</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            {selectedStore && (
-              <div className="p-3 bg-muted rounded-md">
-                <span className="text-sm text-muted-foreground">Баланс ({selectedPaymentMethod}): </span>
-                <span className="font-semibold">{parseFloat(currentBudget).toLocaleString()} UZS</span>
+              <FormField
+                  control={form.control}
+                  name="payment_method"
+                  render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("common.payment_method")}</FormLabel>
+                        <FormControl>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t("placeholders.select_payment_method")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Наличные">{t("payment_types.cash")}</SelectItem>
+                              <SelectItem value="Карта">{t("payment_types.card")}</SelectItem>
+                              <SelectItem value="Click">{t("payment_types.click")}</SelectItem>
+                              <SelectItem value="Перечисление">Перечисление</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                      </FormItem>
+                  )}
+              />
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  {t("common.cancel")}
+                </Button>
+                <Button type="submit" disabled={cashOut.isPending}>
+                  {t("common.save")}
+                </Button>
               </div>
-            )}
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("common.amount")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            <div className="flex justify-end space-x-2">
-              <Button type="button" variant="outline" onClick={onClose}>
-                {t("common.cancel")}
-              </Button>
-              <Button type="submit" disabled={cashOut.isPending}>
-                {t("common.save")}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
   );
 }
 
@@ -347,11 +325,11 @@ export default function ClientsPage() {
   const deleteClient = useDeleteClient();
   const { data: currentUser } = useCurrentUser();
   const clients = Array.isArray(clientsData)
-    ? clientsData
-    : clientsData?.results || [];
+      ? clientsData
+      : clientsData?.results || [];
   const totalCount = Array.isArray(clientsData)
-    ? clients.length
-    : clientsData?.count || 0;
+      ? clients.length
+      : clientsData?.count || 0;
 
   const columns = [
     {
@@ -361,9 +339,9 @@ export default function ClientsPage() {
     {
       header: t("forms.name"),
       accessorKey: (row: Client) =>
-        row.type === "Юр.лицо"
-          ? row.name + " (" + row.ceo_name + ")"
-          : row.name,
+          row.type === "Юр.лицо"
+              ? row.name + " (" + row.ceo_name + ")"
+              : row.name,
     },
     {
       header: t("forms.phone"),
@@ -382,32 +360,32 @@ export default function ClientsPage() {
       id: "actions",
       accessorKey: "id",
       cell: (row: Client) =>
-        row.type === "Юр.лицо" ? (
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => navigate(`/clients/${row.id}/history`)}
-            >
-              {t("common.history")}
-            </Button>
-            {currentUser?.is_superuser && (
-              <>
+          row.type === "Юр.лицо" ? (
+              <div className="flex gap-2">
                 <Button
-                  variant="outline"
-                  onClick={() => row.id && setSelectedClientId(row.id)}
+                    variant="outline"
+                    onClick={() => navigate(`/clients/${row.id}/history`)}
                 >
-                  {t("common.increment_balance")}
+                  {t("common.history")}
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => row.id && setCashOutClientId(row.id)}
-                >
-                  Обналичичка
-                </Button>
-              </>
-            )}
-          </div>
-        ) : null,
+                {currentUser?.is_superuser && (
+                    <>
+                      <Button
+                          variant="outline"
+                          onClick={() => row.id && setSelectedClientId(row.id)}
+                      >
+                        {t("common.increment_balance")}
+                      </Button>
+                      <Button
+                          variant="outline"
+                          onClick={() => row.id && setCashOutClientId(row.id)}
+                      >
+                        Обналичичка
+                      </Button>
+                    </>
+                )}
+              </div>
+          ) : null,
     },
   ];
 
@@ -416,54 +394,54 @@ export default function ClientsPage() {
       if (currentUser?.is_superuser) {
         await deleteClient.mutateAsync(id);
         toast.success(
-          t("messages.success.deleted", { item: t("navigation.clients") }),
+            t("messages.success.deleted", { item: t("navigation.clients") }),
         );
       }
     } catch (error) {
       toast.error(
-        t("messages.error.delete", { item: t("navigation.clients") }),
+          t("messages.error.delete", { item: t("navigation.clients") }),
       );
       console.error("Failed to delete client:", error);
     }
   };
 
   return (
-    <div className="container py-8 px-4">
-      <div className="mb-4">
-        <Select value={selectedType} onValueChange={setSelectedType}>
-          <SelectTrigger>
-            <SelectValue placeholder={t("forms.select_client_type")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{t("common.all")}</SelectItem>
-            <SelectItem value="Физ.лицо">{t("forms.individual")}</SelectItem>
-            <SelectItem value="Юр.лицо">{t("forms.legal_entity")}</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="container py-8 px-4">
+        <div className="mb-4">
+          <Select value={selectedType} onValueChange={setSelectedType}>
+            <SelectTrigger>
+              <SelectValue placeholder={t("forms.select_client_type")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("common.all")}</SelectItem>
+              <SelectItem value="Физ.лицо">{t("forms.individual")}</SelectItem>
+              <SelectItem value="Юр.лицо">{t("forms.legal_entity")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <ResourceTable<Client>
+            data={clients}
+            columns={columns}
+            isLoading={isLoading}
+            onAdd={() => navigate('/create-client')}
+            onEdit={currentUser?.is_superuser ? (client) => navigate(`/edit-client/${client.id}`) : undefined}
+            onDelete={currentUser?.is_superuser ? handleDelete : undefined}
+            totalCount={totalCount}
+        />
+        {selectedClientId && (
+            <BalanceIncrementDialog
+                clientId={selectedClientId}
+                isOpen={!!selectedClientId}
+                onClose={() => setSelectedClientId(null)}
+            />
+        )}
+        {cashOutClientId && (
+            <CashOutDialog
+                clientId={cashOutClientId}
+                isOpen={!!cashOutClientId}
+                onClose={() => setCashOutClientId(null)}
+            />
+        )}
       </div>
-      <ResourceTable<Client>
-        data={clients}
-        columns={columns}
-        isLoading={isLoading}
-        onAdd={() => navigate('/create-client')}
-        onEdit={currentUser?.is_superuser ? (client) => navigate(`/edit-client/${client.id}`) : undefined}
-        onDelete={currentUser?.is_superuser ? handleDelete : undefined}
-        totalCount={totalCount}
-      />
-      {selectedClientId && (
-        <BalanceIncrementDialog
-          clientId={selectedClientId}
-          isOpen={!!selectedClientId}
-          onClose={() => setSelectedClientId(null)}
-        />
-      )}
-      {cashOutClientId && (
-        <CashOutDialog
-          clientId={cashOutClientId}
-          isOpen={!!cashOutClientId}
-          onClose={() => setCashOutClientId(null)}
-        />
-      )}
-    </div>
   );
 }
