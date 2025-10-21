@@ -5,7 +5,7 @@ import { ResourceTable } from '../helpers/ResourseTable';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ResourceForm } from '../helpers/ResourceForm';
 import { toast } from 'sonner';
-import { type LabelSize, useGetLabelSizes, useUpdateLabelSize, useDeleteLabelSize } from '../api/label-size';
+import { type LabelSize, useGetLabelSizes, useUpdateLabelSize } from '../api/label-size';
 
 const labelSizeFields = (t: any) => [
     {
@@ -52,7 +52,6 @@ export default function LabelSizesPage() {
     const labelSizes = (Array.isArray(labelSizesData) ? labelSizesData : []) as LabelSize[];
 
     const { mutate: updateLabelSize, isPending: isUpdating } = useUpdateLabelSize();
-    const { mutate: deleteLabelSize } = useDeleteLabelSize();
 
     const handleEdit = (labelSize: LabelSize) => {
         setEditingLabelSize(labelSize);
@@ -75,12 +74,6 @@ export default function LabelSizesPage() {
         );
     };
 
-    const handleDelete = (id: number) => {
-        deleteLabelSize(id, {
-            onSuccess: () => toast.success(t('messages.success.deleted', { item: t('navigation.labelSizes') })),
-            onError: () => toast.error(t('messages.error.delete', { item: t('navigation.labelSizes') })),
-        });
-    };
 
     return (
         <div className="container mx-auto py-6">
