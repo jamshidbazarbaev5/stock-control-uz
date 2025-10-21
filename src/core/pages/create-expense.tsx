@@ -9,7 +9,7 @@ import { useGetStores } from '../api/store';
 import { useGetExpenseNames } from '../api/expense-name';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 
-const expenseFields = (t: (key: string) => string, storeBudget: number, onStoreChange: (storeId: number) => void, isSuperuser: boolean) => {
+const expenseFields = (t: (key: string) => string, storeBudget: number, onStoreChange: (storeId: number) => void, onPaymentTypeChange: (paymentType: string) => void, isSuperuser: boolean) => {
   const fields = [];
   
   // Only show store field if user is superuser
@@ -59,6 +59,7 @@ const expenseFields = (t: (key: string) => string, storeBudget: number, onStoreC
         { value: 'Click', label: t('forms.click') },
         { value: 'Перечисление', label: t('forms.transfer') },
       ],
+      onChange: (value: string) => onPaymentTypeChange(value)
     },
     {
       name: 'comment',
@@ -77,6 +78,8 @@ export default function CreateExpense() {
   const navigate = useNavigate();
   const createExpense = useCreateExpense();
   const [storeBudget, setStoreBudget] = useState(0);
+  const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null);
+  const [selectedPaymentType, setSelectedPaymentType] = useState<string>('Наличные');
   const { data: currentUser } = useCurrentUser();
 
   // Fetch stores and expense names for select inputs
@@ -87,14 +90,30 @@ export default function CreateExpense() {
   const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
   const expenseNames = Array.isArray(expenseNamesData) ? expenseNamesData : expenseNamesData?.results || [];
 
-  const handleStoreChange = (storeId: number) => {
+  const updateBudget = (storeId: number | null, paymentType: string) => {
+    if (!storeId) return;
     const selectedStore = stores.find(store => store.id === storeId);
-    setStoreBudget(selectedStore?.budget ? parseFloat(selectedStore.budget) : 0);
+    if (selectedStore?.budgets) {
+      const budgetForType = selectedStore.budgets.find(b => b.budget_type === paymentType);
+      setStoreBudget(budgetForType ? parseFloat(budgetForType.amount) : 0);
+    } else {
+      setStoreBudget(selectedStore?.budget ? parseFloat(selectedStore.budget) : 0);
+    }
+  };
+
+  const handleStoreChange = (storeId: number) => {
+    setSelectedStoreId(storeId);
+    updateBudget(storeId, selectedPaymentType);
+  };
+  
+  const handlePaymentTypeChange = (paymentType: string) => {
+    setSelectedPaymentType(paymentType);
+    updateBudget(selectedStoreId, paymentType);
   };
 
   // Update fields with dynamic data
   const isSuperuser = currentUser?.is_superuser || false;
-  const fields = expenseFields(t, storeBudget, handleStoreChange, isSuperuser).map(field => {
+  const fields = expenseFields(t, storeBudget, handleStoreChange, handlePaymentTypeChange, isSuperuser).map(field => {
     if (field.name === 'store') {
       return {
         ...field,

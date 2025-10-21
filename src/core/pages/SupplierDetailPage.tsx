@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGetStockEntries, useGetStocks, usePayStockDebt } from '../api/stock';
+import { useGetStores } from '../api/store';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, DollarSign, History, Edit } from 'lucide-react';
@@ -25,14 +27,22 @@ export default function SupplierDetailPage() {
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentType, setPaymentType] = useState('Наличные');
+  const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null);
   const [paymentComment, setPaymentComment] = useState('');
   
   // Fetch stock entries for this supplier
   const { data: stockEntriesData, isLoading: isLoadingEntries } = useGetStockEntries({
     params: { supplier: id },
   });
+  const { data: currentUser } = useCurrentUser();
+  const { data: storesData } = useGetStores({});
+  const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
 
   const payStockDebt = usePayStockDebt();
+  
+  const currentBudget = selectedStoreId ? 
+    stores.find(s => s.id === selectedStoreId)?.budgets?.find(b => b.budget_type === paymentType)?.amount || "0" 
+    : "0";
 
   const stockEntries = stockEntriesData?.results || [];
 
@@ -40,6 +50,7 @@ export default function SupplierDetailPage() {
     setSelectedEntry(entry);
     setPaymentAmount('');
     setPaymentType('Наличные');
+    setSelectedStoreId(currentUser?.is_superuser ? null : (currentUser?.store_read?.id || null));
     setPaymentComment('');
     setPaymentDialogOpen(true);
   };
@@ -286,17 +297,22 @@ export default function SupplierDetailPage() {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="payment-amount">{t('common.payment_amount')}</Label>
-              <Input
-                id="payment-amount"
-                type="number"
-                placeholder={t('common.enter_payment_amount')}
-                value={paymentAmount}
-                onChange={(e) => setPaymentAmount(e.target.value)}
-                max={selectedEntry?.remaining_debt}
-              />
-            </div>
+            {currentUser?.is_superuser && (
+              <div className="space-y-2">
+                <Label htmlFor="store-select">{t('forms.store')}</Label>
+                <select
+                  id="store-select"
+                  className="w-full px-3 py-2 border rounded-md"
+                  value={selectedStoreId || ''}
+                  onChange={(e) => setSelectedStoreId(e.target.value ? parseInt(e.target.value) : null)}
+                >
+                  <option value="">{t('placeholders.select_store')}</option>
+                  {stores.map(store => (
+                    <option key={store.id} value={store.id}>{store.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="payment-type">{t('forms.payment_method')}</Label>
@@ -311,6 +327,25 @@ export default function SupplierDetailPage() {
                 <option value="Click">{t('payment_types.click')}</option>
                 <option value="Перечисление">{t('payment.per')}</option>
               </select>
+            </div>
+
+            {selectedStoreId && (
+              <div className="p-3 bg-muted rounded-md">
+                <span className="text-sm text-muted-foreground">Баланс ({paymentType}): </span>
+                <span className="font-semibold">{parseFloat(currentBudget).toLocaleString()} UZS</span>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="payment-amount">{t('common.payment_amount')}</Label>
+              <Input
+                id="payment-amount"
+                type="number"
+                placeholder={t('common.enter_payment_amount')}
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                max={selectedEntry?.remaining_debt}
+              />
             </div>
 
             <div className="space-y-2">

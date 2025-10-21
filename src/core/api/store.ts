@@ -1,12 +1,19 @@
 import { createResourceApiHooks } from '../helpers/createResourceApi';
 
 // Types
+export interface StoreBudget {
+  id: number;
+  budget_type: string;
+  amount: string;
+}
+
 export interface Store {
   id?: number;
   name: string;
   address: string;
   phone_number: string;
   budget: string;
+  budgets?: StoreBudget[];
   is_main: boolean;
   parent_store?: number;
   owner: number;

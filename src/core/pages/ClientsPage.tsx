@@ -8,6 +8,7 @@ import {
   useIncrementBalance,
   useClientCashOut,
 } from "../api/client";
+import { useGetStores, type Store } from "../api/store";
 import { toast } from "sonner";
 import {
   Select,
@@ -39,6 +40,8 @@ import { useCurrentUser } from "../hooks/useCurrentUser";
 
 const formSchema = z.object({
   amount: z.number().min(0.01, "Amount must be greater than 0"),
+  payment_method: z.enum(["Наличные", "Карта", "Click", "Перечисление"]),
+  store: z.number().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -56,12 +59,25 @@ function BalanceIncrementDialog({
 }: BalanceIncrementDialogProps) {
   const { t } = useTranslation();
   const incrementBalance = useIncrementBalance();
+  const { data: currentUser } = useCurrentUser();
+  const { data: storesData } = useGetStores({});
+  const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
+  
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       amount: 0,
+      payment_method: "Наличные",
+      store: currentUser?.is_superuser ? undefined : currentUser?.store_read?.id,
     },
   });
+  
+  const selectedStore = form.watch("store");
+  const selectedPaymentMethod = form.watch("payment_method");
+  
+  const currentBudget = selectedStore ? 
+    stores.find(s => s.id === selectedStore)?.budgets?.find(b => b.budget_type === selectedPaymentMethod)?.amount || "0" 
+    : "0";
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -83,6 +99,62 @@ function BalanceIncrementDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {currentUser?.is_superuser && (
+              <FormField
+                control={form.control}
+                name="store"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("forms.store")}</FormLabel>
+                    <FormControl>
+                      <Select 
+                        value={field.value?.toString()} 
+                        onValueChange={(val) => field.onChange(parseInt(val))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("placeholders.select_store")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {stores.map(store => (
+                            <SelectItem key={store.id} value={store.id!.toString()}>
+                              {store.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            )}
+            <FormField
+              control={form.control}
+              name="payment_method"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("common.payment_method")}</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("placeholders.select_payment_method")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Наличные">{t("payment_types.cash")}</SelectItem>
+                        <SelectItem value="Карта">{t("payment_types.card")}</SelectItem>
+                        <SelectItem value="Click">{t("payment_types.click")}</SelectItem>
+                        <SelectItem value="Перечисление">Перечисление</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            {selectedStore && (
+              <div className="p-3 bg-muted rounded-md">
+                <span className="text-sm text-muted-foreground">Баланс ({selectedPaymentMethod}): </span>
+                <span className="font-semibold">{parseFloat(currentBudget).toLocaleString()} UZS</span>
+              </div>
+            )}
             <FormField
               control={form.control}
               name="amount"
@@ -121,6 +193,7 @@ function BalanceIncrementDialog({
 const cashOutSchema = z.object({
   amount: z.number().min(0.01, "Amount must be greater than 0"),
   payment_method: z.enum(["Наличные", "Карта", "Click", "Перечисление"]),
+  store: z.number().optional(),
 });
 
 type CashOutForm = z.infer<typeof cashOutSchema>;
@@ -134,10 +207,25 @@ interface CashOutDialogProps {
 function CashOutDialog({ clientId, isOpen, onClose }: CashOutDialogProps) {
   const { t } = useTranslation();
   const cashOut = useClientCashOut();
+  const { data: currentUser } = useCurrentUser();
+  const { data: storesData } = useGetStores({});
+  const stores = Array.isArray(storesData) ? storesData : storesData?.results || [];
+  
   const form = useForm<CashOutForm>({
     resolver: zodResolver(cashOutSchema),
-    defaultValues: { amount: 0, payment_method: "Наличные" },
+    defaultValues: { 
+      amount: 0, 
+      payment_method: "Наличные",
+      store: currentUser?.is_superuser ? undefined : currentUser?.store_read?.id
+    },
   });
+  
+  const selectedStore = form.watch("store");
+  const selectedPaymentMethod = form.watch("payment_method");
+  
+  const currentBudget = selectedStore ? 
+    stores.find(s => s.id === selectedStore)?.budgets?.find(b => b.budget_type === selectedPaymentMethod)?.amount || "0" 
+    : "0";
 
   const onSubmit = async (data: CashOutForm) => {
     try {
@@ -159,23 +247,34 @@ function CashOutDialog({ clientId, isOpen, onClose }: CashOutDialogProps) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("common.amount")}</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      {...field}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+            {currentUser?.is_superuser && (
+              <FormField
+                control={form.control}
+                name="store"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("forms.store")}</FormLabel>
+                    <FormControl>
+                      <Select 
+                        value={field.value?.toString()} 
+                        onValueChange={(val) => field.onChange(parseInt(val))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("placeholders.select_store")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {stores.map(store => (
+                            <SelectItem key={store.id} value={store.id!.toString()}>
+                              {store.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            )}
             <FormField
               control={form.control}
               name="payment_method"
@@ -194,6 +293,29 @@ function CashOutDialog({ clientId, isOpen, onClose }: CashOutDialogProps) {
                         <SelectItem value="Перечисление">Перечисление</SelectItem>
                       </SelectContent>
                     </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            {selectedStore && (
+              <div className="p-3 bg-muted rounded-md">
+                <span className="text-sm text-muted-foreground">Баланс ({selectedPaymentMethod}): </span>
+                <span className="font-semibold">{parseFloat(currentBudget).toLocaleString()} UZS</span>
+              </div>
+            )}
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("common.amount")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      {...field}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                    />
                   </FormControl>
                 </FormItem>
               )}
