@@ -4,8 +4,8 @@ import { calculateStock, createBulkStockEntry } from "../api/stock";
 import {
   useCreateProduct,
   searchProductByBarcode,
+  useGetProducts,
 } from "../api/product";
-import { fetchAllProducts } from "../api/fetchAllProducts";
 import { useGetStores } from "../api/store";
 import { useGetSuppliers, useCreateSupplier } from "../api/supplier";
 import { useGetCategories } from "../api/category";
@@ -107,8 +107,6 @@ export default function CreateStock() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [productSearchTerm, setProductSearchTerm] = useState("");
-  const [fetchedProducts, setFetchedProducts] = useState<any[]>([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
   const [activeSearchIndex, setActiveSearchIndex] = useState<string | null>(null);
   const searchRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
@@ -116,7 +114,7 @@ export default function CreateStock() {
   const [scanBuffer, setScanBuffer] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
+  const [productPage, _setProductPage] = useState(1);
   // Tabs state
   const [stockTabs, setStockTabs] = useState<StockItemTab[]>([
     {
@@ -160,6 +158,12 @@ export default function CreateStock() {
     useGetCurrencies({});
   const { data: _measurementsData, isLoading: measurementsLoading } =
     useGetMeasurements({});
+  const { data: productsData } = useGetProducts({
+    params: {
+      page: productPage,
+      ...(productSearchTerm ? { product_name: productSearchTerm } : {}),
+    },
+  });
 
   const [createProductOpen, setCreateProductOpen] = useState(false);
   const [createSupplierOpen, setCreateSupplierOpen] = useState(false);
@@ -194,6 +198,9 @@ export default function CreateStock() {
   const currencies = Array.isArray(currenciesData)
     ? currenciesData
     : currenciesData?.results || [];
+  const allProducts = Array.isArray(productsData)
+      ? productsData
+      : productsData?.results || [];
 
   // Add new stock tab
   const addStockTab = () => {
@@ -382,23 +389,6 @@ export default function CreateStock() {
     return String(value);
   };
 
-  // Fetch products when search term changes
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setLoadingProducts(true);
-      fetchAllProducts({
-        product_name: productSearchTerm.length > 0 ? productSearchTerm : undefined,
-      })
-        .then((data) => setFetchedProducts(data))
-        .catch((error) => {
-          console.error("Error fetching products:", error);
-          toast.error("Failed to load products");
-        })
-        .finally(() => setLoadingProducts(false));
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [productSearchTerm]);
 
   // Handle click outside to close search results
   useEffect(() => {
@@ -420,7 +410,7 @@ export default function CreateStock() {
 
   // Handle product selection change in tab
   const handleProductChange = (tabId: string, productId: string) => {
-    const product = fetchedProducts.find((p) => p.id === Number(productId));
+    const product = allProducts.find((p) => p.id === Number(productId));
     setStockTabs((tabs) =>
       tabs.map((tab) => {
         if (tab.id === tabId) {
@@ -429,7 +419,7 @@ export default function CreateStock() {
             product: productId,
             purchase_unit: "", // Reset purchase unit
           };
-          
+
           return {
             ...tab,
             selectedProduct: product,
@@ -695,7 +685,7 @@ export default function CreateStock() {
   const isDebt = commonForm.watch("is_debt");
   useEffect(() => {
     if (!isDebt) return;
-    
+
     // Sum all calculated tabs' total_price_in_uzs (NOT total_price_in_uz)
     const totalUZS = stockTabs.reduce((sum, tab) => {
       if (tab.isCalculated) {
@@ -705,7 +695,7 @@ export default function CreateStock() {
       }
       return sum;
     }, 0);
-    
+
     if (totalUZS > 0) {
       const currentDebt = commonForm.getValues("amount_of_debt");
       // Only auto-set if user hasn't manually entered a value
@@ -721,7 +711,7 @@ export default function CreateStock() {
   // Auto-trigger calculation when all required fields are filled
   useEffect(() => {
     const commonValues = commonForm.getValues();
-    
+
     stockTabs.forEach((tab) => {
       if (
         commonValues.store &&
@@ -780,7 +770,7 @@ export default function CreateStock() {
         {/* Common Fields Section - First */}
         <div className="space-y-4 mb-8 pb-6 border-b">
           <h2 className="text-lg font-semibold">{t("common.common_information")}</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Store */}
             <div className="space-y-2">
@@ -929,84 +919,42 @@ export default function CreateStock() {
                     <Label htmlFor={`product-${tab.id}`}>
                       {t("common.product")} *
                     </Label>
-                    <div
-                      className="relative"
-                      ref={(el) => {
-                        searchRefs.current[tab.id] = el;
-                      }}
+                    <Select
+                        value={tab.form.product?.toString()}
+                        onValueChange={(value) => handleProductChange(tab.id, value)}
+                        onOpenChange={(open) => {
+                          if (!open) setProductSearchTerm("");
+                        }}
                     >
-                      <Input
-                        type="text"
-                        placeholder={t("common.search_product")}
-                        value={
-                          activeSearchIndex === tab.id
-                            ? productSearchTerm
-                            : ""
-                        }
-                        onChange={(e) => {
-                          setProductSearchTerm(e.target.value);
-                          setActiveSearchIndex(tab.id);
-                        }}
-                        onFocus={() => {
-                          setActiveSearchIndex(tab.id);
-                        }}
-                        className="w-full"
-                        autoComplete="off"
-                      />
-                      {activeSearchIndex === tab.id && (
-                        <div className="absolute z-50 w-full mt-1 bg-white border-2 border-gray-300 rounded-lg shadow-xl max-h-[300px] overflow-y-auto">
-                          {loadingProducts ? (
-                            <div className="px-4 py-4 text-center text-gray-600 text-sm bg-white">
-                              Loading...
-                            </div>
-                          ) : fetchedProducts.length > 0 ? (
-                            fetchedProducts.map((product: any) => (
-                              <div
-                                key={product.id}
-                                className="px-4 py-3 bg-white hover:bg-blue-50 active:bg-blue-100 cursor-pointer border-b border-gray-200 last:border-b-0 transition-all duration-150"
-                                onClick={() => {
-                                  handleProductChange(tab.id, String(product.id));
-                                  setProductSearchTerm("");
-                                  setActiveSearchIndex(null);
-                                }}
-                              >
-                                <div className="flex justify-between items-center gap-2">
-                                  <span className="font-medium text-sm text-gray-900">
-                                    {product.product_name}
-                                  </span>
-                                </div>
-                                {product.barcode && (
-                                  <div className="text-xs text-gray-600 mt-1">
-                                    {product.barcode}
-                                  </div>
-                                )}
-                              </div>
-                            ))
-                          ) : (
-                            <div className="px-4 py-4 text-center text-gray-600 text-sm bg-white">
-                              {productSearchTerm ? "No products found" : "Start typing to search"}
-                            </div>
-                          )}
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("common.product")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <div className="p-2 sticky top-0 bg-white">
+                          <Input
+                              placeholder="Search product"
+                              value={productSearchTerm}
+                              onChange={(e) => setProductSearchTerm(e.target.value)}
+                              onKeyDown={(e) => e.stopPropagation()}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onClick={(e) => e.stopPropagation()}
+                              autoFocus
+                          />
                         </div>
-                      )}
-                      {tab.form.product && activeSearchIndex !== tab.id && (
-                        <div className="mt-2 px-3 py-2 bg-blue-50 border border-blue-300 rounded-md text-sm flex justify-between items-center shadow-sm">
-                          <span className="font-medium text-gray-900">
-                            {tab.selectedProduct?.product_name || "Selected"}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActiveSearchIndex(tab.id);
-                              setProductSearchTerm("");
-                            }}
-                            className="text-blue-700 hover:text-blue-900 hover:underline text-xs font-medium"
-                          >
-                            {t("common.edit")}
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                        {(() => {
+                          const options = [...allProducts];
+                          const sel = tab.selectedProduct as any;
+                          if (sel && !options.some((p: any) => p.id === sel.id)) {
+                            options.unshift(sel);
+                          }
+                          return options.map((product: any) => (
+                              <SelectItem key={product.id} value={String(product.id)}>
+                                {product.product_name}
+                              </SelectItem>
+                          ));
+                        })()}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Currency */}
