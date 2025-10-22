@@ -23,7 +23,12 @@ const supplierFields = (t: any) => [
     required: true,
   },
 ];
-
+const formatNumber = (value: string | number) => {
+  return Number(value).toLocaleString('ru-RU', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
 const columns = (t: any) => [
   {
     header: t('table.name'),
@@ -35,15 +40,15 @@ const columns = (t: any) => [
   },
   {
     header: t('table.total_debt'),
-    accessorKey: 'total_debt',
+    accessorKey: (row:any)=>formatNumber(row.total_debt),
   },
   {
     header: t('table.total_paid'),
-    accessorKey: 'total_paid',
+    accessorKey: (row:any)=>formatNumber(row.total_paid),
   },
   {
     header: t('table.remaining_debt'),
-    accessorKey: 'remaining_debt',
+    accessorKey: (row:any)=>formatNumber(row.remaining_debt),
   },
 ];
 
