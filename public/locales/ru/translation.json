@@ -858,6 +858,7 @@
   },
   "table": {
     "balance": "Баланс",
+    "discount": "Скидка",
     "total_debt": "Долг",
     "remaining_debt": "Остаток",
     "total_paid": "Всего оплачено",
