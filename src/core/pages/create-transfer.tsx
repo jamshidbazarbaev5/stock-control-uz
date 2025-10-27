@@ -455,7 +455,7 @@ export default function CreateTransfer() {
                         maximumFractionDigits: 2,
                       })}
                     </span>
-
+                   
                   </div>
                 )}
               </div>

@@ -68,7 +68,7 @@ export default function StockPriceHistoryPage() {
         <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white">
           <CardContent className="p-4 sm:p-6">
             <h3 className="text-xs sm:text-sm font-medium opacity-75 mb-2">{t('table.supplier')}</h3>
-            <p className="text-lg sm:text-2xl font-bold">{stockHistory?.stock_entry?.supplier?.name}</p>
+            <p className="text-lg sm:text-2xl font-bold">{stockHistory.stock_entry?.supplier?.name}</p>
             <div className="mt-3">
               <p className="text-xs opacity-75">Статус долга</p>
               <p className="text-sm sm:text-lg font-medium">
@@ -81,11 +81,11 @@ export default function StockPriceHistoryPage() {
         <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
           <CardContent className="p-4 sm:p-6">
             <h3 className="text-xs sm:text-sm font-medium opacity-75 mb-2">Количество</h3>
-            <p className="text-lg sm:text-2xl font-bold">{stockHistory?.quantity}</p>
+            <p className="text-lg sm:text-2xl font-bold">{stockHistory.quantity}</p>
             <div className="mt-3">
               <p className="text-xs opacity-75">Единица закупки</p>
               <p className="text-sm sm:text-lg font-medium">
-                {stockHistory.purchase_unit_quantity} {stockHistory?.purchase_unit?.short_name}
+                {stockHistory.purchase_unit_quantity} {stockHistory.purchase_unit.short_name}
               </p>
             </div>
           </CardContent>
