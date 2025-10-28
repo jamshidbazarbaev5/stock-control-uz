@@ -962,47 +962,62 @@ export default function CreateStock() {
           const updatedForm = {
             ...i.form,
             purchase_unit_quantity: resultValue,
-            quantity: Number(calculationInput.toFixed(0)), // Convert to integer to avoid precision issues
+            quantity: calculationInput.toFixed(2),
           };
 
-          // Also update dynamicFields if purchase_unit_quantity exists there
+          // Calculate prices directly without triggering recalculation
+          if (i.calculationMetadata) {
+            const { exchange_rate, is_base_currency } = i.calculationMetadata;
+            const qty = parseFloat(resultValue);
+
+            if (!is_base_currency && qty) {
+              const pricePerUnit = Number(i.form.price_per_unit_currency) || 0;
+              if (pricePerUnit) {
+                updatedForm.total_price_in_currency = formatNumberDisplay(pricePerUnit * qty);
+                updatedForm.price_per_unit_uz = formatNumberDisplay(pricePerUnit * exchange_rate);
+                updatedForm.total_price_in_uz = formatNumberDisplay((pricePerUnit * qty) * exchange_rate);
+              }
+            } else if (is_base_currency && qty) {
+              const pricePerUnitUz = Number(i.form.price_per_unit_uz) || 0;
+              if (pricePerUnitUz) {
+                updatedForm.total_price_in_uz = formatNumberDisplay(pricePerUnitUz * qty);
+              }
+            }
+
+            // Base unit cost
+            const finalQuantity = Number(updatedForm.quantity) || 0;
+            if (finalQuantity) {
+              updatedForm.base_unit_in_currency = formatNumberDisplay(
+                (Number(updatedForm.total_price_in_currency) || 0) / finalQuantity,
+              );
+              updatedForm.base_unit_in_uzs = formatNumberDisplay(
+                (Number(updatedForm.total_price_in_uz) || 0) / finalQuantity,
+              );
+            }
+          }
+
           const updatedDynamicFields = { ...i.dynamicFields };
           if (updatedDynamicFields.purchase_unit_quantity) {
-            console.log(
-              "Updating dynamicFields.purchase_unit_quantity from:",
-              updatedDynamicFields.purchase_unit_quantity.value,
-              "to:",
-              resultValue,
-            );
             updatedDynamicFields.purchase_unit_quantity = {
               ...updatedDynamicFields.purchase_unit_quantity,
               value: resultValue,
             };
-          } else {
-            console.log("No purchase_unit_quantity field in dynamicFields");
           }
 
-          const updatedItem = {
+          return {
             ...i,
             form: updatedForm,
             dynamicFields: updatedDynamicFields,
           };
-
-          console.log("Updated item:", updatedItem);
-          return updatedItem;
         }
         return i;
       }),
     );
 
-    // Don't trigger automatic recalculation after manual calculation
-    // The quantity was manually set and should not be overwritten
-
     toast.success(
       `${t("common.calculated_result")} ${calculationInput} ÷ ${conversionNumber} = ${resultValue}`,
     );
 
-    // Close modal and reset
     setCalculationModalOpen(false);
     setActiveCalculationItemId(null);
   };
