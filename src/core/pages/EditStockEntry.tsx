@@ -1214,7 +1214,7 @@ export default function EditStockEntry() {
             const updatedForm = {
               ...i.form,
               purchase_unit_quantity: resultValue,
-              quantity: Number(calculationInput.toFixed(0)), // Convert to integer to avoid precision issues
+              quantity: calculationInput.toFixed(4), // Keep precise value
             };
 
             // Also update dynamicFields if purchase_unit_quantity exists there
@@ -1247,8 +1247,10 @@ export default function EditStockEntry() {
         }),
     );
 
-    // Don't trigger automatic recalculation after manual calculation
-    // The quantity was manually set and should not be overwritten
+    // Trigger price calculations after manual quantity calculation
+    setTimeout(() => {
+      calculateItemFields(item.id, "purchase_unit_quantity", resultValue);
+    }, 0);
 
     toast.success(
         `${t("common.calculated_result")} ${calculationInput} ÷ ${conversionNumber} = ${resultValue}`,
