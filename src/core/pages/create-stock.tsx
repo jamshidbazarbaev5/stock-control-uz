@@ -149,8 +149,8 @@ const formatPurchaseUnitQuantityForAPI = (value: any): number | undefined => {
 
 // LocalStorage helper functions
 const saveToLocalStorage = (
-    commonData: CommonFormValues,
-    items: StockItem[],
+  commonData: CommonFormValues,
+  items: StockItem[],
 ) => {
   try {
     const draft = {
@@ -208,7 +208,7 @@ export default function CreateStock() {
   const { t } = useTranslation();
   const [productSearchTerm, setProductSearchTerm] = useState("");
   const [activeSearchIndex, setActiveSearchIndex] = useState<string | null>(
-      null,
+    null,
   );
   const searchRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
@@ -254,7 +254,7 @@ export default function CreateStock() {
   const [showDraftDialog, setShowDraftDialog] = useState(false);
   const [calculationModalOpen, setCalculationModalOpen] = useState(false);
   const [activeCalculationItemId, setActiveCalculationItemId] = useState<
-      string | null
+    string | null
   >(null);
 
   // API hooks
@@ -262,14 +262,14 @@ export default function CreateStock() {
   const createSupplier = useCreateSupplier();
   const { data: storesData, isLoading: storesLoading } = useGetStores({});
   const { data: suppliersData, isLoading: suppliersLoading } = useGetSuppliers(
-      {},
+    {},
   );
   const { data: categoriesData, isLoading: categoriesLoading } =
-      useGetCategories({});
+    useGetCategories({});
   const { data: currenciesData, isLoading: currenciesLoading } =
-      useGetCurrencies({});
+    useGetCurrencies({});
   const { data: _measurementsData, isLoading: measurementsLoading } =
-      useGetMeasurements({});
+    useGetMeasurements({});
   const { data: productsData } = useGetProducts({
     params: {
       page: productPage,
@@ -302,20 +302,20 @@ export default function CreateStock() {
   });
 
   const stores = Array.isArray(storesData)
-      ? storesData
-      : storesData?.results || [];
+    ? storesData
+    : storesData?.results || [];
   const suppliers = Array.isArray(suppliersData)
-      ? suppliersData
-      : suppliersData?.results || [];
+    ? suppliersData
+    : suppliersData?.results || [];
   const categories = Array.isArray(categoriesData)
-      ? categoriesData
-      : categoriesData?.results || [];
+    ? categoriesData
+    : categoriesData?.results || [];
   const currencies = Array.isArray(currenciesData)
-      ? currenciesData
-      : currenciesData?.results || [];
+    ? currenciesData
+    : currenciesData?.results || [];
   const allProducts = Array.isArray(productsData)
-      ? productsData
-      : productsData?.results || [];
+    ? productsData
+    : productsData?.results || [];
 
   // Check for saved draft on mount
   useEffect(() => {
@@ -336,9 +336,9 @@ export default function CreateStock() {
 
     // Only save if there's meaningful data
     const hasData =
-        commonValues.store ||
-        commonValues.supplier ||
-        stockItems.some((item) => item.form.product);
+      commonValues.store ||
+      commonValues.supplier ||
+      stockItems.some((item) => item.form.product);
 
     if (hasData) {
       const timeoutId = setTimeout(() => {
@@ -467,9 +467,9 @@ export default function CreateStock() {
   // Toggle item expansion
   const toggleItemExpansion = (itemId: string) => {
     setStockItems(
-        stockItems.map((item) =>
-            item.id === itemId ? { ...item, isExpanded: !item.isExpanded } : item,
-        ),
+      stockItems.map((item) =>
+        item.id === itemId ? { ...item, isExpanded: !item.isExpanded } : item,
+      ),
     );
   };
 
@@ -480,25 +480,25 @@ export default function CreateStock() {
 
   // Update stock item form field
   const updateStockItemField = (
-      itemId: string,
-      field: keyof StockItemFormValues,
-      value: any,
+    itemId: string,
+    field: keyof StockItemFormValues,
+    value: any,
   ) => {
     setStockItems((items) =>
-        items.map((item) => {
-          if (item.id === itemId) {
-            const needsRecalculation = ['currency', 'purchase_unit'].includes(field);
-            return {
-              ...item,
-              form: {
-                ...item.form,
-                [field]: value,
-              },
-              ...(needsRecalculation && { isCalculated: false }),
-            };
-          }
-          return item;
-        }),
+      items.map((item) => {
+        if (item.id === itemId) {
+          const needsRecalculation = ['currency', 'purchase_unit'].includes(field);
+          return {
+            ...item,
+            form: {
+              ...item.form,
+              [field]: value,
+            },
+            ...(needsRecalculation && { isCalculated: false }),
+          };
+        }
+        return item;
+      }),
     );
 
     // Trigger recalculation for currency and purchase_unit changes
@@ -506,14 +506,14 @@ export default function CreateStock() {
       const item = stockItems.find((i) => i.id === itemId);
       const commonValues = commonForm.getValues();
       const updatedForm = { ...item?.form, [field]: value };
-
+      
       if (
-          commonValues.store &&
-          commonValues.supplier &&
-          commonValues.date_of_arrived &&
-          updatedForm.product &&
-          updatedForm.currency &&
-          updatedForm.purchase_unit
+        commonValues.store &&
+        commonValues.supplier &&
+        commonValues.date_of_arrived &&
+        updatedForm.product &&
+        updatedForm.currency &&
+        updatedForm.purchase_unit
       ) {
         setTimeout(() => getFieldConfiguration(itemId), 100);
       }
@@ -522,111 +522,111 @@ export default function CreateStock() {
 
   // Get field configuration for a stock item
   const getFieldConfiguration = useCallback(
-      async (itemId: string) => {
-        const item = stockItems.find((i) => i.id === itemId);
-        if (!item) return;
+    async (itemId: string) => {
+      const item = stockItems.find((i) => i.id === itemId);
+      if (!item) return;
 
-        const commonValues = commonForm.getValues();
-        const { form } = item;
+      const commonValues = commonForm.getValues();
+      const { form } = item;
 
-        if (
-            !commonValues.store ||
-            !form.product ||
-            !form.currency ||
-            !form.purchase_unit ||
-            !commonValues.supplier ||
-            !commonValues.date_of_arrived
-        ) {
-          return;
-        }
+      if (
+        !commonValues.store ||
+        !form.product ||
+        !form.currency ||
+        !form.purchase_unit ||
+        !commonValues.supplier ||
+        !commonValues.date_of_arrived
+      ) {
+        return;
+      }
 
-        // Set calculating state
+      // Set calculating state
+      setStockItems((items) =>
+        items.map((i) => (i.id === itemId ? { ...i, isCalculating: true } : i)),
+      );
+
+      try {
+        const configRequest = {
+          store: Number(commonValues.store),
+          product: Number(form.product),
+          currency: Number(form.currency),
+          purchase_unit: Number(form.purchase_unit),
+          supplier: Number(commonValues.supplier),
+          date_of_arrived: commonValues.date_of_arrived,
+        };
+
+        const response = await calculateStock(configRequest);
+
+        const fieldOrder = Object.keys(response.dynamic_fields);
+        const exchangeRateValue = response.dynamic_fields.exchange_rate?.value;
+        const exchangeRate =
+          typeof exchangeRateValue === "object" &&
+          exchangeRateValue !== null &&
+          "rate" in exchangeRateValue
+            ? Number(exchangeRateValue.rate)
+            : 1;
+
+        const conversionFactorValue =
+          response.dynamic_fields.conversion_factor?.value;
+        const conversionFactor =
+          typeof conversionFactorValue === "number"
+            ? conversionFactorValue
+            : Number(conversionFactorValue) || 1;
+
+        const metadata = {
+          conversion_factor: conversionFactor,
+          exchange_rate: exchangeRate,
+          is_base_currency: response.currency?.is_base || false,
+        };
+
+        // Update item with calculation results
         setStockItems((items) =>
-            items.map((i) => (i.id === itemId ? { ...i, isCalculating: true } : i)),
+          items.map((i) => {
+            if (i.id === itemId) {
+              const updatedForm = { ...i.form };
+
+              // Populate form with calculated values
+              Object.entries(response.dynamic_fields).forEach(
+                ([fieldName, fieldData]) => {
+                  if (
+                    fieldData.value !== null &&
+                    fieldData.value !== undefined
+                  ) {
+                    const rawValue = formatFieldValue(fieldData.value);
+                    const displayValue = fieldName === 'purchase_unit_quantity' 
+                      ? formatPurchaseUnitQuantity(rawValue)
+                      : formatNumberDisplay(rawValue);
+                    updatedForm[fieldName as keyof StockItemFormValues] =
+                      displayValue;
+                  }
+                },
+              );
+
+              return {
+                ...i,
+                form: updatedForm,
+                dynamicFields: response.dynamic_fields,
+                dynamicFieldsOrder: fieldOrder,
+                calculationMetadata: metadata,
+                isCalculated: true,
+                isCalculating: false,
+              };
+            }
+            return i;
+          }),
         );
-
-        try {
-          const configRequest = {
-            store: Number(commonValues.store),
-            product: Number(form.product),
-            currency: Number(form.currency),
-            purchase_unit: Number(form.purchase_unit),
-            supplier: Number(commonValues.supplier),
-            date_of_arrived: commonValues.date_of_arrived,
-          };
-
-          const response = await calculateStock(configRequest);
-
-          const fieldOrder = Object.keys(response.dynamic_fields);
-          const exchangeRateValue = response.dynamic_fields.exchange_rate?.value;
-          const exchangeRate =
-              typeof exchangeRateValue === "object" &&
-              exchangeRateValue !== null &&
-              "rate" in exchangeRateValue
-                  ? Number(exchangeRateValue.rate)
-                  : 1;
-
-          const conversionFactorValue =
-              response.dynamic_fields.conversion_factor?.value;
-          const conversionFactor =
-              typeof conversionFactorValue === "number"
-                  ? conversionFactorValue
-                  : Number(conversionFactorValue) || 1;
-
-          const metadata = {
-            conversion_factor: conversionFactor,
-            exchange_rate: exchangeRate,
-            is_base_currency: response.currency?.is_base || false,
-          };
-
-          // Update item with calculation results
-          setStockItems((items) =>
-              items.map((i) => {
-                if (i.id === itemId) {
-                  const updatedForm = { ...i.form };
-
-                  // Populate form with calculated values
-                  Object.entries(response.dynamic_fields).forEach(
-                      ([fieldName, fieldData]) => {
-                        if (
-                            fieldData.value !== null &&
-                            fieldData.value !== undefined
-                        ) {
-                          const rawValue = formatFieldValue(fieldData.value);
-                          const displayValue = fieldName === 'purchase_unit_quantity'
-                              ? formatPurchaseUnitQuantity(rawValue)
-                              : formatNumberDisplay(rawValue);
-                          updatedForm[fieldName as keyof StockItemFormValues] =
-                              displayValue;
-                        }
-                      },
-                  );
-
-                  return {
-                    ...i,
-                    form: updatedForm,
-                    dynamicFields: response.dynamic_fields,
-                    dynamicFieldsOrder: fieldOrder,
-                    calculationMetadata: metadata,
-                    isCalculated: true,
-                    isCalculating: false,
-                  };
-                }
-                return i;
-              }),
-          );
-        } catch (error) {
-          console.error("Field configuration error:", error);
-          toast.error("Failed to calculate stock values");
-          // Reset calculating state on error
-          setStockItems((items) =>
-              items.map((i) =>
-                  i.id === itemId ? { ...i, isCalculating: false } : i,
-              ),
-          );
-        }
-      },
-      [stockItems, commonForm],
+      } catch (error) {
+        console.error("Field configuration error:", error);
+        toast.error("Failed to calculate stock values");
+        // Reset calculating state on error
+        setStockItems((items) =>
+          items.map((i) =>
+            i.id === itemId ? { ...i, isCalculating: false } : i,
+          ),
+        );
+      }
+    },
+    [stockItems, commonForm],
   );
 
   const formatFieldValue = (value: any): string => {
@@ -669,117 +669,130 @@ export default function CreateStock() {
   const handleProductChange = (itemId: string, productId: string) => {
     const product = allProducts.find((p) => p.id === Number(productId));
     setStockItems((items) =>
-        items.map((item) => {
-          if (item.id === itemId) {
-            const updatedForm = {
-              ...item.form,
-              product: productId,
-              purchase_unit: "", // Reset purchase unit
-            };
+      items.map((item) => {
+        if (item.id === itemId) {
+          const updatedForm = {
+            ...item.form,
+            product: productId,
+            purchase_unit: "", // Reset purchase unit
+          };
 
-            return {
-              ...item,
-              selectedProduct: product,
-              form: updatedForm,
-              isCalculated: false, // Reset calculation status
-            };
-          }
-          return item;
-        }),
+          return {
+            ...item,
+            selectedProduct: product,
+            form: updatedForm,
+            isCalculated: false, // Reset calculation status
+          };
+        }
+        return item;
+      }),
     );
   };
 
   // Calculate fields based on user input
   const calculateItemFields = useCallback(
-      (itemId: string, changedField: string, value: any) => {
-        const item = stockItems.find((i) => i.id === itemId);
-        if (!item || !item.calculationMetadata) return;
+    (itemId: string, changedField: string, value: any) => {
+      const item = stockItems.find((i) => i.id === itemId);
+      if (!item || !item.calculationMetadata) return;
 
-        const { conversion_factor, exchange_rate, is_base_currency } =
-            item.calculationMetadata;
-        const currentForm = { ...item.form, [changedField]: value };
+      const { conversion_factor, exchange_rate, is_base_currency } =
+        item.calculationMetadata;
+      const currentForm = { ...item.form, [changedField]: value };
 
-        const qty = Number(currentForm.purchase_unit_quantity) || 0;
-        const quantity = Number(currentForm.quantity) || 0;
+      const qty = Number(currentForm.purchase_unit_quantity) || 0;
+      const quantity = Number(currentForm.quantity) || 0;
 
-        // Update quantity based on purchase_unit_quantity
-        if (
-            changedField === "purchase_unit_quantity" &&
-            qty &&
-            !item.dynamicFields.quantity?.editable
-        ) {
-          currentForm.quantity = formatNumberDisplay(qty * conversion_factor);
-        } else if (
-            changedField === "quantity" &&
-            quantity &&
-            !item.dynamicFields.purchase_unit_quantity?.editable
-        ) {
-          currentForm.purchase_unit_quantity = formatPurchaseUnitQuantity(
-              quantity * conversion_factor,
-          );
-        }
-
-        const currentQty =
-            changedField === "purchase_unit_quantity"
-                ? qty
-                : Number(currentForm.purchase_unit_quantity) || 0;
-
-        // Price calculations
-        if (!is_base_currency && currentQty) {
-          if (changedField === "price_per_unit_currency") {
-            currentForm.total_price_in_currency = formatNumberDisplay(
-                (Number(currentForm.price_per_unit_currency) || 0) * currentQty,
-            );
-          }
-          if (changedField === "total_price_in_currency") {
-            currentForm.price_per_unit_currency = formatNumberDisplay(
-                (Number(currentForm.total_price_in_currency) || 0) / currentQty,
-            );
-          }
-          currentForm.price_per_unit_uz = formatNumberDisplay(
-              (Number(currentForm.price_per_unit_currency) || 0) * exchange_rate,
-          );
-          currentForm.total_price_in_uz = formatNumberDisplay(
-              (Number(currentForm.total_price_in_currency) || 0) * exchange_rate,
-          );
-        } else if (is_base_currency && currentQty) {
-          if (changedField === "price_per_unit_uz") {
-            currentForm.total_price_in_uz = formatNumberDisplay(
-                (Number(currentForm.price_per_unit_uz) || 0) * currentQty,
-            );
-          }
-          if (changedField === "total_price_in_uz") {
-            currentForm.price_per_unit_uz = formatNumberDisplay(
-                (Number(currentForm.total_price_in_uz) || 0) / currentQty,
-            );
-          }
-        }
-
-        // Base unit cost
-        const finalQuantity = Number(currentForm.quantity) || 0;
-        if (finalQuantity) {
-          currentForm.base_unit_in_currency = formatNumberDisplay(
-              (Number(currentForm.total_price_in_currency) || 0) / finalQuantity,
-          );
-          currentForm.base_unit_in_uzs = formatNumberDisplay(
-              (Number(currentForm.total_price_in_uz) || 0) / finalQuantity,
-          );
-        }
-
-        // Update the item
-        setStockItems((items) =>
-            items.map((i) => {
-              if (i.id === itemId) {
-                return {
-                  ...i,
-                  form: currentForm,
-                };
-              }
-              return i;
-            }),
+      // Update quantity based on purchase_unit_quantity
+      if (
+        changedField === "purchase_unit_quantity" &&
+        qty &&
+        !item.dynamicFields.quantity?.editable
+      ) {
+        currentForm.quantity = formatNumberDisplay(qty * conversion_factor);
+      } else if (
+        changedField === "quantity" &&
+        quantity &&
+        !item.dynamicFields.purchase_unit_quantity?.editable
+      ) {
+        currentForm.purchase_unit_quantity = formatPurchaseUnitQuantity(
+          quantity * conversion_factor,
         );
-      },
-      [stockItems],
+      }
+
+      const currentQty =
+        changedField === "purchase_unit_quantity"
+          ? qty
+          : Number(currentForm.purchase_unit_quantity) || 0;
+
+      // Price calculations
+      if (!is_base_currency && currentQty) {
+        if (changedField === "price_per_unit_currency") {
+          currentForm.total_price_in_currency = formatNumberDisplay(
+            (Number(currentForm.price_per_unit_currency) || 0) * currentQty,
+          );
+        } else if (changedField === "total_price_in_currency") {
+          currentForm.price_per_unit_currency = formatNumberDisplay(
+            (Number(currentForm.total_price_in_currency) || 0) / currentQty,
+          );
+        } else if (
+          changedField === "purchase_unit_quantity" ||
+          changedField === "quantity"
+        ) {
+          currentForm.total_price_in_currency = formatNumberDisplay(
+            (Number(currentForm.price_per_unit_currency) || 0) * currentQty,
+          );
+        }
+
+        currentForm.price_per_unit_uz = formatNumberDisplay(
+          (Number(currentForm.price_per_unit_currency) || 0) * exchange_rate,
+        );
+        currentForm.total_price_in_uz = formatNumberDisplay(
+          (Number(currentForm.total_price_in_currency) || 0) * exchange_rate,
+        );
+      } else if (is_base_currency && currentQty) {
+        if (changedField === "price_per_unit_uz") {
+          currentForm.total_price_in_uz = formatNumberDisplay(
+            (Number(currentForm.price_per_unit_uz) || 0) * currentQty,
+          );
+        } else if (changedField === "total_price_in_uz") {
+          currentForm.price_per_unit_uz = formatNumberDisplay(
+            (Number(currentForm.total_price_in_uz) || 0) / currentQty,
+          );
+        } else if (
+          changedField === "purchase_unit_quantity" ||
+          changedField === "quantity"
+        ) {
+          currentForm.total_price_in_uz = formatNumberDisplay(
+            (Number(currentForm.price_per_unit_uz) || 0) * currentQty,
+          );
+        }
+      }
+
+      // Base unit cost
+      const finalQuantity = Number(currentForm.quantity) || 0;
+      if (finalQuantity) {
+        currentForm.base_unit_in_currency = formatNumberDisplay(
+          (Number(currentForm.total_price_in_currency) || 0) / finalQuantity,
+        );
+        currentForm.base_unit_in_uzs = formatNumberDisplay(
+          (Number(currentForm.total_price_in_uz) || 0) / finalQuantity,
+        );
+      }
+
+      // Update the item
+      setStockItems((items) =>
+        items.map((i) => {
+          if (i.id === itemId) {
+            return {
+              ...i,
+              form: currentForm,
+            };
+          }
+          return i;
+        }),
+      );
+    },
+    [stockItems],
   );
 
   // Barcode scanner
@@ -787,9 +800,9 @@ export default function CreateStock() {
     const handleKeyPress = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
       if (
-          target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.tagName === "SELECT"
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT"
       ) {
         return;
       }
@@ -804,38 +817,38 @@ export default function CreateStock() {
         event.preventDefault();
         if (scanBuffer.trim()) {
           searchProductByBarcode(scanBuffer.trim())
-              .then((product) => {
-                if (product) {
-                  // Add new item with scanned product or use first empty item
-                  const firstEmptyItem = stockItems.find((i) => !i.form.product);
-                  const targetItemId = firstEmptyItem?.id || `item-${Date.now()}`;
+            .then((product) => {
+              if (product) {
+                // Add new item with scanned product or use first empty item
+                const firstEmptyItem = stockItems.find((i) => !i.form.product);
+                const targetItemId = firstEmptyItem?.id || `item-${Date.now()}`;
 
-                  if (!firstEmptyItem) {
-                    // Create new item
-                    addStockItem();
-                  }
-
-                  setTimeout(() => {
-                    handleProductChange(targetItemId, String(product.id));
-                    toast.success(
-                        `Product found and selected: ${product.product_name}`,
-                    );
-                  }, 100);
-                  setProductSearchTerm("");
-                } else {
-                  setProductSearchTerm(scanBuffer.trim());
-                  toast.info(
-                      `No product found with barcode: ${scanBuffer.trim()}. Showing search results.`,
-                  );
+                if (!firstEmptyItem) {
+                  // Create new item
+                  addStockItem();
                 }
-              })
-              .catch((error) => {
-                console.error("Error searching for product:", error);
+
+                setTimeout(() => {
+                  handleProductChange(targetItemId, String(product.id));
+                  toast.success(
+                    `Product found and selected: ${product.product_name}`,
+                  );
+                }, 100);
+                setProductSearchTerm("");
+              } else {
                 setProductSearchTerm(scanBuffer.trim());
-                toast.error(
-                    "Error searching for product. Showing search results.",
+                toast.info(
+                  `No product found with barcode: ${scanBuffer.trim()}. Showing search results.`,
                 );
-              });
+              }
+            })
+            .catch((error) => {
+              console.error("Error searching for product:", error);
+              setProductSearchTerm(scanBuffer.trim());
+              toast.error(
+                "Error searching for product. Showing search results.",
+              );
+            });
         }
         setScanBuffer("");
         setIsScanning(false);
@@ -862,8 +875,8 @@ export default function CreateStock() {
 
   // Get conversion number from measurement array
   const getConversionNumber = (
-      product: any,
-      purchaseUnitId: number,
+    product: any,
+    purchaseUnitId: number,
   ): number | null => {
     if (!product?.measurement || !Array.isArray(product.measurement)) {
       return null;
@@ -872,7 +885,7 @@ export default function CreateStock() {
     // Find the measurement that has the purchase unit as from_unit or to_unit
     const measurement = product.measurement.find((m: any) => {
       return (
-          m.from_unit?.id === purchaseUnitId || m.to_unit?.id === purchaseUnitId
+        m.from_unit?.id === purchaseUnitId || m.to_unit?.id === purchaseUnitId
       );
     });
 
@@ -912,7 +925,7 @@ export default function CreateStock() {
 
     // Find the selected purchase unit
     const selectedUnit = item.selectedProduct.available_units?.find(
-        (unit: any) => unit.id === Number(item.form.purchase_unit),
+      (unit: any) => unit.id === Number(item.form.purchase_unit),
     );
 
     if (!selectedUnit) {
@@ -922,8 +935,8 @@ export default function CreateStock() {
 
     // Get the conversion number from the measurement array
     const conversionNumber = getConversionNumber(
-        item.selectedProduct,
-        selectedUnit.id,
+      item.selectedProduct,
+      selectedUnit.id,
     );
     if (!conversionNumber || isNaN(conversionNumber)) {
       toast.error("Conversion number not found for this unit");
@@ -944,42 +957,42 @@ export default function CreateStock() {
 
     // Update the state comprehensively
     setStockItems((items) =>
-        items.map((i) => {
-          if (i.id === item.id) {
-            const updatedForm = {
-              ...i.form,
-              purchase_unit_quantity: resultValue,
-              quantity: calculationInput.toFixed(2), // Set input value to quantity
+      items.map((i) => {
+        if (i.id === item.id) {
+          const updatedForm = {
+            ...i.form,
+            purchase_unit_quantity: resultValue,
+            quantity: calculationInput.toFixed(2), // Set input value to quantity
+          };
+
+          // Also update dynamicFields if purchase_unit_quantity exists there
+          const updatedDynamicFields = { ...i.dynamicFields };
+          if (updatedDynamicFields.purchase_unit_quantity) {
+            console.log(
+              "Updating dynamicFields.purchase_unit_quantity from:",
+              updatedDynamicFields.purchase_unit_quantity.value,
+              "to:",
+              resultValue,
+            );
+            updatedDynamicFields.purchase_unit_quantity = {
+              ...updatedDynamicFields.purchase_unit_quantity,
+              value: resultValue,
             };
-
-            // Also update dynamicFields if purchase_unit_quantity exists there
-            const updatedDynamicFields = { ...i.dynamicFields };
-            if (updatedDynamicFields.purchase_unit_quantity) {
-              console.log(
-                  "Updating dynamicFields.purchase_unit_quantity from:",
-                  updatedDynamicFields.purchase_unit_quantity.value,
-                  "to:",
-                  resultValue,
-              );
-              updatedDynamicFields.purchase_unit_quantity = {
-                ...updatedDynamicFields.purchase_unit_quantity,
-                value: resultValue,
-              };
-            } else {
-              console.log("No purchase_unit_quantity field in dynamicFields");
-            }
-
-            const updatedItem = {
-              ...i,
-              form: updatedForm,
-              dynamicFields: updatedDynamicFields,
-            };
-
-            console.log("Updated item:", updatedItem);
-            return updatedItem;
+          } else {
+            console.log("No purchase_unit_quantity field in dynamicFields");
           }
-          return i;
-        }),
+
+          const updatedItem = {
+            ...i,
+            form: updatedForm,
+            dynamicFields: updatedDynamicFields,
+          };
+
+          console.log("Updated item:", updatedItem);
+          return updatedItem;
+        }
+        return i;
+      }),
     );
 
     // Trigger recalculation of all dependent fields
@@ -990,7 +1003,7 @@ export default function CreateStock() {
     }
 
     toast.success(
-        `${t("common.calculated_result")} ${calculationInput} ÷ ${conversionNumber} = ${resultValue}`,
+      `${t("common.calculated_result")} ${calculationInput} ÷ ${conversionNumber} = ${resultValue}`,
     );
 
     // Close modal and reset
@@ -1005,9 +1018,9 @@ export default function CreateStock() {
       // Validate common fields
       const commonValues = commonForm.getValues();
       if (
-          !commonValues.store ||
-          !commonValues.supplier ||
-          !commonValues.date_of_arrived
+        !commonValues.store ||
+        !commonValues.supplier ||
+        !commonValues.date_of_arrived
       ) {
         toast.error("Please fill all required common fields");
         return;
@@ -1016,7 +1029,7 @@ export default function CreateStock() {
       // Check supplier balance if using supplier balance
       if (commonValues.use_supplier_balance) {
         const selectedSupplier = suppliers.find(
-            (s: Supplier) => s.id === Number(commonValues.supplier),
+          (s: Supplier) => s.id === Number(commonValues.supplier),
         );
         if (selectedSupplier) {
           const totalAmount = stockItems.reduce((sum, item) => {
@@ -1028,7 +1041,7 @@ export default function CreateStock() {
           const balance = Number(selectedSupplier.balance) || 0;
           if (balance < totalAmount) {
             toast.error(
-                `Недостаточный баланс поставщика. Баланс: ${formatPrice(balance)} UZS, Требуется: ${formatPrice(totalAmount)} UZS`,
+              `Недостаточный баланс поставщика. Баланс: ${formatPrice(balance)} UZS, Требуется: ${formatPrice(totalAmount)} UZS`,
             );
             setIsSubmitting(false);
             return;
@@ -1040,7 +1053,7 @@ export default function CreateStock() {
       const uncalculatedItems = stockItems.filter((item) => !item.isCalculated);
       if (uncalculatedItems.length > 0) {
         toast.error(
-            "Please complete all stock items by filling required fields and calculating",
+          "Please complete all stock items by filling required fields and calculating",
         );
         return;
       }
@@ -1051,9 +1064,9 @@ export default function CreateStock() {
         let exchangeRateId: number;
 
         if (
-            exchangeRateField?.value &&
-            typeof exchangeRateField.value === "object" &&
-            (exchangeRateField.value as any).id
+          exchangeRateField?.value &&
+          typeof exchangeRateField.value === "object" &&
+          (exchangeRateField.value as any).id
         ) {
           exchangeRateId = (exchangeRateField.value as any).id;
         } else {
@@ -1067,18 +1080,18 @@ export default function CreateStock() {
           exchange_rate: exchangeRateId,
           quantity: formatNumberForAPI(item.form.quantity) || 0,
           purchase_unit_quantity:
-              formatPurchaseUnitQuantityForAPI(item.form.purchase_unit_quantity) || 0,
+            formatPurchaseUnitQuantityForAPI(item.form.purchase_unit_quantity) || 0,
           price_per_unit_uz:
-              formatNumberForAPI(item.form.price_per_unit_uz) || 0,
+            formatNumberForAPI(item.form.price_per_unit_uz) || 0,
           total_price_in_uz:
-              formatNumberForAPI(item.form.total_price_in_uz) || 0,
+            formatNumberForAPI(item.form.total_price_in_uz) || 0,
           price_per_unit_currency:
-              formatNumberForAPI(item.form.price_per_unit_currency) || 0,
+            formatNumberForAPI(item.form.price_per_unit_currency) || 0,
           total_price_in_currency:
-              formatNumberForAPI(item.form.total_price_in_currency) || 0,
+            formatNumberForAPI(item.form.total_price_in_currency) || 0,
           base_unit_in_uzs: formatNumberForAPI(item.form.base_unit_in_uzs),
           base_unit_in_currency: formatNumberForAPI(
-              item.form.base_unit_in_currency,
+            item.form.base_unit_in_currency,
           ),
         };
 
@@ -1108,12 +1121,12 @@ export default function CreateStock() {
           deposit_payment_method: commonValues.deposit_payment_method,
         }),
         ...(commonValues.payments &&
-            commonValues.payments.length > 0 && {
-              payments: commonValues.payments.map((p) => ({
-                amount: formatNumberForAPI(p.amount),
-                payment_type: p.payment_type,
-              })),
-            }),
+          commonValues.payments.length > 0 && {
+            payments: commonValues.payments.map((p) => ({
+              amount: formatNumberForAPI(p.amount),
+              payment_type: p.payment_type,
+            })),
+          }),
         stocks,
       };
 
@@ -1151,9 +1164,9 @@ export default function CreateStock() {
       const currentDebt = commonForm.getValues("amount_of_debt");
       // Only auto-set if user hasn't manually entered a value
       if (
-          !currentDebt ||
-          Number(currentDebt) === 0 ||
-          Number(currentDebt) < totalUZS
+        !currentDebt ||
+        Number(currentDebt) === 0 ||
+        Number(currentDebt) < totalUZS
       ) {
         commonForm.setValue("amount_of_debt", totalUZS.toFixed(2));
       }
@@ -1166,14 +1179,14 @@ export default function CreateStock() {
 
     stockItems.forEach((item) => {
       if (
-          commonValues.store &&
-          commonValues.supplier &&
-          commonValues.date_of_arrived &&
-          item.form.product &&
-          item.form.currency &&
-          item.form.purchase_unit &&
-          !item.isCalculated &&
-          !item.isCalculating
+        commonValues.store &&
+        commonValues.supplier &&
+        commonValues.date_of_arrived &&
+        item.form.product &&
+        item.form.currency &&
+        item.form.purchase_unit &&
+        !item.isCalculated &&
+        !item.isCalculating
       ) {
         getFieldConfiguration(item.id);
       }
@@ -1250,1215 +1263,1215 @@ export default function CreateStock() {
   };
 
   return (
-      <div className="container mx-auto py-6 px-4">
-        {isScanning && (
-            <div className="mb-4 p-3 bg-blue-100 border border-blue-300 rounded-md">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                <span className="text-blue-700 font-medium">
+    <div className="container mx-auto py-6 px-4">
+      {isScanning && (
+        <div className="mb-4 p-3 bg-blue-100 border border-blue-300 rounded-md">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-blue-700 font-medium">
               Scanning barcode to find product... ({scanBuffer})
             </span>
-              </div>
-            </div>
-        )}
-
-        <div className="bg-white rounded-lg shadow">
-          {/* Header */}
-          <div className="p-6 border-b">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold">
-                {t("common.create_new_stock")}
-              </h1>
-              {hasDraft && (
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1.5 rounded-md">
-                      <Save className="h-4 w-4" />
-                      <span>Draft auto-saved</span>
-                    </div>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={clearDraft}
-                        title="Clear saved draft"
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                    </Button>
-                  </div>
-              )}
-            </div>
           </div>
+        </div>
+      )}
 
-          {/* Common Fields Section */}
-          <div className="p-6 border-b bg-gray-50">
-            <h2 className="text-lg font-semibold mb-4">
-              {t("common.common_information")}
-            </h2>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Store */}
-              <div className="space-y-2">
-                <Label htmlFor="store">{t("common.store")} *</Label>
-                <Select
-                    value={commonForm.watch("store")?.toString()}
-                    onValueChange={(value) =>
-                        commonForm.setValue("store", Number(value))
-                    }
-                    disabled={storesLoading}
+      <div className="bg-white rounded-lg shadow">
+        {/* Header */}
+        <div className="p-6 border-b">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">
+              {t("common.create_new_stock")}
+            </h1>
+            {hasDraft && (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-3 py-1.5 rounded-md">
+                  <Save className="h-4 w-4" />
+                  <span>Draft auto-saved</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={clearDraft}
+                  title="Clear saved draft"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("common.select_store")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {stores
-                        .filter((store) => store.is_main)
-                        .map((store) => (
-                            <SelectItem key={store.id} value={String(store.id)}>
-                              {store.name}
-                            </SelectItem>
-                        ))}
-                  </SelectContent>
-                </Select>
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
               </div>
-
-              {/* Supplier */}
-              <div className="space-y-2">
-                <Label htmlFor="supplier">{t("common.supplier")} *</Label>
-                <div className="flex gap-2">
-                  <Select
-                      value={commonForm.watch("supplier")?.toString()}
-                      onValueChange={(value) =>
-                          commonForm.setValue("supplier", Number(value))
-                      }
-                      disabled={suppliersLoading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("common.select_supplier")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {suppliers.map((supplier) => (
-                          <SelectItem key={supplier.id} value={String(supplier.id)}>
-                            {supplier.name}
-                          </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Date */}
-              <div className="space-y-2">
-                <Label htmlFor="date_of_arrived">
-                  {t("common.date_of_arrival")} *
-                </Label>
-                <Input
-                    id="date_of_arrived"
-                    type="datetime-local"
-                    {...commonForm.register("date_of_arrived")}
-                />
-              </div>
-
-              {/* Is Debt */}
-              <div className="space-y-2 flex items-center gap-2 pt-8">
-                <Checkbox
-                    id="is_debt"
-                    checked={commonForm.watch("is_debt") === true}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        commonForm.setValue("is_debt", true);
-                        commonForm.setValue("use_supplier_balance", false);
-                        // Clear payments when switching to debt mode
-                        commonForm.setValue("payments", []);
-                      } else {
-                        commonForm.setValue("is_debt", false);
-                      }
-                    }}
-                />
-                <Label htmlFor="is_debt" className="cursor-pointer">
-                  {t("common.is_debt")}
-                </Label>
-              </div>
-            </div>
-
-            {/* Debt fields */}
-            {commonForm.watch("is_debt") && (
-                <div className="space-y-4 mt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="amount_of_debt">
-                        {t("common.amount_of_debt")}
-                      </Label>
-                      <Input
-                          id="amount_of_debt"
-                          type="number"
-                          step="0.01"
-                          {...commonForm.register("amount_of_debt")}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="advance_of_debt">
-                        {t("common.advance_of_debt")}
-                      </Label>
-                      <Input
-                          id="advance_of_debt"
-                          type="number"
-                          step="0.01"
-                          {...commonForm.register("advance_of_debt")}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Deposit Payment Method - show when debt and NOT using supplier balance */}
-                  {!commonForm.watch("use_supplier_balance") && (
-                      <div className="space-y-2">
-                        <Label htmlFor="deposit_payment_method">
-                          {t("common.deposit_payment_method") ||
-                              "Deposit Payment Method"}
-                        </Label>
-                        <Select
-                            value={commonForm.watch("deposit_payment_method") || ""}
-                            onValueChange={(value) =>
-                                commonForm.setValue("deposit_payment_method", value)
-                            }
-                        >
-                          <SelectTrigger id="deposit_payment_method">
-                            <SelectValue
-                                placeholder={
-                                    t("common.select_payment_method") ||
-                                    "Select payment method"
-                                }
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Наличные">Наличные</SelectItem>
-                            <SelectItem value="Карта">Карта</SelectItem>
-                            <SelectItem value="Click">Click</SelectItem>
-                            <SelectItem value="Перечисление">Перечисление</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                  )}
-                </div>
             )}
-
-            {/* Use Supplier Balance Section - Separate from debt */}
-            <div className="space-y-2 flex items-center gap-2 pt-8">
-              <Checkbox
-                  id="use_supplier_balance"
-                  checked={commonForm.watch("use_supplier_balance") === true}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      commonForm.setValue("use_supplier_balance", true);
-                      commonForm.setValue("is_debt", false);
-                      // Clear payments when switching to supplier balance mode
-                      commonForm.setValue("payments", []);
-                    } else {
-                      commonForm.setValue("use_supplier_balance", false);
-                    }
-                  }}
-              />
-              <Label htmlFor="use_supplier_balance" className="cursor-pointer">
-                {t("common.use_supplier_balance") || "Use Supplier Balance"}
-              </Label>
-            </div>
-
-            {/* Show supplier balance info when use_supplier_balance is checked */}
-            {commonForm.watch("use_supplier_balance") &&
-                commonForm.watch("supplier") && (
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mt-4">
-                      <h3 className="font-semibold mb-2">
-                        {t("common.supplier_info") || "Supplier Information"}
-                      </h3>
-                      {(() => {
-                        const selectedSupplier = suppliers.find(
-                            (s: Supplier) =>
-                                s.id === Number(commonForm.watch("supplier")),
-                        );
-                        if (selectedSupplier) {
-                          const totalAmount = stockItems.reduce((sum, item) => {
-                            if (item.isCalculated) {
-                              return sum + (Number(item.form.total_price_in_uz) || 0);
-                            }
-                            return sum;
-                          }, 0);
-                          const balance = Number(selectedSupplier.balance) || 0;
-                          const canPay = balance >= totalAmount;
-                          return (
-                              <div className="space-y-3">
-                                <div className="p-3 bg-white border border-blue-200 rounded-lg">
-                                  <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between">
-                              <span className="text-gray-600">
-                                {t("common.supplier_name") || "Supplier"}:
-                              </span>
-                                      <span className="font-medium">
-                                {selectedSupplier.name}
-                              </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                              <span className="text-gray-600">
-                                {t("common.supplier_balance") ||
-                                    "Available Balance"}
-                                :
-                              </span>
-                                      <span
-                                          className={`font-semibold ${balance > 0 ? "text-green-600" : "text-red-600"}`}
-                                      >
-                                {formatPrice(balance)} UZS
-                              </span>
-                                    </div>
-                                    <div className="flex justify-between border-t pt-2">
-                              <span className="text-gray-600">
-                                {t("common.total_amount") || "Purchase Amount"}:
-                              </span>
-                                      <span className="font-semibold">
-                                {formatPrice(totalAmount)} UZS
-                              </span>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {!canPay && (
-                                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-                                      <div className="flex items-start gap-2">
-                                        <span className="font-semibold">⚠️</span>
-                                        <div>
-                                          <p className="font-semibold">
-                                            Недостаточный баланс
-                                          </p>
-                                          <p className="text-xs mt-1">
-                                            Баланс поставщика ({formatPrice(balance)} UZS)
-                                            меньше суммы покупки ({formatPrice(totalAmount)}{" "}
-                                            UZS). Нехватка:{" "}
-                                            {formatPrice(totalAmount - balance)} UZS
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                )}
-
-                                {canPay && (
-                                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
-                                      <div className="flex items-start gap-2">
-                                        <span className="font-semibold">✓</span>
-                                        <div>
-                                          <p className="font-semibold">Оплата доступна</p>
-                                          <p className="text-xs mt-1">
-                                            Остаток баланса после покупки:{" "}
-                                            {(balance - totalAmount).toFixed(2)} UZS
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                )}
-                              </div>
-                          );
-                        }
-                        return null;
-                      })()}
-                    </div>
-                )}
-
-            {/* Payments Section - show when NOT using supplier balance AND NOT debt */}
-            {commonForm.watch("use_supplier_balance") !== true &&
-                commonForm.watch("is_debt") !== true && (
-                    <div className="space-y-4 mt-4 p-4 bg-gray-50 rounded-lg">
-                      <div className="flex justify-between items-center">
-                        <Label className="text-lg font-semibold">
-                          {t("common.payments") || "Payments"}
-                        </Label>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const currentPayments =
-                                  commonForm.watch("payments") || [];
-                              const totalAmount = stockItems.reduce((sum, item) => {
-                                if (item.isCalculated) {
-                                  return (
-                                      sum + (Number(item.form.total_price_in_uz) || 0)
-                                  );
-                                }
-                                return sum;
-                              }, 0);
-
-                              const paidAmount = currentPayments.reduce(
-                                  (sum, p) => sum + (Number(p.amount) || 0),
-                                  0,
-                              );
-                              const remainingAmount = totalAmount - paidAmount;
-
-                              commonForm.setValue("payments", [
-                                ...currentPayments,
-                                {
-                                  amount:
-                                      remainingAmount > 0
-                                          ? remainingAmount.toFixed(2)
-                                          : "0",
-                                  payment_type: "Наличные",
-                                },
-                              ]);
-                            }}
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          {t("common.add_payment") || "Add Payment"}
-                        </Button>
-                      </div>
-
-                      {/* Total Amount Display */}
-                      {(() => {
-                        const totalAmount = stockItems.reduce((sum, item) => {
-                          if (item.isCalculated) {
-                            return sum + (Number(item.form.total_price_in_uz) || 0);
-                          }
-                          return sum;
-                        }, 0);
-                        const payments = commonForm.watch("payments") || [];
-                        const paidAmount = payments.reduce(
-                            (sum, p) => sum + (Number(p.amount) || 0),
-                            0,
-                        );
-                        const remainingAmount = totalAmount - paidAmount;
-
-                        return (
-                            <div className="space-y-2 p-3 bg-white rounded border">
-                              <div className="flex justify-between text-sm">
-                        <span>
-                          {t("common.total_amount") || "Total Amount"}:
-                        </span>
-                                <span className="font-semibold">
-                          {totalAmount.toFixed(2)} UZS
-                        </span>
-                              </div>
-                              <div className="flex justify-between text-sm">
-                                <span>{t("common.paid_amount") || "Paid Amount"}:</span>
-                                <span className="font-semibold text-green-600">
-                          {paidAmount.toFixed(2)} UZS
-                        </span>
-                              </div>
-                              <div className="flex justify-between text-sm border-t pt-2">
-                        <span>
-                          {t("common.remaining_amount") || "Remaining Amount"}:
-                        </span>
-                                <span
-                                    className={`font-semibold ${remainingAmount > 0 ? "text-red-600" : "text-green-600"}`}
-                                >
-                          {remainingAmount.toFixed(2)} UZS
-                        </span>
-                              </div>
-                            </div>
-                        );
-                      })()}
-
-                      {/* Payments List */}
-                      <div className="space-y-2">
-                        {(() => {
-                          const payments = commonForm.watch("payments") || [];
-
-                          return payments.map((payment, index) => (
-                              <div
-                                  key={index}
-                                  className="flex gap-2 items-start p-3 bg-white rounded border"
-                              >
-                                <div className="flex-1 space-y-2">
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div className="space-y-1">
-                                      <Label className="text-xs">
-                                        {t("common.amount") || "Amount"}
-                                      </Label>
-                                      <Input
-                                          type="number"
-                                          step="0.01"
-                                          value={payment.amount}
-                                          onChange={(e) => {
-                                            const payments =
-                                                commonForm.watch("payments") || [];
-                                            const newPayments = [...payments];
-                                            newPayments[index] = {
-                                              ...newPayments[index],
-                                              amount: e.target.value,
-                                            };
-                                            commonForm.setValue("payments", newPayments);
-                                          }}
-                                      />
-                                    </div>
-                                    <div className="space-y-1">
-                                      <Label className="text-xs">
-                                        {t("common.payment_type") || "Payment Type"}
-                                      </Label>
-                                      <Select
-                                          value={payment.payment_type}
-                                          onValueChange={(value) => {
-                                            const payments =
-                                                commonForm.watch("payments") || [];
-                                            const newPayments = [...payments];
-                                            newPayments[index] = {
-                                              ...newPayments[index],
-                                              payment_type: value,
-                                            };
-                                            commonForm.setValue("payments", newPayments);
-                                          }}
-                                      >
-                                        <SelectTrigger>
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="Наличные">
-                                            Наличные
-                                          </SelectItem>
-                                          <SelectItem value="Карта">Карта</SelectItem>
-                                          <SelectItem value="Click">Click</SelectItem>
-                                          <SelectItem value="Перечисление">
-                                            Перечисление
-                                          </SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  </div>
-                                </div>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      const payments = commonForm.watch("payments") || [];
-                                      const newPayments = payments.filter(
-                                          (_, i) => i !== index,
-                                      );
-                                      commonForm.setValue("payments", newPayments);
-                                    }}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                          ));
-                        })()}
-
-                        {(!commonForm.watch("payments") ||
-                            commonForm.watch("payments")?.length === 0) && (
-                            <div className="text-center text-sm text-gray-500 py-4">
-                              {t("common.no_payments_added") ||
-                                  "No payments added. A payment will be auto-added once items are calculated."}
-                            </div>
-                        )}
-                      </div>
-                    </div>
-                )}
-          </div>
-
-          {/* Stock Items List */}
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">
-                {t("common.stock_items")} ({stockItems.length})
-              </h2>
-              <div className="flex gap-2">
-                {selectedItems.size > 0 && (
-                    <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={removeSelectedItems}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Удалить ({selectedItems.size})
-                    </Button>
-                )}
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => toggleAllExpansion(false)}
-                >
-                  cвернуть
-                </Button>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => toggleAllExpansion(true)}
-                >
-                  развернуть
-                </Button>
-                <Button type="button" onClick={addStockItem}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t("common.add_stock_item")}
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              {stockItems.map((item, index) => (
-                  <div
-                      key={item.id}
-                      className={`border rounded-lg transition-all ${
-                          selectedItems.has(item.id) ? "ring-2 ring-blue-500" : ""
-                      } ${item.isCalculated ? "border-green-300 bg-green-50/30" : "border-gray-200"}`}
-                  >
-                    {/* Item Header */}
-                    <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-t-lg">
-                      <Checkbox
-                          checked={selectedItems.has(item.id)}
-                          onCheckedChange={(checked) => {
-                            setSelectedItems((prev) => {
-                              const newSet = new Set(prev);
-                              if (checked) {
-                                newSet.add(item.id);
-                              } else {
-                                newSet.delete(item.id);
-                              }
-                              return newSet;
-                            });
-                          }}
-                      />
-
-                      <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleItemExpansion(item.id)}
-                          className="p-1"
-                      >
-                        {item.isExpanded ? (
-                            <ChevronDown className="h-4 w-4" />
-                        ) : (
-                            <ChevronRight className="h-4 w-4" />
-                        )}
-                      </Button>
-
-                      <div className="flex-1 flex items-center gap-4">
-                    <span className="font-medium text-gray-600">
-                      #{index + 1}
-                    </span>
-                        <span className="font-semibold text-lg">
-                      {item.selectedProduct?.product_name ||
-                          t("common.select_product_placeholder")}
-                    </span>
-                        {item.isCalculated && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <CheckCircle2 className="h-4 w-4 text-green-600" />
-                              <span className="text-green-700 font-medium">
-                          {item.form.quantity}{" "}
-                                {
-                                  item.selectedProduct?.available_units?.[0]
-                                      ?.short_name
-                                }{" "}
-                                · {formatPrice(item.form.total_price_in_uz)}{" "}
-                                UZS
-                        </span>
-                            </div>
-                        )}
-                        {item.isCalculating && (
-                            <div className="flex items-center gap-2 text-sm text-blue-600">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              <span>{t("common.calculating")}</span>
-                            </div>
-                        )}
-                        {!item.isCalculated &&
-                            !item.isCalculating &&
-                            item.form.product && (
-                                <div className="flex items-center gap-2 text-sm text-amber-600">
-                                  <AlertCircle className="h-4 w-4" />
-                                  <span>{t("common.incomplete")}</span>
-                                </div>
-                            )}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => duplicateStockItem(item.id)}
-                            title={t("common.duplicate")}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        {stockItems.length > 1 && (
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeStockItem(item.id)}
-                                title={t("common.delete")}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Item Content */}
-                    {item.isExpanded && (
-                        <div className="p-4 space-y-4">
-                          {/* Product Selection Fields */}
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {/* Product */}
-                            <div className="space-y-2">
-                              <Label htmlFor={`product-${item.id}`}>
-                                {t("common.product")} *
-                              </Label>
-                              <Select
-                                  value={item.form.product?.toString()}
-                                  onValueChange={(value) =>
-                                      handleProductChange(item.id, value)
-                                  }
-                                  onOpenChange={(open) => {
-                                    if (!open) setProductSearchTerm("");
-                                  }}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder={t("common.product")} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <div className="p-2 sticky top-0 bg-white z-10 border-b">
-                                    <Input
-                                        placeholder={t(
-                                            "common.search_product_placeholder",
-                                        )}
-                                        value={productSearchTerm}
-                                        onChange={(e) =>
-                                            setProductSearchTerm(e.target.value)
-                                        }
-                                        onKeyDown={(e) => e.stopPropagation()}
-                                        onPointerDown={(e) => e.stopPropagation()}
-                                        onClick={(e) => e.stopPropagation()}
-                                        autoFocus
-                                    />
-                                  </div>
-                                  <div className="max-h-[300px] overflow-y-auto">
-                                    {(() => {
-                                      const options = [...allProducts];
-                                      const sel = item.selectedProduct as any;
-                                      if (
-                                          sel &&
-                                          !options.some((p: any) => p.id === sel.id)
-                                      ) {
-                                        options.unshift(sel);
-                                      }
-                                      return options.length > 0 ? (
-                                          options.map((product: any) => (
-                                              <SelectItem
-                                                  key={product.id}
-                                                  value={String(product.id)}
-                                                  className="cursor-pointer hover:bg-blue-50 active:bg-blue-100 transition-all duration-150"
-                                              >
-                                                <div className="flex justify-between items-center gap-2 w-full">
-                                        <span className="font-medium text-sm">
-                                          {product.product_name}
-                                        </span>
-                                                  {product.quantity && (
-                                                      <span className="text-xs font-semibold whitespace-nowrap">
-                                            {typeof product.quantity ===
-                                            "string"
-                                                ? parseFloat(product.quantity)
-                                                : product.quantity || 0}{" "}
-                                                        {product.available_units?.[0]
-                                                            ?.short_name || "шт"}
-                                          </span>
-                                                  )}
-                                                </div>
-                                              </SelectItem>
-                                          ))
-                                      ) : (
-                                          <div className="px-4 py-4 text-center text-gray-600 text-sm">
-                                            No products found
-                                          </div>
-                                      );
-                                    })()}
-                                  </div>
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            {/* Currency */}
-                            <div className="space-y-2">
-                              <Label htmlFor={`currency-${item.id}`}>
-                                {t("common.currency")} *
-                              </Label>
-                              <Select
-                                  value={item.form.currency?.toString()}
-                                  onValueChange={(value) =>
-                                      updateStockItemField(item.id, "currency", value)
-                                  }
-                                  disabled={currenciesLoading}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue
-                                      placeholder={t("common.select_currency")}
-                                  />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {currencies.map((currency) => (
-                                      <SelectItem
-                                          key={currency.id}
-                                          value={String(currency.id)}
-                                      >
-                                        {currency.name} ({currency.short_name})
-                                      </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            {/* Purchase Unit */}
-                            <div className="space-y-2">
-                              <Label htmlFor={`purchase_unit-${item.id}`}>
-                                {t("common.purchase_unit")} *
-                              </Label>
-                              <Select
-                                  value={item.form.purchase_unit?.toString()}
-                                  onValueChange={(value) => {
-                                    updateStockItemField(
-                                        item.id,
-                                        "purchase_unit",
-                                        value,
-                                    );
-                                  }}
-                                  disabled={
-                                      measurementsLoading || !item.selectedProduct
-                                  }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue
-                                      placeholder={t("common.select_purchase_unit")}
-                                  />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {item.selectedProduct?.available_units?.map(
-                                      (unit: any) => (
-                                          <SelectItem
-                                              key={unit.id}
-                                              value={String(unit.id)}
-                                          >
-                                            {unit.short_name}
-                                            {unit.is_base ? " (base)" : ""}
-                                          </SelectItem>
-                                      ),
-                                  )}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-
-                          {/* Stock Name Field - Show only for category Лист (id: 3) */}
-                          {item.selectedProduct?.category_read?.id === 3 && (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <Label htmlFor={`stock_name-${item.id}`}>
-                                    Партия
-                                  </Label>
-                                  <Input
-                                      id={`stock_name-${item.id}`}
-                                      type="text"
-                                      value={item.form.stock_name || ""}
-                                      onChange={(e) => {
-                                        updateStockItemField(
-                                            item.id,
-                                            "stock_name",
-                                            e.target.value,
-                                        );
-                                      }}
-                                      placeholder="Партия"
-                                  />
-                                </div>
-
-                                {/* Calculation Button for Лист category */}
-                                <div className="space-y-2">
-                                  <Label>калькулятор</Label>
-                                  <Button
-                                      type="button"
-                                      onClick={() => openCalculationModal(item.id)}
-                                      disabled={!item.form.purchase_unit}
-                                      variant="outline"
-                                      className="w-full"
-                                  >
-                                    калькулятор
-                                  </Button>
-                                </div>
-                              </div>
-                          )}
-
-                          {/* Dynamic Fields */}
-                          {item.isCalculated && (
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 border-t pt-4">
-                                {item.dynamicFieldsOrder
-                                    .filter(
-                                        (fieldName) =>
-                                            item.dynamicFields[fieldName] &&
-                                            item.dynamicFields[fieldName].show,
-                                    )
-                                    .map((fieldName) => {
-                                      const fieldData = item.dynamicFields[fieldName];
-                                      return (
-                                          <div key={fieldName} className="space-y-2">
-                                            <Label htmlFor={`${fieldName}-${item.id}`}>
-                                              {fieldData.label}
-                                            </Label>
-                                            <Input
-                                                id={`${fieldName}-${item.id}`}
-                                                type="number"
-                                                step="0.01"
-                                                value={
-                                                    item.form[
-                                                        fieldName as keyof StockItemFormValues
-                                                        ] || ""
-                                                }
-                                                onChange={(e) => {
-                                                  const value = e.target.value;
-                                                  updateStockItemField(
-                                                      item.id,
-                                                      fieldName as keyof StockItemFormValues,
-                                                      value,
-                                                  );
-                                                  if (fieldData.editable) {
-                                                    calculateItemFields(
-                                                        item.id,
-                                                        fieldName,
-                                                        value,
-                                                    );
-                                                  }
-                                                }}
-                                                readOnly={!fieldData.editable}
-                                                className={
-                                                  !fieldData.editable
-                                                      ? "bg-gray-100 cursor-not-allowed"
-                                                      : ""
-                                                }
-                                            />
-                                          </div>
-                                      );
-                                    })}
-                              </div>
-                          )}
-                        </div>
-                    )}
-                  </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Submit Buttons */}
-          <div className="p-6 border-t bg-gray-50 flex justify-end gap-4">
-            <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate("/stock")}
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-                type="button"
-                onClick={handleSubmit}
-                disabled={
-                    isSubmitting ||
-                    (() => {
-                      // Disable if using supplier balance and insufficient balance
-                      if (
-                          commonForm.watch("use_supplier_balance") &&
-                          commonForm.watch("supplier")
-                      ) {
-                        const selectedSupplier = suppliers.find(
-                            (s: Supplier) =>
-                                s.id === Number(commonForm.watch("supplier")),
-                        );
-                        if (selectedSupplier) {
-                          const totalAmount = stockItems.reduce((sum, item) => {
-                            if (item.isCalculated) {
-                              return sum + (Number(item.form.total_price_in_uz) || 0);
-                            }
-                            return sum;
-                          }, 0);
-                          const balance = Number(selectedSupplier.balance) || 0;
-                          return balance < totalAmount;
-                        }
-                      }
-                      return false;
-                    })()
-                }
-            >
-              {isSubmitting ? t("common.submitting") : t("common.submit")}
-            </Button>
           </div>
         </div>
 
-        {/* Create Product Dialog */}
-        <Dialog open={createProductOpen} onOpenChange={setCreateProductOpen}>
-          <DialogContent>
-            <DialogTitle>{t("common.create_new_product")}</DialogTitle>
-            <form
-                onSubmit={productForm.handleSubmit(handleCreateProductSubmit)}
-                className="space-y-4"
-            >
-              <div className="space-y-2">
-                <Label htmlFor="product_name">{t("common.product_name")}</Label>
-                <Input
-                    id="product_name"
-                    {...productForm.register("product_name", { required: true })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category_write">{t("common.category")}</Label>
+        {/* Common Fields Section */}
+        <div className="p-6 border-b bg-gray-50">
+          <h2 className="text-lg font-semibold mb-4">
+            {t("common.common_information")}
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Store */}
+            <div className="space-y-2">
+              <Label htmlFor="store">{t("common.store")} *</Label>
+              <Select
+                value={commonForm.watch("store")?.toString()}
+                onValueChange={(value) =>
+                  commonForm.setValue("store", Number(value))
+                }
+                disabled={storesLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("common.select_store")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {stores
+                    .filter((store) => store.is_main)
+                    .map((store) => (
+                      <SelectItem key={store.id} value={String(store.id)}>
+                        {store.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Supplier */}
+            <div className="space-y-2">
+              <Label htmlFor="supplier">{t("common.supplier")} *</Label>
+              <div className="flex gap-2">
                 <Select
-                    value={productForm.watch("category_write")?.toString()}
-                    onValueChange={(value) =>
-                        productForm.setValue("category_write", parseInt(value))
-                    }
-                    disabled={categoriesLoading}
+                  value={commonForm.watch("supplier")?.toString()}
+                  onValueChange={(value) =>
+                    commonForm.setValue("supplier", Number(value))
+                  }
+                  disabled={suppliersLoading}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={t("common.select_category")} />
+                    <SelectValue placeholder={t("common.select_supplier")} />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((category) => (
-                        <SelectItem
-                            key={String(category.id)}
-                            value={String(category.id || "")}
-                        >
-                          {category.category_name}
-                        </SelectItem>
+                    {suppliers.map((supplier) => (
+                      <SelectItem key={supplier.id} value={String(supplier.id)}>
+                        {supplier.name}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="store_write">{t("common.store")}</Label>
-                <Select
-                    value={productForm.watch("store_write")?.toString()}
-                    onValueChange={(value) =>
-                        productForm.setValue("store_write", parseInt(value))
-                    }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("common.select_store")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {stores
-                        .filter((store) => !store.is_main)
-                        .map((store) => (
-                            <SelectItem
-                                key={store.id?.toString() || ""}
-                                value={(store.id || 0).toString()}
-                            >
-                              {store.name}
-                            </SelectItem>
-                        ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" disabled={createProduct.isPending}>
-                {t("common.create")}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </div>
 
-        {/* Create Supplier Dialog */}
-        <Dialog open={createSupplierOpen} onOpenChange={setCreateSupplierOpen}>
-          <DialogContent>
-            <DialogTitle>{t("common.create_new_supplier")}</DialogTitle>
-            <form
-                onSubmit={supplierForm.handleSubmit(handleCreateSupplierSubmit)}
-                className="space-y-4"
-            >
-              <div className="space-y-2">
-                <Label htmlFor="name">{t("common.supplier_name")}</Label>
-                <Input
-                    id="name"
-                    {...supplierForm.register("name", { required: true })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone_number">{t("common.phone_number")}</Label>
-                <Input
-                    id="phone_number"
-                    {...supplierForm.register("phone_number", { required: true })}
-                />
-              </div>
-              <Button type="submit" disabled={createSupplier.isPending}>
-                {t("common.create")}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            {/* Date */}
+            <div className="space-y-2">
+              <Label htmlFor="date_of_arrived">
+                {t("common.date_of_arrival")} *
+              </Label>
+              <Input
+                id="date_of_arrived"
+                type="datetime-local"
+                {...commonForm.register("date_of_arrived")}
+              />
+            </div>
 
-        {/* Restore Draft Dialog */}
-        <Dialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
-          <DialogContent>
-            <DialogTitle>{t("common.restore_draft")}</DialogTitle>
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                {t("common.unsaved_work_message")}{" "}
-                {draftTimestamp
-                    ? new Date(draftTimestamp).toLocaleString()
-                    : t("common.a_previous_session")}
-                . {t("common.would_you_like_to_restore")}
-              </p>
+            {/* Is Debt */}
+            <div className="space-y-2 flex items-center gap-2 pt-8">
+              <Checkbox
+                id="is_debt"
+                checked={commonForm.watch("is_debt") === true}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    commonForm.setValue("is_debt", true);
+                    commonForm.setValue("use_supplier_balance", false);
+                    // Clear payments when switching to debt mode
+                    commonForm.setValue("payments", []);
+                  } else {
+                    commonForm.setValue("is_debt", false);
+                  }
+                }}
+              />
+              <Label htmlFor="is_debt" className="cursor-pointer">
+                {t("common.is_debt")}
+              </Label>
+            </div>
+          </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-                <div className="flex items-start gap-3">
-                  <Save className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-blue-900">
-                      {t("common.draft_saved_automatically")}
-                    </p>
-                    <p className="text-sm text-blue-700 mt-1">
-                      {t("common.draft_auto_save_description")}
-                    </p>
-                  </div>
+          {/* Debt fields */}
+          {commonForm.watch("is_debt") && (
+            <div className="space-y-4 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="amount_of_debt">
+                    {t("common.amount_of_debt")}
+                  </Label>
+                  <Input
+                    id="amount_of_debt"
+                    type="number"
+                    step="0.01"
+                    {...commonForm.register("amount_of_debt")}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="advance_of_debt">
+                    {t("common.advance_of_debt")}
+                  </Label>
+                  <Input
+                    id="advance_of_debt"
+                    type="number"
+                    step="0.01"
+                    {...commonForm.register("advance_of_debt")}
+                  />
                 </div>
               </div>
 
-              <div className="flex gap-3">
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={startFresh}
-                    className="flex-1"
-                >
-                  {t("common.start_fresh")}
-                </Button>
-                <Button type="button" onClick={restoreDraft} className="flex-1">
-                  {t("common.restore_draft_button")}
-                </Button>
-              </div>
+              {/* Deposit Payment Method - show when debt and NOT using supplier balance */}
+              {!commonForm.watch("use_supplier_balance") && (
+                <div className="space-y-2">
+                  <Label htmlFor="deposit_payment_method">
+                    {t("common.deposit_payment_method") ||
+                      "Deposit Payment Method"}
+                  </Label>
+                  <Select
+                    value={commonForm.watch("deposit_payment_method") || ""}
+                    onValueChange={(value) =>
+                      commonForm.setValue("deposit_payment_method", value)
+                    }
+                  >
+                    <SelectTrigger id="deposit_payment_method">
+                      <SelectValue
+                        placeholder={
+                          t("common.select_payment_method") ||
+                          "Select payment method"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Наличные">Наличные</SelectItem>
+                      <SelectItem value="Карта">Карта</SelectItem>
+                      <SelectItem value="Click">Click</SelectItem>
+                      <SelectItem value="Перечисление">Перечисление</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
-          </DialogContent>
-        </Dialog>
+          )}
 
-        {/* Quantity Calculation Modal */}
-        <Dialog
-            open={calculationModalOpen}
-            onOpenChange={setCalculationModalOpen}
-        >
-          <DialogContent className="sm:max-w-md">
-            <DialogTitle>{t("common.calculate_quantity")}</DialogTitle>
-            <div className="space-y-4">
-              {activeCalculationItemId &&
-                  (() => {
-                    const item = stockItems.find(
-                        (i) => i.id === activeCalculationItemId,
-                    );
-                    if (!item) return null;
+          {/* Use Supplier Balance Section - Separate from debt */}
+          <div className="space-y-2 flex items-center gap-2 pt-8">
+            <Checkbox
+              id="use_supplier_balance"
+              checked={commonForm.watch("use_supplier_balance") === true}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  commonForm.setValue("use_supplier_balance", true);
+                  commonForm.setValue("is_debt", false);
+                  // Clear payments when switching to supplier balance mode
+                  commonForm.setValue("payments", []);
+                } else {
+                  commonForm.setValue("use_supplier_balance", false);
+                }
+              }}
+            />
+            <Label htmlFor="use_supplier_balance" className="cursor-pointer">
+              {t("common.use_supplier_balance") || "Use Supplier Balance"}
+            </Label>
+          </div>
 
-                    const selectedUnit =
-                        item.selectedProduct?.available_units?.find(
-                            (u: any) => u.id === Number(item.form.purchase_unit),
-                        );
-                    const conversionNumber = getConversionNumber(
-                        item.selectedProduct,
-                        Number(item.form.purchase_unit),
-                    );
-
+          {/* Show supplier balance info when use_supplier_balance is checked */}
+          {commonForm.watch("use_supplier_balance") &&
+            commonForm.watch("supplier") && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mt-4">
+                <h3 className="font-semibold mb-2">
+                  {t("common.supplier_info") || "Supplier Information"}
+                </h3>
+                {(() => {
+                  const selectedSupplier = suppliers.find(
+                    (s: Supplier) =>
+                      s.id === Number(commonForm.watch("supplier")),
+                  );
+                  if (selectedSupplier) {
+                    const totalAmount = stockItems.reduce((sum, item) => {
+                      if (item.isCalculated) {
+                        return sum + (Number(item.form.total_price_in_uz) || 0);
+                      }
+                      return sum;
+                    }, 0);
+                    const balance = Number(selectedSupplier.balance) || 0;
+                    const canPay = balance >= totalAmount;
                     return (
-                        <>
-                          <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-                            <div className="space-y-2 text-sm">
-                              <div className="flex justify-between">
-                          <span className="text-gray-600">
-                            {t("common.product_label")}
-                          </span>
-                                <span className="font-medium">
-                            {item.selectedProduct?.product_name}
-                          </span>
-                              </div>
-                              <div className="flex justify-between">
-                          <span className="text-gray-600">
-                            {t("common.purchase_unit_label")}
-                          </span>
-                                <span className="font-medium">
-                            {selectedUnit?.short_name}
-                          </span>
-                              </div>
-                              <div className="flex justify-between">
-                          <span className="text-gray-600">
-                            {t("common.conversion_number")}
-                          </span>
-                                <span className="font-bold text-blue-600">
-                            {conversionNumber
-                                ? Number(conversionNumber).toFixed(2)
-                                : "N/A"}
-                          </span>
+                      <div className="space-y-3">
+                        <div className="p-3 bg-white border border-blue-200 rounded-lg">
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">
+                                {t("common.supplier_name") || "Supplier"}:
+                              </span>
+                              <span className="font-medium">
+                                {selectedSupplier.name}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">
+                                {t("common.supplier_balance") ||
+                                  "Available Balance"}
+                                :
+                              </span>
+                              <span
+                                className={`font-semibold ${balance > 0 ? "text-green-600" : "text-red-600"}`}
+                              >
+                                {formatPrice(balance)} UZS
+                              </span>
+                            </div>
+                            <div className="flex justify-between border-t pt-2">
+                              <span className="text-gray-600">
+                                {t("common.total_amount") || "Purchase Amount"}:
+                              </span>
+                              <span className="font-semibold">
+                                {formatPrice(totalAmount)} UZS
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {!canPay && (
+                          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                            <div className="flex items-start gap-2">
+                              <span className="font-semibold">⚠️</span>
+                              <div>
+                                <p className="font-semibold">
+                                  Недостаточный баланс
+                                </p>
+                                <p className="text-xs mt-1">
+                                  Баланс поставщика ({formatPrice(balance)} UZS)
+                                  меньше суммы покупки ({formatPrice(totalAmount)}{" "}
+                                  UZS). Нехватка:{" "}
+                                  {formatPrice(totalAmount - balance)} UZS
+                                </p>
                               </div>
                             </div>
                           </div>
+                        )}
 
-                          <div className="space-y-2">
-                            <Label htmlFor="calculation_input">
-                              {t("common.enter_value")}
-                            </Label>
-                            <Input
-                                id="calculation_input"
+                        {canPay && (
+                          <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+                            <div className="flex items-start gap-2">
+                              <span className="font-semibold">✓</span>
+                              <div>
+                                <p className="font-semibold">Оплата доступна</p>
+                                <p className="text-xs mt-1">
+                                  Остаток баланса после покупки:{" "}
+                                  {(balance - totalAmount).toFixed(2)} UZS
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
+            )}
+
+          {/* Payments Section - show when NOT using supplier balance AND NOT debt */}
+          {commonForm.watch("use_supplier_balance") !== true &&
+            commonForm.watch("is_debt") !== true && (
+              <div className="space-y-4 mt-4 p-4 bg-gray-50 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <Label className="text-lg font-semibold">
+                    {t("common.payments") || "Payments"}
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const currentPayments =
+                        commonForm.watch("payments") || [];
+                      const totalAmount = stockItems.reduce((sum, item) => {
+                        if (item.isCalculated) {
+                          return (
+                            sum + (Number(item.form.total_price_in_uz) || 0)
+                          );
+                        }
+                        return sum;
+                      }, 0);
+
+                      const paidAmount = currentPayments.reduce(
+                        (sum, p) => sum + (Number(p.amount) || 0),
+                        0,
+                      );
+                      const remainingAmount = totalAmount - paidAmount;
+
+                      commonForm.setValue("payments", [
+                        ...currentPayments,
+                        {
+                          amount:
+                            remainingAmount > 0
+                              ? remainingAmount.toFixed(2)
+                              : "0",
+                          payment_type: "Наличные",
+                        },
+                      ]);
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    {t("common.add_payment") || "Add Payment"}
+                  </Button>
+                </div>
+
+                {/* Total Amount Display */}
+                {(() => {
+                  const totalAmount = stockItems.reduce((sum, item) => {
+                    if (item.isCalculated) {
+                      return sum + (Number(item.form.total_price_in_uz) || 0);
+                    }
+                    return sum;
+                  }, 0);
+                  const payments = commonForm.watch("payments") || [];
+                  const paidAmount = payments.reduce(
+                    (sum, p) => sum + (Number(p.amount) || 0),
+                    0,
+                  );
+                  const remainingAmount = totalAmount - paidAmount;
+
+                  return (
+                    <div className="space-y-2 p-3 bg-white rounded border">
+                      <div className="flex justify-between text-sm">
+                        <span>
+                          {t("common.total_amount") || "Total Amount"}:
+                        </span>
+                        <span className="font-semibold">
+                          {totalAmount.toFixed(2)} UZS
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>{t("common.paid_amount") || "Paid Amount"}:</span>
+                        <span className="font-semibold text-green-600">
+                          {paidAmount.toFixed(2)} UZS
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm border-t pt-2">
+                        <span>
+                          {t("common.remaining_amount") || "Remaining Amount"}:
+                        </span>
+                        <span
+                          className={`font-semibold ${remainingAmount > 0 ? "text-red-600" : "text-green-600"}`}
+                        >
+                          {remainingAmount.toFixed(2)} UZS
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Payments List */}
+                <div className="space-y-2">
+                  {(() => {
+                    const payments = commonForm.watch("payments") || [];
+
+                    return payments.map((payment, index) => (
+                      <div
+                        key={index}
+                        className="flex gap-2 items-start p-3 bg-white rounded border"
+                      >
+                        <div className="flex-1 space-y-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-xs">
+                                {t("common.amount") || "Amount"}
+                              </Label>
+                              <Input
                                 type="number"
                                 step="0.01"
-                                value={item.form.calculation_input || ""}
+                                value={payment.amount}
                                 onChange={(e) => {
-                                  updateStockItemField(
-                                      item.id,
-                                      "calculation_input",
-                                      e.target.value,
-                                  );
+                                  const payments =
+                                    commonForm.watch("payments") || [];
+                                  const newPayments = [...payments];
+                                  newPayments[index] = {
+                                    ...newPayments[index],
+                                    amount: e.target.value,
+                                  };
+                                  commonForm.setValue("payments", newPayments);
                                 }}
-                                placeholder={t("common.enter_number")}
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (
-                                      e.key === "Enter" &&
-                                      item.form.calculation_input
-                                  ) {
-                                    handleCalculateQuantity();
-                                  }
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">
+                                {t("common.payment_type") || "Payment Type"}
+                              </Label>
+                              <Select
+                                value={payment.payment_type}
+                                onValueChange={(value) => {
+                                  const payments =
+                                    commonForm.watch("payments") || [];
+                                  const newPayments = [...payments];
+                                  newPayments[index] = {
+                                    ...newPayments[index],
+                                    payment_type: value,
+                                  };
+                                  commonForm.setValue("payments", newPayments);
                                 }}
-                            />
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Наличные">
+                                    Наличные
+                                  </SelectItem>
+                                  <SelectItem value="Карта">Карта</SelectItem>
+                                  <SelectItem value="Click">Click</SelectItem>
+                                  <SelectItem value="Перечисление">
+                                    Перечисление
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
                           </div>
-
-                          <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
-                            <p className="text-sm text-amber-800">
-                              <strong>{t("common.formula")}</strong>{" "}
-                              {item.form.calculation_input || t("common.input")} ÷{" "}
-                              {conversionNumber
-                                  ? Number(conversionNumber).toFixed(2)
-                                  : "N/A"}
-                              {item.form.calculation_input && conversionNumber && (
-                                  <span className="block mt-1 font-bold text-amber-900">
-                            ={" "}
-                                    {(
-                                        Number(item.form.calculation_input) /
-                                        Number(conversionNumber)
-                                    ).toFixed(4)}
-                          </span>
-                              )}
-                            </p>
-                          </div>
-
-                          <div className="flex gap-3 pt-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                  setCalculationModalOpen(false);
-                                  setActiveCalculationItemId(null);
-                                }}
-                                className="flex-1"
-                            >
-                              {t("common.cancel")}
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={handleCalculateQuantity}
-                                disabled={!item.form.calculation_input}
-                                className="flex-1"
-                            >
-                              {t("common.calculate")}
-                            </Button>
-                          </div>
-                        </>
-                    );
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const payments = commonForm.watch("payments") || [];
+                            const newPayments = payments.filter(
+                              (_, i) => i !== index,
+                            );
+                            commonForm.setValue("payments", newPayments);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ));
                   })()}
+
+                  {(!commonForm.watch("payments") ||
+                    commonForm.watch("payments")?.length === 0) && (
+                    <div className="text-center text-sm text-gray-500 py-4">
+                      {t("common.no_payments_added") ||
+                        "No payments added. A payment will be auto-added once items are calculated."}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+        </div>
+
+        {/* Stock Items List */}
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">
+              {t("common.stock_items")} ({stockItems.length})
+            </h2>
+            <div className="flex gap-2">
+              {selectedItems.size > 0 && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={removeSelectedItems}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Удалить ({selectedItems.size})
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => toggleAllExpansion(false)}
+              >
+                cвернуть
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => toggleAllExpansion(true)}
+              >
+                развернуть
+              </Button>
+              <Button type="button" onClick={addStockItem}>
+                <Plus className="h-4 w-4 mr-2" />
+                {t("common.add_stock_item")}
+              </Button>
             </div>
-          </DialogContent>
-        </Dialog>
+          </div>
+
+          <div className="space-y-2">
+            {stockItems.map((item, index) => (
+              <div
+                key={item.id}
+                className={`border rounded-lg transition-all ${
+                  selectedItems.has(item.id) ? "ring-2 ring-blue-500" : ""
+                } ${item.isCalculated ? "border-green-300 bg-green-50/30" : "border-gray-200"}`}
+              >
+                {/* Item Header */}
+                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-t-lg">
+                  <Checkbox
+                    checked={selectedItems.has(item.id)}
+                    onCheckedChange={(checked) => {
+                      setSelectedItems((prev) => {
+                        const newSet = new Set(prev);
+                        if (checked) {
+                          newSet.add(item.id);
+                        } else {
+                          newSet.delete(item.id);
+                        }
+                        return newSet;
+                      });
+                    }}
+                  />
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => toggleItemExpansion(item.id)}
+                    className="p-1"
+                  >
+                    {item.isExpanded ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </Button>
+
+                  <div className="flex-1 flex items-center gap-4">
+                    <span className="font-medium text-gray-600">
+                      #{index + 1}
+                    </span>
+                    <span className="font-semibold text-lg">
+                      {item.selectedProduct?.product_name ||
+                        t("common.select_product_placeholder")}
+                    </span>
+                    {item.isCalculated && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 text-green-600" />
+                        <span className="text-green-700 font-medium">
+                          {item.form.quantity}{" "}
+                          {
+                            item.selectedProduct?.available_units?.[0]
+                              ?.short_name
+                          }{" "}
+                          · {formatPrice(item.form.total_price_in_uz)}{" "}
+                          UZS
+                        </span>
+                      </div>
+                    )}
+                    {item.isCalculating && (
+                      <div className="flex items-center gap-2 text-sm text-blue-600">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>{t("common.calculating")}</span>
+                      </div>
+                    )}
+                    {!item.isCalculated &&
+                      !item.isCalculating &&
+                      item.form.product && (
+                        <div className="flex items-center gap-2 text-sm text-amber-600">
+                          <AlertCircle className="h-4 w-4" />
+                          <span>{t("common.incomplete")}</span>
+                        </div>
+                      )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => duplicateStockItem(item.id)}
+                      title={t("common.duplicate")}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    {stockItems.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeStockItem(item.id)}
+                        title={t("common.delete")}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Item Content */}
+                {item.isExpanded && (
+                  <div className="p-4 space-y-4">
+                    {/* Product Selection Fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Product */}
+                      <div className="space-y-2">
+                        <Label htmlFor={`product-${item.id}`}>
+                          {t("common.product")} *
+                        </Label>
+                        <Select
+                          value={item.form.product?.toString()}
+                          onValueChange={(value) =>
+                            handleProductChange(item.id, value)
+                          }
+                          onOpenChange={(open) => {
+                            if (!open) setProductSearchTerm("");
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("common.product")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <div className="p-2 sticky top-0 bg-white z-10 border-b">
+                              <Input
+                                placeholder={t(
+                                  "common.search_product_placeholder",
+                                )}
+                                value={productSearchTerm}
+                                onChange={(e) =>
+                                  setProductSearchTerm(e.target.value)
+                                }
+                                onKeyDown={(e) => e.stopPropagation()}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                                autoFocus
+                              />
+                            </div>
+                            <div className="max-h-[300px] overflow-y-auto">
+                              {(() => {
+                                const options = [...allProducts];
+                                const sel = item.selectedProduct as any;
+                                if (
+                                  sel &&
+                                  !options.some((p: any) => p.id === sel.id)
+                                ) {
+                                  options.unshift(sel);
+                                }
+                                return options.length > 0 ? (
+                                  options.map((product: any) => (
+                                    <SelectItem
+                                      key={product.id}
+                                      value={String(product.id)}
+                                      className="cursor-pointer hover:bg-blue-50 active:bg-blue-100 transition-all duration-150"
+                                    >
+                                      <div className="flex justify-between items-center gap-2 w-full">
+                                        <span className="font-medium text-sm">
+                                          {product.product_name}
+                                        </span>
+                                        {product.quantity && (
+                                          <span className="text-xs font-semibold whitespace-nowrap">
+                                            {typeof product.quantity ===
+                                            "string"
+                                              ? parseFloat(product.quantity)
+                                              : product.quantity || 0}{" "}
+                                            {product.available_units?.[0]
+                                              ?.short_name || "шт"}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </SelectItem>
+                                  ))
+                                ) : (
+                                  <div className="px-4 py-4 text-center text-gray-600 text-sm">
+                                    No products found
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Currency */}
+                      <div className="space-y-2">
+                        <Label htmlFor={`currency-${item.id}`}>
+                          {t("common.currency")} *
+                        </Label>
+                        <Select
+                          value={item.form.currency?.toString()}
+                          onValueChange={(value) =>
+                            updateStockItemField(item.id, "currency", value)
+                          }
+                          disabled={currenciesLoading}
+                        >
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={t("common.select_currency")}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {currencies.map((currency) => (
+                              <SelectItem
+                                key={currency.id}
+                                value={String(currency.id)}
+                              >
+                                {currency.name} ({currency.short_name})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Purchase Unit */}
+                      <div className="space-y-2">
+                        <Label htmlFor={`purchase_unit-${item.id}`}>
+                          {t("common.purchase_unit")} *
+                        </Label>
+                        <Select
+                          value={item.form.purchase_unit?.toString()}
+                          onValueChange={(value) => {
+                            updateStockItemField(
+                              item.id,
+                              "purchase_unit",
+                              value,
+                            );
+                          }}
+                          disabled={
+                            measurementsLoading || !item.selectedProduct
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={t("common.select_purchase_unit")}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {item.selectedProduct?.available_units?.map(
+                              (unit: any) => (
+                                <SelectItem
+                                  key={unit.id}
+                                  value={String(unit.id)}
+                                >
+                                  {unit.short_name}
+                                  {unit.is_base ? " (base)" : ""}
+                                </SelectItem>
+                              ),
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {/* Stock Name Field - Show only for category Лист (id: 3) */}
+                    {item.selectedProduct?.category_read?.id === 3 && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor={`stock_name-${item.id}`}>
+                            Партия
+                          </Label>
+                          <Input
+                            id={`stock_name-${item.id}`}
+                            type="text"
+                            value={item.form.stock_name || ""}
+                            onChange={(e) => {
+                              updateStockItemField(
+                                item.id,
+                                "stock_name",
+                                e.target.value,
+                              );
+                            }}
+                            placeholder="Партия"
+                          />
+                        </div>
+
+                        {/* Calculation Button for Лист category */}
+                        <div className="space-y-2">
+                          <Label>калькулятор</Label>
+                          <Button
+                            type="button"
+                            onClick={() => openCalculationModal(item.id)}
+                            disabled={!item.form.purchase_unit}
+                            variant="outline"
+                            className="w-full"
+                          >
+                            калькулятор
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Dynamic Fields */}
+                    {item.isCalculated && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 border-t pt-4">
+                        {item.dynamicFieldsOrder
+                          .filter(
+                            (fieldName) =>
+                              item.dynamicFields[fieldName] &&
+                              item.dynamicFields[fieldName].show,
+                          )
+                          .map((fieldName) => {
+                            const fieldData = item.dynamicFields[fieldName];
+                            return (
+                              <div key={fieldName} className="space-y-2">
+                                <Label htmlFor={`${fieldName}-${item.id}`}>
+                                  {fieldData.label}
+                                </Label>
+                                <Input
+                                  id={`${fieldName}-${item.id}`}
+                                  type="number"
+                                  step="0.01"
+                                  value={
+                                    item.form[
+                                      fieldName as keyof StockItemFormValues
+                                    ] || ""
+                                  }
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    updateStockItemField(
+                                      item.id,
+                                      fieldName as keyof StockItemFormValues,
+                                      value,
+                                    );
+                                    if (fieldData.editable) {
+                                      calculateItemFields(
+                                        item.id,
+                                        fieldName,
+                                        value,
+                                      );
+                                    }
+                                  }}
+                                  readOnly={!fieldData.editable}
+                                  className={
+                                    !fieldData.editable
+                                      ? "bg-gray-100 cursor-not-allowed"
+                                      : ""
+                                  }
+                                />
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Submit Buttons */}
+        <div className="p-6 border-t bg-gray-50 flex justify-end gap-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate("/stock")}
+          >
+            {t("common.cancel")}
+          </Button>
+          <Button
+            type="button"
+            onClick={handleSubmit}
+            disabled={
+              isSubmitting ||
+              (() => {
+                // Disable if using supplier balance and insufficient balance
+                if (
+                  commonForm.watch("use_supplier_balance") &&
+                  commonForm.watch("supplier")
+                ) {
+                  const selectedSupplier = suppliers.find(
+                    (s: Supplier) =>
+                      s.id === Number(commonForm.watch("supplier")),
+                  );
+                  if (selectedSupplier) {
+                    const totalAmount = stockItems.reduce((sum, item) => {
+                      if (item.isCalculated) {
+                        return sum + (Number(item.form.total_price_in_uz) || 0);
+                      }
+                      return sum;
+                    }, 0);
+                    const balance = Number(selectedSupplier.balance) || 0;
+                    return balance < totalAmount;
+                  }
+                }
+                return false;
+              })()
+            }
+          >
+            {isSubmitting ? t("common.submitting") : t("common.submit")}
+          </Button>
+        </div>
       </div>
+
+      {/* Create Product Dialog */}
+      <Dialog open={createProductOpen} onOpenChange={setCreateProductOpen}>
+        <DialogContent>
+          <DialogTitle>{t("common.create_new_product")}</DialogTitle>
+          <form
+            onSubmit={productForm.handleSubmit(handleCreateProductSubmit)}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="product_name">{t("common.product_name")}</Label>
+              <Input
+                id="product_name"
+                {...productForm.register("product_name", { required: true })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="category_write">{t("common.category")}</Label>
+              <Select
+                value={productForm.watch("category_write")?.toString()}
+                onValueChange={(value) =>
+                  productForm.setValue("category_write", parseInt(value))
+                }
+                disabled={categoriesLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("common.select_category")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem
+                      key={String(category.id)}
+                      value={String(category.id || "")}
+                    >
+                      {category.category_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="store_write">{t("common.store")}</Label>
+              <Select
+                value={productForm.watch("store_write")?.toString()}
+                onValueChange={(value) =>
+                  productForm.setValue("store_write", parseInt(value))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={t("common.select_store")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {stores
+                    .filter((store) => !store.is_main)
+                    .map((store) => (
+                      <SelectItem
+                        key={store.id?.toString() || ""}
+                        value={(store.id || 0).toString()}
+                      >
+                        {store.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" disabled={createProduct.isPending}>
+              {t("common.create")}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Supplier Dialog */}
+      <Dialog open={createSupplierOpen} onOpenChange={setCreateSupplierOpen}>
+        <DialogContent>
+          <DialogTitle>{t("common.create_new_supplier")}</DialogTitle>
+          <form
+            onSubmit={supplierForm.handleSubmit(handleCreateSupplierSubmit)}
+            className="space-y-4"
+          >
+            <div className="space-y-2">
+              <Label htmlFor="name">{t("common.supplier_name")}</Label>
+              <Input
+                id="name"
+                {...supplierForm.register("name", { required: true })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone_number">{t("common.phone_number")}</Label>
+              <Input
+                id="phone_number"
+                {...supplierForm.register("phone_number", { required: true })}
+              />
+            </div>
+            <Button type="submit" disabled={createSupplier.isPending}>
+              {t("common.create")}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Restore Draft Dialog */}
+      <Dialog open={showDraftDialog} onOpenChange={setShowDraftDialog}>
+        <DialogContent>
+          <DialogTitle>{t("common.restore_draft")}</DialogTitle>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              {t("common.unsaved_work_message")}{" "}
+              {draftTimestamp
+                ? new Date(draftTimestamp).toLocaleString()
+                : t("common.a_previous_session")}
+              . {t("common.would_you_like_to_restore")}
+            </p>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+              <div className="flex items-start gap-3">
+                <Save className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div>
+                  <p className="font-medium text-blue-900">
+                    {t("common.draft_saved_automatically")}
+                  </p>
+                  <p className="text-sm text-blue-700 mt-1">
+                    {t("common.draft_auto_save_description")}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={startFresh}
+                className="flex-1"
+              >
+                {t("common.start_fresh")}
+              </Button>
+              <Button type="button" onClick={restoreDraft} className="flex-1">
+                {t("common.restore_draft_button")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quantity Calculation Modal */}
+      <Dialog
+        open={calculationModalOpen}
+        onOpenChange={setCalculationModalOpen}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogTitle>{t("common.calculate_quantity")}</DialogTitle>
+          <div className="space-y-4">
+            {activeCalculationItemId &&
+              (() => {
+                const item = stockItems.find(
+                  (i) => i.id === activeCalculationItemId,
+                );
+                if (!item) return null;
+
+                const selectedUnit =
+                  item.selectedProduct?.available_units?.find(
+                    (u: any) => u.id === Number(item.form.purchase_unit),
+                  );
+                const conversionNumber = getConversionNumber(
+                  item.selectedProduct,
+                  Number(item.form.purchase_unit),
+                );
+
+                return (
+                  <>
+                    <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">
+                            {t("common.product_label")}
+                          </span>
+                          <span className="font-medium">
+                            {item.selectedProduct?.product_name}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">
+                            {t("common.purchase_unit_label")}
+                          </span>
+                          <span className="font-medium">
+                            {selectedUnit?.short_name}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">
+                            {t("common.conversion_number")}
+                          </span>
+                          <span className="font-bold text-blue-600">
+                            {conversionNumber
+                              ? Number(conversionNumber).toFixed(2)
+                              : "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="calculation_input">
+                        {t("common.enter_value")}
+                      </Label>
+                      <Input
+                        id="calculation_input"
+                        type="number"
+                        step="0.01"
+                        value={item.form.calculation_input || ""}
+                        onChange={(e) => {
+                          updateStockItemField(
+                            item.id,
+                            "calculation_input",
+                            e.target.value,
+                          );
+                        }}
+                        placeholder={t("common.enter_number")}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (
+                            e.key === "Enter" &&
+                            item.form.calculation_input
+                          ) {
+                            handleCalculateQuantity();
+                          }
+                        }}
+                      />
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
+                      <p className="text-sm text-amber-800">
+                        <strong>{t("common.formula")}</strong>{" "}
+                        {item.form.calculation_input || t("common.input")} ÷{" "}
+                        {conversionNumber
+                          ? Number(conversionNumber).toFixed(2)
+                          : "N/A"}
+                        {item.form.calculation_input && conversionNumber && (
+                          <span className="block mt-1 font-bold text-amber-900">
+                            ={" "}
+                            {(
+                              Number(item.form.calculation_input) /
+                              Number(conversionNumber)
+                            ).toFixed(4)}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setCalculationModalOpen(false);
+                          setActiveCalculationItemId(null);
+                        }}
+                        className="flex-1"
+                      >
+                        {t("common.cancel")}
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleCalculateQuantity}
+                        disabled={!item.form.calculation_input}
+                        className="flex-1"
+                      >
+                        {t("common.calculate")}
+                      </Button>
+                    </div>
+                  </>
+                );
+              })()}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
