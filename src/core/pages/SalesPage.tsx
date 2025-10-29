@@ -239,8 +239,8 @@ export default function SalesPage() {
   const totalSumPage = totalsData?.total_sum_page || 0;
   const totalPaymentsAll = totalsData?.total_payments_all || {};
   const totalPaymentsPage = totalsData?.total_payments_page || {};
-  const totalDebtSum = totalsData?.total_debt_sum || 0;
-
+  // const totalDebtSum = totalsData?.total_debt_sum || 0;
+  //
   // Fetch recycling data
   const { data: recyclingData } = useGetRecyclings({});
 
