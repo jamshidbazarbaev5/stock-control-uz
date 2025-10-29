@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+  import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
@@ -414,10 +414,11 @@ function CreateSale() {
     }, 0);
     form.setValue("total_amount", total.toString());
 
-    // Update payment amount with total
+    // Update payment amount with total minus discount
+    const discountAmount = parseFloat(form.getValues("discount_amount") || "0");
     const payments = form.getValues("sale_payments");
     if (payments.length > 0) {
-      form.setValue("sale_payments.0.amount", total);
+      form.setValue("sale_payments.0.amount", total - discountAmount);
     }
   };
 
@@ -554,15 +555,35 @@ function CreateSale() {
     }
   };
 
-  const handleQuantityChange = (
+const handleQuantityChange = (
     e: React.ChangeEvent<HTMLInputElement>,
     index: number,
   ) => {
-    const value = parseFloat(e.target.value); // Use parseFloat to allow decimals
-    // If input is empty or not a number, set quantity to 0 and update totals
-    if (isNaN(value)) {
-      form.setValue(`sale_items.${index}.quantity`, 0);
+    const inputValue = e.target.value;
+    
+    // Allow empty input for better mobile UX
+    if (inputValue === '') {
+      form.setValue(`sale_items.${index}.quantity`, '' as any);
+      
+      // Update cart product with 0 quantity for calculation
+      const currentProduct = cartProducts[index];
+      if (currentProduct) {
+        const newCartProducts = [...cartProducts];
+        newCartProducts[index] = {
+          ...currentProduct,
+          quantity: 0,
+          total: 0,
+        };
+        setCartProducts(newCartProducts);
+      }
       updateTotalAmount();
+      return;
+    }
+
+    const value = parseFloat(inputValue);
+    
+    // If not a valid number, don't update
+    if (isNaN(value)) {
       return;
     }
 
@@ -629,17 +650,17 @@ function CreateSale() {
 
   const handleSubmit = async (data: SaleFormData) => {
     try {
+      // Calculate total_amount from items (price * quantity)
+      const totalFromItems = data.sale_items.reduce((sum, item) => {
+        const quantity = item.quantity || 0;
+        const pricePerUnit = parseFloat(item.price_per_unit) || 0;
+        return sum + (quantity * pricePerUnit);
+      }, 0);
+      
       const discountAmount = parseFloat(data.discount_amount || "0");
-      const totalBeforeDiscount = data.sale_payments
-        .reduce((sum, payment) => sum + (payment.amount || 0), 0);
       
-      // Apply discount to payment amounts
-      data.sale_payments = data.sale_payments.map((payment) => ({
-        ...payment,
-        amount: payment.amount - (payment.amount / totalBeforeDiscount) * discountAmount,
-      }));
-      
-      data.total_amount = totalBeforeDiscount.toString();
+      // Set total_amount from items calculation
+      data.total_amount = totalFromItems.toString();
       data.discount_amount = discountAmount.toString();
 
       // Set store based on user role
@@ -835,6 +856,21 @@ function CreateSale() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [activeSearchIndex]);
+
+  // Update payment amount when discount changes
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === "discount_amount") {
+        const totalAmount = parseFloat(form.getValues("total_amount") || "0");
+        const discountAmount = parseFloat(value.discount_amount || "0");
+        const payments = form.getValues("sale_payments");
+        if (payments.length > 0) {
+          form.setValue("sale_payments.0.amount", totalAmount - discountAmount);
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   // Check for prices below minimum (blocking submission)
   const hasBelowMinPrices = cartProducts.some((product) => {
@@ -1143,36 +1179,28 @@ function CreateSale() {
                 </div>
 
                 <div className="w-full sm:w-[120px]">
-                  <FormField
-                    control={form.control}
-                    name={`sale_items.${index}.quantity`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium">
-                          {t("table.quantity")}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="any"
-                            max={(() => {
-                              const qty =
-                                cartProducts[index]?.product?.quantity;
-                              return typeof qty === "string"
-                                ? parseFloat(qty)
-                                : qty || 1;
-                            })()}
-                            placeholder={t("placeholders.enter_quantity")}
-                            className="text-right"
-                            {...field}
-                            onChange={(e) => handleQuantityChange(e, index)}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
+  <FormField
+    control={form.control}
+    name={`sale_items.${index}.quantity`}
+    render={({ field }) => (
+      <FormItem>
+        <FormLabel className="text-sm font-medium">
+          {t("table.quantity")}
+        </FormLabel>
+        <FormControl>
+          <Input
+            type="text"              // 👈 CHANGED FROM "number" TO "text"
+            inputMode="decimal"      // 👈 ADDED THIS
+            placeholder={t("placeholders.enter_quantity")}
+            className="text-right"
+            value={field.value?.toString() || ''} // 👈 CHANGED THIS
+            onChange={(e) => handleQuantityChange(e, index)}
+          />
+        </FormControl>
+      </FormItem>
+    )}
+  />
+</div>
 
                 <div className="w-full sm:w-[150px]">
                   <FormField
@@ -1589,10 +1617,7 @@ function CreateSale() {
                   {t("table.total_amount")}
                 </h3>
                 <p className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                  {form
-                    .watch("sale_payments")
-                    .reduce((sum, payment) => sum + (payment.amount || 0), 0)
-                    .toLocaleString()}
+                  {parseFloat(form.watch("total_amount") || "0").toLocaleString()}
                 </p>
               </div>
               
@@ -1633,9 +1658,7 @@ function CreateSale() {
                     </h3>
                     <p className="text-2xl sm:text-4xl font-bold text-green-600 dark:text-green-400">
                       {(
-                        form
-                          .watch("sale_payments")
-                          .reduce((sum, payment) => sum + (payment.amount || 0), 0) -
+                        parseFloat(form.watch("total_amount") || "0") -
                         parseFloat(form.watch("discount_amount") || "0")
                       ).toLocaleString()}
                     </p>

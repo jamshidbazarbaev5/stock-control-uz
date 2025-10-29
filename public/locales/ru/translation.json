@@ -31,6 +31,8 @@
   "dashboard": {
     "other": "Другие",
     "clients": "Клиенты",
+    "supplier_debts":"Долги поставщикам",
+    "total_supplier_debts":"Общий долг поставщикам",
     "net_profit": "Остаток на счёте",
     "payments_by_method": "Платёжные поступления",
     "payments_by_method_desc": "Описание платежей по методу",
@@ -51,6 +53,12 @@
     "expense_details": "Расходы",
     "total_expenses": "Общие расходы",
     "expense_name": "Название расхода",
+    "suppliers_summary": "Сводка по поставщикам",
+    "supplier_debts_overview": "Обзор закупок и долгов поставщикам",
+    "total_supplier_debt": "Общий долг поставщикам",
+    "supplier_name": "Имя поставщика",
+    "total_purchases": "Общие закупки",
+    "no_supplier_data": "Нет данных о поставщиках",
     "top_sellers": "Лучшие продавцы",
     "top_performing_stores": "Лучшие магазины и продавцы",
     "store": "Магазин",
@@ -123,7 +131,9 @@
     "deposit": "Аванс",
     "all_stores": "Все магазины",
 
-    "no_client_debt_data_available": "Нет данных о долгах клиентов"
+    "no_client_debt_data_available": "Нет данных о долгах клиентов",
+    "custom": "Произвольный",
+    "select_store": "Выберите магазин"
   },
   "stock": {
     "recycled": "Переработан",
@@ -857,9 +867,9 @@
     "complex": "Сложная оплата"
   },
   "table": {
+    "discount":"Скидка",
+     "discount_amount":"Скидка",
     "balance": "Баланс",
-    "discount": "Скидка",
-      "discount_amount": "Скидка",
     "total_debt": "Долг",
     "remaining_debt": "Остаток",
     "total_paid": "Всего оплачено",
