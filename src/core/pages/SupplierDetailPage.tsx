@@ -183,7 +183,7 @@ export default function SupplierDetailPage() {
                           }`}
                         >
                           {!entry.is_debt
-                            ? t('common.paid2') // Not for debt
+                            ? t('common.paid3') // Not for debt
                             : entry.is_paid
                             ? t('common.paid') // Debt paid
                             : t('common.unpaid')}
