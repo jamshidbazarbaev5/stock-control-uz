@@ -52,6 +52,8 @@
     "amount": "Сумма",
     "expense_details": "Расходы",
     "total_expenses": "Общие расходы",
+    "purchase_expenses": "Закупка товара",
+    "other_expenses": "Прочие расходы",
     "expense_name": "Название расхода",
     "suppliers_summary": "Сводка по поставщикам",
     "supplier_debts_overview": "Обзор закупок и долгов поставщикам",
