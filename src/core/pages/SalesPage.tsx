@@ -1241,7 +1241,7 @@ export default function SalesPage() {
                 </p>
               </div>
 
-              {/* Total Debt */}
+              {/* Total Debt
               <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-lg border border-amber-200">
                 <div className="flex items-center gap-2 mb-2">
                   <AlertCircle className="h-5 w-5 text-amber-600" />
@@ -1252,7 +1252,7 @@ export default function SalesPage() {
                 <p className="text-2xl font-bold text-amber-700">
                   {formatCurrency(totalDebtSum)} UZS
                 </p>
-              </div>
+              </div> */}
 
               {/* Placeholder for balance */}
               <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
