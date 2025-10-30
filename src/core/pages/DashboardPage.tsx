@@ -778,20 +778,20 @@ const DashboardPage = () => {
               <div className="text-2xl font-bold">
                 <div
                     className={`text-2xl font-bold ${
-                        (expensesSummary?.total_expense || 0) >= 0
+                        (expensesSummary?.other_expense_total || 0) >= 0
                             ? "text-red-600"
                             : "text-green-600"
                     }`}
                 >
-                  {new Intl.NumberFormat("uz-UZ", {
-                    style: "currency",
-                    currency: "UZS",
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  })
-                      .format(expensesSummary?.total_expense || 0)
-                      .replace("UZS", "")
-                      .trim()}
+                 {new Intl.NumberFormat("uz-UZ", {
+                  style: "currency",
+                  currency: "UZS",
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                })
+                    .format(expensesSummary?.other_expense_total || 0)
+                    .replace("UZS", "")
+                    .trim()}
                 </div>
               </div>
             </CardContent>
@@ -819,7 +819,7 @@ const DashboardPage = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-card">
+          {/* <Card className="bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-card">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 {t("dashboard.other_expenses") || "Прочие расходы"}
@@ -839,7 +839,7 @@ const DashboardPage = () => {
                     .trim()}
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
           {/* Store Balance Card */}
           <Card className="bg-white shadow-md hover:shadow-lg transition-shadow dark:bg-card">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
