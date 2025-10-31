@@ -174,7 +174,9 @@
       }
     }
   },
+
   "common": {
+    "mass_payment":"Оплатить долг",
     "paid3":"Не в долг",
     "available_budget": "Бюджет",
     "search_product": "Поиск продукта",
