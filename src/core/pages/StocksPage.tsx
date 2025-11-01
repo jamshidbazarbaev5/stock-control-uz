@@ -810,7 +810,7 @@ export default function StocksPage() {
 
         {/* Pagination */}
         {stocksData && stocksData.count > pageSize && (
-            <div className="flex justify-center items-center gap-2 mt-6">
+            <div className="flex justify-center items-center gap-2 mt-6 flex-wrap">
               <Button
                   variant="outline"
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
@@ -818,9 +818,16 @@ export default function StocksPage() {
               >
                 Предыдущая
               </Button>
-              <span className="text-sm text-gray-600">
-            Страница {currentPage} из {Math.ceil((stocksData.count || 0) / pageSize)}
-          </span>
+              {stocksData.page_range?.map((page: number) => (
+                  <Button
+                      key={page}
+                      variant={page === currentPage ? "default" : "outline"}
+                      onClick={() => setCurrentPage(page)}
+                      size="sm"
+                  >
+                    {page}
+                  </Button>
+              ))}
               <Button
                   variant="outline"
                   onClick={() => setCurrentPage(currentPage + 1)}
@@ -958,7 +965,7 @@ export default function StocksPage() {
                   </div>
                 </div>
 
-                {/* Page Range */}
+                {/* Page Range
                 {stocksData.page_range && stocksData.page_range.length > 0 && (
                     <div className="mt-4">
                       <h4 className="text-md font-semibold text-gray-700 mb-3">
@@ -975,7 +982,7 @@ export default function StocksPage() {
                         ))}
                       </div>
                     </div>
-                )}
+                )} */}
               </div>
             </Card>
         )}
