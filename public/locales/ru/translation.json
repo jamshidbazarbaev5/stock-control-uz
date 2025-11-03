@@ -174,10 +174,9 @@
       }
     }
   },
-
   "common": {
-    "mass_payment":"Оплатить долг",
     "paid3":"Не в долг",
+      "mass_payment":"Оплатить долг",
     "available_budget": "Бюджет",
     "search_product": "Поиск продукта",
     "edit_stock_entry": "Изменить приход",
@@ -526,6 +525,7 @@
   },
 
   "forms": {
+    "can_view_quantity": "Может просматривать количество",
     "budget_type": "Тип оплаты",
     "transfer": "Перечисление",
     "lender_name": "Имя",
@@ -779,6 +779,7 @@
     "unpaid": "Не погашен"
   },
   "placeholders": {
+    "select_permission": "Выберите разрешение",
     "select_budget_type": "Тип",
     "enter_lender_name": "Введите имя",
     "search_products": "Поиск товаров",

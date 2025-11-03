@@ -432,14 +432,14 @@ export default function StocksPage() {
                     )}
                   </>
               )}
-              {(row.product?.category_read?.category_name === "Лист" ||
-                  row.product_read?.category_read?.category_name === "Лист") && (
-                  <DropdownMenuItem onClick={() => handleAddExtraQuantity(row)}>
+              {(row.product?.category_read?.category_name === "Лист" || 
+                row.product_read?.category_read?.category_name === "Лист") && (
+                <DropdownMenuItem onClick={() => handleAddExtraQuantity(row)}>
                   <span className="flex items-center gap-2">
                     <Package className="h-4 w-4" />
                     Добавить количество
                   </span>
-                  </DropdownMenuItem>
+                </DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -819,14 +819,14 @@ export default function StocksPage() {
                 Предыдущая
               </Button>
               {stocksData.page_range?.map((page: number) => (
-                  <Button
-                      key={page}
-                      variant={page === currentPage ? "default" : "outline"}
-                      onClick={() => setCurrentPage(page)}
-                      size="sm"
-                  >
-                    {page}
-                  </Button>
+                <Button
+                  key={page}
+                  variant={page === currentPage ? "default" : "outline"}
+                  onClick={() => setCurrentPage(page)}
+                  size="sm"
+                >
+                  {page}
+                </Button>
               ))}
               <Button
                   variant="outline"
